@@ -882,7 +882,7 @@ kbd {
 .commit-box textarea {
     width: 100%;
     min-height: 192px;
-    resize: vertical;
+    resize: none;
     padding: 8px 9px;
     color: var(--text);
     background: var(--surface-0);
@@ -1800,13 +1800,29 @@ mark {
 
 /* Commit box resize handle */
 .cb-resize-handle {
-    height: 5px;
-    margin: -11px -12px 7px;
+    position: relative;
+    height: 7px;
+    margin: 0 -12px 5px;
     cursor: row-resize;
+    transition: background 0.15s ease;
+}
+.cb-resize-handle::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 36px;
+    height: 3px;
+    content: '';
+    background: var(--line);
+    border-radius: 999px;
+    transform: translate(-50%, -50%);
     transition: background 0.15s ease;
 }
 .cb-resize-handle:hover {
     background: color-mix(in srgb, var(--teal) 12%, transparent);
+}
+.cb-resize-handle:hover::after {
+    background: var(--teal);
 }
 
 /* File row context menu (History / Blame) */
