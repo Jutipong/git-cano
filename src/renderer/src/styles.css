@@ -238,72 +238,6 @@ kbd {
 }
 
 /* Top toolbar */
-.toolbar {
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    height: 44px;
-    flex: 0 0 44px;
-    gap: 12px;
-    padding: 0 14px;
-    background: var(--surface-0);
-    border-bottom: 1px solid var(--line-soft);
-}
-.product-mark {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 116px;
-    color: #f4f7fa;
-    font-weight: 700;
-    letter-spacing: -0.2px;
-}
-.product-mark-icon {
-    display: grid;
-    place-items: center;
-    width: 25px;
-    height: 25px;
-    color: #fff;
-    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
-    border-radius: 7px;
-    font-weight: 900;
-}
-.toolbar-divider {
-    width: 1px;
-    height: 25px;
-    background: var(--line-soft);
-}
-.repo-context {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 210px;
-    color: var(--teal);
-}
-.repo-context-copy {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-    gap: 2px;
-}
-.repo-context-copy strong,
-.repo-context-copy span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.repo-context-copy strong {
-    color: var(--text);
-    font-size: 13px;
-}
-.repo-context-copy span {
-    color: var(--text-muted);
-    font-size: 10px;
-}
-.remote-actions {
-    display: flex;
-    gap: 2px;
-}
 .commit-search {
     position: absolute;
     left: 50%;
@@ -1720,8 +1654,21 @@ kbd {
 }
 .tab-new {
     align-self: center;
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+.tab-new:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+    border-color: var(--line);
 }
 
 .graph-load-more {

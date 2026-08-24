@@ -8,7 +8,6 @@
     import RebaseEditor from './components/RebaseEditor.vue'
     import Sidebar from './components/Sidebar.vue'
     import TabBar from './components/TabBar.vue'
-    import Toolbar from './components/Toolbar.vue'
     import ToolsModal from './components/ToolsModal.vue'
 
     import type { CommitNode, MenuItem, RepoStatus } from '@shared/types'

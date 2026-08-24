@@ -106,33 +106,6 @@ body {
     margin-top: 8px;
 }
 
-.toolbar {
-    height: 44px;
-    flex-basis: 44px;
-    gap: 10px;
-    padding: 0 12px;
-    background: var(--surface-0);
-    border: 1px solid var(--line-soft);
-    border-radius: 11px 11px 0 0;
-    box-shadow: 0 2px 10px var(--shadow);
-}
-
-.product-mark {
-    min-width: 108px;
-}
-
-.product-mark-icon {
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
-}
-
-.toolbar-divider {
-    height: 22px;
-    background: var(--line-soft);
-}
-
 .commit-search {
     background: var(--surface-1);
     border-color: var(--line-soft);
@@ -160,8 +133,10 @@ body {
     gap: 4px;
     padding: 0 8px;
     background: var(--surface-0);
+    border-top: 1px solid var(--line-soft);
     border-right: 1px solid var(--line-soft);
     border-left: 1px solid var(--line-soft);
+    border-radius: 12px 12px 0 0;
 }
 
 .repo-tab {
