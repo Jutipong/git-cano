@@ -196,10 +196,6 @@
                     width="15"
                     height="15" />
             </button>
-                <i-lucide-x
-                    width="15"
-                    height="15" />
-            </button>
         </div>
 
         <div
