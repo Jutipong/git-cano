@@ -487,6 +487,23 @@ kbd {
     border-radius: 3px;
     font-size: 9px;
 }
+.track-badge {
+    display: inline-flex;
+    flex: none;
+    gap: 4px;
+    margin-left: auto;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+}
+.current-badge + .track-badge {
+    margin-left: 6px;
+}
+.track-ahead {
+    color: var(--green);
+}
+.track-behind {
+    color: var(--orange);
+}
 .row-actions {
     display: none;
     align-items: center;

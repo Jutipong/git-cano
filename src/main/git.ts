@@ -386,9 +386,26 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
     const b = await g.branch(['-a'])
     const local: BranchInfo[] = []
     const remote: BranchInfo[] = []
+
+    // ahead/behind counts vs upstream, per local branch
+    const trackText = await g.raw([
+        'for-each-ref',
+        '--format=%(refname:short)%x1f%(upstream:track)',
+        'refs/heads',
+    ])
+    const track = new Map<string, { ahead: number; behind: number }>()
+    for (const line of trackText.split('\n')) {
+        if (!line.trim()) continue
+        const [name, t = ''] = line.split('\u001f')
+        const ahead = /\bahead (\d+)/.exec(t)?.[1]
+        const behind = /\bbehind (\d+)/.exec(t)?.[1]
+        if (ahead || behind) track.set(name, { ahead: Number(ahead ?? 0), behind: Number(behind ?? 0) })
+    }
+
     for (const ref of b.all) {
         if (ref.includes('HEAD') || ref.includes('->')) continue
         const info: BranchInfo = { name: ref, current: b.current === ref }
+        Object.assign(info, track.get(ref))
         if (ref.startsWith('remotes/') || !b.branches[ref]) remote.push(info)
         else local.push(info)
     }

@@ -11,7 +11,7 @@
     const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
 
     const ui = useUiStore()
-    const local = ref<{ name: string; current: boolean }[]>([])
+    const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number }[]>([])
     const remote = ref<{ name: string; current: boolean }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
     const showNew = ref(false)
@@ -219,6 +219,16 @@
                     width="14"
                     height="14" />
                 <span class="branch-name">{{ branch.name }}</span>
+                <span
+                    v-if="branch.ahead || branch.behind"
+                    class="track-badge">
+                    <span
+                        v-if="branch.ahead"
+                        class="track-ahead">↑{{ branch.ahead }}</span>
+                    <span
+                        v-if="branch.behind"
+                        class="track-behind">↓{{ branch.behind }}</span>
+                </span>
                 <span
                     v-if="branch.current"
                     class="current-badge"
