@@ -112,35 +112,6 @@
             </div>
             <span class="panel-count">{{ files.length }}</span>
         </div>
-        <div class="commit-box">
-            <label class="amend-toggle">
-                <input
-                    v-model="amend"
-                    type="checkbox"
-                    @change="toggleAmend" />
-                Amend last commit
-            </label>
-            <textarea
-                v-model="message"
-                placeholder="Summary of changes"
-                rows="2"
-                @keydown.enter.meta.prevent="doCommit()"
-                @keydown.enter.ctrl.prevent="doCommit()" />
-            <button
-                class="btn primary commit-btn"
-                :disabled="!message.trim() || staged.length === 0"
-                @click="doCommit()">
-                <i-lucide-check
-                    width="15"
-                    height="15" />
-                {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
-            </button>
-            <div
-                v-if="staged.length === 0 && files.length > 0 && !amend"
-                class="commit-hint">
-                Stage at least one file to commit
-            </div>
-        </div>
 
         <div class="file-groups">
             <div class="group-header">
@@ -259,6 +230,36 @@
                         style="margin-right: 6px" />
                     Blame
                 </button>
+            </div>
+        </div>
+
+        <div class="commit-box">
+            <label class="amend-toggle">
+                <input
+                    v-model="amend"
+                    type="checkbox"
+                    @change="toggleAmend" />
+                Amend last commit
+            </label>
+            <textarea
+                v-model="message"
+                placeholder="Summary of changes"
+                rows="2"
+                @keydown.enter.meta.prevent="doCommit()"
+                @keydown.enter.ctrl.prevent="doCommit()" />
+            <button
+                class="btn primary commit-btn"
+                :disabled="!message.trim() || staged.length === 0"
+                @click="doCommit()">
+                <i-lucide-check
+                    width="15"
+                    height="15" />
+                {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
+            </button>
+            <div
+                v-if="staged.length === 0 && files.length > 0 && !amend"
+                class="commit-hint">
+                Stage at least one file to commit
             </div>
         </div>
     </div>
