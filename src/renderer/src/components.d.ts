@@ -40,7 +40,6 @@ declare module 'vue' {
     ILucideMinimize: typeof import('~icons/lucide/minimize')['default']
     ILucideMinus: typeof import('~icons/lucide/minus')['default']
     ILucideMoon: typeof import('~icons/lucide/moon')['default']
-    ILucideMoreHorizontal: typeof import('~icons/lucide/more-horizontal')['default']
     ILucidePauseCircle: typeof import('~icons/lucide/pause-circle')['default']
     ILucidePlay: typeof import('~icons/lucide/play')['default']
     ILucidePlus: typeof import('~icons/lucide/plus')['default']
@@ -60,7 +59,6 @@ declare module 'vue' {
     Sidebar: typeof import('./components/Sidebar.vue')['default']
     StashPanel: typeof import('./components/StashPanel.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
-    Toolbar: typeof import('./components/Toolbar.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']
     Welcome: typeof import('./components/Welcome.vue')['default']
   }
