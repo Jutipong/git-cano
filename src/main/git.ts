@@ -388,15 +388,16 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
     const remote: BranchInfo[] = []
 
     // ahead/behind counts vs upstream, per local branch
+    // (note: Apple Git does not expand %x1f in for-each-ref format, use | as separator)
     const trackText = await g.raw([
         'for-each-ref',
-        '--format=%(refname:short)%x1f%(upstream:track)',
+        '--format=%(refname:short)|%(upstream:track)',
         'refs/heads',
     ])
     const track = new Map<string, { ahead: number; behind: number }>()
     for (const line of trackText.split('\n')) {
         if (!line.trim()) continue
-        const [name, t = ''] = line.split('\u001f')
+        const [name, t = ''] = line.split('|')
         const ahead = /\bahead (\d+)/.exec(t)?.[1]
         const behind = /\bbehind (\d+)/.exec(t)?.[1]
         if (ahead || behind) track.set(name, { ahead: Number(ahead ?? 0), behind: Number(behind ?? 0) })
