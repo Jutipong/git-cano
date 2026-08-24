@@ -6,7 +6,6 @@ export const useUiStore = defineStore(
         const theme = ref<'dark' | 'light'>('dark')
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
-        const commitDetailsHeight = ref(210)
         const summaryHeight = ref(180)
         const searchQuery = ref('')
         const toast = ref<string | null>(null)
@@ -31,7 +30,6 @@ export const useUiStore = defineStore(
             theme,
             sidebarWidth,
             rightPanelWidth,
-            commitDetailsHeight,
             summaryHeight,
             searchQuery,
             toast,
@@ -40,6 +38,6 @@ export const useUiStore = defineStore(
         }
     },
     {
-        persist: { pick: ['theme', 'sidebarWidth', 'rightPanelWidth', 'commitDetailsHeight', 'summaryHeight'] },
+        persist: { pick: ['theme', 'sidebarWidth', 'rightPanelWidth', 'summaryHeight'] },
     }
 )

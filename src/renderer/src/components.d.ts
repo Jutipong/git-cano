@@ -8,7 +8,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     BlameModal: typeof import('./components/BlameModal.vue')['default']
-    CommitDetails: typeof import('./components/CommitDetails.vue')['default']
     ConflictBanner: typeof import('./components/ConflictBanner.vue')['default']
     ContextMenu: typeof import('./components/ContextMenu.vue')['default']
     DiffView: typeof import('./components/DiffView.vue')['default']

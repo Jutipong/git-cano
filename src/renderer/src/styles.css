@@ -721,104 +721,6 @@ kbd {
     color: var(--text-muted);
     text-align: center;
 }
-
-/* Selected commit information */
-.commit-details {
-    display: flex;
-    flex: none;
-    flex-direction: column;
-    min-height: 120px;
-    background: var(--surface-1);
-    border-top: 1px solid var(--line);
-}
-.cd-resize-handle {
-    position: relative;
-    flex: none;
-    height: 5px;
-    cursor: row-resize;
-    transition: background 0.15s ease;
-}
-.cd-resize-handle::after {
-    position: absolute;
-    top: 2px;
-    left: 50%;
-    width: 32px;
-    height: 2px;
-    content: '';
-    background: var(--line);
-    border-radius: 999px;
-    transform: translateX(-50%);
-    transition: background 0.15s ease;
-}
-.cd-resize-handle:hover,
-.cd-resize-handle:active {
-    background: color-mix(in srgb, var(--teal) 12%, transparent);
-}
-.cd-resize-handle:hover::after,
-.cd-resize-handle:active::after {
-    background: var(--teal);
-}
-.commit-details-heading {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    height: 39px;
-    padding: 0 15px;
-    border-bottom: 1px solid var(--line-soft);
-}
-.commit-details-title {
-    display: flex;
-    flex: 1;
-    min-width: 0;
-    align-items: center;
-    gap: 8px;
-}
-.commit-details-title strong {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.commit-details-title svg {
-    color: var(--teal);
-}
-.commit-details-hash,
-.cd-hash {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 7px;
-    color: var(--text-muted);
-    background: var(--surface-2);
-    border: 1px solid var(--line-soft);
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: 'SF Mono', Menlo, monospace;
-    font-size: 11px;
-    transition: color 0.15s ease, border-color 0.15s ease;
-}
-.cd-hash:hover {
-    color: var(--teal);
-    border-color: var(--teal);
-}
-.commit-details-heading {
-    flex: none;
-}
-.commit-details-content {
-    display: flex;
-    flex: 1;
-    flex-direction: column;
-    min-height: 0;
-    padding: 10px 15px 13px;
-    overflow-y: auto;
-}
-.commit-details-content h2 {
-    margin: 0;
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
 .stat-add {
     color: var(--green);
 }
@@ -1332,24 +1234,6 @@ kbd {
     align-items: center;
     gap: 6px;
 }
-.commit-details-summary {
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.commit-details-body {
-    margin-top: 6px;
-    padding: 8px 10px;
-    color: var(--text-secondary);
-    font-size: 11.5px;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    background: var(--surface-2);
-    border-left: 2px solid var(--line);
-    border-radius: 0 4px 4px 0;
-}
 .commit-detail-actions {
     display: inline-flex;
     gap: 5px;
@@ -1463,26 +1347,6 @@ kbd {
 }
 .detail-action.accent:hover {
     color: var(--teal);
-}
-
-/* Commit file list + inline diff */
-.commit-actions-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 5px 12px;
-    margin: -10px -15px 10px;
-    padding: 6px 15px;
-    background: color-mix(in srgb, var(--surface-2) 55%, transparent);
-    border-bottom: 1px solid var(--line-soft);
-}
-.cd-files-count {
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
-}
-.commit-details-content h2 {
-    display: none;
 }
 
 /* Interactive rebase editor */
