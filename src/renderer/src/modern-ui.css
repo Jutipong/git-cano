@@ -69,6 +69,7 @@ body {
 }
 
 .app {
+    position: relative;
     min-width: 980px;
     gap: 0;
     padding: 8px;
@@ -213,6 +214,10 @@ body {
 }
 
 .diff-overlay {
+    /* floats as its own card over tab bar + sidebar + graph (8px = .app padding) */
+    top: 8px;
+    bottom: 8px;
+    left: 8px;
     overflow: hidden;
     border: 1px solid var(--line-soft);
     border-radius: 12px;
