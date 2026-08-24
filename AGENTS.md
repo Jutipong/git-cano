@@ -43,6 +43,7 @@ Key files:
 
 ## Conventions
 
+- **Never commit on your own.** Only commit when the user explicitly asks (e.g. "commit").
 - Vue SFCs use 4-space indentation inside `<script setup>`; auto-imports cover vue/pinia APIs
   (no explicit `ref`/`computed` imports) — icons come from `lucide-vue-next`.
 - Shared date formatting lives in `src/renderer/src/utils/format.ts`; reuse it rather than

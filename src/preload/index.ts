@@ -115,6 +115,12 @@ const api = {
     recentList: (): Promise<string[]> => call('recent:list'),
     recentAdd: (p: string): Promise<boolean> => call('recent:add', p),
     recentRemove: (p: string): Promise<boolean> => call('recent:remove', p),
+    /* external repo change notifications (main-process .git watcher) */
+    onRepoChanged: (callback: (repoPath: string) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, repoPath: string) => callback(repoPath)
+        ipcRenderer.on('repo:changed', listener)
+        return () => ipcRenderer.removeListener('repo:changed', listener)
+    },
 }
 
 export type Api = typeof api

@@ -33,16 +33,34 @@
     }
 
     const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null
+
+    function debouncedRefresh() {
+        if (!repoStore.repo) return
+        if (refreshTimer) clearTimeout(refreshTimer)
+        refreshTimer = setTimeout(() => {
+            refreshTimer = null
+            void repoStore.refresh()
+        }, 400)
+    }
 
     onMounted(() => {
         void repoStore.init()
 
-        // lightweight auto-refresh (5 minutes)
+        // instant refresh when the repo changes outside the app (terminal commits, etc.)
+        const unwatch = window.api.onRepoChanged(debouncedRefresh)
+        onUnmounted(unwatch)
+
+        // refresh when returning to the app window
+        window.addEventListener('focus', debouncedRefresh)
+        onUnmounted(() => window.removeEventListener('focus', debouncedRefresh))
+
+        // polling fallback (1 minute)
         refreshInterval.value = setInterval(
             () => {
                 if (repoStore.repo) void repoStore.refresh()
             },
-            5 * 60 * 1000
+            60 * 1000
         )
 
         const onKeyDown = (event: KeyboardEvent) => {

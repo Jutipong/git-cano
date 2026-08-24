@@ -42,6 +42,7 @@ import {
     getRebasePlan,
     listBranches,
     merge,
+    onRepoChanged,
     openRepo,
     pull,
     push,
@@ -77,6 +78,11 @@ import {
 } from './git'
 
 let win: BrowserWindow | null = null
+
+/* forward external repo changes (commits made outside the app) to the renderer */
+onRepoChanged(repoPath => {
+    if (win && !win.isDestroyed()) win.webContents.send('repo:changed', repoPath)
+})
 
 function createWindow(): void {
     win = new BrowserWindow({

@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+import type { FSWatcher } from 'node:fs'
 
 import { simpleGit, type SimpleGit } from 'simple-git'
 
@@ -37,6 +38,7 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
     }
     repoInstances.set(dir, g)
     activeRepoPath = dir
+    watchRepo(dir)
     return getStatus()
 }
 
@@ -53,9 +55,59 @@ export function closeRepo(dir?: string): void {
     const target = dir ?? activeRepoPath
     if (!target) return
     repoInstances.delete(target)
+    unwatchRepo(target)
     if (activeRepoPath === target) {
         activeRepoPath = repoInstances.keys().next().value ?? null
     }
+}
+
+/* ---- .git watcher: notify renderer when the repo changes externally ---- */
+const repoWatchers = new Map<string, FSWatcher[]>()
+let repoChangeCallback: ((repoPath: string) => void) | null = null
+const emitTimers = new Map<string, ReturnType<typeof setTimeout>>()
+
+export function onRepoChanged(callback: (repoPath: string) => void): void {
+    repoChangeCallback = callback
+}
+
+function watchRepo(dir: string): void {
+    if (repoWatchers.has(dir)) return
+    const gitDir = path.join(dir, '.git')
+    if (!fs.existsSync(gitDir)) return
+    const watchers: FSWatcher[] = []
+    const emit = () => emitRepoChanged(dir)
+    try {
+        // HEAD/index/config live at the top level of .git
+        watchers.push(fs.watch(gitDir, emit))
+        // branch refs update on commit/checkout — recursive works on macOS/Windows
+        watchers.push(fs.watch(path.join(gitDir, 'refs'), { recursive: true } as never, emit))
+    } catch {
+        /* filesystem without fs.watch support — polling fallback still applies */
+    }
+    repoWatchers.set(dir, watchers)
+}
+
+function unwatchRepo(dir: string): void {
+    for (const watcher of repoWatchers.get(dir) ?? []) {
+        watcher.close()
+    }
+    repoWatchers.delete(dir)
+    const timer = emitTimers.get(dir)
+    if (timer) clearTimeout(timer)
+    emitTimers.delete(dir)
+}
+
+function emitRepoChanged(dir: string): void {
+    // git writes several files per operation — collapse into one notification
+    const existing = emitTimers.get(dir)
+    if (existing) clearTimeout(existing)
+    emitTimers.set(
+        dir,
+        setTimeout(() => {
+            emitTimers.delete(dir)
+            repoChangeCallback?.(dir)
+        }, 300)
+    )
 }
 
 export function isOpen(): boolean {

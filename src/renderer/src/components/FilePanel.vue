@@ -66,6 +66,18 @@
         ui.fileViewMode = ui.fileViewMode === 'tree' ? 'flat' : 'tree'
     }
 
+    async function refreshPanel() {
+        if (pending.value) return
+        pending.value = true
+        try {
+            await props.refresh()
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''))
+        } finally {
+            pending.value = false
+        }
+    }
+
     type AnyRow<T> = TreeRow & { file?: T }
     function makeRows<T extends FileEntry | CommitFile>(files: T[], group: string): AnyRow<T>[] {
         if (ui.fileViewMode === 'flat') {
@@ -226,9 +238,16 @@
                         class="stat-del">−{{ commitTotals.deletions.toLocaleString() }}</span
                     >
                 </span>
-                <span
-                    v-else-if="mode === 'workdir'"
-                    class="panel-count">{{ files.length }}</span>
+                <button
+                    class="view-toggle"
+                    title="Refresh changes"
+                    :disabled="pending"
+                    @click="refreshPanel()">
+                    <i-lucide-refresh-cw
+                        :class="{ spinning: pending }"
+                        width="14"
+                        height="14" />
+                </button>
                 <button
                     class="view-toggle"
                     :title="ui.fileViewMode === 'tree' ? 'Show as flat list' : 'Show as tree'"
