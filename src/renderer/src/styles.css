@@ -566,6 +566,16 @@ kbd {
     padding: 0 15px;
     border-bottom: 1px solid var(--line-soft);
 }
+.commit-close-btn {
+    margin-left: 10px;
+    padding: 0 6px;
+    height: 26px;
+    border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+    background: color-mix(in srgb, var(--red) 8%, transparent);
+}
+.commit-close-btn:hover {
+    background: color-mix(in srgb, var(--red) 18%, transparent);
+}
 .graph-title {
     display: flex;
     align-items: center;

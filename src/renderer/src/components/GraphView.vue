@@ -124,15 +124,16 @@
                         width="14"
                         height="14" />
                 </button>
-                <button
-                    v-if="props.commitOpen"
-                    class="icon-btn danger"
-                    title="Close commit details"
-                    @click="emit('close-commit')">
-                    <i-lucide-x
-                        width="14"
-                        height="14" />
-                </button>
+            </div>
+            <button
+                v-if="props.commitOpen"
+                class="icon-btn danger commit-close-btn"
+                title="Close commit details"
+                @click="emit('close-commit')">
+                <i-lucide-x
+                    width="14"
+                    height="14" />
+            </button>
             </div>
         </div>
         <div class="graph-header">
