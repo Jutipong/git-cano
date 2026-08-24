@@ -3,7 +3,6 @@
     import { useUiStore } from '../stores/ui'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
-    import StashPanel from './StashPanel.vue'
 
     import type { MenuItem, RepoStatus } from '@shared/types'
 
@@ -444,10 +443,6 @@
             </template>
         </div>
 
-        <StashPanel
-            :repo-path="repo.path"
-            :refresh="props.refresh" />
-
         <div class="sidebar-bottom">
             <div class="sidebar-bottom-actions">
                 <button
@@ -461,6 +456,15 @@
                 </button>
                 <button
                     class="toolbar-icon-button"
+                    :class="{ 'bisect-active': repoStore.repoState.bisectActive }"
+                    title="Settings"
+                    @click="repoStore.toolsOpen = true">
+                    <i-lucide-settings
+                        width="17"
+                        height="17" />
+                </button>
+                <button
+                    class="toolbar-icon-button"
                     :title="ui.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
                     @click="ui.toggleTheme()">
                     <i-lucide-sun
@@ -471,15 +475,6 @@
                         v-else
                         width="16"
                         height="16" />
-                </button>
-                <button
-                    class="toolbar-icon-button"
-                    :class="{ 'bisect-active': repoStore.repoState.bisectActive }"
-                    title="Settings"
-                    @click="repoStore.toolsOpen = true">
-                    <i-lucide-settings
-                        width="17"
-                        height="17" />
                 </button>
             </div>
         </div>

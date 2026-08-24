@@ -193,14 +193,14 @@ body {
 
 .tab-new {
     color: var(--green);
-    border-color: color-mix(in srgb, var(--green) 45%, var(--line-soft));
-    background: color-mix(in srgb, var(--green) 10%, var(--surface-2));
+    background: transparent;
+    border-color: transparent;
 }
 
 .tab-new:hover {
     color: var(--green);
-    border-color: var(--green);
-    background: color-mix(in srgb, var(--green) 18%, var(--surface-hover));
+    border-color: transparent;
+    background: color-mix(in srgb, var(--green) 15%, transparent);
 }
 
 .app-body {
