@@ -192,8 +192,10 @@
                     :commits="commits"
                     :query="ui.searchQuery"
                     :has-more="hasMore"
+                    :commit-open="!!selectedCommit"
                     :build-commit-menu="buildCommitMenu"
                     @select-commit="selectedCommit = $event"
+                    @close-commit="selectedCommit = null"
                     @load-more="repoStore.loadMore()" />
             </div>
             <div
