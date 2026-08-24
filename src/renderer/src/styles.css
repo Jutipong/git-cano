@@ -540,6 +540,12 @@ kbd {
     background: var(--surface-1);
     box-shadow: 4px 0 16px var(--shadow);
 }
+.diff-view.fullscreen {
+    position: fixed;
+    z-index: 60;
+    inset: 0;
+    box-shadow: none;
+}
 .graph-view {
     display: flex;
     flex: 1;

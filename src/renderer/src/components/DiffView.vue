@@ -14,6 +14,7 @@
 
     const lines = ref<DiffLine[]>([])
     const loading = ref(false)
+    const isFullscreen = ref(false)
     const splitMode = ref(localStorage.getItem('ogit-diff-mode') === 'split')
     const meta = ref<{ binary: boolean; image: boolean } | null>(null)
     const images = ref<{ oldUrl: string | null; newUrl: string | null } | null>(null)
@@ -144,12 +145,14 @@
 <template>
     <div
         v-if="!file"
-        class="diff-view empty">
+        class="diff-view empty"
+        :class="{ fullscreen: isFullscreen }">
         <p>Select a file to view its diff</p>
     </div>
     <div
         v-else
-        class="diff-view">
+        class="diff-view"
+        :class="{ fullscreen: isFullscreen }">
         <div class="diff-header">
             <strong>{{ file.path }}</strong>
             <span class="chip">{{ sourceLabel }}</span>
@@ -168,6 +171,19 @@
                     width="15"
                     height="15" />
                 <i-lucide-columns2
+                    v-else
+                    width="15"
+                    height="15" />
+            </button>
+            <button
+                class="icon-btn"
+                :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+                @click="isFullscreen = !isFullscreen">
+                <i-lucide-minimize
+                    v-if="isFullscreen"
+                    width="15"
+                    height="15" />
+                <i-lucide-maximize
                     v-else
                     width="15"
                     height="15" />
