@@ -38,7 +38,6 @@ import {
   renameBranch,
   getCommitFileDiff,
   getRebasePlan,
-  executeRebase,
   listBranches,
   merge,
   openRepo,
@@ -48,6 +47,31 @@ import {
   stageAll,
   unstage,
   unstageAll,
+  commitMessage,
+  getLastCommitMessage,
+  listTags,
+  createTag,
+  deleteTag,
+  pushTags,
+  listRemotes,
+  addRemote,
+  removeRemote,
+  setRemoteUrl,
+  getRawPatch,
+  stageHunks,
+  applyPatch,
+  getFileHistory,
+  getBlame,
+  executeRebasePlan,
+  abortPausedRebase,
+  bisectStart,
+  bisectMark,
+  bisectReset,
+  listWorktrees,
+  addWorktree,
+  removeWorktree,
+  listSubmodules,
+  updateSubmodules,
 } from './git'
 
 let win: BrowserWindow | null = null
@@ -199,13 +223,6 @@ app.whenReady().then(() => {
     requireRepo()
     return getRebasePlan(ref as string)
   })
-  handle(
-    'rebase:execute',
-    (ref: string, entries: { command: 'pick' | 'reword' | 'squash' | 'fixup' | 'drop'; hash: string; message?: string }[]) => {
-      requireRepo()
-      return executeRebase(entries as never[], ref as string)
-    },
-  )
   handle('commit:cherryPick', (hash: string) => {
     requireRepo()
     return cherryPick(hash as string)
@@ -287,6 +304,110 @@ app.whenReady().then(() => {
   handle('remote:has', () => {
     requireRepo()
     return hasRemote()
+  })
+
+  handle(
+    'rebase:execute',
+    (baseRef: string, entries, resume: boolean) => {
+      requireRepo()
+      return executeRebasePlan(baseRef as string, entries as never[], Boolean(resume))
+    },
+  )
+  handle('rebase:abortPaused', () => {
+    requireRepo()
+    return abortPausedRebase()
+  })
+  handle('commit:message', (message: string, amend: boolean) => {
+    requireRepo()
+    return commitMessage(message as string, amend as boolean)
+  })
+  handle('commit:lastMessage', () => {
+    requireRepo()
+    return getLastCommitMessage()
+  })
+  handle('tag:list', () => {
+    requireRepo()
+    return listTags()
+  })
+  handle('tag:create', (name: string, hash: string | null, message?: string) => {
+    requireRepo()
+    return createTag(name as string, (hash as string) || null, message as string | undefined)
+  })
+  handle('tag:delete', (name: string) => {
+    requireRepo()
+    return deleteTag(name as string)
+  })
+  handle('tag:push', () => {
+    requireRepo()
+    return pushTags()
+  })
+  handle('remote:listFull', () => {
+    requireRepo()
+    return listRemotes()
+  })
+  handle('remote:addNew', (name: string, url: string) => {
+    requireRepo()
+    return addRemote(name as string, url as string)
+  })
+  handle('remote:removeOne', (name: string) => {
+    requireRepo()
+    return removeRemote(name as string)
+  })
+  handle('remote:setUrl', (name: string, url: string) => {
+    requireRepo()
+    return setRemoteUrl(name as string, url as string)
+  })
+  handle('patch:raw', (file: string, staged: boolean) => {
+    requireRepo()
+    return getRawPatch(file as string, staged as boolean)
+  })
+  handle('patch:apply', (patch: string, target: 'index' | 'worktree', reverse: boolean) => {
+    requireRepo()
+    return applyPatch(patch as string, target as 'index' | 'worktree', reverse as boolean)
+  })
+  handle('patch:stageHunks', (file: string, stagedView: boolean, hunks: number[], reverse: boolean) => {
+    requireRepo()
+    return stageHunks(file as string, stagedView as boolean, hunks as number[], reverse as boolean)
+  })
+  handle('file:history', (file: string) => {
+    requireRepo()
+    return getFileHistory(file as string)
+  })
+  handle('file:blame', (file: string) => {
+    requireRepo()
+    return getBlame(file as string)
+  })
+  handle('bisect:start', (bad: string, good?: string) => {
+    requireRepo()
+    return bisectStart(bad as string, good as string | undefined)
+  })
+  handle('bisect:mark', (kind: 'good' | 'bad' | 'skip') => {
+    requireRepo()
+    return bisectMark(kind as 'good' | 'bad' | 'skip')
+  })
+  handle('bisect:reset', () => {
+    requireRepo()
+    return bisectReset()
+  })
+  handle('worktree:listAll', () => {
+    requireRepo()
+    return listWorktrees()
+  })
+  handle('worktree:addNew', (dir: string, branch?: string) => {
+    requireRepo()
+    return addWorktree(dir as string, branch as string | undefined)
+  })
+  handle('worktree:removeOne', (dir: string) => {
+    requireRepo()
+    return removeWorktree(dir as string)
+  })
+  handle('submodule:list', () => {
+    requireRepo()
+    return listSubmodules()
+  })
+  handle('submodule:update', () => {
+    requireRepo()
+    return updateSubmodules()
   })
 
   /* ---- stash ---- */

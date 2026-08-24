@@ -73,6 +73,7 @@ export interface StashEntry {
 export interface RepoState {
   merging: boolean
   rebasing: boolean
+  bisectActive: boolean
 }
 
 export interface MenuItem {
@@ -80,4 +81,42 @@ export interface MenuItem {
   action?: () => void
   danger?: boolean
   separatorBefore?: boolean
+}
+
+export type RebaseCommand = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop' | 'edit' | 'split'
+
+export interface RebaseEntry {
+  command: RebaseCommand
+  hash: string
+  message?: string
+}
+
+export interface RebaseOutcome {
+  completed: boolean
+  message: string
+}
+
+export interface TagInfo {
+  name: string
+  hash: string
+}
+
+export interface RemoteInfo {
+  name: string
+  fetchUrl: string
+  pushUrl: string
+}
+
+export interface WorktreeInfo {
+  path: string
+  head: string
+  branch: string | null
+}
+
+export interface BlameLine {
+  hash: string
+  author: string
+  date: string
+  lineNumber: number
+  content: string
 }

@@ -435,7 +435,9 @@ export async function getRepoState(): Promise<import('@shared/types').RepoState>
   const merging = fs.existsSync(path.join(gitDir, 'MERGE_HEAD'))
   const rebasing =
     fs.existsSync(path.join(gitDir, 'rebase-merge')) || fs.existsSync(path.join(gitDir, 'rebase-apply'))
-  return { merging, rebasing }
+  const bisectActive =
+    fs.existsSync(path.join(gitDir, 'BISECT_START')) || fs.existsSync(path.join(gitDir, 'BISECT_LOG'))
+  return { merging, rebasing, bisectActive }
 }
 
 export async function checkoutSide(file: string, side: 'ours' | 'theirs'): Promise<void> {
@@ -526,46 +528,358 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
     })
 }
 
-export interface RebaseEntry {
-  command: 'pick' | 'reword' | 'squash' | 'fixup' | 'drop'
-  hash: string
-  message?: string
+/* ================= WP1: Amend commit ================= */
+
+export async function commitMessage(message: string, amend: boolean): Promise<string> {
+  const { git: g } = getRepo()
+  if (amend && !message.trim()) throw new Error('Enter a message to amend with')
+  const res = await g.commit(amend ? ['--amend', '-m', message] : ['-m', message])
+  return res.commit
 }
 
-export async function executeRebase(entries: RebaseEntry[], baseRef: string): Promise<string> {
+export async function getLastCommitMessage(): Promise<string> {
   const { git: g } = getRepo()
-  if (!entries.length) throw new Error('Nothing to rebase')
-  const active = entries.filter((entry) => entry.command !== 'drop')
-  if (!active.length) throw new Error('Cannot drop every commit')
+  return (await g.raw(['log', '-1', '--format=%B'])).trim()
+}
 
+/* ================= WP2: Tags ================= */
+
+export interface TagRef { name: string; hash: string }
+
+export async function listTags(): Promise<TagRef[]> {
+  const { git: g } = getRepo()
+  const text = await g.raw(['for-each-ref', 'refs/tags', '--format=%(refname:short)%x1f%(objectname)'])
+  return text.split('\n').filter(Boolean).map((line) => {
+    const [name, hash] = line.split('\x1f')
+    return { name, hash }
+  })
+}
+
+export async function createTag(name: string, targetHash: string | null, message?: string): Promise<void> {
+  const { git: g } = getRepo()
+  if (!name.trim()) throw new Error('Tag name is required')
+  const args = ['tag']
+  if (message?.trim()) args.push('-a', name.trim(), '-m', message.trim())
+  else args.push(name.trim())
+  if (targetHash) args.push(targetHash)
+  await g.raw(args)
+}
+
+export async function deleteTag(name: string): Promise<void> {
+  const { git: g } = getRepo()
+  await g.raw(['tag', '-d', name])
+}
+
+export async function pushTags(): Promise<string> {
+  const { git: g } = getRepo()
+  await g.push(['origin', '--tags'])
+  return 'Tags pushed'
+}
+
+/* ================= WP3: Remotes ================= */
+
+export async function listRemotes(): Promise<{ name: string; url: string }[]> {
+  const { path: p, git: g } = getRepo()
+  const remotes = await g.getRemotes(true)
+  void p
+  return remotes.map((r) => ({ name: r.name, url: r.refs.fetch || r.refs.push || '' }))
+}
+
+export async function addRemote(name: string, url: string): Promise<void> {
+  const { git: g } = getRepo()
+  if (!name.trim() || !url.trim()) throw new Error('Name and URL are required')
+  await g.raw(['remote', 'add', name.trim(), url.trim()])
+}
+
+export async function removeRemote(name: string): Promise<void> {
+  const { git: g } = getRepo()
+  await g.raw(['remote', 'remove', name])
+}
+
+export async function setRemoteUrl(name: string, url: string): Promise<void> {
+  const { git: g } = getRepo()
+  if (!url.trim()) throw new Error('URL is required')
+  await g.raw(['remote', 'set-url', name, url.trim()])
+}
+
+/* ================= WP4: Hunk-level staging ================= */
+
+export async function getRawPatch(file: string, staged: boolean): Promise<string> {
+  const { git: g } = getRepo()
+  try {
+    return await g.raw([
+      'diff',
+      ...(staged ? ['--cached'] : []),
+      '--no-color',
+      '--no-ext-diff',
+      '--',
+      file,
+    ])
+  } catch {
+    return ''
+  }
+}
+
+function writeTempPatch(patch: string): string {
+  const tmp = path.join(path.dirname(getRepo().path), '.git', `open-git-patch-${Date.now()}.patch`)
+  fs.writeFileSync(tmp, patch.endsWith('\n') ? patch : patch + '\n')
+  return tmp
+}
+
+/** Apply a partial patch. target 'index' = stage/unstage; 'worktree' = discard/restore */
+export async function applyPatch(
+  patch: string,
+  target: 'index' | 'worktree',
+  reverse: boolean,
+): Promise<void> {
+  const { path: p, git: g } = getRepo()
+  if (!patch.trim()) throw new Error('Empty patch')
+  const tmp = writeTempPatch(patch)
+  const args = ['apply', '--whitespace=nowarn']
+  if (target === 'index') args.push('--cached')
+  if (reverse) args.push('--reverse')
+  args.push(tmp)
+  try {
+    await g.raw(args)
+  } catch (err) {
+    throw new Error(String(err).replace(/^Error:\s*(spawn|fatal:)?\s*/i, '').slice(0, 300))
+  } finally {
+    fs.promises.unlink(tmp).catch(() => {})
+  }
+}
+
+/** Build a patch containing only the selected hunks of a file's diff */
+export async function stageHunks(
+  file: string,
+  stagedView: boolean,
+  hunkIndexes: number[],
+  reverse: boolean,
+): Promise<void> {
+  const raw = await getRawPatch(file, stagedView)
+  if (!raw.trim()) throw new Error('No changes found')
+
+  // split into header lines and hunks
+  const lines = raw.split('\n')
+  let hunkStarts: number[] = []
+  lines.forEach((line, i) => {
+    if (line.startsWith('@@')) hunkStarts.push(i)
+  })
+  if (!hunkStarts.length) throw new Error('No hunks in this diff')
+
+  const firstHunkLine = hunkStarts[0]
+  const header = lines.slice(0, firstHunkLine)
+
+  const hunkBlocks = hunkStarts.map((start, i) => {
+    const end = i + 1 < hunkStarts.length ? hunkStarts[i + 1] : lines.length
+    return lines.slice(start, end)
+  })
+
+  const chosen = hunkIndexes
+    .filter((i) => i >= 0 && i < hunkBlocks.length)
+    .sort((a, b) => a - b)
+    .map((i) => hunkBlocks[i].join('\n'))
+  if (!chosen.length) throw new Error('No hunks selected')
+
+  const patch = [...header, ...chosen].join('\n')
+  await applyPatch(patch, 'index', reverse)
+}
+
+/* ================= WP5: Blame & file history ================= */
+
+export async function getFileHistory(file: string, limit = 200): Promise<CommitNode[]> {
+  const { git: g } = getRepo()
+  const SEP = '\x1f'
+  const REC = '\x1e'
+  const fmt = ['%H', '%h', '%an', '%aI', '%s'].join(SEP)
+  const text = await g.raw(['log', '--follow', `--pretty=format:${fmt}${REC}`, `--max-count=${limit}`, '--', file])
+  return text
+    .split(REC)
+    .map((line) => line.replace(/^\n/, ''))
+    .filter((line) => line.trim())
+    .map((line) => {
+      const [hash, shortHash, author, date, subject] = line.split(SEP)
+      return { hash, shortHash, parents: [], author, date, subject, refs: [], lane: 0 }
+    })
+}
+
+export async function getBlame(file: string): Promise<import('@shared/types').BlameLine[]> {
+  const { git: g } = getRepo()
+  const text = await g.raw(['blame', '--line-porcelain', '--', file])
+  const result: import('@shared/types').BlameLine[] = []
+  let current: Partial<import('@shared/types').BlameLine> = {}
+  for (const line of text.split('\n')) {
+    if (line.startsWith('\t')) {
+      result.push({
+        hash: current.hash ?? '',
+        author: current.author ?? '',
+        date: current.date ?? '',
+        lineNumber: current.lineNumber ?? 0,
+        content: line.slice(1),
+      })
+      continue
+    }
+    const spaceAt = line.indexOf(' ')
+    const key = spaceAt === -1 ? line : line.slice(0, spaceAt)
+    const value = spaceAt === -1 ? '' : line.slice(spaceAt + 1)
+    if (/^[0-9a-f]{40}$/.test(key)) current.hash = key
+    else if (key === 'author') current.author = value
+    else if (key === 'author-time') current.date = new Date(parseInt(value, 10) * 1000).toISOString()
+    else if (/^\d+$/.test(key)) current.lineNumber = parseInt(key, 10)
+  }
+  return result
+}
+
+/* ================= WP6: Rebase edit/split (pause/resume) ================= */
+
+const BACKUP_FILE = 'open-git-rebase-backup'
+
+async function backupPath(): Promise<string> {
+  const { path: p } = getRepo()
+  const gitDir = fs.existsSync(path.join(p, '.git')) ? path.join(p, '.git') : p
+  return path.join(gitDir, BACKUP_FILE)
+}
+
+export async function executeRebasePlan(
+  baseRef: string,
+  entries: import('@shared/types').RebaseEntry[],
+  resume: boolean,
+): Promise<import('@shared/types').RebaseOutcome> {
+  const { git: g } = getRepo()
+
+  const backupFile = await backupPath()
   const status = await g.status()
   const branch = status.current
-  const origHead = await g.revparse(['HEAD'])
+
+  let origHead: string
+  if (resume) {
+    if (!fs.existsSync(backupFile)) throw new Error('No paused rebase found')
+    origHead = fs.readFileSync(backupFile, 'utf8').trim()
+  } else {
+    if (!entries.length) throw new Error('Nothing to rebase')
+    origHead = await g.revparse(['HEAD'])
+    fs.writeFileSync(backupFile, origHead)
+    await g.raw(['reset', '--hard', baseRef])
+  }
 
   const rollback = async () => {
     await g.raw(['cherry-pick', '--abort']).catch(() => {})
     await g.raw(['reset', '--hard', origHead]).catch(() => {})
     if (branch && branch !== 'HEAD') await g.checkout(branch).catch(() => {})
+    fs.promises.unlink(backupFile).catch(() => {})
   }
 
   try {
-    await g.raw(['reset', '--hard', baseRef])
-    for (const entry of active) {
+    for (const entry of entries) {
+      if (entry.command === 'drop') continue
       await g.raw(['cherry-pick', '--allow-empty', '--keep-redundant-commits', entry.hash])
-      if (entry.command === 'reword') {
-        await g.commit(['--amend', '-m', entry.message || 'Reworded commit'])
-      } else if (entry.command === 'squash' || entry.command === 'fixup') {
-        await g.raw(['reset', '--soft', 'HEAD~1'])
-        if (entry.command === 'squash') {
-          await g.commit(['-m', entry.message?.trim() || 'Squashed commit'])
-        } else {
-          await g.commit(['--no-edit'])
+
+      switch (entry.command) {
+        case 'reword':
+          await g.commit(['--amend', '-m', entry.message || 'Reworded commit'])
+          break
+        case 'squash':
+        case 'fixup': {
+          await g.raw(['reset', '--soft', 'HEAD~1'])
+          if (entry.command === 'squash' && entry.message?.trim()) await g.commit(['-m', entry.message])
+          else await g.commit(['--no-edit'])
+          break
         }
+        case 'edit':
+          // pause: user amends the commit manually, then continues
+          return { completed: false, message: `Paused at ${entry.hash.slice(0, 7)} for editing` }
+        case 'split':
+          // pause: uncommit but keep its changes staged so user can commit pieces
+          await g.raw(['reset', '--soft', 'HEAD~1'])
+          return { completed: false, message: `Paused after unpacking ${entry.hash.slice(0, 7)} — its changes are staged` }
       }
     }
-    return `Interactive rebase complete (${active.length} commits replayed)`
+
+    fs.promises.unlink(backupFile).catch(() => {})
+    const replayed = entries.filter((e) => e.command !== 'drop').length
+    return { completed: true, message: `Interactive rebase complete (${replayed} commits)` }
   } catch (err) {
     await rollback()
     throw new Error('Rebase failed — repository restored to its original state')
   }
+}
+
+export async function abortPausedRebase(): Promise<void> {
+  const { git: g } = getRepo()
+  const backupFile = await backupPath()
+  if (!fs.existsSync(backupFile)) throw new Error('No paused rebase to abort')
+  const origHead = fs.readFileSync(backupFile, 'utf8').trim()
+  await g.raw(['cherry-pick', '--abort']).catch(() => {})
+  await g.raw(['reset', '--hard', origHead])
+  const status = await g.status()
+  if (status.current !== 'HEAD' && status.current) await g.checkout(status.current).catch(() => {})
+  fs.promises.unlink(backupFile).catch(() => {})
+}
+
+/* ================= WP7: Bisect ================= */
+
+export async function bisectStart(badRef: string, goodRef?: string): Promise<void> {
+  const { git: g } = getRepo()
+  const args = ['bisect', 'start', badRef]
+  if (goodRef?.trim()) args.push(goodRef.trim())
+  await g.raw(args)
+}
+
+export async function bisectMark(kind: 'good' | 'bad' | 'skip'): Promise<void> {
+  const { git: g } = getRepo()
+  await g.raw(['bisect', kind])
+}
+
+export async function bisectReset(): Promise<void> {
+  const { git: g } = getRepo()
+  await g.raw(['bisect', 'reset'])
+}
+
+/* ================= WP8: Worktrees & submodules ================= */
+
+export async function listWorktrees(): Promise<import('@shared/types').WorktreeInfo[]> {
+  const { git: g } = getRepo()
+  const text = await g.raw(['worktree', 'list', '--porcelain'])
+  const result: import('@shared/types').WorktreeInfo[] = []
+  let currentWt: Partial<import('@shared/types').WorktreeInfo> = {}
+  for (const line of text.split('\n')) {
+    if (line.startsWith('worktree ')) {
+      if (currentWt.path) result.push(finalizeWorktree(currentWt))
+      currentWt = { path: line.slice('worktree '.length) }
+    } else if (line.startsWith('HEAD ')) currentWt.head = line.slice(5)
+    else if (line.startsWith('branch ')) currentWt.branch = line.slice('branch refs/heads/'.length)
+  }
+  if (currentWt.path) result.push(finalizeWorktree(currentWt))
+  return result
+}
+function finalizeWorktree(wt: Partial<import('@shared/types').WorktreeInfo>): import('@shared/types').WorktreeInfo {
+  return { path: wt.path ?? '', head: wt.head ?? '', branch: wt.branch ?? null }
+}
+
+export async function addWorktree(dir: string, newBranch?: string): Promise<void> {
+  const { git: g } = getRepo()
+  if (!dir.trim()) throw new Error('Path is required')
+  const args = ['worktree', 'add']
+  if (newBranch?.trim()) args.push('-b', newBranch.trim())
+  args.push(dir.trim())
+  if (newBranch?.trim()) args.push('HEAD')
+  await g.raw(args)
+}
+
+export async function removeWorktree(dir: string): Promise<void> {
+  const { git: g } = getRepo()
+  await g.raw(['worktree', 'remove', dir])
+}
+
+export async function listSubmodules(): Promise<string[]> {
+  const { path: p } = getRepo()
+  const modulesFile = path.join(p, '.gitmodules')
+  if (!fs.existsSync(modulesFile)) return []
+  const content = fs.readFileSync(modulesFile, 'utf8')
+  return [...content.matchAll(/submodule "([^"]+)"/g)].map((match) => match[1])
+}
+
+export async function updateSubmodules(): Promise<string> {
+  const { git: g } = getRepo()
+  await g.submoduleUpdate(['--init', '--recursive'])
+  return 'Submodules updated'
 }

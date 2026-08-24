@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { CommitDetails, CommitNode, DiffLine, RepoStatus, StashEntry } from '@shared/types'
+
+type RebaseEntry = import('@shared/types').RebaseEntry
 /** unwrap errors sent as {__error} from main */
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
   const res = await ipcRenderer.invoke(channel, ...args)
@@ -21,7 +23,7 @@ const api = {
   commitDetails: (hash: string): Promise<CommitDetails> => call('commit:details', hash),
   revertCommit: (hash: string): Promise<void> => call('commit:revert', hash),
   checkoutCommit: (hash: string): Promise<void> => call('commit:checkout', hash),
-  repoState: (): Promise<{ merging: boolean; rebasing: boolean }> => call('repo:state'),
+  repoState: (): Promise<{ merging: boolean; rebasing: boolean; bisectActive: boolean }> => call('repo:state'),
   conflictTakeSide: (file: string, side: 'ours' | 'theirs'): Promise<void> => call('conflict:side', file, side),
   markResolved: (files: string[]): Promise<void> => call('conflict:resolved', files),
   continueMerge: (): Promise<void> => call('merge:continue'),
@@ -32,8 +34,10 @@ const api = {
   rebasePlan: (ref: string): Promise<CommitNode[]> => call('rebase:plan', ref),
   rebaseExecute: (
     baseRef: string,
-    entries: { command: 'pick' | 'reword' | 'squash' | 'fixup' | 'drop'; hash: string; message?: string }[],
-  ): Promise<string> => call('rebase:execute', baseRef, entries),
+    entries: RebaseEntry[],
+    resume?: boolean,
+  ): Promise<{ completed: boolean; message: string }> => call('rebase:execute', baseRef, entries, Boolean(resume)),
+  rebaseAbortPaused: (): Promise<void> => call('rebase:abortPaused'),
   cherryPick: (hash: string): Promise<void> => call('commit:cherryPick', hash),
   resetTo: (target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> => call('ref:reset', target, mode),
   renameBranch: (oldName: string, newName: string): Promise<void> => call('branch:rename', oldName, newName),
@@ -53,6 +57,8 @@ const api = {
 
   /* commit */
   commit: (msg: string): Promise<string> => call('commit:create', msg),
+  commitWithAmend: (msg: string, amend: boolean): Promise<string> => call('commit:message', msg, amend),
+  lastCommitMessage: (): Promise<string> => call('commit:lastMessage'),
 
   /* branches */
   branches: (): Promise<{ local: { name: string; current: boolean }[]; remote: { name: string; current: boolean }[] }> =>
@@ -73,6 +79,43 @@ const api = {
   createStash: (message: string, includeUntracked: boolean): Promise<void> => call('stash:create', message, includeUntracked),
   applyStash: (index: number, pop: boolean): Promise<void> => call('stash:apply', index, pop),
   dropStash: (index: number): Promise<void> => call('stash:drop', index),
+
+  /* tags */
+  tags: (): Promise<{ name: string; hash: string }[]> => call('tag:list'),
+  createTag: (name: string, hash?: string | null, message?: string): Promise<void> =>
+    call('tag:create', name, hash ?? null, message),
+  deleteTag: (name: string): Promise<void> => call('tag:delete', name),
+  pushTags: (): Promise<string> => call('tag:push'),
+
+  /* remotes management */
+  remotesFull: (): Promise<{ name: string; url: string }[]> => call('remote:listFull'),
+  addRemote: (name: string, url: string): Promise<void> => call('remote:addNew', name, url),
+  removeRemote: (name: string): Promise<void> => call('remote:removeOne', name),
+  setRemoteUrl: (name: string, url: string): Promise<void> => call('remote:setUrl', name, url),
+
+  /* partial staging */
+  rawPatch: (file: string, staged: boolean): Promise<string> => call('patch:raw', file, staged),
+  applyPatch: (patch: string, target: 'index' | 'worktree', reverse: boolean): Promise<void> =>
+    call('patch:apply', patch, target, reverse),
+  stageHunks: (file: string, stagedView: boolean, hunks: number[], reverse: boolean): Promise<void> =>
+    call('patch:stageHunks', file, stagedView, hunks, reverse),
+
+  /* blame & history */
+  fileHistory: (file: string): Promise<CommitNode[]> => call('file:history', file),
+  blame: (file: string): Promise<{ hash: string; author: string; date: string; lineNumber: number; content: string }[]> =>
+    call('file:blame', file),
+
+  /* bisect */
+  bisectStart: (bad: string, good?: string): Promise<void> => call('bisect:start', bad, good),
+  bisectMark: (kind: 'good' | 'bad' | 'skip'): Promise<void> => call('bisect:mark', kind),
+  bisectReset: (): Promise<void> => call('bisect:reset'),
+
+  /* worktrees & submodules */
+  worktrees: (): Promise<{ path: string; head: string; branch: string | null }[]> => call('worktree:listAll'),
+  addWorktree: (dir: string, branch?: string): Promise<void> => call('worktree:addNew', dir, branch),
+  removeWorktree: (dir: string): Promise<void> => call('worktree:removeOne', dir),
+  submodules: (): Promise<string[]> => call('submodule:list'),
+  updateSubmodules: (): Promise<string> => call('submodule:update'),
 
   /* recent */
   recentList: (): Promise<string[]> => call('recent:list'),

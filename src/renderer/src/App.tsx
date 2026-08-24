@@ -10,6 +10,9 @@ import DiffView from './components/DiffView'
 import CommitDetails from './components/CommitDetails'
 import ConflictBanner from './components/ConflictBanner'
 import RebaseEditor from './components/RebaseEditor'
+import FileHistoryModal from './components/FileHistoryModal'
+import BlameModal from './components/BlameModal'
+import ToolsModal from './components/ToolsModal'
 
 const PAGE_SIZE = 500
 
@@ -38,8 +41,11 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [sidebarWidth, setSidebarWidth] = useState(244)
   const [rightPanelWidth, setRightPanelWidth] = useState(410)
-  const [repoState, setRepoState] = useState<RepoState>({ merging: false, rebasing: false })
+  const [repoState, setRepoState] = useState<RepoState>({ merging: false, rebasing: false, bisectActive: false })
   const [rebaseBase, setRebaseBase] = useState<string | null>(null)
+  const [historyFile, setHistoryFile] = useState<string | null>(null)
+  const [blameFile, setBlameFile] = useState<string | null>(null)
+  const [toolsOpen, setToolsOpen] = useState(false)
   const resizeRef = useRef<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -208,6 +214,15 @@ export default function App() {
       })(),
     },
     {
+      label: 'Create tag here…',
+      action: () => void (async () => {
+        const name = window.prompt(`Tag name at ${commit.shortHash}:`)
+        if (name?.trim()) {
+          try { await window.api.createTag(name.trim(), commit.hash); await refresh(); notify(`Tag ${name.trim()} created`) } catch (err) { notify(String(err).replace(/^Error:\s*/, '')) }
+        }
+      })(),
+    },
+    {
       label: 'Revert this commit',
       action: () => void (async () => {
         if (!window.confirm(`Revert commit ${commit.shortHash}?`)) return
@@ -245,7 +260,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <Toolbar repo={repo} refresh={refresh} notify={notify} search={search} onSearch={setSearch} />
+      <Toolbar repo={repo} refresh={refresh} notify={notify} search={search} onSearch={setSearch} bisectActive={repoState.bisectActive} onOpenTools={() => setToolsOpen(true)} />
       {(repoState.merging || repoState.rebasing || conflicts.length > 0) && (
         <ConflictBanner conflicts={conflicts} state={repoState} refresh={refresh} notify={notify} />
       )}
@@ -266,8 +281,16 @@ export default function App() {
         </div>
         <div className="panel-splitter" onMouseDown={(event) => beginResize('right', event)} />
         <div className="right-pane" style={{ width: rightPanelWidth, flexBasis: rightPanelWidth }}>
-          <FilePanel files={repo.files} selected={selectedFile} onSelect={setSelectedFile} onChange={refresh} notify={notify} />
-          <DiffView file={selectedFile} />
+          <FilePanel
+            files={repo.files}
+            selected={selectedFile}
+            onSelect={setSelectedFile}
+            onChange={refresh}
+            notify={notify}
+            onShowHistory={setHistoryFile}
+            onShowBlame={setBlameFile}
+          />
+          <DiffView file={selectedFile} refresh={refresh} notify={notify} />
         </div>
       </div>
       {rebaseBase && (
@@ -280,6 +303,13 @@ export default function App() {
             notify(message)
           }}
         />
+      )}
+      {historyFile && (
+        <FileHistoryModal file={historyFile} onClose={() => setHistoryFile(null)} notify={notify} />
+      )}
+      {blameFile && <BlameModal file={blameFile} onClose={() => setBlameFile(null)} notify={notify} />}
+      {toolsOpen && (
+        <ToolsModal bisectActive={repoState.bisectActive} onClose={() => setToolsOpen(false)} refresh={refresh} notify={notify} />
       )}
       {toast && <div className="toast">{toast}</div>}
     </div>

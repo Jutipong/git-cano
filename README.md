@@ -17,6 +17,14 @@ Built with **Electron + React + TypeScript + simple-git**.
 - ☁️ Remote operations: Fetch all, Pull, Push (auto `--set-upstream` on first push)
 - ↺ Discard working directory changes
 - 🖱️ Resizable sidebar and changes panel
+- ✏️ Amend last commit (auto-loads previous message)
+- 🏷️ Tag management: create / delete / push tags, create tag from any commit
+- 🌐 Remote management UI: add / remove / edit URLs
+- 🎚️ Hunk-level partial staging (stage/unstage individual diff hunks)
+- 🔎 Blame view & per-file history browser
+- ⏯️ Rebase `edit` & `split` commands with pause/resume and safe rollback
+- ⚗️ Git bisect assistant (start, good/bad/skip, finish)
+- 🌳 Worktree management + submodule listing/updating
 - 🧾 Commit details with changed-file list, per-file diff, checkout / cherry-pick / revert
 - ⚡ Merge conflict resolver: take ours / theirs, mark resolved, abort or continue
 - 🔀 Rebase onto branch with conflict handling (continue/abort)

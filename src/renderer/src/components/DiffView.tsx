@@ -5,6 +5,8 @@ import { intraLineRange, renderDiffContent } from '../lib/highlight'
 
 interface Props {
   file: { path: string; staged: boolean } | null
+  refresh?: () => Promise<unknown>
+  notify?: (message: string) => void
 }
 
 type SideBySideRow = { left?: DiffLine; right?: DiffLine }
@@ -30,12 +32,13 @@ function buildSideBySide(lines: DiffLine[]): SideBySideRow[] {
   return rows
 }
 
-export default function DiffView({ file }: Props) {
+export default function DiffView({ file, refresh, notify }: Props) {
   const [lines, setLines] = useState<DiffLine[]>([])
   const [loading, setLoading] = useState(false)
   const [splitMode, setSplitMode] = useState(() => localStorage.getItem('ogit-diff-mode') === 'split')
   const [meta, setMeta] = useState<{ binary: boolean; image: boolean } | null>(null)
   const [images, setImages] = useState<{ oldUrl: string | null; newUrl: string | null } | null>(null)
+  const [rawPatch, setRawPatch] = useState('')
 
   useEffect(() => {
     localStorage.setItem('ogit-diff-mode', splitMode ? 'split' : 'unified')
@@ -50,14 +53,17 @@ export default function DiffView({ file }: Props) {
     }
     let cancelled = false
     setLoading(true)
+    setRawPatch('')
     Promise.all([
       window.api.diff(file.path, file.staged),
       window.api.diffMeta(file.path, file.staged),
+      window.api.rawPatch(file.path, file.staged),
     ])
-      .then(([diff, diffMeta]) => {
+      .then(([diff, diffMeta, patch]) => {
         if (cancelled) return
         setLines(diff)
         setMeta(diffMeta)
+        setRawPatch(patch)
         if (diffMeta.image) {
           void Promise.all([
             window.api.imageVersion(file.path, 'head'),
@@ -80,6 +86,24 @@ export default function DiffView({ file }: Props) {
   }, [file])
 
   const sideBySide = useMemo(() => (splitMode ? buildSideBySide(lines) : []), [splitMode, lines])
+
+  /** hunk header line indexes within `lines`, for per-hunk actions */
+  const hunkHeaderIndexes = useMemo(
+    () => lines.map((line, index) => (line.type === 'hunk' ? index : -1)).filter((index) => index >= 0),
+    [lines],
+  )
+
+  const actOnHunk = async (hunkOrdinal: number) => {
+    if (!file || !refresh || !notify || rawPatch.trim() === '') return
+    try {
+      // viewing unstaged diff -> stage the hunk (forward); viewing staged diff -> unstage it (reverse)
+      await window.api.stageHunks(file.path, file.staged, [hunkOrdinal], file.staged)
+      await refresh()
+      notify(file.staged ? 'Hunk unstaged' : 'Hunk staged')
+    } catch (error) {
+      notify(String(error).replace(/^Error:\s*/, ''))
+    }
+  }
 
   /** word-level mark ranges for a paired del/add couple */
   const marks = useMemo(() => {
@@ -152,13 +176,25 @@ export default function DiffView({ file }: Props) {
             </div>
           ))
         ) : (
-          lines.map((line, index) => (
-            <div key={index} className={`diff-line ${line.type}`}>
-              <span className="ln">{line.oldNo ?? ''}</span>
-              <span className="ln">{line.newNo ?? ''}</span>
-              <pre dangerouslySetInnerHTML={{ __html: renderLineHtml(line, index) }} />
-            </div>
-          ))
+          lines.map((line, index) => {
+            const hunkOrdinal = hunkHeaderIndexes.indexOf(index)
+            return (
+              <div key={index} className={`diff-line ${line.type}`}>
+                <span className="ln">{line.oldNo ?? ''}</span>
+                <span className="ln">{line.newNo ?? ''}</span>
+                <pre dangerouslySetInnerHTML={{ __html: renderLineHtml(line, index) }} />
+                {hunkOrdinal >= 0 && refresh && notify && !meta?.binary && (
+                  <button
+                    className="detail-action hunk-action"
+                    title={file.staged ? 'Unstage this hunk' : 'Stage just this hunk'}
+                    onClick={() => void actOnHunk(hunkOrdinal)}
+                  >
+                    {file.staged ? '− Unstage hunk' : '+ Stage hunk'}
+                  </button>
+                )}
+              </div>
+            )
+          })
         )}
         {!loading && !meta?.binary && !meta?.image && lines.length === 0 && (
           <div className="diff-empty">No textual changes</div>

@@ -19,9 +19,11 @@ interface Props {
   notify: (m: string) => void
   search: string
   onSearch: (value: string) => void
+  bisectActive: boolean
+  onOpenTools: () => void
 }
 
-export default function Toolbar({ repo, refresh, notify, search, onSearch }: Props) {
+export default function Toolbar({ repo, refresh, notify, search, onSearch, bisectActive, onOpenTools }: Props) {
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme ?? 'dark')
 
   const toggleTheme = () => {
@@ -93,7 +95,7 @@ export default function Toolbar({ repo, refresh, notify, search, onSearch }: Pro
       <button className="toolbar-icon-button" title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} onClick={toggleTheme}>
         {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
       </button>
-      <button className="toolbar-icon-button" title="More actions" onClick={() => notify('More actions are coming soon')}>
+      <button className={`toolbar-icon-button${bisectActive ? ' bisect-active' : ''}`} title="Advanced tools (bisect, worktrees, submodules)" onClick={onOpenTools}>
         <MoreHorizontal size={18} />
       </button>
     </header>

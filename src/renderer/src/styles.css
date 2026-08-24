@@ -413,3 +413,71 @@ mark { padding: 0; background: rgba(237, 179, 93, .35); border-radius: 2px; colo
 .recent-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .recent-remove { opacity: 0; }
 .recent-item:hover .recent-remove { opacity: 1; }
+
+/* Amend toggle */
+.amend-toggle { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); font-size: 12px; cursor: pointer; }
+.amend-toggle input { accent-color: var(--teal); }
+
+/* File row context menu (History / Blame) */
+.file-panel { position: relative; }
+
+/* Hunk-level actions in diff */
+.diff-line.hunk { position: relative; }
+.diff-line .hunk-action { margin-left: auto; margin-right: 8px; align-self: center; }
+
+/* Remote manager */
+.remote-modal { width: min(640px, 92vw); }
+.remote-list { max-height: 300px; overflow: auto; padding: 6px 14px; }
+.remote-row { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 4px 0; border-bottom: 1px solid rgba(155, 169, 191, .07); }
+.remote-row strong { flex: 0 0 auto; min-width: 70px; }
+.remote-url { flex: 1; min-width: 0; padding: 5px 8px; color: var(--text); background: var(--surface-0); border: 1px solid var(--line); border-radius: 4px; outline: none; font-size: 11px; font-family: "SF Mono", Menlo, monospace; }
+.remote-add { display: grid; grid-template-columns: 110px 1fr auto; gap: 7px; padding: 10px 14px; border-top: 1px solid var(--line-soft); }
+.remote-add input { min-width: 0; padding: 6px 9px; color: var(--text); background: var(--surface-0); border: 1px solid var(--line); border-radius: 5px; outline: none; font-size: 12px; }
+.remote-add input:focus { border-color: var(--teal); }
+
+/* Tag rows */
+.tag-row svg { color: var(--yellow); }
+
+/* Tools modal */
+.tools-modal { width: min(600px, 92vw); }
+.tools-tabs { display: flex; gap: 3px; padding: 10px 14px 0; }
+.tools-body { padding: 13px 15px; display: flex; flex-direction: column; gap: 9px; min-height: 170px; }
+.tools-hint { color: var(--text-muted); font-size: 12px; }
+.tools-actions { display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+.tools-body input { width: 100%; padding: 7px 9px; color: var(--text); background: var(--surface-0); border: 1px solid var(--line); border-radius: 5px; outline: none; font-size: 12px; }
+.tools-body input:focus { border-color: var(--teal); }
+
+/* Bisect active indicator */
+.toolbar-icon-button.bisect-active { color: var(--orange); background: rgba(237, 179, 93, .1); border-color: rgba(237, 179, 93, .35); }
+
+/* Paused rebase banner inside editor */
+.rebase-paused { display: flex; align-items: center; gap: 11px; margin: 10px 14px 0; padding: 11px 13px; color: var(--blue); background: rgba(108, 168, 255, .09); border: 1px solid rgba(108, 168, 255, .3); border-radius: 6px; }
+.rebase-paused strong { color: var(--text); font-size: 13px; }
+.rebase-paused p { margin: 4px 0 0; color: var(--text-muted); font-size: 11px; }
+.rebase-list.frozen { opacity: .55; pointer-events: none; }
+
+/* History modal */
+.history-modal { width: min(860px, 94vw); }
+.history-body { display: flex; min-height: 340px; max-height: 60vh; }
+.history-list { flex: 0 0 45%; overflow: auto; border-right: 1px solid var(--line-soft); }
+.history-row { display: flex; align-items: center; gap: 9px; padding: 7px 12px; cursor: pointer; border-left: 2px solid transparent; }
+.history-row:hover { background: var(--surface-hover); }
+.history-row.selected { background: var(--surface-selected); border-left-color: var(--teal); }
+.history-row code { color: var(--teal); font-family: "SF Mono", Menlo, monospace; font-size: 11px; }
+.history-row .commit-author { flex: 0 0 auto; max-width: 90px; font-size: 11px; }
+.history-diff { flex: 1; min-width: 0; overflow: auto; background: var(--diff-inline-bg); font-family: "SF Mono", Menlo, monospace; font-size: 11px; padding: 8px 0; }
+.history-diff pre { margin: 0; padding: 0 10px; line-height: 18px; white-space: pre-wrap; word-break: break-all; }
+.hd-add { background: rgba(100, 217, 149, .1); color: var(--green); }
+.hd-del { background: rgba(239, 120, 128, .1); color: var(--red); }
+.hd-hunk { color: var(--blue); }
+
+/* Blame modal */
+.blame-modal { width: min(900px, 94vw); }
+.blame-body { max-height: 62vh; overflow: auto; font-family: "SF Mono", Menlo, monospace; font-size: 11px; padding: 6px 0; }
+.blame-line { display: flex; align-items: center; gap: 10px; padding: 1px 12px; }
+.blame-line.shade-0 { background: rgba(155, 169, 191, .05); }
+.blame-hash { color: var(--teal); }
+.blame-author { flex: 0 0 100px; overflow: hidden; color: var(--purple); text-overflow: ellipsis; white-space: nowrap; }
+.blame-date { flex: 0 0 80px; color: var(--text-muted); }
+.blame-ln { flex: 0 0 34px; text-align: right; color: var(--text-muted); user-select: none; }
+.blame-line pre { flex: 1; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }

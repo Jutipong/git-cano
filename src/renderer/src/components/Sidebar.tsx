@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, GitBranch, GitMerge, Globe2, Plus, RefreshCw, Trash2 } from 'lucide-react'
+import { ChevronDown, FolderGit2, GitBranch, GitMerge, Tag, Globe2, Plus, RefreshCw, Settings2, Trash2 } from 'lucide-react'
 import type { MenuItem, RepoStatus } from '@shared/types'
 import StashPanel from './StashPanel'
 import ContextMenu, { type MenuState } from './ContextMenu'
+import RemoteManager from './RemoteManager'
 
 interface Props {
   repo: RepoStatus
@@ -19,6 +20,8 @@ export default function Sidebar({ repo, refresh, notify, width, onInteractiveReb
   const [newName, setNewName] = useState('')
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [dropTarget, setDropTarget] = useState<string | null>(null)
+  const [tags, setTags] = useState<{ name: string; hash: string }[]>([])
+  const [showRemoteManager, setShowRemoteManager] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const loadBranches = () =>
@@ -29,6 +32,7 @@ export default function Sidebar({ repo, refresh, notify, width, onInteractiveReb
 
   useEffect(() => {
     loadBranches()
+    window.api.tags().then(setTags).catch(() => {})
   }, [repo])
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
@@ -156,7 +160,34 @@ export default function Sidebar({ repo, refresh, notify, width, onInteractiveReb
 
       <div className="sidebar-section remote-section">
         <div className="section-header">
+          <h3>TAGS <span>{tags.length}</span></h3>
+          <button className="icon-btn accent-icon" title="New tag on HEAD" onClick={() => {
+            const name = window.prompt('Tag name:')
+            if (name?.trim()) void run(() => window.api.createTag(name.trim()), `Tag ${name.trim()} created`)
+          }}>
+            <Plus size={15} />
+          </button>
+        </div>
+        {tags.length === 0 && <div className="sidebar-empty"><Tag size={13} /> No tags yet</div>}
+        {tags.map((tag) => (
+          <div key={tag.name} className="branch-row tag-row" title={`${tag.name} (${tag.hash.slice(0, 7)})`}>
+            <Tag size={13} />
+            <span className="branch-name">{tag.name}</span>
+            <span className="row-actions">
+              <button className="icon-btn danger" title={`Delete tag ${tag.name}`} onClick={() => {
+                if (window.confirm(`Delete tag "${tag.name}"?`)) void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
+              }}><Trash2 size={13} /></button>
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="sidebar-section remote-section">
+        <div className="section-header">
           <h3>REMOTE BRANCHES <span>{remote.length}</span></h3>
+          <button className="icon-btn accent-icon" title="Manage remotes" onClick={() => setShowRemoteManager(true)}>
+            <Settings2 size={14} />
+          </button>
         </div>
         {remote.length === 0 && <div className="sidebar-empty"><Globe2 size={13} /> Fetch a remote to see branches</div>}
         {remote.map((branch) => (
@@ -176,6 +207,9 @@ export default function Sidebar({ repo, refresh, notify, width, onInteractiveReb
       </div>
 
       <ContextMenu menu={menu} onClose={() => setMenu(null)} />
+      {showRemoteManager && (
+        <RemoteManager onClose={() => setShowRemoteManager(false)} refresh={refresh} notify={notify} />
+      )}
     </aside>
   )
 }

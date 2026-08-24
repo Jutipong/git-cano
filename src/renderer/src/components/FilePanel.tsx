@@ -1,4 +1,4 @@
-import { Check, FileDiff, Minus, Plus, RotateCcw } from 'lucide-react'
+import { Check, FileDiff, History, Minus, Plus, RotateCcw, ScanSearch } from 'lucide-react'
 import { useState } from 'react'
 import type { FileEntry } from '@shared/types'
 
@@ -8,16 +8,20 @@ interface Props {
   onSelect: (sel: { path: string; staged: boolean } | null) => void
   onChange: () => Promise<unknown>
   notify: (m: string) => void
+  onShowHistory: (path: string) => void
+  onShowBlame: (path: string) => void
 }
 
 const STATUS_LABEL: Record<string, string> = {
   M: 'Modified', A: 'Added', D: 'Deleted', '?': 'Untracked', R: 'Renamed', C: 'Copied', U: 'Conflict',
 }
 
-export default function FilePanel({ files, selected, onSelect, onChange, notify }: Props) {
+export default function FilePanel({ files, selected, onSelect, onChange, notify, onShowHistory, onShowBlame }: Props) {
   const staged = files.filter((file) => file.staged !== ' ' && file.staged !== '')
   const unstaged = files.filter((file) => file.staged === ' ' || file.staged === '')
   const [message, setMessage] = useState('')
+  const [amend, setAmend] = useState(false)
+  const [menu, setMenu] = useState<{ x: number; y: number; path: string } | null>(null)
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     try {
@@ -31,8 +35,18 @@ export default function FilePanel({ files, selected, onSelect, onChange, notify 
 
   const doCommit = async () => {
     if (!message.trim()) return notify('Enter a commit message first')
-    await run(() => window.api.commit(message.trim()), 'Committed successfully')
+    if (amend && !window.confirm('Amend the last commit with the currently staged changes?')) return
+    await run(() => window.api.commitWithAmend(message.trim(), amend), amend ? 'Commit amended' : 'Committed successfully')
     setMessage('')
+    setAmend(false)
+  }
+
+  const toggleAmend = async () => {
+    const next = !amend
+    setAmend(next)
+    if (next && !message.trim()) {
+      try { setMessage(await window.api.lastCommitMessage().then((value) => value.split('\n')[0])) } catch { /* ignore */ }
+    }
   }
 
   return (
@@ -42,7 +56,10 @@ export default function FilePanel({ files, selected, onSelect, onChange, notify 
         <span className="panel-count">{files.length}</span>
       </div>
       <div className="commit-box">
-        <div className="commit-box-label">COMMIT MESSAGE</div>
+        <label className="amend-toggle">
+          <input type="checkbox" checked={amend} onChange={() => void toggleAmend()} />
+          Amend last commit
+        </label>
         <textarea
           placeholder="Summary of changes"
           value={message}
@@ -53,7 +70,7 @@ export default function FilePanel({ files, selected, onSelect, onChange, notify 
           rows={2}
         />
         <button className="btn primary commit-btn" disabled={!message.trim() || staged.length === 0} onClick={() => void doCommit()}>
-          <Check size={15} /> Commit changes <kbd>⌘↵</kbd>
+          <Check size={15} /> {amend ? 'Amend commit' : 'Commit changes'} <kbd>⌘↵</kbd>
         </button>
         {staged.length === 0 && files.length > 0 && <div className="commit-hint">Stage at least one file to commit</div>}
       </div>
@@ -86,6 +103,10 @@ export default function FilePanel({ files, selected, onSelect, onChange, notify 
             badge={file.unstaged}
             selected={selected?.path === file.path && !selected.staged}
             onClick={() => onSelect({ path: file.path, staged: false })}
+            onContextMenu={(event) => {
+              event.preventDefault()
+              setMenu({ x: event.clientX, y: event.clientY, path: file.path })
+            }}
             action={
               <>
                 <button className="icon-btn" title="Stage" onClick={(event) => { event.stopPropagation(); void run(() => window.api.stage([file.path]), 'File staged') }}><Plus size={14} /></button>
@@ -96,14 +117,20 @@ export default function FilePanel({ files, selected, onSelect, onChange, notify 
         ))}
         {unstaged.length === 0 && <div className="group-empty">Working tree clean</div>}
       </div>
+      {menu && (
+        <div className="context-menu" style={{ left: Math.min(menu.x, window.innerWidth - 200), top: Math.min(menu.y, window.innerHeight - 90) }} onMouseLeave={() => setMenu(null)}>
+          <button className="context-menu-item" onClick={() => { onShowHistory(menu.path); setMenu(null) }}><History size={12} style={{ marginRight: 6 }} />View history</button>
+          <button className="context-menu-item" onClick={() => { onShowBlame(menu.path); setMenu(null) }}><ScanSearch size={12} style={{ marginRight: 6 }} />Blame</button>
+        </div>
+      )}
     </div>
   )
 }
 
-function FileRow({ file, badge, selected, onClick, action }: { file: FileEntry; badge: string; selected: boolean; onClick: () => void; action?: React.ReactNode }) {
+function FileRow({ file, badge, selected, onClick, onContextMenu, action }: { file: FileEntry; badge: string; selected: boolean; onClick: () => void; onContextMenu?: (event: React.MouseEvent) => void; action?: React.ReactNode }) {
   const status = badge === '?' ? 'U' : badge
   return (
-    <div className={`file-row${selected ? ' selected' : ''}`} onClick={onClick}>
+    <div className={`file-row${selected ? ' selected' : ''}`} onClick={onClick} onContextMenu={onContextMenu}>
       <span className={`badge b-${status.toLowerCase()}`}>{badge}</span>
       <span className="file-path" title={`${file.path} — ${STATUS_LABEL[badge] ?? ''}`}>{file.path}</span>
       {action}
