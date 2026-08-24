@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { X } from 'lucide-vue-next'
     import { computed, onMounted, ref } from 'vue'
 
     interface BlameLine {
@@ -62,7 +61,9 @@
                 <button
                     class="icon-btn"
                     @click="emit('close')">
-                    <X :size="16" />
+                    <i-lucide-x
+                        width="16"
+                        height="16" />
                 </button>
             </div>
             <div class="blame-body">

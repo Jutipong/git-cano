@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { GitCommitHorizontal, RotateCcw } from 'lucide-vue-next'
-
     import type { CommitDetails as CommitDetailsData, CommitNode } from '@shared/types'
 
     const props = defineProps<{ commit: CommitNode; notify: (message: string) => void }>()
@@ -63,7 +61,9 @@
     <section class="commit-details">
         <div class="commit-details-heading">
             <div class="commit-details-title">
-                <GitCommitHorizontal :size="16" />
+                <i-lucide-git-commit-horizontal
+                    width="16"
+                    height="16" />
                 <strong>Commit details</strong>
             </div>
             <span class="commit-details-hash">{{ commit.shortHash }}</span>
@@ -109,7 +109,10 @@
                         class="detail-action danger"
                         title="Revert this commit"
                         @click="revertCommit()">
-                        <RotateCcw :size="12" /> Revert
+                        <i-lucide-rotate-ccw
+                            width="12"
+                            height="12" />
+                        Revert
                     </button>
                 </span>
             </div>

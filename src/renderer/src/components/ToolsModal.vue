@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { Check, FolderPlus, Trash2, X } from 'lucide-vue-next'
     import { onMounted, ref, watch } from 'vue'
 
     interface WorktreeInfo {
@@ -102,7 +101,9 @@
                 <button
                     class="icon-btn"
                     @click="emit('close')">
-                    <X :size="16" />
+                    <i-lucide-x
+                        width="16"
+                        height="16" />
                 </button>
             </div>
             <div class="tools-tabs">
@@ -169,7 +170,9 @@
                         v-for="wt in worktrees"
                         :key="wt.path"
                         class="remote-row">
-                        <FolderPlus :size="13" />
+                        <i-lucide-folder-plus
+                            width="13"
+                            height="13" />
                         <code>{{ wt.path }}</code>
                         <span class="muted">{{ wt.branch ? `⎇ ${wt.branch}` : wt.head.slice(0, 7) }}</span>
                         <span class="spacer" />
@@ -178,7 +181,9 @@
                             class="icon-btn danger"
                             title="Remove worktree"
                             @click="removeWorktree(wt.path)">
-                            <Trash2 :size="13" />
+                            <i-lucide-trash2
+                                width="13"
+                                height="13" />
                         </button>
                     </div>
                     <form
@@ -204,7 +209,9 @@
                             v-for="name in submodules"
                             :key="name"
                             class="remote-row">
-                            <Check :size="13" /><span>{{ name }}</span>
+                            <i-lucide-check
+                                width="13"
+                                height="13" /><span>{{ name }}</span>
                         </div>
                         <div class="tools-actions">
                             <button

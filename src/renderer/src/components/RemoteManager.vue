@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { Link2Off, Plus, X } from 'lucide-vue-next'
     import { onMounted, ref } from 'vue'
 
     const props = defineProps<{ refresh: () => Promise<unknown> }>()
@@ -69,7 +68,9 @@
                 <button
                     class="icon-btn"
                     @click="emit('close')">
-                    <X :size="16" />
+                    <i-lucide-x
+                        width="16"
+                        height="16" />
                 </button>
             </div>
 
@@ -94,7 +95,9 @@
                         class="icon-btn danger"
                         :title="`Remove ${remote.name}`"
                         @click="removeRemote(remote)">
-                        <Link2Off :size="13" />
+                        <i-lucide-link2-off
+                            width="13"
+                            height="13" />
                     </button>
                 </div>
                 <div
@@ -116,7 +119,10 @@
                 <button
                     type="submit"
                     class="btn primary small">
-                    <Plus :size="13" /> Add remote
+                    <i-lucide-plus
+                        width="13"
+                        height="13" />
+                    Add remote
                 </button>
             </form>
 

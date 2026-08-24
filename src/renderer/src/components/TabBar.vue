@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { Plus, X } from 'lucide-vue-next'
-
     interface Tab {
         path: string
         name: string
@@ -26,14 +24,18 @@
                 class="icon-btn tab-close"
                 :title="`Close ${tab.name}`"
                 @click.stop="emit('close', index)">
-                <X :size="12" />
+                <i-lucide-x
+                    width="12"
+                    height="12" />
             </button>
         </div>
         <button
             class="icon-btn tab-new"
             title="Open another repository"
             @click="emit('open-new')">
-            <Plus :size="15" />
+            <i-lucide-plus
+                width="15"
+                height="15" />
         </button>
     </div>
 </template>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { GitCommitHorizontal, Minus, Plus } from 'lucide-vue-next'
     import { computed, ref, watch } from 'vue'
 
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
@@ -95,7 +94,9 @@
     <main class="graph-view">
         <div class="graph-toolbar">
             <div class="graph-title">
-                <GitCommitHorizontal :size="17" />
+                <i-lucide-git-commit-horizontal
+                    width="17"
+                    height="17" />
                 <strong>Commit history</strong>
                 <span>{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
             </div>
@@ -105,7 +106,9 @@
                     class="icon-btn"
                     title="Zoom out"
                     @click="zoom = Math.max(ZOOM_MIN, zoom - 0.1)">
-                    <Minus :size="14" />
+                    <i-lucide-minus
+                        width="14"
+                        height="14" />
                 </button>
                 <button
                     class="icon-btn zoom-reset"
@@ -117,7 +120,9 @@
                     class="icon-btn"
                     title="Zoom in"
                     @click="zoom = Math.min(ZOOM_MAX, zoom + 0.1)">
-                    <Plus :size="14" />
+                    <i-lucide-plus
+                        width="14"
+                        height="14" />
                 </button>
             </div>
         </div>

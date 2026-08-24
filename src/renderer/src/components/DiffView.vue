@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { Columns2, Rows3 } from 'lucide-vue-next'
     import { computed, ref, watch } from 'vue'
 
     import { intraLineRange, renderDiffContent } from '../utils/highlight'
@@ -153,12 +152,14 @@
                 class="icon-btn"
                 :title="splitMode ? 'Unified view' : 'Side-by-side view'"
                 @click="splitMode = !splitMode">
-                <Rows3
+                <i-lucide-rows3
                     v-if="splitMode"
-                    :size="15" />
-                <Columns2
+                    width="15"
+                    height="15" />
+                <i-lucide-columns2
                     v-else
-                    :size="15" />
+                    width="15"
+                    height="15" />
             </button>
         </div>
 

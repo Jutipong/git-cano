@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { X } from 'lucide-vue-next'
     import { onMounted, ref } from 'vue'
 
     import type { RepoStatus } from '@shared/types'
@@ -94,7 +93,9 @@
                     class="icon-btn recent-remove"
                     :title="`Remove ${entry} from list`"
                     @click.stop="removeRecent(entry)">
-                    <X :size="13" />
+                    <i-lucide-x
+                        width="13"
+                        height="13" />
                 </button>
             </div>
         </div>

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { ChevronDown, FolderGit2, GitBranch, GitMerge, Globe2, Plus, RefreshCw, Settings2, Tag, Trash2 } from 'lucide-vue-next'
     import { ref, watch } from 'vue'
 
     import { useUiStore } from '../stores/ui'
@@ -160,13 +159,18 @@
         class="sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
         <div class="sidebar-repo-card">
-            <div class="sidebar-repo-icon"><FolderGit2 :size="18" /></div>
+            <div class="sidebar-repo-icon">
+                <i-lucide-folder-git2
+                    width="18"
+                    height="18" />
+            </div>
             <div class="sidebar-repo-copy">
                 <strong>{{ repo.name }}</strong>
                 <span>{{ repo.branch }}</span>
             </div>
-            <ChevronDown
-                :size="15"
+            <i-lucide-chevron-down
+                width="15"
+                height="15"
                 class="muted-icon" />
         </div>
 
@@ -179,7 +183,9 @@
                     class="icon-btn accent-icon"
                     title="New branch"
                     @click="showNew = !showNew">
-                    <Plus :size="15" />
+                    <i-lucide-plus
+                        width="15"
+                        height="15" />
                 </button>
             </div>
 
@@ -210,7 +216,9 @@
                 @dragover="onDragOver(branch.name, $event)"
                 @dragleave="dropTarget = null"
                 @drop="handleDrop(branch.name, $event)">
-                <GitBranch :size="14" />
+                <i-lucide-git-branch
+                    width="14"
+                    height="14" />
                 <span class="branch-name">{{ branch.name }}</span>
                 <span
                     v-if="branch.current"
@@ -224,13 +232,17 @@
                         class="icon-btn"
                         title="Merge into current branch"
                         @click.stop="mergeBranchIntoHead(branch.name)">
-                        <GitMerge :size="14" />
+                        <i-lucide-git-merge
+                            width="14"
+                            height="14" />
                     </button>
                     <button
                         class="icon-btn danger"
                         title="Delete branch"
                         @click.stop="deleteBranch(branch.name)">
-                        <Trash2 :size="14" />
+                        <i-lucide-trash2
+                            width="14"
+                            height="14" />
                     </button>
                 </span>
             </div>
@@ -245,7 +257,9 @@
                     class="icon-btn accent-icon"
                     title="New tag on HEAD"
                     @click="createTagOnHead">
-                    <Plus :size="15" />
+                    <i-lucide-plus
+                        width="15"
+                        height="15" />
                 </button>
             </div>
             <div
@@ -258,14 +272,18 @@
                 :key="tag.name"
                 class="branch-row tag-row"
                 :title="`${tag.name} (${tag.hash.slice(0, 7)})`">
-                <Tag :size="13" />
+                <i-lucide-tag
+                    width="13"
+                    height="13" />
                 <span class="branch-name">{{ tag.name }}</span>
                 <span class="row-actions">
                     <button
                         class="icon-btn danger"
                         :title="`Delete tag ${tag.name}`"
                         @click="deleteTag(tag.name)">
-                        <Trash2 :size="13" />
+                        <i-lucide-trash2
+                            width="13"
+                            height="13" />
                     </button>
                 </span>
             </div>
@@ -280,7 +298,9 @@
                     class="icon-btn accent-icon"
                     title="Manage remotes"
                     @click="showRemoteManager = true">
-                    <Settings2 :size="14" />
+                    <i-lucide-settings2
+                        width="14"
+                        height="14" />
                 </button>
             </div>
             <div
@@ -294,7 +314,9 @@
                 class="branch-row remote"
                 title="Checkout remote branch"
                 @click="checkoutRemote(branch.name)">
-                <Globe2 :size="14" />
+                <i-lucide-globe2
+                    width="14"
+                    height="14" />
                 <span>{{ stripRemote(branch.name) }}</span>
             </div>
         </div>
@@ -307,7 +329,10 @@
             <button
                 class="sidebar-bottom-button"
                 @click="run(props.refresh, 'Refreshed')">
-                <RefreshCw :size="14" /> Refresh repository
+                <i-lucide-refresh-cw
+                    width="14"
+                    height="14" />
+                Refresh repository
             </button>
         </div>
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { Archive, Check, ChevronDown, ChevronRight, Plus, Trash2 } from 'lucide-vue-next'
     import { onMounted, ref, watch } from 'vue'
 
     import type { StashEntry } from '@shared/types'
@@ -62,14 +61,19 @@
             <button
                 class="section-toggle"
                 @click="expanded = !expanded">
-                <ChevronDown
+                <i-lucide-chevron-down
                     v-if="expanded"
-                    :size="13" />
-                <ChevronRight
+                    width="13"
+                    height="13" />
+                <i-lucide-chevron-right
                     v-else
-                    :size="13" />
+                    width="13"
+                    height="13" />
                 <h3>
-                    <Archive :size="13" /> STASHES <span>{{ stashes.length }}</span>
+                    <i-lucide-archive
+                        width="13"
+                        height="13" />
+                    STASHES <span>{{ stashes.length }}</span>
                 </h3>
             </button>
             <button
@@ -81,7 +85,9 @@
                         creating = true
                     }
                 ">
-                <Plus :size="15" />
+                <i-lucide-plus
+                    width="15"
+                    height="15" />
             </button>
         </div>
         <template v-if="expanded">
@@ -97,7 +103,10 @@
                     <button
                         class="btn primary small"
                         @click="create()">
-                        <Check :size="13" /> Save
+                        <i-lucide-check
+                            width="13"
+                            height="13" />
+                        Save
                     </button>
                     <button
                         class="btn small"
@@ -136,7 +145,9 @@
                         class="icon-btn danger"
                         title="Drop"
                         @click="dropStash(stash)">
-                        <Trash2 :size="13" />
+                        <i-lucide-trash2
+                            width="13"
+                            height="13" />
                     </button>
                 </div>
             </div>

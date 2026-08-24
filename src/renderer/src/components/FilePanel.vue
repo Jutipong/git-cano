@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { Check, History, Minus, Plus, RotateCcw, ScanSearch } from 'lucide-vue-next'
     import { ref } from 'vue'
 
     import type { FileEntry } from '@shared/types'
@@ -108,7 +107,11 @@
 <template>
     <div class="file-panel">
         <div class="panel-heading">
-            <div class="panel-heading-title"><FileDiff :size="16" /><strong>Changes</strong></div>
+            <div class="panel-heading-title">
+                <FileDiff
+                    width="16"
+                    height="16" /><strong>Changes</strong>
+            </div>
             <span class="panel-count">{{ files.length }}</span>
         </div>
         <div class="commit-box">
@@ -129,7 +132,10 @@
                 class="btn primary commit-btn"
                 :disabled="!message.trim() || staged.length === 0"
                 @click="doCommit()">
-                <Check :size="15" /> {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
+                <i-lucide-check
+                    width="15"
+                    height="15" />
+                {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
             </button>
             <div
                 v-if="staged.length === 0 && files.length > 0 && !amend"
@@ -170,7 +176,9 @@
                     class="icon-btn"
                     title="Unstage"
                     @click.stop="unstage(file)">
-                    <Minus :size="14" />
+                    <i-lucide-minus
+                        width="14"
+                        height="14" />
                 </button>
             </div>
             <div
@@ -211,13 +219,17 @@
                     class="icon-btn"
                     title="Stage"
                     @click.stop="stage(file)">
-                    <Plus :size="14" />
+                    <i-lucide-plus
+                        width="14"
+                        height="14" />
                 </button>
                 <button
                     class="icon-btn danger"
                     title="Discard changes"
                     @click.stop="discard(file)">
-                    <RotateCcw :size="13" />
+                    <i-lucide-rotate-ccw
+                        width="13"
+                        height="13" />
                 </button>
             </div>
             <div
@@ -234,16 +246,18 @@
                 <button
                     class="context-menu-item"
                     @click="pickHistory(menu.path)">
-                    <History
-                        :size="12"
+                    <i-lucide-history
+                        width="12"
+                        height="12"
                         style="margin-right: 6px" />
                     View history
                 </button>
                 <button
                     class="context-menu-item"
                     @click="pickBlame(menu.path)">
-                    <ScanSearch
-                        :size="12"
+                    <i-lucide-scan-search
+                        width="12"
+                        height="12"
                         style="margin-right: 6px" />
                     Blame
                 </button>

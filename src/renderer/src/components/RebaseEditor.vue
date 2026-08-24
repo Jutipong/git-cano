@@ -1,5 +1,4 @@
 <script setup lang="ts">
-    import { ArrowDown, ArrowUp, PauseCircle, Play, Trash2, X } from 'lucide-vue-next'
     import { computed, ref, watch } from 'vue'
 
     import type { CommitNode, RebaseCommand } from '@shared/types'
@@ -115,7 +114,9 @@
                     class="icon-btn"
                     :disabled="running"
                     @click="emit('cancel')">
-                    <X :size="16" />
+                    <i-lucide-x
+                        width="16"
+                        height="16" />
                 </button>
             </div>
 
@@ -128,7 +129,9 @@
             <div
                 v-if="pausedMessage"
                 class="rebase-paused">
-                <PauseCircle :size="18" />
+                <i-lucide-pause-circle
+                    width="18"
+                    height="18" />
                 <div>
                     <strong>{{ pausedMessage }}</strong>
                     <p>Make your changes and commit them normally (the commit box works), then press Continue.</p>
@@ -142,7 +145,10 @@
                 <button
                     class="btn primary small"
                     @click="continueRebase()">
-                    <Play :size="13" /> Continue rebase
+                    <i-lucide-play
+                        width="13"
+                        height="13" />
+                    Continue rebase
                 </button>
             </div>
 
@@ -190,14 +196,18 @@
                         title="Move up"
                         :disabled="running || Boolean(pausedMessage) || index === 0"
                         @click="move(index, -1)">
-                        <ArrowUp :size="13" />
+                        <i-lucide-arrow-up
+                            width="13"
+                            height="13" />
                     </button>
                     <button
                         class="icon-btn"
                         title="Move down"
                         :disabled="running || Boolean(pausedMessage) || index === entries.length - 1"
                         @click="move(index, 1)">
-                        <ArrowDown :size="13" />
+                        <i-lucide-arrow-down
+                            width="13"
+                            height="13" />
                     </button>
                     <button
                         class="icon-btn"
@@ -207,10 +217,12 @@
                         @click="update(index, { command: entry.command === 'drop' ? 'pick' : 'drop' })">
                         <Plus
                             v-if="entry.command === 'drop'"
-                            :size="13" />
-                        <Trash2
+                            width="13"
+                            height="13" />
+                        <i-lucide-trash2
                             v-else
-                            :size="13" />
+                            width="13"
+                            height="13" />
                     </button>
                 </div>
             </div>

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { AlertTriangle, ArrowLeftRight, Check, X } from 'lucide-vue-next'
-
     import type { RepoState } from '@shared/types'
 
     const props = defineProps<{
@@ -48,7 +46,9 @@
         v-if="state.merging || state.rebasing || conflicts.length"
         class="conflict-banner">
         <div class="conflict-banner-header">
-            <AlertTriangle :size="15" />
+            <i-lucide-alert-triangle
+                width="15"
+                height="15" />
             <strong v-if="state.rebasing">Rebase in progress — resolve conflicts to continue</strong>
             <strong v-else-if="state.merging">Merge conflict — resolve all files then continue</strong>
             <span class="spacer" />
@@ -56,26 +56,38 @@
                 <button
                     class="btn small"
                     @click="abortMerge()">
-                    <X :size="13" /> Abort merge
+                    <i-lucide-x
+                        width="13"
+                        height="13" />
+                    Abort merge
                 </button>
                 <button
                     v-if="conflicts.length === 0"
                     class="btn primary small"
                     @click="continueMerge()">
-                    <Check :size="13" /> Continue merge
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
+                    Continue merge
                 </button>
             </template>
             <template v-if="state.rebasing">
                 <button
                     class="btn small"
                     @click="abortRebase()">
-                    <X :size="13" /> Abort rebase
+                    <i-lucide-x
+                        width="13"
+                        height="13" />
+                    Abort rebase
                 </button>
                 <button
                     v-if="conflicts.length === 0"
                     class="btn primary small"
                     @click="continueRebase()">
-                    <Check :size="13" /> Continue rebase
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
+                    Continue rebase
                 </button>
             </template>
         </div>
@@ -106,7 +118,10 @@
                     class="detail-action accent"
                     title="I edited the file manually — mark as resolved"
                     @click="markResolved(file)">
-                    <ArrowLeftRight :size="12" /> Mark resolved
+                    <i-lucide-arrow-left-right
+                        width="12"
+                        height="12" />
+                    Mark resolved
                 </button>
             </div>
         </div>
