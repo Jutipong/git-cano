@@ -298,20 +298,33 @@ function parseDiff(text: string, file?: string): DiffLine[] {
 
 export async function getCommitDetails(hash: string): Promise<CommitDetails> {
     const { git: g } = getRepo()
-    const [metadata, message, diffText, fileText] = await Promise.all([
+    const [metadata, message, diffText, fileText, numstatText] = await Promise.all([
         g.raw(['show', '-s', '--format=%H%x1f%an%x1f%ae%x1f%aI%x1f%P', hash]),
         g.raw(['show', '-s', '--format=%B', hash]),
         g.raw(['show', '--no-color', '--format=', hash]),
         g.raw(['diff-tree', '--root', '--no-commit-id', '--name-status', '-r', hash]),
+        g.raw(['diff-tree', '--root', '--no-commit-id', '--numstat', '-r', hash]),
     ])
-    const [fullHash, author, email, date, parents = ''] = metadata.trim().split('\x1f')
+    const [fullHash, author, email, date, parents = ''] = metadata.trim().split('\u001f')
+
+    const statMap = new Map<string, { additions: number; deletions: number }>()
+    for (const line of numstatText.split('\n')) {
+        if (!line.trim()) continue
+        const [add, del, ...pathParts] = line.split('\t')
+        statMap.set(pathParts.join('\t'), {
+            additions: add === '-' ? 0 : Number.parseInt(add, 10) || 0,
+            deletions: del === '-' ? 0 : Number.parseInt(del, 10) || 0,
+        })
+    }
+
     const files = fileText
         .trim()
         .split('\n')
         .filter(Boolean)
         .map(line => {
             const [status, ...pathParts] = line.split('\t')
-            return { path: pathParts.join('\t'), status, additions: 0, deletions: 0 }
+            const path = pathParts.join('\t')
+            return { path, status, ...(statMap.get(path) ?? { additions: 0, deletions: 0 }) }
         })
     return {
         hash: fullHash || hash,
