@@ -191,6 +191,14 @@
                     :build-commit-menu="buildCommitMenu"
                     @select-commit="selectedCommit = $event"
                     @load-more="repoStore.loadMore()" />
+                <!-- diff overlay: covers the graph while a file is selected -->
+                <DiffView
+                    v-if="selectedFile"
+                    class="diff-overlay"
+                    :file="selectedFile"
+                    :commit-hash="selectedCommit?.hash ?? undefined"
+                    :refresh="repoStore.refresh"
+                    @close="selectedFile = null" />
                 <CommitDetails
                     v-if="selectedCommit"
                     :commit="selectedCommit"
@@ -206,15 +214,11 @@
                 <FilePanel
                     :files="selectedCommit ? repoStore.commitFiles : repo.files"
                     :mode="selectedCommit ? 'commit' : 'workdir'"
-                    :commit-hash="selectedCommit?.hash"
-                    :selected="selectedCommit ? null : selectedFile"
+                    :selected="selectedFile"
                     :refresh="repoStore.refresh"
                     @select="selectedFile = $event"
                     @show-history="historyFile = $event"
                     @show-blame="blameFile = $event" />
-                <DiffView
-                    :file="selectedFile"
-                    :refresh="repoStore.refresh" />
             </div>
         </div>
         <RebaseEditor

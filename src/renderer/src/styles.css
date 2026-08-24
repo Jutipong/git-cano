@@ -523,11 +523,19 @@ kbd {
 
 /* Center history */
 .center-column {
+    position: relative;
     display: flex;
     flex: 1;
     flex-direction: column;
     min-width: 450px;
     min-height: 0;
+}
+.diff-overlay {
+    position: absolute;
+    z-index: 10;
+    inset: 0;
+    background: var(--surface-1);
+    box-shadow: -4px 0 16px var(--shadow);
 }
 .graph-view {
     display: flex;
@@ -912,15 +920,6 @@ kbd {
     font-family: 'SF Mono', Menlo, monospace;
     font-size: 10px;
     font-weight: 600;
-}
-.commit-inline-diff {
-    max-height: 220px;
-    margin: 2px 8px 6px 24px;
-    padding: 4px 0;
-    overflow: auto;
-    background: var(--diff-bg);
-    border: 1px solid var(--line-soft);
-    border-radius: 4px;
 }
 .commit-box {
     display: flex;

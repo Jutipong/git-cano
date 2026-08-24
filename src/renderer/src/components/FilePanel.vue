@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import type { CommitFile, DiffLine, FileEntry } from '@shared/types'
+    import type { CommitFile, FileEntry } from '@shared/types'
 
     interface Props {
         files: FileEntry[] | CommitFile[]
@@ -32,28 +32,6 @@
     const message = ref('')
     const amend = ref(false)
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
-
-    // inline diff of a file changed by the selected commit
-    const openCommitFile = ref<string | null>(null)
-    const commitDiffLines = ref<DiffLine[]>([])
-
-    watch(openCommitFile, async path => {
-        commitDiffLines.value = []
-        if (!path || !props.commitHash) return
-        try {
-            commitDiffLines.value = await window.api.commitFileDiff(props.commitHash, path)
-        } catch {
-            /* ignore */
-        }
-    })
-
-    function toggleCommitFile(path: string) {
-        openCommitFile.value = openCommitFile.value === path ? null : path
-    }
-
-    function escapeHtml(text: string) {
-        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    }
 
     async function run(fn: () => Promise<unknown>, ok: string) {
         try {
@@ -255,8 +233,8 @@
                     class="commit-file-block">
                     <div
                         class="file-row"
-                        :class="{ selected: openCommitFile === file.path }"
-                        @click="toggleCommitFile(file.path)">
+                        :class="{ selected: selected?.path === file.path }"
+                        @click="emit('select', { path: file.path, staged: false })">
                         <span
                             class="badge"
                             :class="badgeClass(file.status)"
@@ -277,23 +255,6 @@
                                 class="stat-del">−{{ file.deletions.toLocaleString() }}</span
                             >
                         </span>
-                    </div>
-                    <div
-                        v-if="openCommitFile === file.path"
-                        class="commit-inline-diff">
-                        <div
-                            v-for="(line, index) in commitDiffLines"
-                            :key="index"
-                            class="diff-line"
-                            :class="line.type">
-                            <!-- eslint-disable-next-line vue/no-v-html -->
-                            <pre v-html="escapeHtml(line.text)" />
-                        </div>
-                        <div
-                            v-if="commitDiffLines.length === 0"
-                            class="group-empty">
-                            No textual changes
-                        </div>
                     </div>
                 </div>
                 <div
