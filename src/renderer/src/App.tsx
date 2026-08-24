@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CommitNode, MenuItem, RepoState, RepoStatus } from '@shared/types'
 import Welcome from './components/Welcome'
 import Toolbar from './components/Toolbar'
+import TabBar from './components/TabBar'
 import Sidebar from './components/Sidebar'
 import GraphView from './components/GraphView'
 import FilePanel from './components/FilePanel'
@@ -10,9 +11,20 @@ import CommitDetails from './components/CommitDetails'
 import ConflictBanner from './components/ConflictBanner'
 import RebaseEditor from './components/RebaseEditor'
 
+const PAGE_SIZE = 500
+
+interface Tab {
+  path: string
+  name: string
+  status: RepoStatus
+}
+
 export default function App() {
-  const [repo, setRepo] = useState<RepoStatus | null>(null)
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [activeTab, setActiveTab] = useState(0)
   const [commits, setCommits] = useState<CommitNode[]>([])
+  const [logLimit, setLogLimit] = useState(PAGE_SIZE)
+  const [hasMoreCommits, setHasMoreCommits] = useState(false)
   const [selectedFile, setSelectedFile] = useState<{ path: string; staged: boolean } | null>(null)
   const [selectedCommit, setSelectedCommit] = useState<CommitNode | null>(null)
   const [search, setSearch] = useState('')
@@ -23,32 +35,65 @@ export default function App() {
   const resizeRef = useRef<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
+  const repo = tabs[activeTab]?.status ?? null
+
   const notify = useCallback((msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(null), 4000)
+  }, [])
+
+  /** open (or focus) a repository as a new tab */
+  const addTab = useCallback((status: RepoStatus) => {
+    setTabs((current) => {
+      const existing = current.findIndex((tab) => tab.path === status.path)
+      if (existing >= 0) {
+        const next = [...current]
+        next[existing] = { ...next[existing], status }
+        setActiveTab(existing)
+        return next
+      }
+      setActiveTab(current.length)
+      return [...current, { path: status.path, name: status.name, status }]
+    })
   }, [])
 
   const refresh = useCallback(async () => {
     try {
       const [status, log, branches, state] = await Promise.all([
         window.api.status(),
-        window.api.log(),
+        window.api.log(logLimit),
         window.api.branches(),
         window.api.repoState(),
       ])
       setCommits(log)
-      setRepo(status)
+      // git log with --max-count=N+1 tells us whether more exist
+      setHasMoreCommits(log.length >= logLimit)
       setRepoState(state)
+      setTabs((current) => {
+        if (!current.length) return current
+        const index = current.findIndex((tab) => tab.path === status.path)
+        if (index === -1) return current
+        const next = [...current]
+        next[index] = { ...next[index], status }
+        return next
+      })
       return branches
     } catch (err) {
       notify(String(err))
       return undefined
     }
-  }, [notify])
+  }, [notify, logLimit])
+
+  /* refresh whenever the active tab or its repo changes */
+  useEffect(() => {
+    if (!repo) return
+    void window.api.setActiveRepo(repo.path).then(() => refresh()).catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repo?.path])
 
   useEffect(() => {
     if (!repo) return
-    const id = setInterval(() => void refresh(), 5000)
+    const id = setInterval(() => void refresh(), 8000)
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey)) return
       if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
@@ -59,6 +104,10 @@ export default function App() {
       if (event.shiftKey && event.key.toLowerCase() === 'f') {
         event.preventDefault()
         document.querySelector<HTMLInputElement>('.commit-search input')?.focus()
+      }
+      if (event.key.toLowerCase() === 'p' && event.shiftKey) {
+        event.preventDefault()
+        document.querySelector<HTMLButtonElement>('.tab-new')?.click()
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -122,11 +171,6 @@ export default function App() {
       })(),
     },
     {
-      label: 'Interactive rebase onto this commit…',
-      separatorBefore: true,
-      action: () => setRebaseBase(commit.hash),
-    },
-    {
       label: `Reset current branch to ${commit.shortHash} (hard)`,
       danger: true,
       separatorBefore: true,
@@ -137,7 +181,18 @@ export default function App() {
     },
   ], [repo, refresh, notify])
 
-  if (!repo) return <Welcome onOpened={() => void refresh()} notify={notify} />
+  const closeTab = async (index: number) => {
+    const tab = tabs[index]
+    const stillOpen = await window.api.closeRepo(tab.path)
+    setTabs((current) => current.filter((_, i) => i !== index))
+    setActiveTab((current) => Math.max(0, current > index ? current - 1 : Math.min(current, tabs.length - 2)))
+    if (!stillOpen && tabs.length <= 1) {
+      setCommits([])
+      setSelectedCommit(null)
+    }
+  }
+
+  if (!repo) return <Welcome onOpened={addTab} notify={notify} />
 
   const conflicts = repo.files.filter((f) => f.staged === 'U' || f.unstaged === 'U').map((f) => f.path)
 
@@ -147,6 +202,27 @@ export default function App() {
       {(repoState.merging || repoState.rebasing || conflicts.length > 0) && (
         <ConflictBanner conflicts={conflicts} state={repoState} refresh={refresh} notify={notify} />
       )}
+      <TabBar tabs={tabs} activeIndex={activeTab} onSelect={setActiveTab} onClose={(index) => void closeTab(index)} onOpenNew={() => void window.api.pickAndOpen().then((status) => status && addTab(status)).catch((err) => notify(String(err)))} />
+      <div className="app-body">
+        <Sidebar repo={repo} refresh={refresh} notify={notify} width={sidebarWidth} onInteractiveRebase={setRebaseBase} />
+        <div className="panel-splitter" onMouseDown={(event) => beginResize('left', event)} />
+        <div className="center-column">
+          <GraphView
+            commits={commits}
+            query={search}
+            hasMore={hasMoreCommits}
+            onLoadMore={() => setLogLimit((limit) => limit + PAGE_SIZE)}
+            onSelectCommit={setSelectedCommit}
+            buildCommitMenu={buildCommitMenu}
+          />
+          {selectedCommit && <CommitDetails commit={selectedCommit} refresh={refresh} notify={notify} />}
+        </div>
+        <div className="panel-splitter" onMouseDown={(event) => beginResize('right', event)} />
+        <div className="right-pane" style={{ width: rightPanelWidth, flexBasis: rightPanelWidth }}>
+          <FilePanel files={repo.files} selected={selectedFile} onSelect={setSelectedFile} onChange={refresh} notify={notify} />
+          <DiffView file={selectedFile} />
+        </div>
+      </div>
       {rebaseBase && (
         <RebaseEditor
           baseRef={rebaseBase}
@@ -158,19 +234,6 @@ export default function App() {
           }}
         />
       )}
-      <div className="app-body">
-        <Sidebar repo={repo} refresh={refresh} notify={notify} width={sidebarWidth} onInteractiveRebase={setRebaseBase} />
-        <div className="panel-splitter" onMouseDown={(event) => beginResize('left', event)} />
-        <div className="center-column">
-          <GraphView commits={commits} query={search} onSelectCommit={setSelectedCommit} buildCommitMenu={buildCommitMenu} />
-          {selectedCommit && <CommitDetails commit={selectedCommit} refresh={refresh} notify={notify} />}
-        </div>
-        <div className="panel-splitter" onMouseDown={(event) => beginResize('right', event)} />
-        <div className="right-pane" style={{ width: rightPanelWidth, flexBasis: rightPanelWidth }}>
-          <FilePanel files={repo.files} selected={selectedFile} onSelect={setSelectedFile} onChange={refresh} notify={notify} />
-          <DiffView file={selectedFile} />
-        </div>
-      </div>
       {toast && <div className="toast">{toast}</div>}
     </div>
   )

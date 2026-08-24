@@ -22,6 +22,10 @@ import {
   revertCommit,
   checkoutCommit,
   getRepoState,
+  setActiveRepo,
+  listOpenRepos,
+  getDiffMeta,
+  getImageVersion,
   checkoutSide,
   markResolved,
   continueMerge,
@@ -120,29 +124,32 @@ app.whenReady().then(() => {
     return openRepo(dest)
   })
   handle('repo:openPath', (_dir: string) => openRepo(_dir as string))
+  handle('repo:setActive', (_dir: string) => setActiveRepo(_dir as string))
+  handle('repo:list', () => listOpenRepos())
   handle('repo:status', () => {
     requireRepo()
     return getStatus()
   })
-  handle('repo:close', () => {
-    closeRepo()
-    return true
+  handle('repo:close', (_dir?: string) => {
+    closeRepo(_dir as string | undefined)
+    return isOpen()
   })
-  handle('repo:openInTerminal', async () => {
-    requireRepo()
-    const dir = getStatus && (await getStatus()).path
-    shell.openPath(dir)
-    return true
-  })
-
   /* ---- log / diff ---- */
-  handle('repo:log', () => {
+  handle('repo:log', (_limit?: number) => {
     requireRepo()
-    return getLog()
+    return getLog(typeof _limit === 'number' ? _limit : 500)
   })
   handle('file:diff', (file: string, staged: boolean) => {
     requireRepo()
     return getDiff(file as string, staged as boolean)
+  })
+  handle('file:diffMeta', (file: string, staged: boolean) => {
+    requireRepo()
+    return getDiffMeta(file as string, staged as boolean)
+  })
+  handle('file:image', (file: string, source: 'workdir' | 'index' | 'head') => {
+    requireRepo()
+    return getImageVersion(file as string, source as 'workdir' | 'index' | 'head')
   })
   handle('commit:details', (hash: string) => {
     requireRepo()
@@ -316,6 +323,16 @@ app.whenReady().then(() => {
       list = JSON.parse(fs.readFileSync(file, 'utf8')) as string[]
     } catch {}
     list = [String(_p), ...list.filter((x) => x !== _p)].slice(0, 10)
+    fs.writeFileSync(file, JSON.stringify(list))
+    return true
+  })
+  handle('recent:remove', (_p: string) => {
+    const file = path.join(app.getPath('userData'), 'recent.json')
+    let list: string[] = []
+    try {
+      list = JSON.parse(fs.readFileSync(file, 'utf8')) as string[]
+    } catch {}
+    list = list.filter((x) => x !== _p)
     fs.writeFileSync(file, JSON.stringify(list))
     return true
   })

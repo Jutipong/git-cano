@@ -5,10 +5,13 @@ import {
   FolderGit2,
   GitBranch,
   MoreHorizontal,
+  Moon,
   RefreshCw,
   Search,
+  Sun,
 } from 'lucide-react'
 import type { RepoStatus } from '@shared/types'
+import { useState } from 'react'
 
 interface Props {
   repo: RepoStatus
@@ -19,6 +22,15 @@ interface Props {
 }
 
 export default function Toolbar({ repo, refresh, notify, search, onSearch }: Props) {
+  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme ?? 'dark')
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark'
+    setTheme(next)
+    document.documentElement.dataset.theme = next
+    localStorage.setItem('gkx-theme', next)
+    notify(`${next === 'dark' ? 'Dark' : 'Light'} theme`)
+  }
   const act = async (label: string, fn: () => Promise<unknown>) => {
     try {
       const result = await fn()
@@ -78,6 +90,9 @@ export default function Toolbar({ repo, refresh, notify, search, onSearch }: Pro
           <span>Push</span>
         </button>
       </div>
+      <button className="toolbar-icon-button" title={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'} onClick={toggleTheme}>
+        {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+      </button>
       <button className="toolbar-icon-button" title="More actions" onClick={() => notify('More actions are coming soon')}>
         <MoreHorizontal size={18} />
       </button>

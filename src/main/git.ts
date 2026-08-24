@@ -1,32 +1,50 @@
 import { simpleGit, type SimpleGit } from 'simple-git'
 import * as path from 'node:path'
+import { execFile } from 'node:child_process'
+import * as fs from 'node:fs'
 import type { BranchInfo, CommitNode, DiffLine, FileEntry, RepoStatus } from '@shared/types'
 
-let repoPath: string | null = null
-let git: SimpleGit | null = null
+/* Multi-repo support: one SimpleGit instance per opened repo, one active at a time */
+const repoInstances = new Map<string, SimpleGit>()
+let activeRepoPath: string | null = null
 
 export function getRepo(): { path: string; git: SimpleGit } {
-  if (!repoPath || !git) throw new Error('No repository opened')
-  return { path: repoPath, git }
+  if (!activeRepoPath) throw new Error('No repository opened')
+  const instance = repoInstances.get(activeRepoPath)
+  if (!instance) throw new Error('Active repository is not registered')
+  return { path: activeRepoPath, git: instance }
 }
 
 export async function openRepo(dir: string): Promise<RepoStatus> {
-  const g = simpleGit(dir)
+  const g = repoInstances.get(dir) ?? simpleGit(dir)
   if (!(await g.checkIsRepo())) {
     throw new Error(`"${dir}" is not a git repository`)
   }
-  repoPath = dir
-  git = g
+  repoInstances.set(dir, g)
+  activeRepoPath = dir
   return getStatus()
 }
 
-export function closeRepo(): void {
-  repoPath = null
-  git = null
+export async function setActiveRepo(dir: string): Promise<void> {
+  if (!repoInstances.has(dir)) throw new Error(`Repository "${dir}" is not open`)
+  activeRepoPath = dir
+}
+
+export function listOpenRepos(): string[] {
+  return [...repoInstances.keys()]
+}
+
+export function closeRepo(dir?: string): void {
+  const target = dir ?? activeRepoPath
+  if (!target) return
+  repoInstances.delete(target)
+  if (activeRepoPath === target) {
+    activeRepoPath = repoInstances.keys().next().value ?? null
+  }
 }
 
 export function isOpen(): boolean {
-  return repoPath !== null
+  return activeRepoPath !== null
 }
 
 /* ---------------- Status ---------------- */
@@ -34,7 +52,6 @@ export function isOpen(): boolean {
 export async function getStatus(): Promise<RepoStatus> {
   const { path: p, git: g } = getRepo()
   const status = await g.status()
-
   const files: FileEntry[] = status.files.map((f) => ({
     path: f.path,
     staged: f.index === '?' ? 'A' : f.index,
@@ -50,6 +67,70 @@ export async function getStatus(): Promise<RepoStatus> {
   const tracking = status.tracking ?? null
 
   return { path: p, name: path.basename(p), branch, tracking, ahead, behind, files }
+}
+
+/* ---------------- Binary / image detection ---------------- */
+
+export async function getDiffMeta(file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> {
+  const { path: p, git: g } = getRepo()
+  const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']
+  const ext = path.extname(file).toLowerCase()
+  const image = IMAGE_EXTS.includes(ext)
+  try {
+    const numstat = await g.raw([
+      'diff',
+      ...(staged ? ['--cached'] : []),
+      '--numstat',
+      '--no-color',
+      '--',
+      file,
+    ])
+    const line = numstat.trim().split('\n')[0]
+    const binary = !line || line.startsWith('-\t-\t') || line.startsWith('-	-	')
+    return { binary, image }
+  } catch {
+    return { binary: !image, image }
+  }
+}
+
+function gitBinaryBuffer(cwd: string, args: string[]): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    execFile('git', args, { cwd, encoding: 'buffer', maxBuffer: 64 * 1024 * 1024 }, (err, stdout) => {
+      if (err) reject(err)
+      else resolve(stdout as Buffer)
+    })
+  })
+}
+
+const MIME_BY_EXT: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.webp': 'image/webp',
+  '.bmp': 'image/bmp',
+  '.ico': 'image/x-icon',
+  '.svg': 'image/svg+xml',
+}
+
+/** Returns a data URL for an image version: workdir | index | head */
+export async function getImageVersion(file: string, source: 'workdir' | 'index' | 'head'): Promise<string | null> {
+  const { path: p, git: g } = getRepo()
+  const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
+  try {
+    let buf: Buffer
+    if (source === 'workdir') {
+      buf = await fs.promises.readFile(path.join(p, file))
+    } else {
+      const spec = source === 'index' ? `:${file}` : `HEAD:${file}`
+      buf = await gitBinaryBuffer(p, ['cat-file', '-p', spec])
+    }
+    void g
+    if (!buf.length) return null
+    return `data:${mime};base64,${buf.toString('base64')}`
+  } catch {
+    return null
+  }
 }
 
 /* ---------------- Log / Graph ---------------- */
@@ -347,8 +428,6 @@ export async function hasRemote(): Promise<boolean> {
 }
 
 /* ---------------- Repo state / conflicts / rebase / advanced ---------------- */
-
-import * as fs from 'node:fs'
 
 export async function getRepoState(): Promise<import('@shared/types').RepoState> {
   const { path: p } = getRepo()

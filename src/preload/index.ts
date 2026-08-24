@@ -13,8 +13,11 @@ const api = {
   init: (): Promise<RepoStatus | null> => call('repo:init'),
   clone: (url: string): Promise<RepoStatus | null> => call('repo:clone', url),
   openPath: (dir: string): Promise<RepoStatus> => call('repo:openPath', dir),
+  setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
+  listRepos: (): Promise<string[]> => call('repo:list'),
+  closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
   status: (): Promise<RepoStatus> => call('repo:status'),
-  log: (): Promise<CommitNode[]> => call('repo:log'),
+  log: (limit?: number): Promise<CommitNode[]> => call('repo:log', limit),
   commitDetails: (hash: string): Promise<CommitDetails> => call('commit:details', hash),
   revertCommit: (hash: string): Promise<void> => call('commit:revert', hash),
   checkoutCommit: (hash: string): Promise<void> => call('commit:checkout', hash),
@@ -38,6 +41,10 @@ const api = {
 
   /* files */
   diff: (file: string, staged: boolean): Promise<DiffLine[]> => call('file:diff', file, staged),
+  diffMeta: (file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> =>
+    call('file:diffMeta', file, staged),
+  imageVersion: (file: string, source: 'workdir' | 'index' | 'head'): Promise<string | null> =>
+    call('file:image', file, source),
   stage: (paths: string[]): Promise<void> => call('file:stage', paths),
   stageAll: (): Promise<void> => call('file:stageAll'),
   unstage: (paths: string[]): Promise<void> => call('file:unstage', paths),
@@ -70,6 +77,7 @@ const api = {
   /* recent */
   recentList: (): Promise<string[]> => call('recent:list'),
   recentAdd: (p: string): Promise<boolean> => call('recent:add', p),
+  recentRemove: (p: string): Promise<boolean> => call('recent:remove', p),
 }
 
 export type Api = typeof api
