@@ -212,6 +212,17 @@ body {
     overflow: hidden;
 }
 
+.diff-overlay {
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+}
+
+.diff-overlay.fullscreen {
+    border: 0;
+    border-radius: 0;
+}
+
 .panel-splitter {
     width: 6px;
     flex-basis: 6px;
@@ -229,7 +240,7 @@ body {
 .right-pane {
     overflow: hidden;
     border: 1px solid var(--line-soft);
-    border-radius: 9px;
+    border-radius: 12px;
     box-shadow: 0 3px 14px var(--shadow);
 }
 
@@ -374,7 +385,7 @@ body {
 .remote-url {
     background: var(--surface-0);
     border-color: var(--line-soft);
-    border-radius: 7px;
+    border-radius: 8px;
 }
 
 .btn {
@@ -395,7 +406,7 @@ body {
 .context-menu,
 .rebase-modal {
     border-color: var(--line-soft);
-    border-radius: 10px;
+    border-radius: 12px;
     box-shadow: 0 18px 50px var(--shadow);
 }
 
