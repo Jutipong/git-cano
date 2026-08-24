@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Copy, GitCommitHorizontal, RotateCcw, X } from 'lucide-vue-next'
+import { Copy, GitCommitHorizontal, X } from 'lucide-vue-next'
 import type { CommitDetails as CommitDetailsData, CommitNode } from '@shared/types'
 
 const props = defineProps<{ commit: CommitNode; notify: (message: string) => void }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
-const refresh = inject<() => Promise<unknown>>('refresh', async () => {})
 const ui = useUiStore()
 
 const details = ref<CommitDetailsData | null>(null)
@@ -36,34 +35,11 @@ const stats = computed(() => {
     return { additions, deletions }
 })
 
-function revertCommit() {
-    if (!window.confirm(`Revert commit ${props.commit.shortHash}?`)) return
-    void run('Commit reverted', () => window.api.revertCommit(props.commit.hash))
-}
-
-function checkout() {
-    void run('Checked out commit (detached HEAD)', () => window.api.checkoutCommit(props.commit.hash))
-}
-
-function cherryPick() {
-    void run('Cherry-picked', () => window.api.cherryPick(props.commit.hash))
-}
-
 function copyHash() {
     void navigator.clipboard
         .writeText(props.commit.hash)
         .then(() => ui.notify('Full hash copied'))
         .catch(() => ui.notify('Copy failed'))
-}
-
-async function run(label: string, fn: () => Promise<unknown>) {
-    try {
-        await fn()
-        await refresh()
-        props.notify(label)
-    } catch (error) {
-        ui.notify(String(error).replace(/^Error:\s*/, ''))
-    }
 }
 
 function startResize(event: MouseEvent) {
@@ -111,17 +87,6 @@ function formatDate(value: string): string {
             <div class="commit-details-title">
                 <GitCommitHorizontal :size="16" />
                 <strong>{{ summary }}</strong>
-            </div>
-            <div class="cd-heading-actions">
-                <button class="detail-action" title="Checkout this commit" @click="checkout()">
-                    Checkout
-                </button>
-                <button class="detail-action" title="Cherry-pick onto current branch" @click="cherryPick()">
-                    Cherry-pick
-                </button>
-                <button class="detail-action danger" title="Revert this commit" @click="revertCommit()">
-                    <RotateCcw :size="12" /> Revert
-                </button>
             </div>
             <button class="cd-hash" :title="`Copy full hash\n${props.commit.hash}`" @click="copyHash()">
                 {{ commit.shortHash }} <Copy :size="12" />
