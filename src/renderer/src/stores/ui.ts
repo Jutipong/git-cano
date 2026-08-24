@@ -31,7 +31,17 @@ export const useUiStore = defineStore(
         const summaryHeight = ref(180)
         const searchQuery = ref('')
         const fileViewMode = ref<'tree' | 'flat'>('tree')
+        const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
+            local: true,
+            tags: true,
+            remote: true,
+            stashes: true,
+        })
         const toast = ref<ToastMessage | null>(null)
+
+        function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {
+            sidebarSections.value[key] = !sidebarSections.value[key]
+        }
 
         function notify(message: string, type?: ToastKind) {
             toast.value = { message, type: type ?? inferToastKind(message) }
@@ -55,14 +65,23 @@ export const useUiStore = defineStore(
             summaryHeight,
             searchQuery,
             fileViewMode,
+            sidebarSections,
             toast,
             notify,
+            toggleSection,
             toggleTheme,
         }
     },
     {
         persist: {
-            pick: ['theme', 'sidebarWidth', 'rightPanelWidth', 'summaryHeight', 'fileViewMode'],
+            pick: [
+                'theme',
+                'sidebarWidth',
+                'rightPanelWidth',
+                'summaryHeight',
+                'fileViewMode',
+                'sidebarSections',
+            ],
         },
     }
 )

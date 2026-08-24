@@ -15,6 +15,24 @@
     const remote = ref<{ name: string; current: boolean }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
     const showNew = ref(false)
+    const localExpanded = computed({
+        get: () => ui.sidebarSections.local,
+        set: value => {
+            ui.sidebarSections.local = value
+        },
+    })
+    const tagsExpanded = computed({
+        get: () => ui.sidebarSections.tags,
+        set: value => {
+            ui.sidebarSections.tags = value
+        },
+    })
+    const remoteExpanded = computed({
+        get: () => ui.sidebarSections.remote,
+        set: value => {
+            ui.sidebarSections.remote = value
+        },
+    })
     const newName = ref('')
     const menu = ref<MenuState | null>(null)
     const dropTarget = ref<string | null>(null)
@@ -174,19 +192,37 @@
 
         <div class="sidebar-section">
             <div class="section-header">
-                <h3>
-                    LOCAL BRANCHES <span>{{ local.length }}</span>
-                </h3>
+                <button
+                    class="section-toggle"
+                    @click="localExpanded = !localExpanded">
+                    <i-lucide-chevron-down
+                        v-if="localExpanded"
+                        width="13"
+                        height="13" />
+                    <i-lucide-chevron-right
+                        v-else
+                        width="13"
+                        height="13" />
+                    <h3>
+                        LOCAL BRANCHES <span class="section-count">{{ local.length }}</span>
+                    </h3>
+                </button>
                 <button
                     class="icon-btn accent-icon"
                     title="New branch"
-                    @click="showNew = !showNew">
+                    @click="
+                        () => {
+                            localExpanded = true
+                            showNew = !showNew
+                        }
+                    ">
                     <i-lucide-plus
                         width="15"
                         height="15" />
                 </button>
             </div>
 
+            <template v-if="localExpanded">
             <form
                 v-if="showNew"
                 class="new-branch"
@@ -250,13 +286,77 @@
                     </button>
                 </span>
             </div>
+            </template>
         </div>
 
         <div class="sidebar-section remote-section">
             <div class="section-header">
-                <h3>
-                    TAGS <span>{{ tags.length }}</span>
-                </h3>
+                <button
+                    class="section-toggle"
+                    @click="remoteExpanded = !remoteExpanded">
+                    <i-lucide-chevron-down
+                        v-if="remoteExpanded"
+                        width="13"
+                        height="13" />
+                    <i-lucide-chevron-right
+                        v-else
+                        width="13"
+                        height="13" />
+                    <h3>
+                        REMOTE BRANCHES <span class="section-count">{{ remote.length }}</span>
+                    </h3>
+                </button>
+                <button
+                    class="icon-btn accent-icon"
+                    title="Manage remotes"
+                    @click="
+                        () => {
+                            remoteExpanded = true
+                            showRemoteManager = true
+                        }
+                    ">
+                    <i-lucide-settings2
+                        width="14"
+                        height="14" />
+                </button>
+            </div>
+            <template v-if="remoteExpanded">
+            <div
+                v-if="remote.length === 0"
+                class="sidebar-empty">
+                Fetch a remote to see branches
+            </div>
+            <div
+                v-for="branch in remote"
+                :key="branch.name"
+                class="branch-row remote"
+                @dblclick="checkoutRemote(branch.name)"
+                title="Double-click to checkout">
+                <i-lucide-globe2
+                    width="14"
+                    height="14" />
+                <span>{{ stripRemote(branch.name) }}</span>
+            </div>
+            </template>
+        </div>
+
+        <div class="sidebar-section remote-section">
+            <div class="section-header">
+                <button
+                    class="section-toggle"
+                    @click="tagsExpanded = !tagsExpanded">
+                    <i-lucide-chevron-down
+                        v-if="tagsExpanded"
+                        width="13"
+                        height="13" />
+                    <i-lucide-chevron-right
+                        v-else
+                        width="13"
+                        height="13" />
+                    <h3>
+                        TAGS <span class="section-count">{{ tags.length }}</span>
+                    </h3>
+                </button>
                 <button
                     class="icon-btn accent-icon"
                     title="New tag on HEAD"
@@ -266,6 +366,7 @@
                         height="15" />
                 </button>
             </div>
+            <template v-if="tagsExpanded">
             <div
                 v-if="tags.length === 0"
                 class="sidebar-empty">
@@ -291,38 +392,7 @@
                     </button>
                 </span>
             </div>
-        </div>
-
-        <div class="sidebar-section remote-section">
-            <div class="section-header">
-                <h3>
-                    REMOTE BRANCHES <span>{{ remote.length }}</span>
-                </h3>
-                <button
-                    class="icon-btn accent-icon"
-                    title="Manage remotes"
-                    @click="showRemoteManager = true">
-                    <i-lucide-settings2
-                        width="14"
-                        height="14" />
-                </button>
-            </div>
-            <div
-                v-if="remote.length === 0"
-                class="sidebar-empty">
-                Fetch a remote to see branches
-            </div>
-            <div
-                v-for="branch in remote"
-                :key="branch.name"
-                class="branch-row remote"
-                @dblclick="checkoutRemote(branch.name)"
-                title="Double-click to checkout">
-                <i-lucide-globe2
-                    width="14"
-                    height="14" />
-                <span>{{ stripRemote(branch.name) }}</span>
-            </div>
+            </template>
         </div>
 
         <StashPanel

@@ -5,7 +5,13 @@
     const notify = inject<(m: string) => void>('notify', () => {})
 
     const stashes = ref<StashEntry[]>([])
-    const expanded = ref(true)
+    const ui = useUiStore()
+    const expanded = computed({
+        get: () => ui.sidebarSections.stashes,
+        set: value => {
+            ui.sidebarSections.stashes = value
+        },
+    })
     const creating = ref(false)
     const message = ref('')
 
@@ -71,7 +77,7 @@
                     <i-lucide-archive
                         width="13"
                         height="13" />
-                    STASHES <span>{{ stashes.length }}</span>
+                    STASHES <span class="section-count">{{ stashes.length }}</span>
                 </h3>
             </button>
             <button
