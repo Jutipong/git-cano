@@ -872,11 +872,10 @@ kbd {
 }
 .file-panel {
     display: flex;
-    flex: 0 0 48%;
+    flex: 1;
     flex-direction: column;
-    min-height: 260px;
+    min-height: 0;
     background: var(--surface-1);
-    border-bottom: 1px solid var(--line);
 }
 .panel-heading {
     display: flex;
