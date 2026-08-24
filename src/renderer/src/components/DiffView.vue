@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue'
-
     import { intraLineRange, renderDiffContent } from '../utils/highlight'
 
     import type { DiffLine } from '@shared/types'

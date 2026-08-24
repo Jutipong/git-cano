@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue'
-
     import type { CommitNode, RebaseCommand } from '@shared/types'
 
     interface Entry {

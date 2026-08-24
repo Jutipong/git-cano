@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { onMounted, ref, watch } from 'vue'
-
     interface WorktreeInfo {
         path: string
         head: string

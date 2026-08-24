@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { onMounted, ref } from 'vue'
-
     const props = defineProps<{ refresh: () => Promise<unknown> }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})

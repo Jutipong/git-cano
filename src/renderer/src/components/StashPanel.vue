@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { onMounted, ref, watch } from 'vue'
-
     import type { StashEntry } from '@shared/types'
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()

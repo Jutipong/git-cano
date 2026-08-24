@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue'
-
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
 
     import type { CommitNode, MenuItem } from '@shared/types'

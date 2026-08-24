@@ -1,6 +1,3 @@
-import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
-
 import type { CommitNode, RepoState, RepoStatus } from '@shared/types'
 
 const PAGE_SIZE = 500

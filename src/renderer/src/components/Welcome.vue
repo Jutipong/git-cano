@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { onMounted, ref } from 'vue'
-
     import type { RepoStatus } from '@shared/types'
 
     const emit = defineEmits<{

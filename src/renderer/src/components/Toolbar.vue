@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { ref } from 'vue'
-
     import { useUiStore } from '../stores/ui'
 
     import type { RepoStatus } from '@shared/types'

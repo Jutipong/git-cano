@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { ref, watch } from 'vue'
-
     import { useUiStore } from '../stores/ui'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'

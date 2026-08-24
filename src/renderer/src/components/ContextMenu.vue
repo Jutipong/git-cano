@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { onBeforeUnmount, onMounted, ref } from 'vue'
-
     import type { MenuItem } from '@shared/types'
 
     export interface MenuState {

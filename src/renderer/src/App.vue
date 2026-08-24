@@ -1,7 +1,4 @@
 <script setup lang="ts">
-    import { storeToRefs } from 'pinia'
-    import { onMounted, ref } from 'vue'
-
     import BlameModal from './components/BlameModal.vue'
     import CommitDetails from './components/CommitDetails.vue'
     import ConflictBanner from './components/ConflictBanner.vue'
