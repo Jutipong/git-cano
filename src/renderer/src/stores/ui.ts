@@ -30,6 +30,7 @@ export const useUiStore = defineStore(
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(180)
         const searchQuery = ref('')
+        const fileViewMode = ref<'tree' | 'flat'>('tree')
         const toast = ref<ToastMessage | null>(null)
 
         function notify(message: string, type?: ToastKind) {
@@ -54,12 +55,15 @@ export const useUiStore = defineStore(
             rightPanelWidth,
             summaryHeight,
             searchQuery,
+            fileViewMode,
             toast,
             notify,
             toggleTheme,
         }
     },
     {
-        persist: { pick: ['theme', 'sidebarWidth', 'rightPanelWidth', 'summaryHeight'] },
+        persist: {
+            pick: ['theme', 'sidebarWidth', 'rightPanelWidth', 'summaryHeight', 'fileViewMode'],
+        },
     }
 )

@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { formatCommitDate } from '../utils/format'
+    import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
 
     import type { CommitFile, FileEntry } from '@shared/types'
 
@@ -53,6 +54,38 @@
     const ui = useUiStore()
     const message = ref('')
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
+
+    // tree view state (collapse dirs; shared across groups so the same folder stays folded)
+    const collapsedDirs = reactive(new Set<string>())
+    function toggleDir(path: string) {
+        if (collapsedDirs.has(path)) collapsedDirs.delete(path)
+        else collapsedDirs.add(path)
+    }
+    function toggleViewMode() {
+        ui.fileViewMode = ui.fileViewMode === 'tree' ? 'flat' : 'tree'
+    }
+
+    type AnyRow<T> = TreeRow & { file?: T }
+    function makeRows<T extends FileEntry | CommitFile>(files: T[], group: string): AnyRow<T>[] {
+        if (ui.fileViewMode === 'flat') {
+            return files.map(file => ({
+                key: `${group}:${file.path}`,
+                kind: 'file' as const,
+                name: file.path,
+                fullPath: file.path,
+                depth: 0,
+                file,
+            }))
+        }
+        const byPath = new Map(files.map(file => [file.path, file]))
+        return flattenTree(buildTree(files.map(file => file.path)), collapsedDirs, `${group}:`).map(
+            row => ({ ...row, file: row.kind === 'file' ? byPath.get(row.fullPath) : undefined })
+        )
+    }
+
+    const stagedRows = computed(() => makeRows(staged.value, 'staged'))
+    const unstagedRows = computed(() => makeRows(unstaged.value, 'unstaged'))
+    const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
 
     async function run(fn: () => Promise<unknown>, ok: string) {
         try {
@@ -173,21 +206,36 @@
                     {{ shortHash }}
                 </button>
             </div>
-            <span
-                v-if="mode === 'commit' && commitTotals && (commitTotals.additions || commitTotals.deletions)"
-                class="commit-file-stats">
+            <div class="panel-heading-side">
                 <span
-                    v-if="commitTotals.additions"
-                    class="stat-add">+{{ commitTotals.additions.toLocaleString() }}</span
-                >
+                    v-if="mode === 'commit' && commitTotals && (commitTotals.additions || commitTotals.deletions)"
+                    class="commit-file-stats">
+                    <span
+                        v-if="commitTotals.additions"
+                        class="stat-add">+{{ commitTotals.additions.toLocaleString() }}</span
+                    >
+                    <span
+                        v-if="commitTotals.deletions"
+                        class="stat-del">−{{ commitTotals.deletions.toLocaleString() }}</span
+                    >
+                </span>
                 <span
-                    v-if="commitTotals.deletions"
-                    class="stat-del">−{{ commitTotals.deletions.toLocaleString() }}</span
-                >
-            </span>
-            <span
-                v-else
-                class="panel-count">{{ files.length }}</span>
+                    v-else-if="mode === 'workdir'"
+                    class="panel-count">{{ files.length }}</span>
+                <button
+                    class="view-toggle"
+                    :title="ui.fileViewMode === 'tree' ? 'Show as flat list' : 'Show as tree'"
+                    @click="toggleViewMode()">
+                    <i-lucide-list
+                        v-if="ui.fileViewMode === 'tree'"
+                        width="14"
+                        height="14" />
+                    <i-lucide-folder-tree
+                        v-else
+                        width="14"
+                        height="14" />
+                </button>
+            </div>
         </div>
 
         <div class="file-groups">
@@ -203,31 +251,59 @@
                     Unstage all
                 </button>
             </div>
-            <div
-                v-for="file in staged"
-                :key="`staged:${file.path}`"
-                class="file-row"
-                :class="{ selected: selected?.path === file.path && selected.staged }"
-                @click="emit('select', { path: file.path, staged: true })">
-                <span
-                    class="badge"
-                    :class="badgeClass(file.staged)"
-                    >{{ file.staged }}</span
-                >
-                <span
-                    class="file-path"
-                    :title="`${file.path} — ${STATUS_LABEL[file.staged] ?? ''}`"
-                    >{{ file.path }}</span
-                >
-                <button
-                    class="icon-btn"
-                    title="Unstage"
-                    @click.stop="unstage(file)">
-                    <i-lucide-minus
+            <template
+                v-for="row in stagedRows"
+                :key="row.key">
+                <div
+                    v-if="row.kind === 'dir'"
+                    class="dir-row"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="toggleDir(row.fullPath)">
+                    <i-lucide-chevron-right
+                        v-if="collapsedDirs.has(row.fullPath)"
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-chevron-down
+                        v-else
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-folder
+                        class="dir-icon"
                         width="14"
                         height="14" />
-                </button>
-            </div>
+                    <span
+                        class="file-path dir-name"
+                        :title="row.fullPath">{{ row.name }}</span>
+                    <span class="dir-count">{{ row.count }}</span>
+                </div>
+                <div
+                    v-else
+                    class="file-row"
+                    :class="{ selected: selected?.path === row.fullPath && selected.staged }"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="emit('select', { path: row.fullPath, staged: true })">
+                    <span
+                        class="badge"
+                        :class="badgeClass(row.file!.staged)"
+                        >{{ row.file!.staged }}</span
+                    >
+                    <span
+                        class="file-path"
+                        :title="`${row.fullPath} — ${STATUS_LABEL[row.file!.staged] ?? ''}`"
+                        >{{ row.name }}</span
+                    >
+                    <button
+                        class="icon-btn"
+                        title="Unstage"
+                        @click.stop="unstage(row.file!)">
+                        <i-lucide-minus
+                            width="14"
+                            height="14" />
+                    </button>
+                </div>
+            </template>
             <div
                 v-if="staged.length === 0"
                 class="group-empty">
@@ -245,40 +321,68 @@
                     Stage all
                 </button>
             </div>
-            <div
-                v-for="file in unstaged"
-                :key="`unstaged:${file.path}`"
-                class="file-row"
-                :class="{ selected: selected?.path === file.path && !selected.staged }"
-                @click="emit('select', { path: file.path, staged: false })"
-                @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: file.path }">
-                <span
-                    class="badge"
-                    :class="badgeClass(file.unstaged)"
-                    >{{ file.unstaged }}</span
-                >
-                <span
-                    class="file-path"
-                    :title="`${file.path} — ${STATUS_LABEL[file.unstaged] ?? ''}`"
-                    >{{ file.path }}</span
-                >
-                <button
-                    class="icon-btn"
-                    title="Stage"
-                    @click.stop="stage(file)">
-                    <i-lucide-plus
-                        width="14"
-                        height="14" />
-                </button>
-                <button
-                    class="icon-btn danger"
-                    title="Discard changes"
-                    @click.stop="discard(file)">
-                    <i-lucide-rotate-ccw
+            <template
+                v-for="row in unstagedRows"
+                :key="row.key">
+                <div
+                    v-if="row.kind === 'dir'"
+                    class="dir-row"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="toggleDir(row.fullPath)">
+                    <i-lucide-chevron-right
+                        v-if="collapsedDirs.has(row.fullPath)"
+                        class="dir-chevron"
                         width="13"
                         height="13" />
-                </button>
-            </div>
+                    <i-lucide-chevron-down
+                        v-else
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-folder
+                        class="dir-icon"
+                        width="14"
+                        height="14" />
+                    <span
+                        class="file-path dir-name"
+                        :title="row.fullPath">{{ row.name }}</span>
+                    <span class="dir-count">{{ row.count }}</span>
+                </div>
+                <div
+                    v-else
+                    class="file-row"
+                    :class="{ selected: selected?.path === row.fullPath && !selected.staged }"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="emit('select', { path: row.fullPath, staged: false })"
+                    @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: row.fullPath }">
+                    <span
+                        class="badge"
+                        :class="badgeClass(row.file!.unstaged)"
+                        >{{ row.file!.unstaged }}</span
+                    >
+                    <span
+                        class="file-path"
+                        :title="`${row.fullPath} — ${STATUS_LABEL[row.file!.unstaged] ?? ''}`"
+                        >{{ row.name }}</span
+                    >
+                    <button
+                        class="icon-btn"
+                        title="Stage"
+                        @click.stop="stage(row.file!)">
+                        <i-lucide-plus
+                            width="14"
+                            height="14" />
+                    </button>
+                    <button
+                        class="icon-btn danger"
+                        title="Discard changes"
+                        @click.stop="discard(row.file!)">
+                        <i-lucide-rotate-ccw
+                            width="13"
+                            height="13" />
+                    </button>
+                </div>
+            </template>
             <div
                 v-if="unstaged.length === 0"
                 class="group-empty">
@@ -288,36 +392,64 @@
 
             <!-- files changed by the selected commit -->
             <template v-else>
-                <div
-                    v-for="file in commitFileList"
-                    :key="`commit:${file.path}`"
-                    class="commit-file-block">
+                <template
+                    v-for="row in commitRows"
+                    :key="row.key">
                     <div
-                        class="file-row"
-                        :class="{ selected: selected?.path === file.path }"
-                        @click="emit('select', { path: file.path, staged: false })">
+                        v-if="row.kind === 'dir'"
+                        class="dir-row"
+                        :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                        @click="toggleDir(row.fullPath)">
+                        <i-lucide-chevron-right
+                            v-if="collapsedDirs.has(row.fullPath)"
+                            class="dir-chevron"
+                            width="13"
+                            height="13" />
+                        <i-lucide-chevron-down
+                            v-else
+                            class="dir-chevron"
+                            width="13"
+                            height="13" />
+                        <i-lucide-folder
+                            class="dir-icon"
+                            width="14"
+                            height="14" />
                         <span
-                            class="badge"
-                            :class="badgeClass(file.status)"
-                            >{{ file.status }}</span
-                        >
-                        <span
-                            class="file-path"
-                            :title="file.path"
-                            >{{ file.path }}</span
-                        >
-                        <span class="commit-file-stats">
-                            <span
-                                v-if="file.additions"
-                                class="stat-add">+{{ file.additions.toLocaleString() }}</span
-                            >
-                            <span
-                                v-if="file.deletions"
-                                class="stat-del">−{{ file.deletions.toLocaleString() }}</span
-                            >
-                        </span>
+                            class="file-path dir-name"
+                            :title="row.fullPath">{{ row.name }}</span>
+                        <span class="dir-count">{{ row.count }}</span>
                     </div>
-                </div>
+                    <div
+                        v-else
+                        class="commit-file-block">
+                        <div
+                            class="file-row"
+                            :class="{ selected: selected?.path === row.fullPath }"
+                            :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                            @click="emit('select', { path: row.fullPath, staged: false })">
+                            <span
+                                class="badge"
+                                :class="badgeClass(row.file!.status)"
+                                >{{ row.file!.status }}</span
+                            >
+                            <span
+                                class="file-path"
+                                :title="row.fullPath"
+                                >{{ row.name }}</span
+                            >
+                            <span class="commit-file-stats">
+                                <span
+                                    v-if="row.file!.additions"
+                                    class="stat-add">+{{ row.file!.additions.toLocaleString() }}</span
+                                >
+                                <span
+                                    v-if="row.file!.deletions"
+                                    class="stat-del">−{{ row.file!.deletions.toLocaleString() }}</span
+                                >
+                            </span>
+                        </div>
+                    </div>
+                </template>
                 <div
                     v-if="commitFileList.length === 0"
                     class="group-empty">
