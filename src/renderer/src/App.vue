@@ -179,8 +179,7 @@
             v-if="repo"
             :repo="repo"
             :refresh="repoStore.refresh"
-            :bisect-active="repoState.bisectActive"
-            v-model:search="ui.searchQuery" />
+            :bisect-active="repoState.bisectActive" />
         <ConflictBanner
             v-if="repo && (repoState.merging || repoState.rebasing || conflicts.length)"
             :conflicts="conflicts"
@@ -222,7 +221,6 @@
             <div class="center-column">
                 <GraphView
                     :commits="commits"
-                    :query="ui.searchQuery"
                     :has-more="hasMore"
                     :commit-open="!!selectedCommit"
                     :build-commit-menu="buildCommitMenu"

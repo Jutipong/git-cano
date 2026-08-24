@@ -343,7 +343,6 @@ body {
     padding-right: 12px;
     padding-left: 12px;
     background: color-mix(in srgb, var(--surface-0) 65%, transparent);
-    font-size: 9px;
 }
 
 .graph-row {
@@ -355,12 +354,6 @@ body {
 .graph-row:hover,
 .graph-row.selected {
     background: var(--surface-selected);
-}
-
-.zoom-controls {
-    background: var(--surface-2);
-    border-color: var(--line-soft);
-    border-radius: 7px;
 }
 
 .file-row.selected {

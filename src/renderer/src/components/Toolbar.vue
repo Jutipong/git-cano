@@ -8,7 +8,6 @@
         refresh: () => Promise<unknown>
         bisectActive: boolean
     }>()
-    const search = defineModel<string>('search', { default: '' })
     const emit = defineEmits<{ (e: 'open-tools'): void }>()
     const ui = useUiStore()
 
@@ -79,23 +78,6 @@
             </span>
         </div>
         <div class="spacer" />
-        <label
-            class="commit-search"
-            title="Search commits">
-            <i-lucide-search
-                width="15"
-                height="15" />
-            <input
-                v-model="search"
-                placeholder="Search commits" />
-            <button
-                v-if="search"
-                type="button"
-                class="search-clear"
-                @click="search = ''">
-                ×
-            </button>
-        </label>
         <button
             class="toolbar-action action-stash"
             title="Stash changes"

@@ -1,11 +1,12 @@
 <script setup lang="ts">
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
 
+    import { useUiStore } from '../stores/ui'
+
     import type { CommitNode, MenuItem } from '@shared/types'
 
     interface Props {
         commits: CommitNode[]
-        query: string
         hasMore: boolean
         commitOpen: boolean
         buildCommitMenu: (commit: CommitNode) => MenuItem[]
@@ -19,24 +20,17 @@
     }>()
 
     const COLORS = ['#35c6b0', '#5b9cf6', '#b78af7', '#f2a65a', '#ef6b73', '#4fc3d8', '#e3bd55', '#ef82b8']
-    const BASE_LANE_W = 24
-    const BASE_ROW_H = 42
-    const ZOOM_MIN = 0.65
-    const ZOOM_MAX = 1.6
+    const laneW = 24
+    const rowH = 42
 
+    const ui = useUiStore()
     const selectedHash = ref<string | null>(null)
     const menu = ref<MenuState | null>(null)
     const dropTargetHash = ref<string | null>(null)
-    const zoom = ref(Number(localStorage.getItem('ogit-graph-zoom')) || 1)
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
 
-    const laneW = computed(() => Math.round(BASE_LANE_W * zoom.value))
-    const rowH = computed(() => Math.round(BASE_ROW_H * zoom.value))
-
-    watch(zoom, value => localStorage.setItem('ogit-graph-zoom', String(value)))
-
-    const normalizedQuery = computed(() => props.query.trim().toLowerCase())
+    const normalizedQuery = computed(() => ui.searchQuery.trim().toLowerCase())
     const visibleCommits = computed(() =>
         normalizedQuery.value
             ? props.commits.filter(commit =>
@@ -44,24 +38,18 @@
               )
             : props.commits
     )
-    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW.value + 20, 64))
+    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, 64))
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
-    const totalHeight = computed(() => visibleCommits.value.length * rowH.value)
+    const totalHeight = computed(() => visibleCommits.value.length * rowH)
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
 
     function onScroll() {
         const el = scrollEl.value
         if (!el) return
-        const start = Math.max(0, Math.floor(el.scrollTop / rowH.value) - 15)
-        const count = Math.ceil(el.clientHeight / rowH.value) + 30
+        const start = Math.max(0, Math.floor(el.scrollTop / rowH) - 15)
+        const count = Math.ceil(el.clientHeight / rowH) + 30
         visibleRange.value = [start, start + count]
-        if (props.hasMore && el.scrollTop + el.clientHeight >= el.scrollHeight - rowH.value * 10) emit('load-more')
-    }
-    function onWheel(event: WheelEvent) {
-        if (event.ctrlKey || event.metaKey) {
-            event.preventDefault()
-            zoom.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom.value - event.deltaY * 0.002))
-        }
+        if (props.hasMore && el.scrollTop + el.clientHeight >= el.scrollHeight - rowH * 10) emit('load-more')
     }
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
@@ -78,10 +66,10 @@
         return COLORS[commit.lane % COLORS.length]
     }
     function nodeX(commit: CommitNode) {
-        return commit.lane * laneW.value + laneW.value / 2
+        return commit.lane * laneW + laneW / 2
     }
     function nodeY(index: number) {
-        return index * rowH.value + rowH.value / 2
+        return index * rowH + rowH / 2
     }
     function formatDate(iso: string): string {
         const date = new Date(iso)
@@ -101,30 +89,23 @@
                 <span>{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
             </div>
             <div class="spacer" />
-            <div class="zoom-controls">
+            <label
+                class="commit-search"
+                title="Search commits">
+                <i-lucide-search
+                    width="15"
+                    height="15" />
+                <input
+                    v-model="ui.searchQuery"
+                    placeholder="Search commits" />
                 <button
-                    class="icon-btn"
-                    title="Zoom out"
-                    @click="zoom = Math.max(ZOOM_MIN, zoom - 0.1)">
-                    <i-lucide-minus
-                        width="14"
-                        height="14" />
+                    v-if="ui.searchQuery"
+                    type="button"
+                    class="search-clear"
+                    @click="ui.searchQuery = ''">
+                    ×
                 </button>
-                <button
-                    class="icon-btn zoom-reset"
-                    title="Reset zoom"
-                    @click="zoom = 1">
-                    {{ Math.round(zoom * 100) }}%
-                </button>
-                <button
-                    class="icon-btn"
-                    title="Zoom in"
-                    @click="zoom = Math.min(ZOOM_MAX, zoom + 0.1)">
-                    <i-lucide-plus
-                        width="14"
-                        height="14" />
-                </button>
-            </div>
+            </label>
             <button
                 v-if="props.commitOpen"
                 class="icon-btn danger commit-close-btn"
@@ -144,8 +125,7 @@
         <div
             ref="scrollEl"
             class="graph-scroll"
-            @scroll.passive="onScroll"
-            @wheel="onWheel">
+            @scroll.passive="onScroll">
             <template v-if="totalHeight > 0">
                 <svg
                     class="graph-canvas"
@@ -190,7 +170,7 @@
                         <circle
                             :cx="nodeX(commit)"
                             :cy="nodeY(index)"
-                            :r="selectedHash === commit.hash ? Math.round(5.5 * zoom) : Math.round(4.5 * zoom)"
+                            :r="selectedHash === commit.hash ? 6 : 5"
                             :fill="nodeColor(commit)"
                             stroke="var(--canvas)"
                             stroke-width="2" />
@@ -222,9 +202,7 @@
                     <div
                         class="graph-cell"
                         :style="{ width: `${graphW}px` }" />
-                    <span
-                        class="commit-subject"
-                        :style="{ fontSize: `${Math.round(13 * zoom)}px` }">
+                    <span class="commit-subject">
                         <span class="subject-text">{{ commit.subject }}</span>
                         <span
                             v-for="ref in commit.refs"
