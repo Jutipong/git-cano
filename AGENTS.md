@@ -39,8 +39,11 @@ Key files:
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it).
-- **DiffView overlay**: opens over sidebar + graph when a file row is clicked (right pane stays
-  interactive for switching files). Has fullscreen toggle and close (✕).
+- **DiffView overlay**: opens as a floating card over the tab bar + sidebar + graph when a
+  file row is clicked (right pane stays interactive for switching files). It is rendered as a
+  direct child of `.app` — **not** inside `.app-body` — because `.app-body` has
+  `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
+  close (✕).
 - **Commit selection** affects Changes/DiffView but there is no separate details panel —
   do not reintroduce one; extend the Changes panel instead.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should

@@ -29,8 +29,8 @@ Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses
 
 ### Diff viewing
 
-- 🔍 Diff overlay opens over sidebar + graph when you click a file row
-  (the Changes panel stays interactive for switching files)
+- 🔍 Diff overlay opens as a floating card over the tab bar + sidebar + graph when
+  you click a file row (the Changes panel stays interactive for switching files)
 - ↔️ Unified & side-by-side modes (remembered between sessions)
 - 🖼️ Image diffs and binary-file detection
 - ⛶ Fullscreen toggle for distraction-free review
