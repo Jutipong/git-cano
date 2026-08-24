@@ -370,7 +370,6 @@ body {
     color: var(--text);
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-left: 4px solid var(--toast-accent);
     border-radius: 999px;
     box-shadow: 0 12px 40px var(--shadow);
     font-size: 13.5px;
@@ -402,28 +401,24 @@ body {
     --toast-accent: var(--green);
     background: #20372a;
     border-color: #4d9b6d;
-    border-left-color: var(--toast-accent);
 }
 
 .toast-error {
     --toast-accent: var(--red);
     background: #3b252a;
     border-color: #b45b66;
-    border-left-color: var(--toast-accent);
 }
 
 .toast-warning {
     --toast-accent: var(--orange);
     background: #3b3122;
     border-color: #ad8247;
-    border-left-color: var(--toast-accent);
 }
 
 .toast-info {
     --toast-accent: var(--teal);
     background: #1f3440;
     border-color: #4a90b3;
-    border-left-color: var(--toast-accent);
 }
 
 :root[data-theme='light'] .toast-success {
