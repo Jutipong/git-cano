@@ -38,10 +38,10 @@
     onMounted(() => {
         void repoStore.init()
 
-        // lightweight auto-refresh
+        // lightweight auto-refresh (5 minutes)
         refreshInterval.value = setInterval(() => {
             if (repoStore.repo) void repoStore.refresh()
-        }, 8000)
+        }, 5 * 60 * 1000)
 
         const onKeyDown = (event: KeyboardEvent) => {
             if (!(event.metaKey || event.ctrlKey)) return
