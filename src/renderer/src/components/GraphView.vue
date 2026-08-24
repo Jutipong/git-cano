@@ -134,7 +134,6 @@
                     width="14"
                     height="14" />
             </button>
-            </div>
         </div>
         <div class="graph-header">
             <span :style="{ width: `${graphW}px` }">GRAPH</span>
