@@ -9,10 +9,12 @@ Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses
 ### Repos & history
 
 - 📂 Open / Init / Clone repository (+ recent repos list, session restore)
+- 🗂️ Multiple repositories open at once as tabs (capsule tab bar with a green `+`)
 - 📊 Interactive commit graph across all branches (custom SVG DAG renderer)
-- 🎚️ Graph zoom via `⌘`/`Ctrl` + scroll wheel or toolbar controls
-- 🔎 Search commits by message, author, hash, or ref (`⌘⇧F`)
-- ⏱️ Auto-refresh every 5 minutes · manual refresh with `⌘R`
+- 🔎 Search commits by message, author, hash, or ref (`⌘⇧F`) — search lives
+  in the graph toolbar
+- ⏱️ Auto-refresh every minute · instant refresh on window focus or external
+  repo changes · manual refresh with `⌘R`
 
 ### Changes panel (right)
 
@@ -38,7 +40,8 @@ Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses
 - 🌿 Branch management: create, checkout, rename, delete, merge, rebase
 - 🏷️ Tag management: create / delete / push tags, create tag from any commit
 - 🌐 Remote management UI: add / remove / edit URLs; fetch all, pull, push
-  (auto `--set-upstream` on first push)
+  (auto `--set-upstream` on first push) — sync buttons sit at the top of the sidebar,
+  settings & theme toggle at the bottom
 - 🎛️ Hunk-level partial staging (stage/unstage individual diff hunks)
 - 🔎 Blame view & per-file history browser
 - 🧰 Stash management: create, apply, pop, drop (including untracked files)
@@ -92,19 +95,20 @@ src/
     └── src/
         ├── components/   # Vue SFCs, one per panel/modal
         │   ├── Welcome.vue        # Open/Init/Clone screen
-        │   ├── Toolbar.vue        # Fetch/Pull/Push bar
-        │   ├── Sidebar.vue        # Branches panel
-        │   ├── GraphView.vue      # Commit graph (SVG)
+        │   ├── TabBar.vue         # Repository tabs (capsule bar)
+        │   ├── Sidebar.vue        # Sync actions, branches, stashes, bottom actions
+        │   ├── GraphView.vue      # Commit graph (SVG) + commit search
         │   ├── FilePanel.vue      # Changes panel + commit box
         │   ├── DiffView.vue       # Diff overlay viewer
         │   └── ...                # Modals: history, blame, rebase, bisect…
         ├── stores/       # Pinia stores (repo state + persisted UI state)
         ├── utils/        # Shared helpers (date formatting, highlighting)
-        └── styles.css    # Global stylesheet
+        ├── styles.css    # Global stylesheet (base)
+        └── modern-ui.css # Modern theme overrides (palette, radii, pills)
 ```
 
 ## Notes
 
 - Requires system `git` in PATH.
-- The graph auto-refreshes every 5 minutes.
+- The graph auto-refreshes every minute and instantly on focus/external changes.
 - Agent guidance lives in [AGENTS.md](AGENTS.md).

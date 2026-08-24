@@ -31,6 +31,11 @@ Key files:
 
 ## UI model
 
+- **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the `+` button is a flat
+  green icon styled like the panel refresh buttons — no outline.
+- **Sidebar**: fetch/pull/push sync card at the top, branch/tag sections, then the STASHES
+  section; bottom actions are Settings and the theme toggle only (no stash button there —
+  stash creation lives in the STASHES section).
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it).
@@ -40,6 +45,9 @@ Key files:
   do not reintroduce one; extend the Changes panel instead.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should
   follow the same pattern (`ref` + `persist.pick` + mousedown drag handler).
+- **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
+  look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
+  `12px` radius; rows/buttons use pill (`999px`) shapes.
 
 ## Conventions
 
