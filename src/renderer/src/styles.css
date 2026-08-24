@@ -147,8 +147,11 @@ button {
     color: var(--text);
     background: var(--surface-hover);
 }
-.icon-btn.danger:hover {
+.icon-btn.danger {
     color: var(--red);
+}
+.icon-btn.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 .link-btn {
     padding: 2px 0;
@@ -918,7 +921,7 @@ kbd {
 }
 .commit-box textarea {
     width: 100%;
-    min-height: 144px;
+    min-height: 192px;
     resize: vertical;
     padding: 8px 9px;
     color: var(--text);
@@ -935,6 +938,13 @@ kbd {
     background: transparent;
     border-style: dashed;
     cursor: default;
+}
+.readonly-meta {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+.readonly-meta::first-line {
+    color: var(--text);
 }
 .summary-counter {
     display: flex;

@@ -109,7 +109,7 @@
                 <span class="spacer" />
                 <button
                     v-if="!pausedMessage"
-                    class="icon-btn"
+                    class="icon-btn danger"
                     :disabled="running"
                     @click="emit('cancel')">
                     <i-lucide-x
@@ -190,7 +190,7 @@
                         :disabled="running || Boolean(pausedMessage) || !EDITABLE_COMMANDS.includes(entry.command)" />
                     <span class="rebase-author">{{ entry.author }}</span>
                     <button
-                        class="icon-btn"
+                        class="icon-btn danger"
                         title="Move up"
                         :disabled="running || Boolean(pausedMessage) || index === 0"
                         @click="move(index, -1)">

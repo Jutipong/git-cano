@@ -143,13 +143,6 @@
             .catch(() => notify('Copy failed'))
     }
 
-    const readonlyMessage = computed(() => {
-        const meta = [props.commitAuthor, props.commitDate ? formatCommitDate(props.commitDate) : '']
-            .filter(Boolean)
-            .join(' · ')
-        return [meta, props.commitMessage].filter(Boolean).join('\n')
-    })
-
     // commit title convention: <=50 ideal, 72 hard cap
     const firstLine = computed(() => message.value.split('\n')[0] ?? '')
     const subjectCountClass = computed(() =>
@@ -362,17 +355,22 @@
                 Amend last commit
             </label>
             <!-- read-only when viewing an already-committed commit -->
+            <div
+                v-if="mode === 'commit' && (commitAuthor || commitDate)"
+                class="readonly-meta">
+                {{ [commitAuthor, commitDate ? formatCommitDate(commitDate) : ''].filter(Boolean).join(' · ') }}
+            </div>
             <textarea
                 v-if="mode === 'commit'"
-                :value="readonlyMessage"
+                :value="commitMessage"
                 placeholder="No commit message"
-                rows="6"
+                rows="8"
                 readonly />
             <textarea
                 v-else
                 v-model="message"
                 placeholder="Summary of changes"
-                rows="6"
+                rows="8"
                 @keydown.enter.meta.prevent="doCommit()"
                 @keydown.enter.ctrl.prevent="doCommit()" />
             <div
