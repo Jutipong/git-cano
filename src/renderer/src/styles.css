@@ -936,7 +936,8 @@ kbd {
 }
 .commit-box textarea {
     width: 100%;
-    resize: none;
+    min-height: 96px;
+    resize: vertical;
     padding: 8px 9px;
     color: var(--text);
     background: var(--surface-0);

@@ -306,13 +306,13 @@
                 v-if="mode === 'commit'"
                 :value="commitSubject"
                 placeholder="No commit message"
-                rows="2"
+                rows="4"
                 readonly />
             <textarea
                 v-else
                 v-model="message"
                 placeholder="Summary of changes"
-                rows="2"
+                rows="4"
                 @keydown.enter.meta.prevent="doCommit()"
                 @keydown.enter.ctrl.prevent="doCommit()" />
             <button
