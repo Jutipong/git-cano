@@ -940,11 +940,13 @@ kbd {
     cursor: default;
 }
 .readonly-meta {
+    align-self: flex-end;
+    padding: 2px 8px;
     color: var(--text-secondary);
-    font-size: 11px;
-}
-.readonly-meta::first-line {
-    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    font-size: 10.5px;
 }
 .summary-counter {
     display: flex;
