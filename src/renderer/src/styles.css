@@ -904,6 +904,13 @@ kbd {
     font-size: 10px;
     text-align: center;
 }
+.panel-file-num {
+    color: var(--text-muted);
+    background: var(--surface-3);
+    border-radius: 8px;
+    padding: 1px 7px;
+    font-size: 10px;
+}
 .panel-commit-chip {
     padding: 1px 6px;
     color: var(--teal);

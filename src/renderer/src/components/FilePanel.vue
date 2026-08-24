@@ -133,23 +133,26 @@
                 <FileDiff
                     width="16"
                     height="16" /><strong>Changes</strong>
+                <span class="panel-file-num">{{ files.length }}</span>
                 <span
                     v-if="mode === 'commit'"
                     class="panel-commit-chip">{{ shortHash }}</span>
-                <span
-                    v-if="mode === 'commit' && commitTotals"
-                    class="commit-file-stats">
-                    <span
-                        v-if="commitTotals.additions"
-                        class="stat-add">+{{ commitTotals.additions.toLocaleString() }}</span
-                    >
-                    <span
-                        v-if="commitTotals.deletions"
-                        class="stat-del">−{{ commitTotals.deletions.toLocaleString() }}</span
-                    >
-                </span>
             </div>
-            <span class="panel-count">{{ files.length }}</span>
+            <span
+                v-if="mode === 'commit' && commitTotals && (commitTotals.additions || commitTotals.deletions)"
+                class="commit-file-stats">
+                <span
+                    v-if="commitTotals.additions"
+                    class="stat-add">+{{ commitTotals.additions.toLocaleString() }}</span
+                >
+                <span
+                    v-if="commitTotals.deletions"
+                    class="stat-del">−{{ commitTotals.deletions.toLocaleString() }}</span
+                >
+            </span>
+            <span
+                v-else
+                class="panel-count">{{ files.length }}</span>
         </div>
 
         <div class="file-groups">
