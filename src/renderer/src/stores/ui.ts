@@ -7,7 +7,7 @@ export const useUiStore = defineStore(
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
         const commitDetailsHeight = ref(210)
-        const summaryHeight = ref(192)
+        const summaryHeight = ref(180)
         const searchQuery = ref('')
         const toast = ref<string | null>(null)
 
