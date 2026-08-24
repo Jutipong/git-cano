@@ -356,9 +356,9 @@ body {
 .toast {
     z-index: 70;
     top: 16px;
-    right: 16px;
+    right: auto;
     bottom: auto;
-    left: auto;
+    left: 50%;
     display: flex;
     align-items: flex-start;
     gap: 11px;
@@ -375,7 +375,7 @@ body {
     font-size: 13.5px;
     font-weight: 550;
     text-overflow: clip;
-    transform: none;
+    transform: translateX(-50%);
     white-space: normal;
     line-height: 1.45;
     animation: toast-enter 160ms ease-out;
@@ -444,11 +444,11 @@ body {
 @keyframes toast-enter {
     from {
         opacity: 0;
-        transform: translateY(-8px);
+        transform: translateX(-50%) translateY(-8px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(-50%) translateY(0);
     }
 }
 
