@@ -206,6 +206,7 @@
                 <FilePanel
                     :files="selectedCommit ? repoStore.commitFiles : repo.files"
                     :mode="selectedCommit ? 'commit' : 'workdir'"
+                    :commit-hash="selectedCommit?.hash"
                     :selected="selectedFile"
                     :commit-subject="repoStore.commitSubject"
                     :refresh="repoStore.refresh"
