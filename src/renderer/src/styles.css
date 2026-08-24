@@ -764,6 +764,26 @@ kbd {
     color: var(--teal);
     border-color: var(--teal);
 }
+.cd-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-left: 2px;
+    padding: 0;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+.cd-close:hover {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+}
 .commit-details-heading {
     flex: none;
 }

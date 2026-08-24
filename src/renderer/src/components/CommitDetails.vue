@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronRight, Copy, GitCommitHorizontal, RotateCcw } from 'lucide-vue-next'
+import { ChevronDown, ChevronRight, Copy, GitCommitHorizontal, RotateCcw, X } from 'lucide-vue-next'
 import type { CommitDetails as CommitDetailsData, CommitNode, DiffLine } from '@shared/types'
 
 const props = defineProps<{ commit: CommitNode; notify: (message: string) => void }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 const refresh = inject<() => Promise<unknown>>('refresh', async () => {})
 const ui = useUiStore()
 
@@ -126,6 +127,9 @@ function formatDate(value: string): string {
             </div>
             <button class="cd-hash" :title="`Copy full hash\n${props.commit.hash}`" @click="copyHash()">
                 {{ commit.shortHash }} <Copy :size="12" />
+            </button>
+            <button class="cd-close" title="Close commit details" @click="emit('close')">
+                <X :size="14" />
             </button>
         </div>
 

@@ -194,7 +194,8 @@
                 <CommitDetails
                     v-if="selectedCommit"
                     :commit="selectedCommit"
-                    :notify="ui.notify" />
+                    :notify="ui.notify"
+                    @close="selectedCommit = null" />
             </div>
             <div
                 class="panel-splitter"
