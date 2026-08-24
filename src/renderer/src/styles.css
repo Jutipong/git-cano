@@ -588,6 +588,16 @@ kbd {
     padding: 10px;
     border-top: 1px solid var(--line-soft);
 }
+.sidebar-bottom-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+.sidebar-bottom-actions .toolbar-action {
+    min-height: 30px;
+    flex: 0 0 auto;
+}
 .sidebar-bottom-button {
     display: flex;
     align-items: center;

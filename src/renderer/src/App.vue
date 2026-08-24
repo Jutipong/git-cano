@@ -178,8 +178,7 @@
         <Toolbar
             v-if="repo"
             :repo="repo"
-            :refresh="repoStore.refresh"
-            :bisect-active="repoState.bisectActive" />
+            :refresh="repoStore.refresh" />
         <ConflictBanner
             v-if="repo && (repoState.merging || repoState.rebasing || conflicts.length)"
             :conflicts="conflicts"

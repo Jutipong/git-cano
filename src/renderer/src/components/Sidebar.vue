@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -11,6 +12,7 @@
     const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
 
     const ui = useUiStore()
+    const repoStore = useRepoStore()
     const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number }[]>([])
     const remote = ref<{ name: string; current: boolean }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
@@ -54,6 +56,12 @@
     }
 
     watch(() => props.repo, loadAll, { immediate: true })
+
+    function actStash() {
+        const message = window.prompt('Stash message:', 'WIP')
+        if (message === null) return
+        void run(() => window.api.createStash(message.trim() || 'WIP', true), 'Stashed changes')
+    }
 
     async function run(fn: () => Promise<unknown>, ok: string) {
         try {
@@ -400,14 +408,39 @@
             :refresh="props.refresh" />
 
         <div class="sidebar-bottom">
-            <button
-                class="sidebar-bottom-button"
-                @click="run(props.refresh, 'Refreshed')">
-                <i-lucide-refresh-cw
-                    width="14"
-                    height="14" />
-                Refresh repository
-            </button>
+            <div class="sidebar-bottom-actions">
+                <button
+                    class="toolbar-action action-stash"
+                    title="Stash changes"
+                    @click="actStash()">
+                    <i-lucide-archive
+                        width="15"
+                        height="15" />
+                    <span>Stash</span>
+                </button>
+                <button
+                    class="toolbar-icon-button"
+                    :title="ui.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
+                    @click="ui.toggleTheme()">
+                    <i-lucide-sun
+                        v-if="ui.theme === 'dark'"
+                        width="16"
+                        height="16" />
+                    <i-lucide-moon
+                        v-else
+                        width="16"
+                        height="16" />
+                </button>
+                <button
+                    class="toolbar-icon-button"
+                    :class="{ 'bisect-active': repoStore.repoState.bisectActive }"
+                    title="Settings"
+                    @click="repoStore.toolsOpen = true">
+                    <i-lucide-settings
+                        width="17"
+                        height="17" />
+                </button>
+            </div>
         </div>
 
         <ContextMenuVue

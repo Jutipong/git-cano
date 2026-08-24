@@ -6,9 +6,7 @@
     const props = defineProps<{
         repo: RepoStatus
         refresh: () => Promise<unknown>
-        bisectActive: boolean
     }>()
-    const emit = defineEmits<{ (e: 'open-tools'): void }>()
     const ui = useUiStore()
 
     function actFetch() {
@@ -19,11 +17,6 @@
     }
     function actPush() {
         void act('Push', () => window.api.push())
-    }
-    function actStash() {
-        const message = window.prompt('Stash message:', 'WIP')
-        if (message === null) return
-        void act('Stash', () => window.api.createStash(message.trim() || 'WIP', true))
     }
 
     const busy = ref<string | null>(null)
@@ -78,17 +71,6 @@
             </span>
         </div>
         <div class="spacer" />
-        <button
-            class="toolbar-action action-stash"
-            title="Stash changes"
-            :disabled="!!busy"
-            @click="actStash()">
-            <i-lucide-archive
-                width="15"
-                height="15" />
-            <span>Stash</span>
-        </button>
-        <div class="toolbar-divider" />
         <div class="remote-actions">
             <button
                 class="toolbar-action action-fetch"
@@ -121,27 +103,5 @@
                 <span>Push</span>
             </button>
         </div>
-        <button
-            class="toolbar-icon-button"
-            :title="ui.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-            @click="ui.toggleTheme()">
-            <i-lucide-sun
-                v-if="ui.theme === 'dark'"
-                width="16"
-                height="16" />
-            <i-lucide-moon
-                v-else
-                width="16"
-                height="16" />
-        </button>
-        <button
-            class="toolbar-icon-button"
-            :class="{ 'bisect-active': bisectActive }"
-            title="Advanced tools (bisect, worktrees, submodules)"
-            @click="emit('open-tools')">
-            <i-lucide-more-horizontal
-                width="18"
-                height="18" />
-        </button>
     </header>
 </template>

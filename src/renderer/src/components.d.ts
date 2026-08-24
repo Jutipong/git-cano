@@ -49,6 +49,7 @@ declare module 'vue' {
     ILucideRows3: typeof import('~icons/lucide/rows3')['default']
     ILucideScanSearch: typeof import('~icons/lucide/scan-search')['default']
     ILucideSearch: typeof import('~icons/lucide/search')['default']
+    ILucideSettings: typeof import('~icons/lucide/settings')['default']
     ILucideSettings2: typeof import('~icons/lucide/settings2')['default']
     ILucideSun: typeof import('~icons/lucide/sun')['default']
     ILucideTag: typeof import('~icons/lucide/tag')['default']
