@@ -88,7 +88,7 @@
                 @click="openRecent(entry)">
                 <span class="recent-label">📂 {{ entry }}</span>
                 <button
-                    class="icon-btn recent-remove"
+                    class="icon-btn danger recent-remove"
                     :title="`Remove ${entry} from list`"
                     @click.stop="removeRecent(entry)">
                     <i-lucide-x

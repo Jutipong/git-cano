@@ -147,8 +147,11 @@ button {
     color: var(--text);
     background: var(--surface-hover);
 }
-.icon-btn.danger:hover {
+.icon-btn.danger {
     color: var(--red);
+}
+.icon-btn.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 .link-btn {
     padding: 2px 0;
@@ -177,6 +180,7 @@ kbd {
     background: var(--canvas);
 }
 .app-body {
+    position: relative;
     display: flex;
     flex: 1;
     min-height: 0;
@@ -483,6 +487,23 @@ kbd {
     border-radius: 3px;
     font-size: 9px;
 }
+.track-badge {
+    display: inline-flex;
+    flex: none;
+    gap: 4px;
+    margin-left: auto;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+}
+.current-badge + .track-badge {
+    margin-left: 6px;
+}
+.track-ahead {
+    color: var(--green);
+}
+.track-behind {
+    color: var(--orange);
+}
 .row-actions {
     display: none;
     align-items: center;
@@ -523,11 +544,28 @@ kbd {
 
 /* Center history */
 .center-column {
+    position: relative;
     display: flex;
     flex: 1;
     flex-direction: column;
     min-width: 450px;
     min-height: 0;
+}
+.diff-overlay {
+    position: absolute;
+    z-index: 10;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    background: var(--surface-1);
+    box-shadow: 4px 0 16px var(--shadow);
+}
+.diff-view.fullscreen {
+    position: fixed;
+    z-index: 60;
+    /* override the inline `right` offset bound by the app-layout */
+    inset: 0 !important;
+    box-shadow: none;
 }
 .graph-view {
     display: flex;
@@ -544,6 +582,21 @@ kbd {
     flex: 0 0 48px;
     padding: 0 15px;
     border-bottom: 1px solid var(--line-soft);
+}
+.commit-close-btn,
+.diff-close-btn {
+    border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+    background: color-mix(in srgb, var(--red) 8%, transparent);
+}
+.commit-close-btn {
+    margin-left: 10px;
+}
+.diff-close-btn {
+    margin-left: 4px;
+}
+.commit-close-btn:hover,
+.diff-close-btn:hover {
+    background: color-mix(in srgb, var(--red) 18%, transparent);
 }
 .graph-title {
     display: flex;
@@ -692,63 +745,11 @@ kbd {
     color: var(--text-muted);
     text-align: center;
 }
-
-/* Selected commit information */
-.commit-details {
-    flex: 0 0 165px;
-    background: var(--surface-1);
-    border-top: 1px solid var(--line);
+.stat-add {
+    color: var(--green);
 }
-.commit-details-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 39px;
-    padding: 0 15px;
-    border-bottom: 1px solid var(--line-soft);
-}
-.commit-details-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.commit-details-title svg {
-    color: var(--teal);
-}
-.commit-details-hash {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: var(--text-muted);
-    font-family: 'SF Mono', Menlo, monospace;
-    font-size: 11px;
-}
-.commit-details-content {
-    padding: 13px 15px;
-}
-.commit-details-content h2 {
-    margin: 0;
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.commit-meta {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin-top: 9px;
-    color: var(--text-secondary);
-    font-size: 12px;
-}
-.commit-meta span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
-.commit-meta svg {
-    color: var(--text-muted);
+.stat-del {
+    color: var(--red);
 }
 .commit-ref-list {
     display: flex;
@@ -778,11 +779,10 @@ kbd {
 }
 .file-panel {
     display: flex;
-    flex: 0 0 48%;
+    flex: 1;
     flex-direction: column;
-    min-height: 260px;
+    min-height: 0;
     background: var(--surface-1);
-    border-bottom: 1px solid var(--line);
 }
 .panel-heading {
     display: flex;
@@ -810,13 +810,43 @@ kbd {
     font-size: 10px;
     text-align: center;
 }
+.panel-file-num {
+    color: var(--text-muted);
+    background: var(--surface-3);
+    border-radius: 8px;
+    padding: 1px 7px;
+    font-size: 10px;
+}
+.panel-commit-chip {
+    padding: 2px 7px;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+.panel-commit-chip:hover {
+    color: var(--teal);
+    border-color: var(--teal);
+}
+.commit-file-stats {
+    display: inline-flex;
+    flex: none;
+    gap: 5px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    font-weight: 600;
+}
 .commit-box {
     display: flex;
     flex-direction: column;
     gap: 7px;
     padding: 11px 12px;
     background: color-mix(in srgb, var(--surface-0) 28%, transparent);
-    border-bottom: 1px solid var(--line-soft);
+    border-top: 1px solid var(--line-soft);
 }
 .commit-box-label {
     color: var(--text-muted);
@@ -825,7 +855,8 @@ kbd {
 }
 .commit-box textarea {
     width: 100%;
-    resize: none;
+    min-height: 192px;
+    resize: vertical;
     padding: 8px 9px;
     color: var(--text);
     background: var(--surface-0);
@@ -835,6 +866,36 @@ kbd {
 }
 .commit-box textarea:focus {
     border-color: var(--teal);
+}
+.commit-box textarea[readonly] {
+    color: var(--text-secondary);
+    background: transparent;
+    border-style: dashed;
+    cursor: default;
+}
+.readonly-meta {
+    align-self: flex-end;
+    padding: 2px 8px;
+    color: var(--text-secondary);
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    font-size: 10.5px;
+}
+.summary-counter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    font-size: 10px;
+}
+.subject-count {
+    font-family: 'SF Mono', Menlo, monospace;
+}
+.subject-count.warn {
+    color: var(--orange);
+}
+.subject-count.over {
+    color: var(--red);
 }
 .commit-box textarea::placeholder {
     color: var(--text-muted);
@@ -1197,21 +1258,6 @@ kbd {
     align-items: center;
     gap: 6px;
 }
-.commit-details-summary {
-    overflow: hidden;
-    font-size: 14px;
-    font-weight: 600;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.commit-details-body {
-    max-height: 34px;
-    margin-top: 5px;
-    overflow: hidden;
-    color: var(--text-secondary);
-    font-size: 11px;
-    white-space: pre-wrap;
-}
 .commit-detail-actions {
     display: inline-flex;
     gap: 5px;
@@ -1325,52 +1371,6 @@ kbd {
 }
 .detail-action.accent:hover {
     color: var(--teal);
-}
-
-/* Commit file list + inline diff */
-.commit-files {
-    max-height: 210px;
-    margin-top: 11px;
-    overflow: auto;
-    border-top: 1px solid var(--line-soft);
-}
-.commit-file-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 27px;
-    padding: 2px 8px 2px 2px;
-    cursor: pointer;
-    border-left: 2px solid transparent;
-}
-.commit-file-row:hover {
-    background: var(--surface-hover);
-}
-.commit-file-row.selected {
-    background: var(--surface-selected);
-    border-left-color: var(--teal);
-}
-.commit-file-path {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    color: var(--text-secondary);
-    font-family: 'SF Mono', Menlo, monospace;
-    font-size: 11px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.commit-file-diff {
-    max-height: 150px;
-    margin: 2px 0 6px 10px;
-    padding: 4px 0;
-    overflow: auto;
-    background: #171b22;
-    border: 1px solid var(--line-soft);
-    border-radius: 4px;
-}
-.commit-details-content h2 {
-    display: none;
 }
 
 /* Interactive rebase editor */
@@ -1701,17 +1701,15 @@ mark {
     opacity: 1;
 }
 
-/* Amend toggle */
-.amend-toggle {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    color: var(--text-secondary);
-    font-size: 12px;
-    cursor: pointer;
+/* Commit box resize handle */
+.cb-resize-handle {
+    height: 5px;
+    margin: -11px -12px 7px;
+    cursor: row-resize;
+    transition: background 0.15s ease;
 }
-.amend-toggle input {
-    accent-color: var(--teal);
+.cb-resize-handle:hover {
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
 }
 
 /* File row context menu (History / Blame) */

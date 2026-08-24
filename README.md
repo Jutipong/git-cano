@@ -6,32 +6,58 @@ Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses
 
 ## Features
 
-- 📂 Open / Init / Clone repository (+ recent repos list)
+### Repos & history
+
+- 📂 Open / Init / Clone repository (+ recent repos list, session restore)
 - 📊 Interactive commit graph across all branches (custom SVG DAG renderer)
-- 📝 Stage / Unstage files individually or all at once
-- 🔍 Side-by-side line diff viewer (staged & working directory)
-- ✍️ Commit box with `⌘↵` shortcut
-- 🌿 Branch management: create, checkout, rename, delete, merge, rebase
-- 🧰 Stash management: create, apply, pop, drop (including untracked files)
+- 🎚️ Graph zoom via `⌘`/`Ctrl` + scroll wheel or toolbar controls
 - 🔎 Search commits by message, author, hash, or ref (`⌘⇧F`)
-- ☁️ Remote operations: Fetch all, Pull, Push (auto `--set-upstream` on first push)
-- ↺ Discard working directory changes
-- 🖱️ Resizable sidebar and changes panel
-- ✏️ Amend last commit (auto-loads previous message)
+- ⏱️ Auto-refresh every 5 minutes · manual refresh with `⌘R`
+
+### Changes panel (right)
+
+- 📝 Stage / unstage files individually or all at once
+- ✍️ Commit box with `⌘↵` shortcut and a soft title-length counter
+  (≤50 ideal / ≤72 hard cap per convention — warns, never blocks)
+- ↺ Discard working-directory changes
+- 🧾 Select any commit in the graph → the panel switches to that commit's
+  changed files with per-file `+/−` stats and the total in the header
+- 📋 Hash chip copies the full commit hash to the clipboard
+- 📄 Readonly message view showing title + body with an author · date chip
+
+### Diff viewing
+
+- 🔍 Diff overlay opens over sidebar + graph when you click a file row
+  (the Changes panel stays interactive for switching files)
+- ↔️ Unified & side-by-side modes (remembered between sessions)
+- 🖼️ Image diffs and binary-file detection
+- ⛶ Fullscreen toggle for distraction-free review
+
+### Branches, remotes & advanced
+
+- 🌿 Branch management: create, checkout, rename, delete, merge, rebase
 - 🏷️ Tag management: create / delete / push tags, create tag from any commit
-- 🌐 Remote management UI: add / remove / edit URLs
-- 🎚️ Hunk-level partial staging (stage/unstage individual diff hunks)
+- 🌐 Remote management UI: add / remove / edit URLs; fetch all, pull, push
+  (auto `--set-upstream` on first push)
+- 🎛️ Hunk-level partial staging (stage/unstage individual diff hunks)
 - 🔎 Blame view & per-file history browser
+- 🧰 Stash management: create, apply, pop, drop (including untracked files)
 - ⏯️ Rebase `edit` & `split` commands with pause/resume and safe rollback
 - ⚗️ Git bisect assistant (start, good/bad/skip, finish)
 - 🌳 Worktree management + submodule listing/updating
-- 🧾 Commit details with changed-file list, per-file diff, checkout / cherry-pick / revert
-- ⚡ Merge conflict resolver: take ours / theirs, mark resolved, abort or continue
+- ⚡ Merge conflict resolver: take ours / theirs, mark resolved, abort/continue
 - 🔀 Rebase onto branch with conflict handling (continue/abort)
-- 🎛️ Interactive rebase todo editor: pick / reword / squash / fixup / drop, reorder commits (right-click a branch or commit)
+- 🎛️ Interactive rebase todo editor: pick / reword / squash / fixup / drop,
+  reorder commits (right-click a branch or commit)
+
+### Interactions
+
 - 📋 Right-click context menus on commits and branches
+  (checkout, cherry-pick, revert, reset, create branch/tag here)
 - 🤝 Drag & drop: commit → branch to reset, branch → branch to merge
-- ⌘R Refresh repository shortcut
+- 🖱️ Resizable sidebar, right pane, and summary box (sizes persist)
+- ⌨️ Shortcuts: `⌘R` refresh · `⌘⇧F` search · `⌘⇧P` open repo · `⌘↵` commit ·
+  `Esc` close diff → deselect commit
 
 ## Build a macOS app (.dmg)
 
@@ -61,17 +87,24 @@ src/
 │   └── git.ts      # All git logic (simple-git)
 ├── preload/        # contextBridge API (window.api)
 ├── shared/         # Shared types
-└── renderer/       # React UI
-    └── src/components/
-        ├── Welcome.tsx    # Open/Init/Clone screen
-        ├── Toolbar.tsx    # Fetch/Pull/Push bar
-        ├── Sidebar.tsx    # Branches panel
-        ├── GraphView.tsx  # Commit graph (SVG)
-        ├── FilePanel.tsx  # Staging + commit box
-        └── DiffView.tsx   # Diff viewer
+└── renderer/
+    ├── index.html
+    └── src/
+        ├── components/   # Vue SFCs, one per panel/modal
+        │   ├── Welcome.vue        # Open/Init/Clone screen
+        │   ├── Toolbar.vue        # Fetch/Pull/Push bar
+        │   ├── Sidebar.vue        # Branches panel
+        │   ├── GraphView.vue      # Commit graph (SVG)
+        │   ├── FilePanel.vue      # Changes panel + commit box
+        │   ├── DiffView.vue       # Diff overlay viewer
+        │   └── ...                # Modals: history, blame, rebase, bisect…
+        ├── stores/       # Pinia stores (repo state + persisted UI state)
+        ├── utils/        # Shared helpers (date formatting, highlighting)
+        └── styles.css    # Global stylesheet
 ```
 
 ## Notes
 
 - Requires system `git` in PATH.
-- The graph auto-refreshes every 5 seconds.
+- The graph auto-refreshes every 5 minutes.
+- Agent guidance lives in [AGENTS.md](AGENTS.md).

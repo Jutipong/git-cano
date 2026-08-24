@@ -7,12 +7,14 @@
         commits: CommitNode[]
         query: string
         hasMore: boolean
+        commitOpen: boolean
         buildCommitMenu: (commit: CommitNode) => MenuItem[]
     }
 
     const props = defineProps<Props>()
     const emit = defineEmits<{
         (e: 'select-commit', commit: CommitNode): void
+        (e: 'close-commit'): void
         (e: 'load-more'): void
     }>()
 
@@ -123,6 +125,15 @@
                         height="14" />
                 </button>
             </div>
+            <button
+                v-if="props.commitOpen"
+                class="icon-btn danger commit-close-btn"
+                title="Close commit details (show working directory)"
+                @click="emit('close-commit')">
+                <i-lucide-x
+                    width="14"
+                    height="14" />
+            </button>
         </div>
         <div class="graph-header">
             <span :style="{ width: `${graphW}px` }">GRAPH</span>
@@ -197,7 +208,7 @@
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
                     @click="select(commit)"
-                    @contextmenu.prevent="openMenu(commit, $event)"
+                    @contextmenu.prevent.stop="openMenu(commit, $event)"
                     @dragstart="$event.dataTransfer?.setData('text/plain', `commit:${commit.hash}`)"
                     @dragover="
                         $event => {

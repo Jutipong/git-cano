@@ -97,7 +97,7 @@
                 <strong>Advanced tools</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn"
+                    class="icon-btn danger"
                     @click="emit('close')">
                     <i-lucide-x
                         width="16"

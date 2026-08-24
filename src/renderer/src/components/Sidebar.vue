@@ -11,7 +11,7 @@
     const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
 
     const ui = useUiStore()
-    const local = ref<{ name: string; current: boolean }[]>([])
+    const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number }[]>([])
     const remote = ref<{ name: string; current: boolean }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
     const showNew = ref(false)
@@ -207,8 +207,9 @@
                 :key="branch.name"
                 class="branch-row"
                 :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
-                :draggable="!branch.current"
-                @click="!branch.current && checkoutBranch(branch.name)"
+                draggable="true"
+                @dblclick="!branch.current && checkoutBranch(branch.name)"
+                :title="branch.current ? 'Current branch' : 'Double-click to checkout'"
                 @contextmenu.prevent="openBranchContextMenu(branch, $event)"
                 @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
                 @dragover="onDragOver(branch.name, $event)"
@@ -218,6 +219,16 @@
                     width="14"
                     height="14" />
                 <span class="branch-name">{{ branch.name }}</span>
+                <span
+                    v-if="branch.ahead || branch.behind"
+                    class="track-badge">
+                    <span
+                        v-if="branch.ahead"
+                        class="track-ahead">↑{{ branch.ahead }}</span>
+                    <span
+                        v-if="branch.behind"
+                        class="track-behind">↓{{ branch.behind }}</span>
+                </span>
                 <span
                     v-if="branch.current"
                     class="current-badge"
@@ -310,8 +321,8 @@
                 v-for="branch in remote"
                 :key="branch.name"
                 class="branch-row remote"
-                title="Checkout remote branch"
-                @click="checkoutRemote(branch.name)">
+                @dblclick="checkoutRemote(branch.name)"
+                title="Double-click to checkout">
                 <i-lucide-globe2
                     width="14"
                     height="14" />

@@ -6,12 +6,15 @@
     interface Props {
         file: { path: string; staged: boolean } | null
         refresh?: () => Promise<unknown>
+        commitHash?: string
     }
     const props = defineProps<Props>()
+    const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})
 
     const lines = ref<DiffLine[]>([])
     const loading = ref(false)
+    const isFullscreen = ref(false)
     const splitMode = ref(localStorage.getItem('ogit-diff-mode') === 'split')
     const meta = ref<{ binary: boolean; image: boolean } | null>(null)
     const images = ref<{ oldUrl: string | null; newUrl: string | null } | null>(null)
@@ -20,27 +23,33 @@
     watch(splitMode, value => localStorage.setItem('ogit-diff-mode', value ? 'split' : 'unified'))
 
     watch(
-        () => props.file,
-        async file => {
+        () => [props.file, props.commitHash],
+        async ([file]) => {
             lines.value = []
             meta.value = null
             images.value = null
             rawPatch.value = ''
-            if (!file) return
+            const f = file as { path: string; staged: boolean } | null
+            if (!f) return
             loading.value = true
             try {
+                if (props.commitHash) {
+                    // diff of a file inside a specific commit
+                    lines.value = await window.api.commitFileDiff(props.commitHash, f.path)
+                    return
+                }
                 const [diff, diffMeta, patch] = await Promise.all([
-                    window.api.diff(file.path, file.staged),
-                    window.api.diffMeta(file.path, file.staged),
-                    window.api.rawPatch(file.path, file.staged),
+                    window.api.diff(f.path, f.staged),
+                    window.api.diffMeta(f.path, f.staged),
+                    window.api.rawPatch(f.path, f.staged),
                 ])
                 lines.value = diff
                 meta.value = diffMeta
                 rawPatch.value = patch
                 if (diffMeta.image) {
                     const [oldUrl, newUrl] = await Promise.all([
-                        window.api.imageVersion(file.path, 'head'),
-                        file.staged ? window.api.imageVersion(file.path, 'index') : window.api.imageVersion(file.path, 'workdir'),
+                        window.api.imageVersion(f.path, 'head'),
+                        f.staged ? window.api.imageVersion(f.path, 'index') : window.api.imageVersion(f.path, 'workdir'),
                     ])
                     images.value = { oldUrl, newUrl }
                 }
@@ -53,6 +62,11 @@
         },
         { immediate: true }
     )
+
+    const sourceLabel = computed(() => {
+        if (props.commitHash) return `${props.commitHash.slice(0, 7)} · commit`
+        return props.file?.staged ? 'staged' : 'working directory'
+    })
 
     interface SideBySideRow {
         left?: DiffLine
@@ -131,15 +145,17 @@
 <template>
     <div
         v-if="!file"
-        class="diff-view empty">
+        class="diff-view empty"
+        :class="{ fullscreen: isFullscreen }">
         <p>Select a file to view its diff</p>
     </div>
     <div
         v-else
-        class="diff-view">
+        class="diff-view"
+        :class="{ fullscreen: isFullscreen }">
         <div class="diff-header">
             <strong>{{ file.path }}</strong>
-            <span class="chip">{{ file.staged ? 'staged' : 'working directory' }}</span>
+            <span class="chip">{{ sourceLabel }}</span>
             <span
                 v-if="loading"
                 class="muted"
@@ -156,6 +172,27 @@
                     height="15" />
                 <i-lucide-columns2
                     v-else
+                    width="15"
+                    height="15" />
+            </button>
+            <button
+                class="icon-btn"
+                :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+                @click="isFullscreen = !isFullscreen">
+                <i-lucide-minimize
+                    v-if="isFullscreen"
+                    width="15"
+                    height="15" />
+                <i-lucide-maximize
+                    v-else
+                    width="15"
+                    height="15" />
+            </button>
+            <button
+                class="icon-btn danger diff-close-btn"
+                title="Close diff"
+                @click="emit('close')">
+                <i-lucide-x
                     width="15"
                     height="15" />
             </button>
@@ -236,7 +273,7 @@
                     <!-- eslint-disable-next-line vue/no-v-html -->
                     <pre v-html="lineHtml(line, index)" />
                     <button
-                        v-if="line.type === 'hunk' && refresh && !meta?.binary"
+                        v-if="!commitHash && line.type === 'hunk' && refresh && !meta?.binary"
                         class="detail-action hunk-action"
                         :title="file.staged ? 'Unstage this hunk' : 'Stage just this hunk'"
                         @click="actOnHunk(hunkHeaderIndexes.indexOf(index))">

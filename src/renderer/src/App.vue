@@ -1,6 +1,5 @@
 <script setup lang="ts">
     import BlameModal from './components/BlameModal.vue'
-    import CommitDetails from './components/CommitDetails.vue'
     import ConflictBanner from './components/ConflictBanner.vue'
     import DiffView from './components/DiffView.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
@@ -30,7 +29,7 @@
         window.api
             .pickAndOpen()
             .then((status: RepoStatus | null) => status && repoStore.addTab(status))
-            .catch((error: unknown) => ui.notify(String(error)))
+            .catch((error: unknown) => ui.notify(String(error), 'error'))
     }
 
     const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
@@ -39,16 +38,19 @@
         void repoStore.init()
 
         // lightweight auto-refresh (5 minutes)
-        refreshInterval.value = setInterval(() => {
-            if (repoStore.repo) void repoStore.refresh()
-        }, 5 * 60 * 1000)
+        refreshInterval.value = setInterval(
+            () => {
+                if (repoStore.repo) void repoStore.refresh()
+            },
+            5 * 60 * 1000
+        )
 
         const onKeyDown = (event: KeyboardEvent) => {
             if (!(event.metaKey || event.ctrlKey)) return
             if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
                 event.preventDefault()
                 void repoStore.refresh()
-                ui.notify('Repository refreshed')
+                ui.notify('Repository refreshed', 'success')
             }
             if (event.shiftKey && event.key.toLowerCase() === 'f') {
                 event.preventDefault()
@@ -105,9 +107,9 @@
             try {
                 await fn()
                 await repoStore.refresh()
-                ui.notify(label)
+                ui.notify(label, 'success')
             } catch (error) {
-                ui.notify(String(error).replace(/^Error:\s*/, ''))
+                ui.notify(String(error).replace(/^Error:\s*/, ''), 'error')
             }
         }
         return [
@@ -190,13 +192,11 @@
                     :commits="commits"
                     :query="ui.searchQuery"
                     :has-more="hasMore"
+                    :commit-open="!!selectedCommit"
                     :build-commit-menu="buildCommitMenu"
                     @select-commit="selectedCommit = $event"
+                    @close-commit="selectedCommit = null"
                     @load-more="repoStore.loadMore()" />
-                <CommitDetails
-                    v-if="selectedCommit"
-                    :commit="selectedCommit"
-                    :notify="ui.notify" />
             </div>
             <div
                 class="panel-splitter"
@@ -205,16 +205,27 @@
                 class="right-pane"
                 :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
                 <FilePanel
-                    :files="repo.files"
+                    :files="selectedCommit ? repoStore.commitFiles : repo.files"
+                    :mode="selectedCommit ? 'commit' : 'workdir'"
+                    :commit-hash="selectedCommit?.hash"
                     :selected="selectedFile"
+                    :commit-message="repoStore.commitMessage"
+                    :commit-author="repoStore.commitAuthor"
+                    :commit-date="repoStore.commitDate"
                     :refresh="repoStore.refresh"
                     @select="selectedFile = $event"
                     @show-history="historyFile = $event"
                     @show-blame="blameFile = $event" />
-                <DiffView
-                    :file="selectedFile"
-                    :refresh="repoStore.refresh" />
             </div>
+            <!-- diff overlay: covers sidebar + graph, stops before the right pane -->
+            <DiffView
+                v-if="selectedFile"
+                class="diff-overlay"
+                :style="{ right: `${ui.rightPanelWidth + 6}px` }"
+                :file="selectedFile"
+                :commit-hash="selectedCommit?.hash ?? undefined"
+                :refresh="repoStore.refresh"
+                @close="selectedFile = null" />
         </div>
         <RebaseEditor
             v-if="rebaseBase"
@@ -224,7 +235,7 @@
                 message => {
                     rebaseBase = null
                     void repoStore.refresh()
-                    ui.notify(message)
+                    ui.notify(message, 'success')
                 }
             " />
         <FileHistoryModal
@@ -242,8 +253,16 @@
             @close="toolsOpen = false" />
         <div
             v-if="ui.toast"
-            class="toast">
-            {{ ui.toast }}
+            class="toast"
+            :class="`toast-${ui.toast.type}`"
+            role="status"
+            aria-live="polite">
+            <span
+                class="toast-icon"
+                aria-hidden="true">
+                {{ ui.toast.type === 'success' ? '✓' : ui.toast.type === 'error' ? '×' : ui.toast.type === 'warning' ? '!' : 'i' }}
+            </span>
+            <span>{{ ui.toast.message }}</span>
         </div>
     </div>
 </template>

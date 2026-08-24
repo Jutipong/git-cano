@@ -298,20 +298,33 @@ function parseDiff(text: string, file?: string): DiffLine[] {
 
 export async function getCommitDetails(hash: string): Promise<CommitDetails> {
     const { git: g } = getRepo()
-    const [metadata, message, diffText, fileText] = await Promise.all([
+    const [metadata, message, diffText, fileText, numstatText] = await Promise.all([
         g.raw(['show', '-s', '--format=%H%x1f%an%x1f%ae%x1f%aI%x1f%P', hash]),
         g.raw(['show', '-s', '--format=%B', hash]),
         g.raw(['show', '--no-color', '--format=', hash]),
         g.raw(['diff-tree', '--root', '--no-commit-id', '--name-status', '-r', hash]),
+        g.raw(['diff-tree', '--root', '--no-commit-id', '--numstat', '-r', hash]),
     ])
-    const [fullHash, author, email, date, parents = ''] = metadata.trim().split('\x1f')
+    const [fullHash, author, email, date, parents = ''] = metadata.trim().split('\u001f')
+
+    const statMap = new Map<string, { additions: number; deletions: number }>()
+    for (const line of numstatText.split('\n')) {
+        if (!line.trim()) continue
+        const [add, del, ...pathParts] = line.split('\t')
+        statMap.set(pathParts.join('\t'), {
+            additions: add === '-' ? 0 : Number.parseInt(add, 10) || 0,
+            deletions: del === '-' ? 0 : Number.parseInt(del, 10) || 0,
+        })
+    }
+
     const files = fileText
         .trim()
         .split('\n')
         .filter(Boolean)
         .map(line => {
             const [status, ...pathParts] = line.split('\t')
-            return { path: pathParts.join('\t'), status, additions: 0, deletions: 0 }
+            const path = pathParts.join('\t')
+            return { path, status, ...(statMap.get(path) ?? { additions: 0, deletions: 0 }) }
         })
     return {
         hash: fullHash || hash,
@@ -373,9 +386,27 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
     const b = await g.branch(['-a'])
     const local: BranchInfo[] = []
     const remote: BranchInfo[] = []
+
+    // ahead/behind counts vs upstream, per local branch
+    // (note: Apple Git does not expand %x1f in for-each-ref format, use | as separator)
+    const trackText = await g.raw([
+        'for-each-ref',
+        '--format=%(refname:short)|%(upstream:track)',
+        'refs/heads',
+    ])
+    const track = new Map<string, { ahead: number; behind: number }>()
+    for (const line of trackText.split('\n')) {
+        if (!line.trim()) continue
+        const [name, t = ''] = line.split('|')
+        const ahead = /\bahead (\d+)/.exec(t)?.[1]
+        const behind = /\bbehind (\d+)/.exec(t)?.[1]
+        if (ahead || behind) track.set(name, { ahead: Number(ahead ?? 0), behind: Number(behind ?? 0) })
+    }
+
     for (const ref of b.all) {
         if (ref.includes('HEAD') || ref.includes('->')) continue
         const info: BranchInfo = { name: ref, current: b.current === ref }
+        Object.assign(info, track.get(ref))
         if (ref.startsWith('remotes/') || !b.branches[ref]) remote.push(info)
         else local.push(info)
     }

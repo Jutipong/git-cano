@@ -14,21 +14,16 @@
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
-    function onDocContextMenu(event: MouseEvent) {
-        if (props.menu) emit('close')
-    }
     function onKey(event: KeyboardEvent) {
         if (event.key === 'Escape') emit('close')
     }
 
     onMounted(() => {
         document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('contextmenu', onDocContextMenu)
         document.addEventListener('keydown', onKey)
     })
     onBeforeUnmount(() => {
         document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('contextmenu', onDocContextMenu)
         document.removeEventListener('keydown', onKey)
     })
 

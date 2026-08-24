@@ -1,4 +1,4 @@
-import type { CommitNode, RepoState, RepoStatus } from '@shared/types'
+import type { CommitFile, CommitNode, RepoState, RepoStatus } from '@shared/types'
 
 const PAGE_SIZE = 500
 
@@ -26,6 +26,10 @@ export const useRepoStore = defineStore('repo', () => {
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
+    const commitFiles = ref<CommitFile[]>([])
+    const commitMessage = ref('')
+    const commitAuthor = ref('')
+    const commitDate = ref('')
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
 
     // modal states
@@ -127,6 +131,30 @@ export const useRepoStore = defineStore('repo', () => {
         logLimit.value += PAGE_SIZE
     }
 
+    // files changed by the selected commit — shown in the Changes panel
+    watch(
+        () => selectedCommit.value?.hash,
+        async hash => {
+            commitFiles.value = []
+            commitMessage.value = ''
+            commitAuthor.value = ''
+            commitDate.value = ''
+            if (!hash) return
+            try {
+                const details = await window.api.commitDetails(hash)
+                if (selectedCommit.value?.hash === hash) {
+                    commitFiles.value = details.files
+                    commitMessage.value = details.message.trim()
+                    commitAuthor.value = details.author
+                    commitDate.value = details.date
+                }
+            } catch {
+                /* ignore — details panel shows its own error */
+            }
+        },
+        { immediate: true }
+    )
+
     watch(logLimit, () => void refresh())
     watch([activeTab], () => {
         if (!repo.value) return
@@ -150,6 +178,10 @@ export const useRepoStore = defineStore('repo', () => {
         hasMore,
         selectedFile,
         selectedCommit,
+        commitFiles,
+        commitMessage,
+        commitAuthor,
+        commitDate,
         repoState,
         rebaseBase,
         historyFile,
