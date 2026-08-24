@@ -478,15 +478,6 @@ kbd {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.current-badge {
-    margin-left: auto;
-    padding: 2px 5px;
-    color: var(--teal);
-    background: rgba(67, 201, 182, 0.14);
-    border: 1px solid rgba(67, 201, 182, 0.3);
-    border-radius: 3px;
-    font-size: 9px;
-}
 .track-badge {
     display: inline-flex;
     flex: none;
@@ -494,9 +485,6 @@ kbd {
     margin-left: auto;
     font-family: 'SF Mono', Menlo, monospace;
     font-size: 10px;
-}
-.current-badge + .track-badge {
-    margin-left: 6px;
 }
 .track-ahead {
     color: var(--green);

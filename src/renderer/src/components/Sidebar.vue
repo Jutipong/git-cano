@@ -230,11 +230,6 @@
                         class="track-behind">↓{{ branch.behind }}</span>
                 </span>
                 <span
-                    v-if="branch.current"
-                    class="current-badge"
-                    >HEAD</span
-                >
-                <span
                     v-if="!branch.current"
                     class="row-actions">
                     <button
