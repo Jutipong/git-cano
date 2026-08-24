@@ -213,10 +213,11 @@
                     @show-blame="blameFile = $event" />
             </div>
         </div>
-        <!-- diff overlay: covers everything (sidebar included) while a file is selected -->
+        <!-- diff overlay: covers sidebar + graph, stops before the right pane -->
         <DiffView
             v-if="selectedFile"
             class="diff-overlay"
+            :style="{ right: `${ui.rightPanelWidth + 5}px` }"
             :file="selectedFile"
             :commit-hash="selectedCommit?.hash ?? undefined"
             :refresh="repoStore.refresh"
