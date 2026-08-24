@@ -568,8 +568,6 @@ kbd {
 }
 .commit-close-btn {
     margin-left: 10px;
-    padding: 0 6px;
-    height: 26px;
     border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
     background: color-mix(in srgb, var(--red) 8%, transparent);
 }
