@@ -188,14 +188,15 @@
                     :commits="commits"
                     :query="ui.searchQuery"
                     :has-more="hasMore"
+                    :commit-open="!!selectedCommit"
                     :build-commit-menu="buildCommitMenu"
                     @select-commit="selectedCommit = $event"
+                    @close-commit="selectedCommit = null"
                     @load-more="repoStore.loadMore()" />
                 <CommitDetails
                     v-if="selectedCommit"
                     :commit="selectedCommit"
-                    :notify="ui.notify"
-                    @close="selectedCommit = null" />
+                    :notify="ui.notify" />
             </div>
             <div
                 class="panel-splitter"
@@ -209,6 +210,8 @@
                     :commit-hash="selectedCommit?.hash"
                     :selected="selectedFile"
                     :commit-subject="repoStore.commitSubject"
+                    :commit-author="repoStore.commitAuthor"
+                    :commit-date="repoStore.commitDate"
                     :refresh="repoStore.refresh"
                     @select="selectedFile = $event"
                     @show-history="historyFile = $event"

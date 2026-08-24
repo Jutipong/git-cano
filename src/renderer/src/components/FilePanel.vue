@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import { formatCommitDate } from '../utils/format'
+
     import type { CommitFile, FileEntry } from '@shared/types'
 
     interface Props {
@@ -8,8 +10,16 @@
         mode?: 'workdir' | 'commit'
         commitHash?: string
         commitSubject?: string
+        commitAuthor?: string
+        commitDate?: string
     }
-    const props = withDefaults(defineProps<Props>(), { mode: 'workdir', commitHash: '', commitSubject: '' })
+    const props = withDefaults(defineProps<Props>(), {
+        mode: 'workdir',
+        commitHash: '',
+        commitSubject: '',
+        commitAuthor: '',
+        commitDate: '',
+    })
     const emit = defineEmits<{
         (e: 'select', sel: { path: string; staged: boolean } | null): void
         (e: 'show-history', path: string): void
@@ -132,6 +142,13 @@
             .then(() => notify('Full hash copied'))
             .catch(() => notify('Copy failed'))
     }
+
+    const readonlyMessage = computed(() => {
+        const meta = [props.commitAuthor, props.commitDate ? formatCommitDate(props.commitDate) : '']
+            .filter(Boolean)
+            .join(' · ')
+        return meta ? `${meta}\n${props.commitSubject}` : props.commitSubject
+    })
 </script>
 
 <template>
@@ -341,7 +358,7 @@
             <!-- read-only when viewing an already-committed commit -->
             <textarea
                 v-if="mode === 'commit'"
-                :value="commitSubject"
+                :value="readonlyMessage"
                 placeholder="No commit message"
                 rows="6"
                 readonly />

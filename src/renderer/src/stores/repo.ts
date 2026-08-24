@@ -28,6 +28,8 @@ export const useRepoStore = defineStore('repo', () => {
     const selectedCommit = ref<CommitNode | null>(null)
     const commitFiles = ref<CommitFile[]>([])
     const commitSubject = ref('')
+    const commitAuthor = ref('')
+    const commitDate = ref('')
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
 
     // modal states
@@ -135,12 +137,16 @@ export const useRepoStore = defineStore('repo', () => {
         async hash => {
             commitFiles.value = []
             commitSubject.value = ''
+            commitAuthor.value = ''
+            commitDate.value = ''
             if (!hash) return
             try {
                 const details = await window.api.commitDetails(hash)
                 if (selectedCommit.value?.hash === hash) {
                     commitFiles.value = details.files
                     commitSubject.value = details.message.split('\n')[0]
+                    commitAuthor.value = details.author
+                    commitDate.value = details.date
                 }
             } catch {
                 /* ignore — details panel shows its own error */
@@ -174,6 +180,8 @@ export const useRepoStore = defineStore('repo', () => {
         selectedCommit,
         commitFiles,
         commitSubject,
+        commitAuthor,
+        commitDate,
         repoState,
         rebaseBase,
         historyFile,

@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { Copy, GitCommitHorizontal, X } from 'lucide-vue-next'
+import { Copy, GitCommitHorizontal } from 'lucide-vue-next'
 import type { CommitDetails as CommitDetailsData, CommitNode } from '@shared/types'
 
 const props = defineProps<{ commit: CommitNode; notify: (message: string) => void }>()
-const emit = defineEmits<{ (e: 'close'): void }>()
 const ui = useUiStore()
 
 const details = ref<CommitDetailsData | null>(null)
@@ -53,19 +52,6 @@ function startResize(event: MouseEvent) {
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseup', onEnd)
 }
-
-function formatDate(value: string): string {
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return value
-    const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
-    const today = new Date()
-    const daysAgo = Math.floor((today.setHours(0, 0, 0, 0) - new Date(date).setHours(0, 0, 0, 0)) / 86_400_000)
-    if (daysAgo === 0) return `Today at ${time}`
-    if (daysAgo === 1) return `Yesterday at ${time}`
-    if (daysAgo > 1 && daysAgo < 7)
-        return `${date.toLocaleDateString(undefined, { weekday: 'long' })} at ${time}`
-    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
 </script>
 
 <template>
@@ -81,9 +67,6 @@ function formatDate(value: string): string {
             <button class="cd-hash" :title="`Copy full hash\n${props.commit.hash}`" @click="copyHash()">
                 {{ commit.shortHash }} <Copy :size="12" />
             </button>
-            <button class="cd-close" title="Close commit details" @click="emit('close')">
-                <X :size="14" />
-            </button>
         </div>
 
         <div class="commit-details-content">
@@ -95,8 +78,6 @@ function formatDate(value: string): string {
                 <span v-else class="muted">No changed files</span>
 
                 <span class="spacer" />
-                <span class="cd-author">{{ details?.author || commit.author }}</span>
-                <span class="cd-date">{{ formatDate(details?.date || commit.date) }}</span>
                 <span
                     v-for="ref in commit.refs.slice(0, 3)"
                     :key="ref"
