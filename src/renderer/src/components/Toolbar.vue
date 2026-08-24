@@ -29,9 +29,9 @@
         try {
             const result = await fn()
             await props.refresh()
-            ui.notify(result ? String(result) : `${label} completed`)
+            ui.notify(result ? String(result) : `${label} completed`, 'success')
         } catch (error) {
-            ui.notify(String(error).replace(/^Error:\s*/, ''))
+            ui.notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
     }
 </script>

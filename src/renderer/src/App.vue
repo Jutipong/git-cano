@@ -29,7 +29,7 @@
         window.api
             .pickAndOpen()
             .then((status: RepoStatus | null) => status && repoStore.addTab(status))
-            .catch((error: unknown) => ui.notify(String(error)))
+            .catch((error: unknown) => ui.notify(String(error), 'error'))
     }
 
     const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
@@ -50,7 +50,7 @@
             if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
                 event.preventDefault()
                 void repoStore.refresh()
-                ui.notify('Repository refreshed')
+                ui.notify('Repository refreshed', 'success')
             }
             if (event.shiftKey && event.key.toLowerCase() === 'f') {
                 event.preventDefault()
@@ -107,9 +107,9 @@
             try {
                 await fn()
                 await repoStore.refresh()
-                ui.notify(label)
+                ui.notify(label, 'success')
             } catch (error) {
-                ui.notify(String(error).replace(/^Error:\s*/, ''))
+                ui.notify(String(error).replace(/^Error:\s*/, ''), 'error')
             }
         }
         return [
@@ -221,7 +221,7 @@
             <DiffView
                 v-if="selectedFile"
                 class="diff-overlay"
-                :style="{ right: `${ui.rightPanelWidth + 5}px` }"
+                :style="{ right: `${ui.rightPanelWidth + 6}px` }"
                 :file="selectedFile"
                 :commit-hash="selectedCommit?.hash ?? undefined"
                 :refresh="repoStore.refresh"
@@ -235,7 +235,7 @@
                 message => {
                     rebaseBase = null
                     void repoStore.refresh()
-                    ui.notify(message)
+                    ui.notify(message, 'success')
                 }
             " />
         <FileHistoryModal
@@ -253,8 +253,16 @@
             @close="toolsOpen = false" />
         <div
             v-if="ui.toast"
-            class="toast">
-            {{ ui.toast }}
+            class="toast"
+            :class="`toast-${ui.toast.type}`"
+            role="status"
+            aria-live="polite">
+            <span
+                class="toast-icon"
+                aria-hidden="true">
+                {{ ui.toast.type === 'success' ? '✓' : ui.toast.type === 'error' ? '×' : ui.toast.type === 'warning' ? '!' : 'i' }}
+            </span>
+            <span>{{ ui.toast.message }}</span>
         </div>
     </div>
 </template>
