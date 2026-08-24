@@ -29,6 +29,16 @@
             : []
     )
     const commitFileList = computed(() => (isWorkdir.value ? [] : (props.files as CommitFile[])))
+    const commitTotals = computed(() => {
+        if (!commitFileList.value.length) return null
+        return commitFileList.value.reduce(
+            (acc, file) => ({
+                additions: acc.additions + file.additions,
+                deletions: acc.deletions + file.deletions,
+            }),
+            { additions: 0, deletions: 0 }
+        )
+    })
     const shortHash = computed(() => props.commitHash.slice(0, 7))
     const message = ref('')
     const amend = ref(false)
@@ -126,6 +136,18 @@
                 <span
                     v-if="mode === 'commit'"
                     class="panel-commit-chip">{{ shortHash }}</span>
+                <span
+                    v-if="mode === 'commit' && commitTotals"
+                    class="commit-file-stats">
+                    <span
+                        v-if="commitTotals.additions"
+                        class="stat-add">+{{ commitTotals.additions.toLocaleString() }}</span
+                    >
+                    <span
+                        v-if="commitTotals.deletions"
+                        class="stat-del">−{{ commitTotals.deletions.toLocaleString() }}</span
+                    >
+                </span>
             </div>
             <span class="panel-count">{{ files.length }}</span>
         </div>

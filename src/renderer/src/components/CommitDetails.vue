@@ -25,16 +25,6 @@ const message = computed(() => details.value?.message || props.commit.subject)
 const summary = computed(() => message.value.split('\n')[0])
 const body = computed(() => message.value.split('\n').slice(2).join('\n').trim())
 
-const stats = computed(() => {
-    let additions = 0
-    let deletions = 0
-    for (const line of details.value?.diff ?? []) {
-        if (line.type === 'add') additions++
-        else if (line.type === 'del') deletions++
-    }
-    return { additions, deletions }
-})
-
 function copyHash() {
     void navigator.clipboard
         .writeText(props.commit.hash)
@@ -107,10 +97,6 @@ function formatDate(value: string): string {
                 <span class="spacer" />
                 <span class="cd-author">{{ details?.author || commit.author }}</span>
                 <span class="cd-date">{{ formatDate(details?.date || commit.date) }}</span>
-                <span class="cd-stats">
-                    <span v-if="stats.additions" class="stat-add">+{{ stats.additions.toLocaleString() }}</span>
-                    <span v-if="stats.deletions" class="stat-del">−{{ stats.deletions.toLocaleString() }}</span>
-                </span>
                 <span
                     v-for="ref in commit.refs.slice(0, 3)"
                     :key="ref"
