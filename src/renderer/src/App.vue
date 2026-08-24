@@ -61,6 +61,11 @@
                 event.preventDefault()
                 openNewRepo()
             }
+            if (event.key === 'Escape') {
+                // close diff overlay first, then commit details
+                if (selectedFile.value) selectedFile.value = null
+                else if (selectedCommit.value) selectedCommit.value = null
+            }
         }
 
         onBeforeUnmount(() => {
