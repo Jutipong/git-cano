@@ -111,7 +111,7 @@
                 :disabled="!!busy"
                 @click="actFetch()">
                 <i-lucide-arrow-down-to-line
-                    :class="{ spinning: busy === 'Fetch' }"
+                    :class="{ 'bouncing-down': busy === 'Fetch' }"
                     width="15"
                     height="15" />
                 <span>Fetch</span>
@@ -121,7 +121,7 @@
                 :disabled="!!busy"
                 @click="actPull()">
                 <i-lucide-arrow-down
-                    :class="{ spinning: busy === 'Pull' }"
+                    :class="{ 'bouncing-down': busy === 'Pull' }"
                     width="15"
                     height="15" />
                 <span>Pull</span>
@@ -131,7 +131,7 @@
                 :disabled="!!busy"
                 @click="actPush()">
                 <i-lucide-arrow-up
-                    :class="{ spinning: busy === 'Push' }"
+                    :class="{ 'bouncing-up': busy === 'Push' }"
                     width="15"
                     height="15" />
                 <span>Push</span>

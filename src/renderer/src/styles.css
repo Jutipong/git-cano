@@ -135,6 +135,30 @@ button {
 .spinning {
     animation: ogit-spin 0.8s linear infinite;
 }
+@keyframes ogit-bounce-up {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+@keyframes ogit-bounce-down {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(3px);
+    }
+}
+.bouncing-up {
+    animation: ogit-bounce-up 0.65s ease-in-out infinite;
+}
+.bouncing-down {
+    animation: ogit-bounce-down 0.65s ease-in-out infinite;
+}
 .toolbar-icon-button:disabled,
 .toolbar-action:disabled,
 .btn:disabled {
