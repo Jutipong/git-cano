@@ -108,7 +108,7 @@ body {
 .commit-search {
     background: var(--surface-1);
     border-color: var(--line-soft);
-    border-radius: 8px;
+    border-radius: 999px;
 }
 
 .branch-chip {
@@ -121,7 +121,7 @@ body {
 
 .toolbar-icon-button,
 .toolbar-action {
-    border-radius: 7px;
+    border-radius: 999px;
 }
 
 .toolbar-icon-button:hover,
@@ -209,8 +209,8 @@ body {
 .branch-row,
 .file-row {
     min-height: 32px;
-    border-radius: 6px;
-    border-left-width: 3px;
+    border-radius: 999px;
+    border-left: none;
 }
 
 .branch-row {
@@ -225,8 +225,12 @@ body {
 
 .branch-row.current,
 .file-row.selected {
-    border-left-color: var(--teal);
-    background: color-mix(in srgb, var(--teal) 12%, var(--surface-1));
+    background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
+}
+
+.branch-row.current .branch-name {
+    color: var(--teal);
+    font-weight: 600;
 }
 
 .branch-row:hover,
@@ -290,11 +294,19 @@ body {
     border-radius: 7px;
 }
 
+.file-row.selected {
+    background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
+}
+
+.view-toggle {
+    border-radius: 999px;
+}
+
 .panel-count,
 .panel-file-num,
 .panel-commit-chip,
 .chip {
-    border-radius: 6px;
+    border-radius: 999px;
 }
 
 .commit-box {
@@ -317,12 +329,16 @@ body {
 .btn {
     min-height: 29px;
     border-color: var(--line-soft);
-    border-radius: 7px;
+    border-radius: 999px;
 }
 
 .btn.primary {
     background: var(--teal-dark);
     border-color: var(--teal-dark);
+}
+
+.commit-btn {
+    min-height: 40px;
 }
 
 .context-menu,

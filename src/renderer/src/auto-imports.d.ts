@@ -6,10 +6,12 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const buildTree: typeof import('./utils/fileTree')['buildTree']
   const computed: typeof import('vue')['computed']
   const defineEmits: typeof import('vue')['defineEmits']
   const defineProps: typeof import('vue')['defineProps']
   const defineStore: typeof import('pinia')['defineStore']
+  const flattenTree: typeof import('./utils/fileTree')['flattenTree']
   const formatCommitDate: typeof import('./utils/format')['formatCommitDate']
   const highlightLine: typeof import('./utils/highlight')['highlightLine']
   const inject: typeof import('vue')['inject']
@@ -33,4 +35,7 @@ declare global {
   // @ts-ignore
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
+  // @ts-ignore
+  export type { FileNode, TreeRow } from './utils/fileTree'
+  import('./utils/fileTree')
 }

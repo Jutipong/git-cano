@@ -104,7 +104,7 @@ button {
     color: var(--text-secondary);
     background: var(--surface-2);
     border: 1px solid var(--line);
-    border-radius: 5px;
+    border-radius: 999px;
     cursor: pointer;
     transition: 120ms ease;
 }
@@ -140,7 +140,7 @@ button {
     padding: 0;
     color: var(--text-muted);
     background: transparent;
-    border-radius: 4px;
+    border-radius: 50%;
     cursor: pointer;
 }
 .icon-btn:hover {
@@ -292,11 +292,11 @@ kbd {
     gap: 6px;
     width: 170px;
     height: 30px;
-    padding: 0 8px;
+    padding: 0 10px;
     color: var(--text-muted);
     background: var(--surface-1);
     border: 1px solid var(--line);
-    border-radius: 5px;
+    border-radius: 999px;
 }
 .commit-search:focus-within {
     border-color: var(--teal);
@@ -334,7 +334,7 @@ kbd {
     color: var(--text-muted);
     background: transparent;
     border: 1px solid transparent;
-    border-radius: 5px;
+    border-radius: 999px;
     cursor: pointer;
 }
 .toolbar-icon-button {
@@ -810,7 +810,7 @@ kbd {
     color: var(--text-muted);
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
-    border-radius: 4px;
+    border-radius: 999px;
     cursor: pointer;
     font-family: 'SF Mono', Menlo, monospace;
     font-size: 10px;
@@ -890,6 +890,15 @@ kbd {
 }
 .commit-btn {
     width: 100%;
+    min-height: 40px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 650;
+}
+.commit-btn kbd {
+    margin-left: 2px;
+    opacity: 0.75;
 }
 .commit-hint {
     color: var(--text-muted);
@@ -964,6 +973,7 @@ kbd {
     padding: 0;
     color: var(--text-muted);
     background: transparent;
+    border-radius: 50%;
     border: none;
     border-radius: 5px;
     cursor: pointer;
