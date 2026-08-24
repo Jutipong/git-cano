@@ -901,6 +901,8 @@ kbd {
 }
 .readonly-meta {
     align-self: flex-end;
+    /* cancel the resize handle's extra bottom margin so the chip sits evenly (7px above / 7px below) */
+    margin-top: -7px;
     padding: 2px 8px;
     color: var(--text-secondary);
     background: var(--surface-2);
@@ -1068,7 +1070,7 @@ kbd {
     flex: 0 0 19px;
     width: 19px;
     padding: 2px 0;
-    border-radius: 3px;
+    border-radius: 999px;
     font-size: 10px;
     font-weight: 700;
     text-align: center;
