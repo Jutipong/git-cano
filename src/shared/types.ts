@@ -1,0 +1,83 @@
+// Shared types between main / preload / renderer
+
+export interface CommitNode {
+  hash: string
+  shortHash: string
+  parents: string[]
+  author: string
+  date: string
+  subject: string
+  refs: string[] // e.g. ["HEAD -> main", "origin/main", "tag: v1.0"]
+  lane: number
+}
+
+export interface FileEntry {
+  path: string
+  /** index (staged) status: ' ' | A | M | D | R | C | U */
+  staged: string
+  /** working dir status: ' ' | M | D | ? | U */
+  unstaged: string
+}
+
+export interface RepoStatus {
+  path: string
+  name: string
+  branch: string
+  tracking: string | null
+  ahead: number
+  behind: number
+  files: FileEntry[]
+}
+
+export interface BranchInfo {
+  name: string
+  current: boolean
+}
+
+export interface DiffLine {
+  type: 'add' | 'del' | 'ctx' | 'hunk' | 'meta'
+  oldNo: number | null
+  newNo: number | null
+  text: string
+}
+
+export interface ApiError {
+  message: string
+}
+
+export interface CommitFile {
+  path: string
+  status: string
+  additions: number
+  deletions: number
+}
+
+export interface CommitDetails {
+  hash: string
+  message: string
+  author: string
+  email: string
+  date: string
+  parents: string[]
+  files: CommitFile[]
+  diff: DiffLine[]
+}
+
+export interface StashEntry {
+  index: number
+  hash: string
+  message: string
+  date: string
+}
+
+export interface RepoState {
+  merging: boolean
+  rebasing: boolean
+}
+
+export interface MenuItem {
+  label: string
+  action?: () => void
+  danger?: boolean
+  separatorBefore?: boolean
+}
