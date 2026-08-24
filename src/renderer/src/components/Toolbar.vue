@@ -25,7 +25,11 @@
         void act('Refresh', props.refresh)
     }
 
+    const busy = ref<string | null>(null)
+
     async function act(label: string, fn: () => Promise<unknown>) {
+        if (busy.value) return
+        busy.value = label
         try {
             const result = await fn()
             await props.refresh()
@@ -33,6 +37,8 @@
             ui.notify(message, 'success')
         } catch (error) {
             ui.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            busy.value = null
         }
     }
 </script>
@@ -91,8 +97,10 @@
         <button
             class="toolbar-icon-button"
             title="Refresh"
+            :disabled="!!busy"
             @click="actRefresh()">
             <i-lucide-refresh-cw
+                :class="{ spinning: busy === 'Refresh' }"
                 width="16"
                 height="16" />
         </button>
@@ -100,24 +108,30 @@
         <div class="remote-actions">
             <button
                 class="toolbar-action"
+                :disabled="!!busy"
                 @click="actFetch()">
                 <i-lucide-arrow-down-to-line
+                    :class="{ spinning: busy === 'Fetch' }"
                     width="15"
                     height="15" />
                 <span>Fetch</span>
             </button>
             <button
                 class="toolbar-action"
+                :disabled="!!busy"
                 @click="actPull()">
                 <i-lucide-arrow-down
+                    :class="{ spinning: busy === 'Pull' }"
                     width="15"
                     height="15" />
                 <span>Pull</span>
             </button>
             <button
                 class="toolbar-action primary-action"
+                :disabled="!!busy"
                 @click="actPush()">
                 <i-lucide-arrow-up
+                    :class="{ spinning: busy === 'Push' }"
                     width="15"
                     height="15" />
                 <span>Push</span>

@@ -127,6 +127,20 @@ button {
     opacity: 0.4;
     cursor: not-allowed;
 }
+@keyframes ogit-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+.spinning {
+    animation: ogit-spin 0.8s linear infinite;
+}
+.toolbar-icon-button:disabled,
+.toolbar-action:disabled,
+.btn:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
 .btn.small {
     min-height: 27px;
     padding: 0 9px;

@@ -27,6 +27,7 @@
         (e: 'show-blame', path: string): void
     }>()
     const notify = inject<(m: string) => void>('notify', () => {})
+    const pending = ref(false)
 
     const isWorkdir = computed(() => props.mode === 'workdir')
     const staged = computed(() =>
@@ -88,12 +89,16 @@
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
 
     async function run(fn: () => Promise<unknown>, ok: string) {
+        if (pending.value) return
+        pending.value = true
         try {
             await fn()
             await props.refresh()
             notify(ok)
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
+        } finally {
+            pending.value = false
         }
     }
 
@@ -105,6 +110,8 @@
         )
         message.value = ''
     }
+
+    const committing = computed(() => pending.value)
 
     function startResizeBox(event: MouseEvent) {
         event.preventDefault()
@@ -521,12 +528,19 @@
             </div>
             <button
                 class="btn primary commit-btn"
-                :disabled="mode === 'commit' || !message.trim() || staged.length === 0"
+                :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
                 @click="doCommit()">
-                <i-lucide-check
+                <i-lucide-loader-circle
+                    v-if="committing"
+                    class="spinning"
                     width="15"
                     height="15" />
-                Commit changes <kbd>⌘↵</kbd>
+                <i-lucide-check
+                    v-else
+                    width="15"
+                    height="15" />
+                {{ committing ? 'Committing…' : 'Commit changes' }}
+                <kbd v-if="!committing">⌘↵</kbd>
             </button>
             <div
                 v-if="mode === 'workdir' && staged.length === 0 && files.length > 0"
