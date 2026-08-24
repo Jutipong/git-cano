@@ -33,6 +33,8 @@ declare module 'vue' {
     ILucideGlobe2: typeof import('~icons/lucide/globe2')['default']
     ILucideHistory: typeof import('~icons/lucide/history')['default']
     ILucideLink2Off: typeof import('~icons/lucide/link2-off')['default']
+    ILucideMaximize: typeof import('~icons/lucide/maximize')['default']
+    ILucideMinimize: typeof import('~icons/lucide/minimize')['default']
     ILucideMinus: typeof import('~icons/lucide/minus')['default']
     ILucideMoon: typeof import('~icons/lucide/moon')['default']
     ILucideMoreHorizontal: typeof import('~icons/lucide/more-horizontal')['default']
