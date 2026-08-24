@@ -212,16 +212,16 @@
                     @show-history="historyFile = $event"
                     @show-blame="blameFile = $event" />
             </div>
+            <!-- diff overlay: covers sidebar + graph, stops before the right pane -->
+            <DiffView
+                v-if="selectedFile"
+                class="diff-overlay"
+                :style="{ right: `${ui.rightPanelWidth + 5}px` }"
+                :file="selectedFile"
+                :commit-hash="selectedCommit?.hash ?? undefined"
+                :refresh="repoStore.refresh"
+                @close="selectedFile = null" />
         </div>
-        <!-- diff overlay: covers sidebar + graph, stops before the right pane -->
-        <DiffView
-            v-if="selectedFile"
-            class="diff-overlay"
-            :style="{ right: `${ui.rightPanelWidth + 5}px` }"
-            :file="selectedFile"
-            :commit-hash="selectedCommit?.hash ?? undefined"
-            :refresh="repoStore.refresh"
-            @close="selectedFile = null" />
         <RebaseEditor
             v-if="rebaseBase"
             :base-ref="rebaseBase"
