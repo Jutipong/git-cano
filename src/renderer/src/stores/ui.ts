@@ -41,7 +41,6 @@ export const useUiStore = defineStore(
 
         function toggleTheme() {
             theme.value = theme.value === 'dark' ? 'light' : 'dark'
-            notify(`${theme.value === 'dark' ? 'Dark' : 'Light'} theme`)
         }
 
         watchEffect(() => {
