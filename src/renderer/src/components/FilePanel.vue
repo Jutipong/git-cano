@@ -50,8 +50,8 @@
         )
     })
     const shortHash = computed(() => props.commitHash.slice(0, 7))
+    const ui = useUiStore()
     const message = ref('')
-    const amend = ref(false)
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
 
     async function run(fn: () => Promise<unknown>, ok: string) {
@@ -66,24 +66,31 @@
 
     async function doCommit() {
         if (!message.value.trim()) return notify('Enter a commit message first')
-        if (amend.value && !window.confirm('Amend the last commit with the currently staged changes?')) return
         await run(
-            () => window.api.commitWithAmend(message.value.trim(), amend.value),
-            amend.value ? 'Commit amended' : 'Committed successfully'
+            () => window.api.commitWithAmend(message.value.trim(), false),
+            'Committed successfully'
         )
         message.value = ''
-        amend.value = false
     }
 
-    async function toggleAmend() {
-        amend.value = !amend.value
-        if (amend.value && !message.value.trim()) {
-            try {
-                message.value = (await window.api.lastCommitMessage()).split('\n')[0]
-            } catch {
-                /* ignore */
-            }
+    function startResizeBox(event: MouseEvent) {
+        event.preventDefault()
+        const startY = event.clientY
+        const startH = ui.summaryHeight
+        const onMove = (moveEvent: MouseEvent) => {
+            // ลากขึ้น = สูงขึ้น
+            ui.summaryHeight = Math.min(480, Math.max(96, startH + (startY - moveEvent.clientY)))
         }
+        const onEnd = () => {
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onEnd)
+        }
+        document.body.style.cursor = 'row-resize'
+        document.body.style.userSelect = 'none'
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onEnd)
     }
 
     function pickHistory(path: string) {
@@ -345,15 +352,10 @@
         </div>
 
         <div class="commit-box">
-            <label
-                v-if="mode === 'workdir'"
-                class="amend-toggle">
-                <input
-                    v-model="amend"
-                    type="checkbox"
-                    @change="toggleAmend" />
-                Amend last commit
-            </label>
+            <div
+                class="cb-resize-handle"
+                title="Drag to resize"
+                @mousedown="startResizeBox" />
             <!-- read-only when viewing an already-committed commit -->
             <div
                 v-if="mode === 'commit' && (commitAuthor || commitDate)"
@@ -363,14 +365,14 @@
             <textarea
                 v-if="mode === 'commit'"
                 :value="commitMessage"
+                :style="{ height: `${ui.summaryHeight}px` }"
                 placeholder="No commit message"
-                rows="8"
                 readonly />
             <textarea
                 v-else
                 v-model="message"
+                :style="{ height: `${ui.summaryHeight}px` }"
                 placeholder="Summary of changes"
-                rows="8"
                 @keydown.enter.meta.prevent="doCommit()"
                 @keydown.enter.ctrl.prevent="doCommit()" />
             <div
@@ -392,10 +394,10 @@
                 <i-lucide-check
                     width="15"
                     height="15" />
-                {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
+                Commit changes <kbd>⌘↵</kbd>
             </button>
             <div
-                v-if="mode === 'workdir' && staged.length === 0 && files.length > 0 && !amend"
+                v-if="mode === 'workdir' && staged.length === 0 && files.length > 0"
                 class="commit-hint">
                 Stage at least one file to commit
             </div>
