@@ -732,15 +732,31 @@ kbd {
 .commit-details-heading {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    gap: 8px;
     height: 39px;
     padding: 0 15px;
     border-bottom: 1px solid var(--line-soft);
 }
 .commit-details-title {
     display: flex;
+    flex: 1;
+    min-width: 0;
     align-items: center;
     gap: 8px;
+}
+.commit-details-title strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cd-heading-actions {
+    display: inline-flex;
+    flex: none;
+    gap: 4px;
+}
+.cd-heading-actions .detail-action {
+    padding: 3px 8px;
+    font-size: 10.5px;
 }
 .commit-details-title svg {
     color: var(--teal);

@@ -125,6 +125,17 @@ function formatDate(value: string): string {
                 <GitCommitHorizontal :size="16" />
                 <strong>{{ summary }}</strong>
             </div>
+            <div class="cd-heading-actions">
+                <button class="detail-action" title="Checkout this commit" @click="checkout()">
+                    Checkout
+                </button>
+                <button class="detail-action" title="Cherry-pick onto current branch" @click="cherryPick()">
+                    Cherry-pick
+                </button>
+                <button class="detail-action danger" title="Revert this commit" @click="revertCommit()">
+                    <RotateCcw :size="12" /> Revert
+                </button>
+            </div>
             <button class="cd-hash" :title="`Copy full hash\n${props.commit.hash}`" @click="copyHash()">
                 {{ commit.shortHash }} <Copy :size="12" />
             </button>
@@ -164,16 +175,6 @@ function formatDate(value: string): string {
                 </button>
                 <span v-else-if="!details" class="muted">Loading…</span>
                 <span v-else class="muted">No changed files</span>
-                <span class="spacer" />
-                <button class="detail-action" title="Checkout this commit" @click="checkout()">
-                    Checkout
-                </button>
-                <button class="detail-action" title="Cherry-pick onto current branch" @click="cherryPick()">
-                    Cherry-pick
-                </button>
-                <button class="detail-action danger" title="Revert this commit" @click="revertCommit()">
-                    <RotateCcw :size="12" /> Revert
-                </button>
             </div>
 
             <div v-if="openFile && details" class="commit-files">
