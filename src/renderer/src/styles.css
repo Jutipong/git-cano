@@ -936,6 +936,21 @@ kbd {
     border-style: dashed;
     cursor: default;
 }
+.summary-counter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    font-size: 10px;
+}
+.subject-count {
+    font-family: 'SF Mono', Menlo, monospace;
+}
+.subject-count.warn {
+    color: var(--orange);
+}
+.subject-count.over {
+    color: var(--red);
+}
 .commit-box textarea::placeholder {
     color: var(--text-muted);
 }

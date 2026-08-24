@@ -10,6 +10,7 @@ declare global {
   const defineEmits: typeof import('vue')['defineEmits']
   const defineProps: typeof import('vue')['defineProps']
   const defineStore: typeof import('pinia')['defineStore']
+  const formatCommitDate: typeof import('./utils/format')['formatCommitDate']
   const highlightLine: typeof import('./utils/highlight')['highlightLine']
   const inject: typeof import('vue')['inject']
   const intraLineRange: typeof import('./utils/highlight')['intraLineRange']

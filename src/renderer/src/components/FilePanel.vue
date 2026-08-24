@@ -149,6 +149,12 @@
             .join(' · ')
         return [meta, props.commitMessage].filter(Boolean).join('\n')
     })
+
+    // commit title convention: <=50 ideal, 72 hard cap
+    const firstLine = computed(() => message.value.split('\n')[0] ?? '')
+    const subjectCountClass = computed(() =>
+        firstLine.value.length > 72 ? 'over' : firstLine.value.length > 50 ? 'warn' : ''
+    )
 </script>
 
 <template>
@@ -369,6 +375,18 @@
                 rows="6"
                 @keydown.enter.meta.prevent="doCommit()"
                 @keydown.enter.ctrl.prevent="doCommit()" />
+            <div
+                v-if="mode === 'workdir' && message"
+                class="summary-counter">
+                <span
+                    class="muted"
+                    v-if="message.split('\n').length > 1">
+                    body · {{ message.split('\n').length - 1 }} lines
+                </span>
+                <span :class="['subject-count', subjectCountClass]">
+                    title {{ firstLine.length }} / 72
+                </span>
+            </div>
             <button
                 class="btn primary commit-btn"
                 :disabled="mode === 'commit' || !message.trim() || staged.length === 0"
