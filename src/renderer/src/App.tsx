@@ -19,6 +19,14 @@ interface Tab {
   status: RepoStatus
 }
 
+function loadSavedSession(): { paths: string[]; active: number } {
+  try {
+    const raw = localStorage.getItem('gkx-session')
+    if (raw) return JSON.parse(raw) as { paths: string[]; active: number }
+  } catch {}
+  return { paths: [], active: 0 }
+}
+
 export default function App() {
   const [tabs, setTabs] = useState<Tab[]>([])
   const [activeTab, setActiveTab] = useState(0)
@@ -44,6 +52,7 @@ export default function App() {
 
   /** open (or focus) a repository as a new tab */
   const addTab = useCallback((status: RepoStatus) => {
+    void window.api.recentAdd(status.path).catch(() => {})
     setTabs((current) => {
       const existing = current.findIndex((tab) => tab.path === status.path)
       if (existing >= 0) {
@@ -83,6 +92,41 @@ export default function App() {
       return undefined
     }
   }, [notify, logLimit])
+
+  /* session restore: reopen previously opened repositories on first launch */
+  const restoredRef = useRef(false)
+  useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+    void (async () => {
+      const saved = loadSavedSession()
+      // no saved session -> fall back to the most recently used repository (if any)
+      const paths = saved.paths.length
+        ? saved.paths
+        : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
+      let openedCount = 0
+      for (const path of paths) {
+        try {
+          addTab(await window.api.openPath(path))
+          openedCount++
+        } catch {
+          /* repo was moved/deleted — skip it */
+        }
+      }
+      if (openedCount > 0 && saved.active > 0) {
+        setActiveTab(Math.min(saved.active, openedCount - 1))
+      }
+    })()
+  }, [addTab])
+
+  /* persist open tabs for next launch */
+  useEffect(() => {
+    if (!tabs.length) return
+    localStorage.setItem(
+      'gkx-session',
+      JSON.stringify({ paths: tabs.map((tab) => tab.path), active: activeTab }),
+    )
+  }, [tabs, activeTab])
 
   /* refresh whenever the active tab or its repo changes */
   useEffect(() => {
@@ -184,9 +228,12 @@ export default function App() {
   const closeTab = async (index: number) => {
     const tab = tabs[index]
     const stillOpen = await window.api.closeRepo(tab.path)
-    setTabs((current) => current.filter((_, i) => i !== index))
-    setActiveTab((current) => Math.max(0, current > index ? current - 1 : Math.min(current, tabs.length - 2)))
-    if (!stillOpen && tabs.length <= 1) {
+    const remaining = tabs.filter((_, i) => i !== index)
+    setTabs(remaining)
+    setActiveTab((current) => Math.max(0, current > index ? current - 1 : Math.min(current, remaining.length - 1)))
+    // closing the very last tab means the user ended their session -> start fresh next launch
+    if (remaining.length === 0) localStorage.removeItem('gkx-session')
+    if (!stillOpen) {
       setCommits([])
       setSelectedCommit(null)
     }
