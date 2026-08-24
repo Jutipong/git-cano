@@ -109,8 +109,13 @@ const STATUS_CLASS: Record<string, string> = { A: 'b-a', M: 'b-m', D: 'b-d', U: 
 function formatDate(value: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
-    const sameDay = new Date().toDateString() === date.toDateString()
-    if (sameDay) return `today ${date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}`
+    const time = date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+    const today = new Date()
+    const daysAgo = Math.floor((today.setHours(0, 0, 0, 0) - new Date(date).setHours(0, 0, 0, 0)) / 86_400_000)
+    if (daysAgo === 0) return `Today at ${time}`
+    if (daysAgo === 1) return `Yesterday at ${time}`
+    if (daysAgo > 1 && daysAgo < 7)
+        return date.toLocaleDateString(undefined, { weekday: 'long' }) + ` at ${time}`
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
@@ -159,23 +164,23 @@ function formatDate(value: string): string {
                 </button>
                 <span v-else-if="!details" class="muted">Loading…</span>
                 <span v-else class="muted">No changed files</span>
-            </div>
 
-            <p v-if="body" class="commit-details-body">{{ body }}</p>
-
-            <div class="commit-meta">
+                <span class="spacer" />
                 <span class="cd-author">{{ details?.author || commit.author }}</span>
                 <span class="cd-date">{{ formatDate(details?.date || commit.date) }}</span>
                 <span class="cd-stats">
-                    <span v-if="stats.additions" class="stat-add">+{{ stats.additions }}</span>
-                    <span v-if="stats.deletions" class="stat-del">−{{ stats.deletions }}</span>
+                    <span v-if="stats.additions" class="stat-add">+{{ stats.additions.toLocaleString() }}</span>
+                    <span v-if="stats.deletions" class="stat-del">−{{ stats.deletions.toLocaleString() }}</span>
                 </span>
-
-                <span class="spacer" />
-                <span v-for="ref in commit.refs.slice(0, 3)" :key="ref" class="ref-chip">
+                <span
+                    v-for="ref in commit.refs.slice(0, 3)"
+                    :key="ref"
+                    class="ref-chip">
                     {{ ref.replace('HEAD -> ', '') }}
                 </span>
             </div>
+
+            <p v-if="body" class="commit-details-body">{{ body }}</p>
 
             <div v-if="openFile && details" class="commit-files">
                 <div

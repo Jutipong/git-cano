@@ -270,11 +270,11 @@
                         <span class="commit-file-stats">
                             <span
                                 v-if="file.additions"
-                                class="stat-add">+{{ file.additions }}</span
+                                class="stat-add">+{{ file.additions.toLocaleString() }}</span
                             >
                             <span
                                 v-if="file.deletions"
-                                class="stat-del">−{{ file.deletions }}</span
+                                class="stat-del">−{{ file.deletions.toLocaleString() }}</span
                             >
                         </span>
                     </div>
