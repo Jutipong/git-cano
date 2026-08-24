@@ -700,7 +700,7 @@ kbd {
     flex-direction: column;
     min-height: 120px;
     background: var(--surface-1);
-    border-bottom: 1px solid var(--line);
+    border-top: 1px solid var(--line);
 }
 .cd-resize-handle {
     position: relative;
