@@ -124,6 +124,14 @@
         const status = badge === '?' || badge === 'R' || badge === 'C' ? 'M' : badge
         return `b-${status.toLowerCase()}`
     }
+
+    function copyFullHash() {
+        if (!props.commitHash) return
+        void navigator.clipboard
+            .writeText(props.commitHash)
+            .then(() => notify('Full hash copied'))
+            .catch(() => notify('Copy failed'))
+    }
 </script>
 
 <template>
@@ -134,9 +142,13 @@
                     width="16"
                     height="16" /><strong>Changes</strong>
                 <span class="panel-file-num">{{ files.length }}</span>
-                <span
+                <button
                     v-if="mode === 'commit'"
-                    class="panel-commit-chip">{{ shortHash }}</span>
+                    class="panel-commit-chip"
+                    :title="`Copy full hash\n${commitHash}`"
+                    @click="copyFullHash()">
+                    {{ shortHash }}
+                </button>
             </div>
             <span
                 v-if="mode === 'commit' && commitTotals && (commitTotals.additions || commitTotals.deletions)"
