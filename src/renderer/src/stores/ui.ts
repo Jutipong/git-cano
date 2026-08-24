@@ -6,6 +6,7 @@ export const useUiStore = defineStore(
         const theme = ref<'dark' | 'light'>('dark')
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
+        const commitDetailsHeight = ref(210)
         const searchQuery = ref('')
         const toast = ref<string | null>(null)
 
@@ -25,9 +26,18 @@ export const useUiStore = defineStore(
         })
         document.documentElement.dataset.theme = theme.value
 
-        return { theme, sidebarWidth, rightPanelWidth, searchQuery, toast, notify, toggleTheme }
+        return {
+            theme,
+            sidebarWidth,
+            rightPanelWidth,
+            commitDetailsHeight,
+            searchQuery,
+            toast,
+            notify,
+            toggleTheme,
+        }
     },
     {
-        persist: { pick: ['theme', 'sidebarWidth', 'rightPanelWidth'] },
+        persist: { pick: ['theme', 'sidebarWidth', 'rightPanelWidth', 'commitDetailsHeight'] },
     }
 )

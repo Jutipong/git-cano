@@ -17,6 +17,7 @@
     },
     "dependencies": {
         "lucide-react": "^1.33.0",
+        "lucide-vue-next": "^1.0.0",
         "pinia": "^2.3.0",
         "pinia-plugin-persistedstate": "^4.2.0",
         "simple-git": "^3.27.0",

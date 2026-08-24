@@ -191,10 +191,6 @@
                     :build-commit-menu="buildCommitMenu"
                     @select-commit="selectedCommit = $event"
                     @load-more="repoStore.loadMore()" />
-                <CommitDetails
-                    v-if="selectedCommit"
-                    :commit="selectedCommit"
-                    :notify="ui.notify" />
             </div>
             <div
                 class="panel-splitter"
@@ -202,6 +198,11 @@
             <div
                 class="right-pane"
                 :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
+                <!-- commit panel: lives on the right of the graph (GitKraken-style) -->
+                <CommitDetails
+                    v-if="selectedCommit"
+                    :commit="selectedCommit"
+                    :notify="ui.notify" />
                 <FilePanel
                     :files="repo.files"
                     :selected="selectedFile"
