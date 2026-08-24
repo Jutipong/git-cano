@@ -239,7 +239,7 @@
                     >
                 </span>
                 <button
-                    class="view-toggle"
+                    class="view-toggle refresh-btn"
                     title="Refresh changes"
                     :disabled="pending"
                     @click="refreshPanel()">
@@ -561,11 +561,6 @@
                 {{ committing ? 'Committing…' : 'Commit changes' }}
                 <kbd v-if="!committing">⌘↵</kbd>
             </button>
-            <div
-                v-if="mode === 'workdir' && staged.length === 0 && files.length > 0"
-                class="commit-hint">
-                Stage at least one file to commit
-            </div>
         </div>
     </div>
 </template>

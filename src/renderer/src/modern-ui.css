@@ -133,16 +133,12 @@ body {
     background: var(--line-soft);
 }
 
-.branch-chip,
 .commit-search {
     background: var(--surface-1);
     border-color: var(--line-soft);
     border-radius: 999px;
 }
 
-.branch-chip {
-    min-height: 29px;
-}
 
 .commit-search {
     height: 29px;
@@ -277,7 +273,7 @@ body {
 
 .branch-row,
 .file-row {
-    min-height: 32px;
+    min-height: 26px;
     border-radius: 999px;
     border-left: none;
 }

@@ -40,6 +40,25 @@
     const dropTarget = ref<string | null>(null)
     const showRemoteManager = ref(false)
 
+    const syncBusy = ref<string | null>(null)
+
+    function actFetch() {
+        void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
+    }
+    function actPull() {
+        void sync('Pull', () => window.api.pull(), 'Pull completed')
+    }
+    function actPush() {
+        void sync('Push', () => window.api.push(), 'Push completed')
+    }
+
+    async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
+        if (syncBusy.value) return
+        syncBusy.value = label
+        await run(fn, ok)
+        syncBusy.value = null
+    }
+
     async function loadAll() {
         try {
             const branches = await window.api.branches()
@@ -182,20 +201,42 @@
     <aside
         class="sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
-        <div class="sidebar-repo-card">
-            <div class="sidebar-repo-icon">
-                <i-lucide-folder-git2
-                    width="18"
-                    height="18" />
+        <div class="sidebar-repo-card repo-sync-card">
+            <div class="repo-sync-actions">
+                <button
+                    class="toolbar-action action-fetch"
+                    :disabled="!!syncBusy"
+                    title="Fetch"
+                    @click="actFetch()">
+                    <i-lucide-arrow-down-to-line
+                        :class="{ 'bouncing-down': syncBusy === 'Fetch' }"
+                        width="15"
+                        height="15" />
+                    <span>Fetch</span>
+                </button>
+                <button
+                    class="toolbar-action action-pull"
+                    :disabled="!!syncBusy"
+                    title="Pull"
+                    @click="actPull()">
+                    <i-lucide-arrow-down
+                        :class="{ 'bouncing-down': syncBusy === 'Pull' }"
+                        width="15"
+                        height="15" />
+                    <span>Pull</span>
+                </button>
+                <button
+                    class="toolbar-action primary-action"
+                    :disabled="!!syncBusy"
+                    title="Push"
+                    @click="actPush()">
+                    <i-lucide-arrow-up
+                        :class="{ 'bouncing-up': syncBusy === 'Push' }"
+                        width="15"
+                        height="15" />
+                    <span>Push</span>
+                </button>
             </div>
-            <div class="sidebar-repo-copy">
-                <strong>{{ repo.name }}</strong>
-                <span>{{ repo.branch }}</span>
-            </div>
-            <i-lucide-chevron-down
-                width="15"
-                height="15"
-                class="muted-icon" />
         </div>
 
         <div class="sidebar-section">
