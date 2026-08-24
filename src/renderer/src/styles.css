@@ -177,6 +177,7 @@ kbd {
     background: var(--canvas);
 }
 .app-body {
+    position: relative;
     display: flex;
     flex: 1;
     min-height: 0;
@@ -535,7 +536,7 @@ kbd {
     z-index: 10;
     inset: 0;
     background: var(--surface-1);
-    box-shadow: -4px 0 16px var(--shadow);
+    box-shadow: 0 -4px 16px var(--shadow);
 }
 .graph-view {
     display: flex;
