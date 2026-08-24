@@ -209,7 +209,7 @@
                     :mode="selectedCommit ? 'commit' : 'workdir'"
                     :commit-hash="selectedCommit?.hash"
                     :selected="selectedFile"
-                    :commit-subject="repoStore.commitSubject"
+                    :commit-message="repoStore.commitMessage"
                     :commit-author="repoStore.commitAuthor"
                     :commit-date="repoStore.commitDate"
                     :refresh="repoStore.refresh"

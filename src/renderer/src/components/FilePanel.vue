@@ -9,14 +9,14 @@
         refresh: () => Promise<unknown>
         mode?: 'workdir' | 'commit'
         commitHash?: string
-        commitSubject?: string
+        commitMessage?: string
         commitAuthor?: string
         commitDate?: string
     }
     const props = withDefaults(defineProps<Props>(), {
         mode: 'workdir',
         commitHash: '',
-        commitSubject: '',
+        commitMessage: '',
         commitAuthor: '',
         commitDate: '',
     })
@@ -147,7 +147,7 @@
         const meta = [props.commitAuthor, props.commitDate ? formatCommitDate(props.commitDate) : '']
             .filter(Boolean)
             .join(' · ')
-        return meta ? `${meta}\n${props.commitSubject}` : props.commitSubject
+        return [meta, props.commitMessage].filter(Boolean).join('\n')
     })
 </script>
 

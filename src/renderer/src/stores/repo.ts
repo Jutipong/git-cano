@@ -27,7 +27,7 @@ export const useRepoStore = defineStore('repo', () => {
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
     const commitFiles = ref<CommitFile[]>([])
-    const commitSubject = ref('')
+    const commitMessage = ref('')
     const commitAuthor = ref('')
     const commitDate = ref('')
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
@@ -136,7 +136,7 @@ export const useRepoStore = defineStore('repo', () => {
         () => selectedCommit.value?.hash,
         async hash => {
             commitFiles.value = []
-            commitSubject.value = ''
+            commitMessage.value = ''
             commitAuthor.value = ''
             commitDate.value = ''
             if (!hash) return
@@ -144,7 +144,7 @@ export const useRepoStore = defineStore('repo', () => {
                 const details = await window.api.commitDetails(hash)
                 if (selectedCommit.value?.hash === hash) {
                     commitFiles.value = details.files
-                    commitSubject.value = details.message.split('\n')[0]
+                    commitMessage.value = details.message.trim()
                     commitAuthor.value = details.author
                     commitDate.value = details.date
                 }
@@ -179,7 +179,7 @@ export const useRepoStore = defineStore('repo', () => {
         selectedFile,
         selectedCommit,
         commitFiles,
-        commitSubject,
+        commitMessage,
         commitAuthor,
         commitDate,
         repoState,
