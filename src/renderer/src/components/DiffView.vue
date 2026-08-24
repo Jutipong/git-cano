@@ -189,9 +189,13 @@
                     height="15" />
             </button>
             <button
-                class="icon-btn danger"
+                class="icon-btn danger diff-close-btn"
                 title="Close diff"
                 @click="emit('close')">
+                <i-lucide-x
+                    width="15"
+                    height="15" />
+            </button>
                 <i-lucide-x
                     width="15"
                     height="15" />

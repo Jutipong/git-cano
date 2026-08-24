@@ -566,12 +566,19 @@ kbd {
     padding: 0 15px;
     border-bottom: 1px solid var(--line-soft);
 }
-.commit-close-btn {
-    margin-left: 10px;
+.commit-close-btn,
+.diff-close-btn {
     border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
     background: color-mix(in srgb, var(--red) 8%, transparent);
 }
-.commit-close-btn:hover {
+.commit-close-btn {
+    margin-left: 10px;
+}
+.diff-close-btn {
+    margin-left: 4px;
+}
+.commit-close-btn:hover,
+.diff-close-btn:hover {
     background: color-mix(in srgb, var(--red) 18%, transparent);
 }
 .graph-title {
