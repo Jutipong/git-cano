@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ChevronDown, ChevronRight, Copy, GitCommitHorizontal, RotateCcw, X } from 'lucide-vue-next'
-import type { CommitDetails as CommitDetailsData, CommitNode, DiffLine } from '@shared/types'
+import { Copy, GitCommitHorizontal, RotateCcw, X } from 'lucide-vue-next'
+import type { CommitDetails as CommitDetailsData, CommitNode } from '@shared/types'
 
 const props = defineProps<{ commit: CommitNode; notify: (message: string) => void }>()
 const emit = defineEmits<{ (e: 'close'): void }>()
@@ -8,14 +8,11 @@ const refresh = inject<() => Promise<unknown>>('refresh', async () => {})
 const ui = useUiStore()
 
 const details = ref<CommitDetailsData | null>(null)
-const openFile = ref<string | null>(null)
-const fileDiff = ref<DiffLine[]>([])
 
 watch(
     () => props.commit.hash,
     async () => {
         details.value = null
-        openFile.value = null
         try {
             details.value = await window.api.commitDetails(props.commit.hash)
         } catch (error) {
@@ -24,15 +21,6 @@ watch(
     },
     { immediate: true },
 )
-
-watch(openFile, async (file) => {
-    if (!file) return
-    try {
-        fileDiff.value = await window.api.commitFileDiff(props.commit.hash, file)
-    } catch {
-        fileDiff.value = []
-    }
-})
 
 const message = computed(() => details.value?.message || props.commit.subject)
 const summary = computed(() => message.value.split('\n')[0])
@@ -47,10 +35,6 @@ const stats = computed(() => {
     }
     return { additions, deletions }
 })
-
-function toggleFile(path: string) {
-    openFile.value = openFile.value === path ? null : path
-}
 
 function revertCommit() {
     if (!window.confirm(`Revert commit ${props.commit.shortHash}?`)) return
@@ -104,8 +88,6 @@ function startResize(event: MouseEvent) {
     window.addEventListener('mouseup', onEnd)
 }
 
-const STATUS_CLASS: Record<string, string> = { A: 'b-a', M: 'b-m', D: 'b-d', U: 'b-u' }
-
 function formatDate(value: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
@@ -115,7 +97,7 @@ function formatDate(value: string): string {
     if (daysAgo === 0) return `Today at ${time}`
     if (daysAgo === 1) return `Yesterday at ${time}`
     if (daysAgo > 1 && daysAgo < 7)
-        return date.toLocaleDateString(undefined, { weekday: 'long' }) + ` at ${time}`
+        return `${date.toLocaleDateString(undefined, { weekday: 'long' })} at ${time}`
     return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
 }
 </script>
@@ -151,17 +133,9 @@ function formatDate(value: string): string {
 
         <div class="commit-details-content">
             <div class="commit-actions-row">
-                <button
+                <span
                     v-if="details && details.files.length"
-                    class="detail-action"
-                    @click="openFile = openFile === null ? (details.files[0]?.path ?? null) : null"
-                >
-                    <component
-                        :is="openFile ? ChevronDown : ChevronRight"
-                        :size="12"
-                    />
-                    {{ details.files.length }} changed files
-                </button>
+                    class="cd-files-count">{{ details.files.length }} changed files</span>
                 <span v-else-if="!details" class="muted">Loading…</span>
                 <span v-else class="muted">No changed files</span>
 
@@ -181,34 +155,6 @@ function formatDate(value: string): string {
             </div>
 
             <p v-if="body" class="commit-details-body">{{ body }}</p>
-
-            <div v-if="openFile && details" class="commit-files">
-                <div
-                    v-for="file in details.files"
-                    :key="file.path"
-                    class="commit-file-block"
-                >
-                    <div
-                        class="commit-file-row"
-                        :class="{ selected: openFile === file.path }"
-                        @click="toggleFile(file.path)"
-                    >
-                        <component
-                            :is="openFile === file.path ? ChevronDown : ChevronRight"
-                            :size="12"
-                            class="muted-icon"
-                        />
-                        <span class="badge" :class="STATUS_CLASS[file.status.toUpperCase()] ?? 'b-m'">{{ file.status }}</span>
-                        <span class="commit-file-path" :title="file.path">{{ file.path }}</span>
-                    </div>
-                    <div v-if="openFile === file.path" class="commit-file-diff">
-                        <div v-for="(line, index) in fileDiff" :key="index" class="diff-line" :class="line.type">
-                            <pre v-html="line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')" />
-                        </div>
-                        <div v-if="fileDiff.length === 0" class="diff-empty">No textual diff available</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 </template>

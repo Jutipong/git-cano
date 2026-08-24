@@ -1453,44 +1453,10 @@ kbd {
     background: color-mix(in srgb, var(--surface-2) 55%, transparent);
     border-bottom: 1px solid var(--line-soft);
 }
-.commit-files {
-    margin-top: 11px;
-    overflow: visible;
-    border-top: 1px solid var(--line-soft);
-}
-.commit-file-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 27px;
-    padding: 2px 8px 2px 2px;
-    cursor: pointer;
-    border-left: 2px solid transparent;
-}
-.commit-file-row:hover {
-    background: var(--surface-hover);
-}
-.commit-file-row.selected {
-    background: var(--surface-selected);
-    border-left-color: var(--teal);
-}
-.commit-file-path {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
+.cd-files-count {
     color: var(--text-secondary);
-    font-family: 'SF Mono', Menlo, monospace;
     font-size: 11px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.commit-file-diff {
-    margin: 2px 0 6px 10px;
-    padding: 4px 0;
-    overflow-x: auto;
-    background: #171b22;
-    border: 1px solid var(--line-soft);
-    border-radius: 4px;
+    font-weight: 600;
 }
 .commit-details-content h2 {
     display: none;
