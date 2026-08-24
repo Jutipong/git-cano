@@ -23,6 +23,9 @@
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
 
+    // toast notifications สำหรับทุก component ที่ inject('notify')
+    provide('notify', (message: string) => ui.notify(message))
+
     function openNewRepo() {
         window.api
             .pickAndOpen()
@@ -30,8 +33,15 @@
             .catch((error: unknown) => ui.notify(String(error)))
     }
 
+    const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
+
     onMounted(() => {
         void repoStore.init()
+
+        // lightweight auto-refresh
+        refreshInterval.value = setInterval(() => {
+            if (repoStore.repo) void repoStore.refresh()
+        }, 8000)
 
         const onKeyDown = (event: KeyboardEvent) => {
             if (!(event.metaKey || event.ctrlKey)) return
@@ -44,7 +54,16 @@
                 event.preventDefault()
                 document.querySelector<HTMLInputElement>('.commit-search input')?.focus()
             }
+            if (event.shiftKey && event.key.toLowerCase() === 'p') {
+                event.preventDefault()
+                openNewRepo()
+            }
         }
+
+        onBeforeUnmount(() => {
+            if (refreshInterval.value) clearInterval(refreshInterval.value)
+            window.removeEventListener('keydown', onKeyDown)
+        })
         window.addEventListener('keydown', onKeyDown)
     })
 

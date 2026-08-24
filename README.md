@@ -2,7 +2,7 @@
 
 A lightweight open-source Git GUI — **basic features only** (no AI, no PR integration).
 
-Built with **Electron + React + TypeScript + simple-git**.
+Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses plain HTML/CSS — no UI framework).
 
 ## Features
 
