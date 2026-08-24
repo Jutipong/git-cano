@@ -1,0 +1,57 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    // ── General ──────────────────────────────────────────────────
+    "semi": false,
+    "singleQuote": true,
+    "tabWidth": 4,
+    "printWidth": 140,
+    "trailingComma": "es5",
+    "arrowParens": "avoid",
+    "bracketSpacing": true,
+    "bracketSameLine": true,
+    "endOfLine": "crlf",
+    // ── HTML / Vue ────────────────────────────────────────────────
+    "htmlWhitespaceSensitivity": "css",
+    "singleAttributePerLine": true,
+    "vueIndentScriptAndStyle": true,
+    // ── Markdown ──────────────────────────────────────────────────
+    "proseWrap": "preserve",
+    // ── JSON ──────────────────────────────────────────────────
+    // Supports: json, json5, jsonc (JSON with comments)
+    // JSON files are auto-formatted (v0.54.0+)
+    // ── Import sorting ───────────────────────────────────────────
+    // Group order: builtin → external → internal (@/) → relative → types → styles → side-effects
+    "sortImports": {
+        "groups": [
+            "builtin",
+            "external",
+            "internal",
+            ["parent", "sibling", "index"],
+            "type",
+            "style",
+            "side_effect_style",
+            "side_effect",
+            "unknown"
+        ],
+        // Match all project path aliases defined in tsconfig.json + vite.config.mts
+        "internalPattern": ["@/**", "@assets/**", "@components/**", "@types/**", "@utils/**", "@stores/**"],
+        "newlinesBetween": true,
+        "order": "asc",
+        "ignoreCase": true,
+        // Side-effect imports (e.g. import './polyfill') are NOT reordered for safety
+        "sortSideEffects": false
+    },
+    // ── TailwindCSS / UnoCSS class sorting ────────────────────────
+    // Sorts UnoCSS utility classes in Vue template `class` and `:class` attributes
+    // Uses Tailwind v4 ordering (compatible with presetWind4)
+    "sortTailwindcss": { "attributes": [":class"] },
+    // ── Embedded language formatting ──────────────────────────────
+    // Formats embedded JS/CSS inside Vue SFC templates
+    "embeddedLanguageFormatting": "auto",
+    // ── Object wrapping ───────────────────────────────────────────
+    // Preserve author line breaks; collapse only when object fits within printWidth and was originally single-line
+    "objectWrap": "preserve",
+    // ── JSDoc formatting ──────────────────────────────────────────
+    // Auto-format JSDoc comments: capitalizes descriptions, canonicalizes tags
+    "jsdoc": true
+}

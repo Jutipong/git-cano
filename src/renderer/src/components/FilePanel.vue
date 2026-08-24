@@ -1,0 +1,253 @@
+<script setup lang="ts">
+    import { Check, History, Minus, Plus, RotateCcw, ScanSearch } from 'lucide-vue-next'
+    import { ref } from 'vue'
+
+    import type { FileEntry } from '@shared/types'
+
+    interface Props {
+        files: FileEntry[]
+        selected: { path: string; staged: boolean } | null
+        refresh: () => Promise<unknown>
+    }
+    const props = defineProps<Props>()
+    const emit = defineEmits<{
+        (e: 'select', sel: { path: string; staged: boolean } | null): void
+        (e: 'show-history', path: string): void
+        (e: 'show-blame', path: string): void
+    }>()
+    const notify = inject<(m: string) => void>('notify', () => {})
+
+    const staged = computed(() => props.files.filter(file => file.staged !== ' ' && file.staged !== ''))
+    const unstaged = computed(() => props.files.filter(file => file.staged === ' ' || file.staged === ''))
+    const message = ref('')
+    const amend = ref(false)
+    const menu = ref<{ x: number; y: number; path: string } | null>(null)
+
+    async function run(fn: () => Promise<unknown>, ok: string) {
+        try {
+            await fn()
+            await props.refresh()
+            notify(ok)
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''))
+        }
+    }
+
+    async function doCommit() {
+        if (!message.value.trim()) return notify('Enter a commit message first')
+        if (amend.value && !window.confirm('Amend the last commit with the currently staged changes?')) return
+        await run(
+            () => window.api.commitWithAmend(message.value.trim(), amend.value),
+            amend.value ? 'Commit amended' : 'Committed successfully'
+        )
+        message.value = ''
+        amend.value = false
+    }
+
+    async function toggleAmend() {
+        amend.value = !amend.value
+        if (amend.value && !message.value.trim()) {
+            try {
+                message.value = (await window.api.lastCommitMessage()).split('\n')[0]
+            } catch {
+                /* ignore */
+            }
+        }
+    }
+
+    function pickHistory(path: string) {
+        emit('show-history', path)
+        menu.value = null
+    }
+    function pickBlame(path: string) {
+        emit('show-blame', path)
+        menu.value = null
+    }
+
+    const menuStyle = computed(() =>
+        menu.value
+            ? {
+                  left: `${Math.min(menu.value.x, window.innerWidth - 200)}px`,
+                  top: `${Math.min(menu.value.y, window.innerHeight - 90)}px`,
+              }
+            : {}
+    )
+
+    const STATUS_LABEL: Record<string, string> = {
+        M: 'Modified',
+        A: 'Added',
+        D: 'Deleted',
+        '?': 'Untracked',
+        R: 'Renamed',
+        C: 'Copied',
+        U: 'Conflict',
+    }
+    function unstage(file: FileEntry) {
+        void run(() => window.api.unstage([file.path]), 'File unstaged')
+    }
+    function stage(file: FileEntry) {
+        void run(() => window.api.stage([file.path]), 'File staged')
+    }
+    function unstageAll() {
+        void run(() => window.api.unstageAll(), 'Unstaged all files')
+    }
+    function stageAll() {
+        void run(() => window.api.stageAll(), 'Staged all files')
+    }
+    function discard(file: FileEntry) {
+        if (!window.confirm(`Discard changes to "${file.path}"?`)) return
+        void run(() => window.api.discardFile(file.path), 'Changes discarded')
+    }
+
+    function badgeClass(badge: string) {
+        const status = badge === '?' ? 'U' : badge
+        return `b-${status.toLowerCase()}`
+    }
+</script>
+
+<template>
+    <div class="file-panel">
+        <div class="panel-heading">
+            <div class="panel-heading-title"><FileDiff :size="16" /><strong>Changes</strong></div>
+            <span class="panel-count">{{ files.length }}</span>
+        </div>
+        <div class="commit-box">
+            <label class="amend-toggle">
+                <input
+                    v-model="amend"
+                    type="checkbox"
+                    @change="toggleAmend" />
+                Amend last commit
+            </label>
+            <textarea
+                v-model="message"
+                placeholder="Summary of changes"
+                rows="2"
+                @keydown.enter.meta.prevent="doCommit()"
+                @keydown.enter.ctrl.prevent="doCommit()" />
+            <button
+                class="btn primary commit-btn"
+                :disabled="!message.trim() || staged.length === 0"
+                @click="doCommit()">
+                <Check :size="15" /> {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
+            </button>
+            <div
+                v-if="staged.length === 0 && files.length > 0 && !amend"
+                class="commit-hint">
+                Stage at least one file to commit
+            </div>
+        </div>
+
+        <div class="file-groups">
+            <div class="group-header">
+                <h4>
+                    Staged files <span>{{ staged.length }}</span>
+                </h4>
+                <button
+                    v-if="staged.length > 0"
+                    class="link-btn"
+                    @click="unstageAll()">
+                    Unstage all
+                </button>
+            </div>
+            <div
+                v-for="file in staged"
+                :key="`staged:${file.path}`"
+                class="file-row"
+                :class="{ selected: selected?.path === file.path && selected.staged }"
+                @click="emit('select', { path: file.path, staged: true })">
+                <span
+                    class="badge"
+                    :class="badgeClass(file.staged)"
+                    >{{ file.staged }}</span
+                >
+                <span
+                    class="file-path"
+                    :title="`${file.path} — ${STATUS_LABEL[file.staged] ?? ''}`"
+                    >{{ file.path }}</span
+                >
+                <button
+                    class="icon-btn"
+                    title="Unstage"
+                    @click.stop="unstage(file)">
+                    <Minus :size="14" />
+                </button>
+            </div>
+            <div
+                v-if="staged.length === 0"
+                class="group-empty">
+                No staged files
+            </div>
+
+            <div class="group-header">
+                <h4>
+                    Unstaged changes <span>{{ unstaged.length }}</span>
+                </h4>
+                <button
+                    v-if="unstaged.length > 0"
+                    class="link-btn"
+                    @click="stageAll()">
+                    Stage all
+                </button>
+            </div>
+            <div
+                v-for="file in unstaged"
+                :key="`unstaged:${file.path}`"
+                class="file-row"
+                :class="{ selected: selected?.path === file.path && !selected.staged }"
+                @click="emit('select', { path: file.path, staged: false })"
+                @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: file.path }">
+                <span
+                    class="badge"
+                    :class="badgeClass(file.unstaged)"
+                    >{{ file.unstaged }}</span
+                >
+                <span
+                    class="file-path"
+                    :title="`${file.path} — ${STATUS_LABEL[file.unstaged] ?? ''}`"
+                    >{{ file.path }}</span
+                >
+                <button
+                    class="icon-btn"
+                    title="Stage"
+                    @click.stop="stage(file)">
+                    <Plus :size="14" />
+                </button>
+                <button
+                    class="icon-btn danger"
+                    title="Discard changes"
+                    @click.stop="discard(file)">
+                    <RotateCcw :size="13" />
+                </button>
+            </div>
+            <div
+                v-if="unstaged.length === 0"
+                class="group-empty">
+                Working tree clean
+            </div>
+
+            <div
+                v-if="menu"
+                class="context-menu"
+                :style="menuStyle"
+                @mouseleave="menu = null">
+                <button
+                    class="context-menu-item"
+                    @click="pickHistory(menu.path)">
+                    <History
+                        :size="12"
+                        style="margin-right: 6px" />
+                    View history
+                </button>
+                <button
+                    class="context-menu-item"
+                    @click="pickBlame(menu.path)">
+                    <ScanSearch
+                        :size="12"
+                        style="margin-right: 6px" />
+                    Blame
+                </button>
+            </div>
+        </div>
+    </div>
+</template>

@@ -1,0 +1,66 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "rules": {
+        "no-console": [
+            "error",
+            {
+                "allow": ["warn", "error"]
+            }
+        ],
+        "no-var": "error",
+        "no-unused-vars": "error",
+        "no-debugger": "error",
+        "no-empty-function": [
+            "error",
+            {
+                "allow": ["arrowFunctions"]
+            }
+        ],
+        "eqeqeq": "error",
+        "no-duplicate-imports": "error",
+        "prefer-const": "error",
+        "no-await-in-loop": "error",
+        "no-constant-condition": "error",
+        "no-dupe-keys": "error",
+        "no-unreachable": "error",
+        "no-useless-catch": "error",
+        "require-await": "error",
+        "prefer-template": "warn",
+        "no-empty-file": "off",
+        "no-unused-expressions": "off",
+        "typescript/no-unused-vars": [
+            "error",
+            {
+                "varsIgnorePattern": "^_",
+                "argsIgnorePattern": "^_"
+            }
+        ],
+        "typescript/explicit-function-return-type": "off",
+        "typescript/prefer-nullish-coalescing": "warn",
+        "typescript/prefer-optional-chain": "warn",
+        "typescript/consistent-type-imports": "warn",
+        "typescript/no-floating-promises": "error",
+        "typescript/return-await": "error",
+        "typescript/no-unnecessary-type-constraint": "warn",
+        "vue/no-arrow-functions-in-watch": "error",
+        "vue/no-export-in-script-setup": "error",
+        "vue/no-lifecycle-after-await": "error",
+        "vue/require-typed-ref": "warn",
+        "vue/no-watch-after-await": "error",
+        "vue/no-expose-after-await": "error",
+        "vue/require-direct-export": "error",
+        "vue/require-prop-types": "error",
+        "vue/no-reserved-props": "warn",
+        "vue/prop-name-casing": "warn",
+        "vue/require-prop-type-constructor": "error",
+        "vue/no-reserved-component-names": "error",
+        "vue/component-definition-name-casing": "warn",
+        "vue/no-reserved-keys": "error",
+        "vue/no-computed-properties-in-data": "error",
+        "vue/no-deprecated-props-default-this": "warn",
+        "vue/no-shared-component-data": "error",
+        "vue/next-tick-style": "warn",
+        "vue/require-render-return": "error",
+        "vue/valid-define-options": "error"
+    }
+}

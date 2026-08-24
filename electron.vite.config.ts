@@ -1,33 +1,73 @@
-import { defineConfig } from 'electron-vite'
-import react from '@vitejs/plugin-react'
 import { resolve } from 'node:path'
 
+import vue from '@vitejs/plugin-vue'
+import { defineConfig } from 'electron-vite'
+import AutoImport from 'unplugin-auto-import/vite'
+import Components from 'unplugin-vue-components/vite'
+
 export default defineConfig({
-  main: {
-    resolve: {
-      alias: { '@shared': resolve(__dirname, 'src/shared') },
+    main: {
+        resolve: {
+            alias: { '@shared': resolve(__dirname, 'src/shared') },
+        },
+        build: {
+            rollupOptions: {
+                external: ['simple-git'],
+            },
+        },
     },
-    build: {
-      rollupOptions: {
-        external: ['simple-git'],
-      },
+    preload: {
+        resolve: {
+            alias: { '@shared': resolve(__dirname, 'src/shared') },
+        },
     },
-  },
-  preload: {
-    resolve: {
-      alias: { '@shared': resolve(__dirname, 'src/shared') },
+    renderer: {
+        root: 'src/renderer',
+        resolve: {
+            alias: {
+                '@shared': resolve(__dirname, 'src/shared'),
+                '@': resolve(__dirname, 'src/renderer/src'),
+            },
+        },
+        plugins: [
+            vue(),
+            AutoImport({
+                imports: [
+                    {
+                        vue: [
+                            'ref',
+                            'reactive',
+                            'computed',
+                            'watch',
+                            'watchEffect',
+                            'defineProps',
+                            'defineEmits',
+                            'onMounted',
+                            'onBeforeUnmount',
+                            'onUnmounted',
+                            'toRefs',
+                            'provide',
+                            'inject',
+                        ],
+                        pinia: ['defineStore', 'storeToRefs'],
+                    },
+                ],
+                dirs: ['src/stores/**', 'src/utils/**'],
+                dts: 'src/auto-imports.d.ts',
+            }),
+            Components({
+                dirs: ['src/renderer/src/components'],
+                dts: 'src/components.d.ts',
+            }),
+        ],
+        optimizeDeps: {
+            include: ['vue', 'pinia', 'pinia-plugin-persistedstate', 'lucide-vue-next'],
+            entries: ['./src/renderer/src/**/*.vue'],
+        },
+        build: {
+            rollupOptions: {
+                input: resolve(__dirname, 'src/renderer/index.html'),
+            },
+        },
     },
-  },
-  renderer: {
-    root: 'src/renderer',
-    resolve: {
-      alias: { '@shared': resolve(__dirname, 'src/shared') },
-    },
-    plugins: [react()],
-    build: {
-      rollupOptions: {
-        input: resolve(__dirname, 'src/renderer/index.html'),
-      },
-    },
-  },
 })

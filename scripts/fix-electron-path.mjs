@@ -10,12 +10,12 @@ const electronDir = join(root, 'node_modules', 'electron')
 const pathTxt = join(electronDir, 'path.txt')
 
 if (!existsSync(pathTxt)) {
-  writeFileSync(pathTxt, 'Electron.app/Contents/MacOS/Electron')
-  console.log('[fix-electron-path] wrote path.txt')
+    writeFileSync(pathTxt, 'Electron.app/Contents/MacOS/Electron')
+    process.stdout.write('[fix-electron-path] wrote path.txt\n')
 } else {
-  const content = readFileSync(pathTxt, 'utf8')
-  if (content !== content.trim()) {
-    writeFileSync(pathTxt, content.trim())
-    console.log('[fix-electron-path] trimmed path.txt')
-  }
+    const content = readFileSync(pathTxt, 'utf8')
+    if (content !== content.trim()) {
+        writeFileSync(pathTxt, content.trim())
+        process.stdout.write('[fix-electron-path] trimmed path.txt\n')
+    }
 }

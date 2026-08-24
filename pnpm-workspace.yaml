@@ -1,10 +1,11 @@
 packages: []
 
 allowBuilds:
-  electron: true
-  electron-winstaller: true
-  esbuild: true
+    electron: true
+    electron-winstaller: true
+    esbuild: true
+    vue-demi: true
 
 onlyBuiltDependencies:
-  - electron
-  - esbuild
+    - electron
+    - esbuild

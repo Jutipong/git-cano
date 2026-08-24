@@ -1,0 +1,7 @@
+# Ignore generated declaration files so oxfmt doesn't try to parse them
+src/renderer/src/auto-imports.d.ts
+src/renderer/src/components.d.ts
+out/
+release/
+node_modules/
+pnpm-lock.yaml

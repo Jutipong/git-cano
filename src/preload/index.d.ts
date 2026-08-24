@@ -1,7 +1,9 @@
 export {}
 
+import type { Api } from './index'
+
 declare global {
-  interface Window {
-    api: import('./index').Api
-  }
+    interface Window {
+        api: Api
+    }
 }

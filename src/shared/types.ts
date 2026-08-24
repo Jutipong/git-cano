@@ -1,122 +1,122 @@
 // Shared types between main / preload / renderer
 
 export interface CommitNode {
-  hash: string
-  shortHash: string
-  parents: string[]
-  author: string
-  date: string
-  subject: string
-  refs: string[] // e.g. ["HEAD -> main", "origin/main", "tag: v1.0"]
-  lane: number
+    hash: string
+    shortHash: string
+    parents: string[]
+    author: string
+    date: string
+    subject: string
+    refs: string[] // e.g. ["HEAD -> main", "origin/main", "tag: v1.0"]
+    lane: number
 }
 
 export interface FileEntry {
-  path: string
-  /** index (staged) status: ' ' | A | M | D | R | C | U */
-  staged: string
-  /** working dir status: ' ' | M | D | ? | U */
-  unstaged: string
+    path: string
+    /** Index (staged) status: ' ' | A | M | D | R | C | U */
+    staged: string
+    /** Working dir status: ' ' | M | D | ? | U */
+    unstaged: string
 }
 
 export interface RepoStatus {
-  path: string
-  name: string
-  branch: string
-  tracking: string | null
-  ahead: number
-  behind: number
-  files: FileEntry[]
+    path: string
+    name: string
+    branch: string
+    tracking: string | null
+    ahead: number
+    behind: number
+    files: FileEntry[]
 }
 
 export interface BranchInfo {
-  name: string
-  current: boolean
+    name: string
+    current: boolean
 }
 
 export interface DiffLine {
-  type: 'add' | 'del' | 'ctx' | 'hunk' | 'meta'
-  oldNo: number | null
-  newNo: number | null
-  text: string
+    type: 'add' | 'del' | 'ctx' | 'hunk' | 'meta'
+    oldNo: number | null
+    newNo: number | null
+    text: string
 }
 
 export interface ApiError {
-  message: string
+    message: string
 }
 
 export interface CommitFile {
-  path: string
-  status: string
-  additions: number
-  deletions: number
+    path: string
+    status: string
+    additions: number
+    deletions: number
 }
 
 export interface CommitDetails {
-  hash: string
-  message: string
-  author: string
-  email: string
-  date: string
-  parents: string[]
-  files: CommitFile[]
-  diff: DiffLine[]
+    hash: string
+    message: string
+    author: string
+    email: string
+    date: string
+    parents: string[]
+    files: CommitFile[]
+    diff: DiffLine[]
 }
 
 export interface StashEntry {
-  index: number
-  hash: string
-  message: string
-  date: string
+    index: number
+    hash: string
+    message: string
+    date: string
 }
 
 export interface RepoState {
-  merging: boolean
-  rebasing: boolean
-  bisectActive: boolean
+    merging: boolean
+    rebasing: boolean
+    bisectActive: boolean
 }
 
 export interface MenuItem {
-  label: string
-  action?: () => void
-  danger?: boolean
-  separatorBefore?: boolean
+    label: string
+    action?: () => void
+    danger?: boolean
+    separatorBefore?: boolean
 }
 
 export type RebaseCommand = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop' | 'edit' | 'split'
 
 export interface RebaseEntry {
-  command: RebaseCommand
-  hash: string
-  message?: string
+    command: RebaseCommand
+    hash: string
+    message?: string
 }
 
 export interface RebaseOutcome {
-  completed: boolean
-  message: string
+    completed: boolean
+    message: string
 }
 
 export interface TagInfo {
-  name: string
-  hash: string
+    name: string
+    hash: string
 }
 
 export interface RemoteInfo {
-  name: string
-  fetchUrl: string
-  pushUrl: string
+    name: string
+    fetchUrl: string
+    pushUrl: string
 }
 
 export interface WorktreeInfo {
-  path: string
-  head: string
-  branch: string | null
+    path: string
+    head: string
+    branch: string | null
 }
 
 export interface BlameLine {
-  hash: string
-  author: string
-  date: string
-  lineNumber: number
-  content: string
+    hash: string
+    author: string
+    date: string
+    lineNumber: number
+    content: string
 }
