@@ -1,8 +1,8 @@
 {
-  "name": "gitkraken-x",
+  "name": "open-git",
   "version": "0.1.0",
-  "description": "A lightweight Git GUI inspired by GitKraken (basic features only)",
-  "author": "GitKraken X contributors",
+  "description": "Open Git - a lightweight Git GUI with basic features",
+  "author": "Open Git contributors",
   "main": "out/main/index.js",
   "type": "module",
   "scripts": {
@@ -14,12 +14,25 @@
     "typecheck": "tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json"
   },
   "build": {
-    "appId": "dev.js.gitkrakenx",
-    "productName": "GitKraken X",
-    "directories": { "output": "release" },
-    "files": ["out/**/*", "node_modules/**/*", "package.json"],
+    "appId": "com.jutipong.open-git",
+    "productName": "Open Git",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
     "mac": {
-      "target": [{ "target": "dmg", "arch": ["arm64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
       "category": "public.app-category.developer-tools",
       "identity": null
     }

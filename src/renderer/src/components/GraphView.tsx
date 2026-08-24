@@ -22,7 +22,7 @@ export default function GraphView({ commits, query, hasMore, onLoadMore, onSelec
   const [selectedHash, setSelectedHash] = useState<string | null>(null)
   const [menu, setMenu] = useState<MenuState | null>(null)
   const [dropTargetHash, setDropTargetHash] = useState<string | null>(null)
-  const [zoom, setZoom] = useState(() => Number(localStorage.getItem('gkx-graph-zoom')) || 1)
+  const [zoom, setZoom] = useState(() => Number(localStorage.getItem('ogit-graph-zoom')) || 1)
   const [visibleRange, setVisibleRange] = useState<[number, number]>([0, 60])
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -30,7 +30,7 @@ export default function GraphView({ commits, query, hasMore, onLoadMore, onSelec
   const rowH = Math.round(BASE_ROW_H * zoom)
 
   useEffect(() => {
-    localStorage.setItem('gkx-graph-zoom', String(zoom))
+    localStorage.setItem('ogit-graph-zoom', String(zoom))
   }, [zoom])
 
   const onScroll = useCallback(() => {

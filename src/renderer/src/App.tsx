@@ -21,7 +21,7 @@ interface Tab {
 
 function loadSavedSession(): { paths: string[]; active: number } {
   try {
-    const raw = localStorage.getItem('gkx-session')
+    const raw = localStorage.getItem('ogit-session')
     if (raw) return JSON.parse(raw) as { paths: string[]; active: number }
   } catch {}
   return { paths: [], active: 0 }
@@ -123,7 +123,7 @@ export default function App() {
   useEffect(() => {
     if (!tabs.length) return
     localStorage.setItem(
-      'gkx-session',
+      'ogit-session',
       JSON.stringify({ paths: tabs.map((tab) => tab.path), active: activeTab }),
     )
   }, [tabs, activeTab])
@@ -232,7 +232,7 @@ export default function App() {
     setTabs(remaining)
     setActiveTab((current) => Math.max(0, current > index ? current - 1 : Math.min(current, remaining.length - 1)))
     // closing the very last tab means the user ended their session -> start fresh next launch
-    if (remaining.length === 0) localStorage.removeItem('gkx-session')
+    if (remaining.length === 0) localStorage.removeItem('ogit-session')
     if (!stillOpen) {
       setCommits([])
       setSelectedCommit(null)

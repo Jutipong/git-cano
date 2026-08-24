@@ -31,7 +31,7 @@ export default function Welcome({ onOpened, notify }: Props) {
 
   return (
     <div className="welcome">
-      <h1>🐙 GitKraken X</h1>
+      <h1>🔱 Open Git</h1>
       <p className="tagline">A lightweight Git GUI — basic features only</p>
 
       <div className="welcome-actions">

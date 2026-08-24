@@ -28,7 +28,7 @@ export default function Toolbar({ repo, refresh, notify, search, onSearch }: Pro
     const next = theme === 'dark' ? 'light' : 'dark'
     setTheme(next)
     document.documentElement.dataset.theme = next
-    localStorage.setItem('gkx-theme', next)
+    localStorage.setItem('ogit-theme', next)
     notify(`${next === 'dark' ? 'Dark' : 'Light'} theme`)
   }
   const act = async (label: string, fn: () => Promise<unknown>) => {
@@ -43,9 +43,9 @@ export default function Toolbar({ repo, refresh, notify, search, onSearch }: Pro
 
   return (
     <header className="toolbar">
-      <div className="product-mark" aria-label="GitKraken X">
+      <div className="product-mark" aria-label="Open Git">
         <span className="product-mark-icon">G</span>
-        <span>GitKraken X</span>
+        <span>Open Git</span>
       </div>
       <div className="toolbar-divider" />
       <div className="repo-context">

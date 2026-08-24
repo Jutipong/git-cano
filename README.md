@@ -1,6 +1,6 @@
-# 🐙 GitKraken X
+# 🔀 Open Git
 
-A lightweight Git GUI inspired by GitKraken — **basic features only** (no AI, no PR integration).
+A lightweight open-source Git GUI — **basic features only** (no AI, no PR integration).
 
 Built with **Electron + React + TypeScript + simple-git**.
 
@@ -29,7 +29,7 @@ Built with **Electron + React + TypeScript + simple-git**.
 
 ```bash
 pnpm dist
-# → release/GitKraken X-<version>-arm64.dmg
+# → release/Open Git-<version>-arm64.dmg
 ```
 
 ## Run

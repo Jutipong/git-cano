@@ -33,12 +33,12 @@ function buildSideBySide(lines: DiffLine[]): SideBySideRow[] {
 export default function DiffView({ file }: Props) {
   const [lines, setLines] = useState<DiffLine[]>([])
   const [loading, setLoading] = useState(false)
-  const [splitMode, setSplitMode] = useState(() => localStorage.getItem('gkx-diff-mode') === 'split')
+  const [splitMode, setSplitMode] = useState(() => localStorage.getItem('ogit-diff-mode') === 'split')
   const [meta, setMeta] = useState<{ binary: boolean; image: boolean } | null>(null)
   const [images, setImages] = useState<{ oldUrl: string | null; newUrl: string | null } | null>(null)
 
   useEffect(() => {
-    localStorage.setItem('gkx-diff-mode', splitMode ? 'split' : 'unified')
+    localStorage.setItem('ogit-diff-mode', splitMode ? 'split' : 'unified')
   }, [splitMode])
 
   useEffect(() => {

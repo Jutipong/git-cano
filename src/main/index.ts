@@ -58,7 +58,7 @@ function createWindow(): void {
     height: 900,
     minWidth: 1000,
     minHeight: 600,
-    title: 'GitKraken X',
+    title: 'Open Git',
     backgroundColor: '#1e2227',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
