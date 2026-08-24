@@ -207,6 +207,7 @@
                     :files="selectedCommit ? repoStore.commitFiles : repo.files"
                     :mode="selectedCommit ? 'commit' : 'workdir'"
                     :selected="selectedFile"
+                    :commit-subject="repoStore.commitSubject"
                     :refresh="repoStore.refresh"
                     @select="selectedFile = $event"
                     @show-history="historyFile = $event"

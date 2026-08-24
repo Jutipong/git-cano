@@ -947,6 +947,12 @@ kbd {
 .commit-box textarea:focus {
     border-color: var(--teal);
 }
+.commit-box textarea[readonly] {
+    color: var(--text-secondary);
+    background: transparent;
+    border-style: dashed;
+    cursor: default;
+}
 .commit-box textarea::placeholder {
     color: var(--text-muted);
 }

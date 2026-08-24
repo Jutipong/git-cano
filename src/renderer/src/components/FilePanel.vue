@@ -7,8 +7,9 @@
         refresh: () => Promise<unknown>
         mode?: 'workdir' | 'commit'
         commitHash?: string
+        commitSubject?: string
     }
-    const props = withDefaults(defineProps<Props>(), { mode: 'workdir', commitHash: '' })
+    const props = withDefaults(defineProps<Props>(), { mode: 'workdir', commitHash: '', commitSubject: '' })
     const emit = defineEmits<{
         (e: 'select', sel: { path: string; staged: boolean } | null): void
         (e: 'show-history', path: string): void
@@ -320,6 +321,17 @@
                 class="commit-hint">
                 Stage at least one file to commit
             </div>
+        </div>
+
+        <!-- read-only message of the selected (already committed) commit -->
+        <div
+            v-else
+            class="commit-box">
+            <textarea
+                :value="commitSubject"
+                placeholder="No commit message"
+                rows="2"
+                readonly />
         </div>
     </div>
 </template>
