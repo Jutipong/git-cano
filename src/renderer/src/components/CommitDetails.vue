@@ -145,22 +145,6 @@ function formatDate(value: string): string {
         </div>
 
         <div class="commit-details-content">
-            <p v-if="body" class="commit-details-body">{{ body }}</p>
-
-            <div class="commit-meta">
-                <span class="cd-author">{{ details?.author || commit.author }}</span>
-                <span class="cd-date">{{ formatDate(details?.date || commit.date) }}</span>
-                <span class="cd-stats">
-                    <span v-if="stats.additions" class="stat-add">+{{ stats.additions }}</span>
-                    <span v-if="stats.deletions" class="stat-del">−{{ stats.deletions }}</span>
-                </span>
-
-                <span class="spacer" />
-                <span v-for="ref in commit.refs.slice(0, 3)" :key="ref" class="ref-chip">
-                    {{ ref.replace('HEAD -> ', '') }}
-                </span>
-            </div>
-
             <div class="commit-actions-row">
                 <button
                     v-if="details && details.files.length"
@@ -175,6 +159,22 @@ function formatDate(value: string): string {
                 </button>
                 <span v-else-if="!details" class="muted">Loading…</span>
                 <span v-else class="muted">No changed files</span>
+            </div>
+
+            <p v-if="body" class="commit-details-body">{{ body }}</p>
+
+            <div class="commit-meta">
+                <span class="cd-author">{{ details?.author || commit.author }}</span>
+                <span class="cd-date">{{ formatDate(details?.date || commit.date) }}</span>
+                <span class="cd-stats">
+                    <span v-if="stats.additions" class="stat-add">+{{ stats.additions }}</span>
+                    <span v-if="stats.deletions" class="stat-del">−{{ stats.deletions }}</span>
+                </span>
+
+                <span class="spacer" />
+                <span v-for="ref in commit.refs.slice(0, 3)" :key="ref" class="ref-chip">
+                    {{ ref.replace('HEAD -> ', '') }}
+                </span>
             </div>
 
             <div v-if="openFile && details" class="commit-files">

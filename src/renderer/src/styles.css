@@ -1463,7 +1463,10 @@ kbd {
     display: flex;
     align-items: center;
     gap: 5px;
-    margin-top: 10px;
+    margin: -10px -15px 10px;
+    padding: 6px 15px;
+    background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+    border-bottom: 1px solid var(--line-soft);
 }
 .commit-files {
     margin-top: 11px;
