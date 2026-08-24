@@ -131,7 +131,7 @@
         const startH = ui.summaryHeight
         const onMove = (moveEvent: MouseEvent) => {
             // ลากขึ้น = สูงขึ้น
-            ui.summaryHeight = Math.min(480, Math.max(96, startH + (startY - moveEvent.clientY)))
+            ui.summaryHeight = Math.min(480, Math.max(140, startH + (startY - moveEvent.clientY)))
         }
         const onEnd = () => {
             document.body.style.cursor = ''

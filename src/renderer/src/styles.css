@@ -399,6 +399,12 @@ kbd {
 .toolbar-action.action-pull {
     color: var(--blue);
 }
+.toolbar-action.action-stash {
+    color: var(--purple);
+}
+.toolbar-action.action-stash:hover {
+    color: var(--purple);
+}
 .toolbar-action.primary-action:hover {
     color: var(--green);
 }
@@ -903,7 +909,7 @@ kbd {
 }
 .commit-box textarea {
     width: 100%;
-    min-height: 192px;
+    min-height: 140px;
     resize: none;
     padding: 8px 9px;
     color: var(--text);

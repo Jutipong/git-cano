@@ -21,8 +21,10 @@
     function actPush() {
         void act('Push', () => window.api.push())
     }
-    function actRefresh() {
-        void act('Refresh', props.refresh)
+    function actStash() {
+        const message = window.prompt('Stash message:', 'WIP')
+        if (message === null) return
+        void act('Stash', () => window.api.createStash(message.trim() || 'WIP', true))
     }
 
     const busy = ref<string | null>(null)
@@ -95,14 +97,14 @@
             </button>
         </label>
         <button
-            class="toolbar-icon-button"
-            title="Refresh"
+            class="toolbar-action action-stash"
+            title="Stash changes"
             :disabled="!!busy"
-            @click="actRefresh()">
-            <i-lucide-refresh-cw
-                :class="{ spinning: busy === 'Refresh' }"
-                width="16"
-                height="16" />
+            @click="actStash()">
+            <i-lucide-archive
+                width="15"
+                height="15" />
+            <span>Stash</span>
         </button>
         <div class="toolbar-divider" />
         <div class="remote-actions">
