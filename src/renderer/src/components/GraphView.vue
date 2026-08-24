@@ -197,7 +197,7 @@
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
                     @click="select(commit)"
-                    @contextmenu.prevent="openMenu(commit, $event)"
+                    @contextmenu.prevent.stop="openMenu(commit, $event)"
                     @dragstart="$event.dataTransfer?.setData('text/plain', `commit:${commit.hash}`)"
                     @dragover="
                         $event => {
