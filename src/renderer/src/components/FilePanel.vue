@@ -291,17 +291,25 @@
             </div>
         </div>
 
-        <div
-            v-if="mode === 'workdir'"
-            class="commit-box">
-            <label class="amend-toggle">
+        <div class="commit-box">
+            <label
+                v-if="mode === 'workdir'"
+                class="amend-toggle">
                 <input
                     v-model="amend"
                     type="checkbox"
                     @change="toggleAmend" />
                 Amend last commit
             </label>
+            <!-- read-only when viewing an already-committed commit -->
             <textarea
+                v-if="mode === 'commit'"
+                :value="commitSubject"
+                placeholder="No commit message"
+                rows="2"
+                readonly />
+            <textarea
+                v-else
                 v-model="message"
                 placeholder="Summary of changes"
                 rows="2"
@@ -309,7 +317,7 @@
                 @keydown.enter.ctrl.prevent="doCommit()" />
             <button
                 class="btn primary commit-btn"
-                :disabled="!message.trim() || staged.length === 0"
+                :disabled="mode === 'commit' || !message.trim() || staged.length === 0"
                 @click="doCommit()">
                 <i-lucide-check
                     width="15"
@@ -317,21 +325,10 @@
                 {{ amend ? 'Amend commit' : 'Commit changes' }} <kbd>⌘↵</kbd>
             </button>
             <div
-                v-if="staged.length === 0 && files.length > 0 && !amend"
+                v-if="mode === 'workdir' && staged.length === 0 && files.length > 0 && !amend"
                 class="commit-hint">
                 Stage at least one file to commit
             </div>
-        </div>
-
-        <!-- read-only message of the selected (already committed) commit -->
-        <div
-            v-else
-            class="commit-box">
-            <textarea
-                :value="commitSubject"
-                placeholder="No commit message"
-                rows="2"
-                readonly />
         </div>
     </div>
 </template>
