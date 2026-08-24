@@ -121,7 +121,7 @@ export const useRepoStore = defineStore('repo', () => {
                 /* repo moved/deleted — skip */
             }
         }
-        if (openedCount > 0 && saved.active > 0 && saved.active < tabs.value.length) {
+        if (openedCount > 0 && saved.active >= 0 && saved.active < tabs.value.length) {
             activeTab.value = saved.active
             await selectTab(activeTab.value)
         }

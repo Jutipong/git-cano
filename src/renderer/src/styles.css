@@ -391,7 +391,22 @@ kbd {
     border-color: var(--line);
 }
 .toolbar-action.primary-action {
+    color: var(--green);
+}
+.toolbar-action.action-fetch {
     color: var(--teal);
+}
+.toolbar-action.action-pull {
+    color: var(--blue);
+}
+.toolbar-action.primary-action:hover {
+    color: var(--green);
+}
+.toolbar-action.action-fetch:hover {
+    color: var(--teal);
+}
+.toolbar-action.action-pull:hover {
+    color: var(--blue);
 }
 
 /* Left navigation */

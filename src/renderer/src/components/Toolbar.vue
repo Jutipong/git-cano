@@ -107,7 +107,7 @@
         <div class="toolbar-divider" />
         <div class="remote-actions">
             <button
-                class="toolbar-action"
+                class="toolbar-action action-fetch"
                 :disabled="!!busy"
                 @click="actFetch()">
                 <i-lucide-arrow-down-to-line
@@ -117,7 +117,7 @@
                 <span>Fetch</span>
             </button>
             <button
-                class="toolbar-action"
+                class="toolbar-action action-pull"
                 :disabled="!!busy"
                 @click="actPull()">
                 <i-lucide-arrow-down

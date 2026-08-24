@@ -156,20 +156,15 @@
 </script>
 
 <template>
-    <Welcome
-        v-if="!repo"
-        @opened="repoStore.addTab($event)" />
-
-    <div
-        v-else
-        class="app">
+    <div class="app">
         <Toolbar
+            v-if="repo"
             :repo="repo"
             :refresh="repoStore.refresh"
             :bisect-active="repoState.bisectActive"
             v-model:search="ui.searchQuery" />
         <ConflictBanner
-            v-if="repoState.merging || repoState.rebasing || conflicts.length"
+            v-if="repo && (repoState.merging || repoState.rebasing || conflicts.length)"
             :conflicts="conflicts"
             :state="repoState"
             :refresh="repoStore.refresh" />
@@ -179,7 +174,26 @@
             @select="index => repoStore.setActive(index)"
             @close="repoStore.closeTab($event)"
             @open-new="openNewRepo()" />
-        <div class="app-body">
+        <div
+            v-if="!repo"
+            class="app-empty">
+            <i-lucide-folder-git2
+                width="42"
+                height="42" />
+            <strong>No repository opened</strong>
+            <span>Open a repository to see its graph, branches and changes</span>
+            <button
+                class="btn primary"
+                @click="openNewRepo()">
+                <i-lucide-plus
+                    width="15"
+                    height="15" />
+                Open repository
+            </button>
+        </div>
+        <div
+            v-else
+            class="app-body">
             <Sidebar
                 :repo="repo"
                 :refresh="repoStore.refresh"
