@@ -543,7 +543,8 @@ kbd {
 .diff-view.fullscreen {
     position: fixed;
     z-index: 60;
-    inset: 0;
+    /* override the inline `right` offset bound by the app-layout */
+    inset: 0 !important;
     box-shadow: none;
 }
 .graph-view {
