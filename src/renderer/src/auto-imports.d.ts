@@ -13,6 +13,7 @@ declare global {
   const defineStore: typeof import('pinia')['defineStore']
   const flattenTree: typeof import('./utils/fileTree')['flattenTree']
   const formatCommitDate: typeof import('./utils/format')['formatCommitDate']
+  const formatShortDate: typeof import('./utils/format')['formatShortDate']
   const highlightLine: typeof import('./utils/highlight')['highlightLine']
   const inject: typeof import('vue')['inject']
   const intraLineRange: typeof import('./utils/highlight')['intraLineRange']

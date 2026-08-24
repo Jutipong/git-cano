@@ -107,8 +107,8 @@ body {
 }
 
 .toolbar {
-    height: 50px;
-    flex-basis: 50px;
+    height: 44px;
+    flex-basis: 44px;
     gap: 10px;
     padding: 0 12px;
     background: var(--surface-0);
@@ -155,10 +155,10 @@ body {
 }
 
 .tab-bar {
-    height: 40px;
-    flex-basis: 40px;
+    height: 38px;
+    flex-basis: 38px;
     gap: 4px;
-    padding: 6px;
+    padding: 0 8px;
     background: var(--surface-0);
     border-right: 1px solid var(--line-soft);
     border-left: 1px solid var(--line-soft);
@@ -313,17 +313,21 @@ body {
     background: var(--surface-1);
 }
 
-.graph-toolbar,
 .panel-heading,
 .diff-header {
-    height: 44px;
-    flex-basis: 44px;
+    height: 38px;
+    flex-basis: 38px;
     padding-right: 12px;
     padding-left: 12px;
     background: color-mix(in srgb, var(--surface-0) 72%, var(--surface-1));
 }
 
 .graph-toolbar {
+    height: 38px;
+    flex-basis: 38px;
+    padding-right: 12px;
+    padding-left: 12px;
+    background: color-mix(in srgb, var(--surface-0) 72%, var(--surface-1));
     border-bottom-color: var(--line-soft);
 }
 
@@ -334,8 +338,8 @@ body {
 }
 
 .graph-header {
-    height: 29px;
-    flex-basis: 29px;
+    height: 26px;
+    flex-basis: 26px;
     padding-right: 12px;
     padding-left: 12px;
     background: color-mix(in srgb, var(--surface-0) 65%, transparent);
@@ -343,7 +347,7 @@ body {
 
 .graph-row {
     min-width: 590px;
-    height: 40px;
+    height: 28px;
     border-bottom-color: rgba(174, 187, 203, 0.07);
 }
 

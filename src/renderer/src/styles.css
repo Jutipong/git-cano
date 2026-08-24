@@ -242,8 +242,8 @@ kbd {
     z-index: 5;
     display: flex;
     align-items: center;
-    height: 56px;
-    flex: 0 0 56px;
+    height: 44px;
+    flex: 0 0 44px;
     gap: 12px;
     padding: 0 14px;
     background: var(--surface-0);
@@ -660,8 +660,8 @@ kbd {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 48px;
-    flex: 0 0 48px;
+    height: 38px;
+    flex: 0 0 38px;
     padding: 0 15px;
     border-bottom: 1px solid var(--line-soft);
 }
@@ -716,8 +716,8 @@ kbd {
     display: flex;
     align-items: center;
     gap: 12px;
-    height: 31px;
-    flex: 0 0 31px;
+    height: 26px;
+    flex: 0 0 26px;
     padding: 0 14px;
     color: var(--text-secondary);
     background: color-mix(in srgb, var(--surface-0) 55%, transparent);
@@ -759,7 +759,7 @@ kbd {
     align-items: center;
     gap: 12px;
     min-width: 590px;
-    height: 42px;
+    height: 28px;
     padding-right: 14px;
     border-bottom: 1px solid rgba(155, 169, 191, 0.06);
     cursor: pointer;
@@ -871,8 +871,8 @@ kbd {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 42px;
-    flex: 0 0 42px;
+    height: 38px;
+    flex: 0 0 38px;
     padding: 0 13px;
     border-bottom: 1px solid var(--line-soft);
 }
@@ -938,7 +938,7 @@ kbd {
 }
 .commit-box textarea {
     width: 100%;
-    min-height: 140px;
+    min-height: 96px;
     resize: none;
     padding: 8px 9px;
     color: var(--text);
@@ -1032,7 +1032,7 @@ kbd {
     display: flex;
     align-items: center;
     gap: 8px;
-    min-height: 30px;
+    min-height: 26px;
     padding: 0 10px 0 12px;
     border-left: 2px solid transparent;
     cursor: pointer;
@@ -1167,8 +1167,8 @@ kbd {
     display: flex;
     align-items: center;
     gap: 8px;
-    height: 42px;
-    flex: 0 0 42px;
+    height: 34px;
+    flex: 0 0 34px;
     padding: 0 12px;
     overflow: hidden;
     background: var(--surface-0);
@@ -1668,11 +1668,11 @@ kbd {
 .tab-bar {
     z-index: 5;
     display: flex;
-    align-items: stretch;
-    gap: 3px;
-    height: 34px;
-    flex: 0 0 34px;
-    padding: 4px 8px 0;
+    align-items: center;
+    gap: 4px;
+    height: 38px;
+    flex: 0 0 38px;
+    padding: 0 8px;
     background: var(--surface-0);
     border-bottom: 1px solid var(--line-soft);
 }

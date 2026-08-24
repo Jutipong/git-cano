@@ -2,6 +2,7 @@
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
 
     import { useUiStore } from '../stores/ui'
+    import { formatShortDate } from '../utils/format'
 
     import type { CommitNode, MenuItem } from '@shared/types'
 
@@ -21,7 +22,7 @@
 
     const COLORS = ['#35c6b0', '#5b9cf6', '#b78af7', '#f2a65a', '#ef6b73', '#4fc3d8', '#e3bd55', '#ef82b8']
     const laneW = 24
-    const rowH = 42
+    const rowH = 28
 
     const ui = useUiStore()
     const selectedHash = ref<string | null>(null)
@@ -72,9 +73,7 @@
         return index * rowH + rowH / 2
     }
     function formatDate(iso: string): string {
-        const date = new Date(iso)
-        if (Number.isNaN(date.getTime())) return iso
-        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+        return formatShortDate(iso)
     }
 </script>
 

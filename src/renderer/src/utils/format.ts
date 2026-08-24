@@ -1,3 +1,12 @@
+/** Short absolute date as dd/mm/yyyy (commit graph DATE column) */
+export function formatShortDate(value: string): string {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+    const dd = String(date.getDate()).padStart(2, '0')
+    const mm = String(date.getMonth() + 1).padStart(2, '0')
+    return `${dd}/${mm}/${date.getFullYear()}`
+}
+
 /** Human-friendly commit date: Today/Yesterday/weekday, else absolute date */
 export function formatCommitDate(value: string): string {
     const date = new Date(value)
