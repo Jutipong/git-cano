@@ -207,7 +207,7 @@
                 :key="branch.name"
                 class="branch-row"
                 :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
-                :draggable="!branch.current"
+                draggable="true"
                 @dblclick="!branch.current && checkoutBranch(branch.name)"
                 :title="branch.current ? 'Current branch' : 'Double-click to checkout'"
                 @contextmenu.prevent="openBranchContextMenu(branch, $event)"
