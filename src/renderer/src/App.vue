@@ -204,8 +204,10 @@
                 class="right-pane"
                 :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
                 <FilePanel
-                    :files="repo.files"
-                    :selected="selectedFile"
+                    :files="selectedCommit ? repoStore.commitFiles : repo.files"
+                    :mode="selectedCommit ? 'commit' : 'workdir'"
+                    :commit-hash="selectedCommit?.hash"
+                    :selected="selectedCommit ? null : selectedFile"
                     :refresh="repoStore.refresh"
                     @select="selectedFile = $event"
                     @show-history="historyFile = $event"

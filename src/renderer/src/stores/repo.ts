@@ -1,4 +1,4 @@
-import type { CommitNode, RepoState, RepoStatus } from '@shared/types'
+import type { CommitFile, CommitNode, RepoState, RepoStatus } from '@shared/types'
 
 const PAGE_SIZE = 500
 
@@ -26,6 +26,7 @@ export const useRepoStore = defineStore('repo', () => {
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
+    const commitFiles = ref<CommitFile[]>([])
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
 
     // modal states
@@ -127,6 +128,22 @@ export const useRepoStore = defineStore('repo', () => {
         logLimit.value += PAGE_SIZE
     }
 
+    // files changed by the selected commit — shown in the Changes panel
+    watch(
+        () => selectedCommit.value?.hash,
+        async hash => {
+            commitFiles.value = []
+            if (!hash) return
+            try {
+                const details = await window.api.commitDetails(hash)
+                if (selectedCommit.value?.hash === hash) commitFiles.value = details.files
+            } catch {
+                /* ignore — details panel shows its own error */
+            }
+        },
+        { immediate: true }
+    )
+
     watch(logLimit, () => void refresh())
     watch([activeTab], () => {
         if (!repo.value) return
@@ -150,6 +167,7 @@ export const useRepoStore = defineStore('repo', () => {
         hasMore,
         selectedFile,
         selectedCommit,
+        commitFiles,
         repoState,
         rebaseBase,
         historyFile,

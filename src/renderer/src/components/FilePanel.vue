@@ -1,12 +1,14 @@
 <script setup lang="ts">
-    import type { FileEntry } from '@shared/types'
+    import type { CommitFile, DiffLine, FileEntry } from '@shared/types'
 
     interface Props {
-        files: FileEntry[]
+        files: FileEntry[] | CommitFile[]
         selected: { path: string; staged: boolean } | null
         refresh: () => Promise<unknown>
+        mode?: 'workdir' | 'commit'
+        commitHash?: string
     }
-    const props = defineProps<Props>()
+    const props = withDefaults(defineProps<Props>(), { mode: 'workdir', commitHash: '' })
     const emit = defineEmits<{
         (e: 'select', sel: { path: string; staged: boolean } | null): void
         (e: 'show-history', path: string): void
@@ -14,11 +16,44 @@
     }>()
     const notify = inject<(m: string) => void>('notify', () => {})
 
-    const staged = computed(() => props.files.filter(file => file.staged !== ' ' && file.staged !== ''))
-    const unstaged = computed(() => props.files.filter(file => file.staged === ' ' || file.staged === ''))
+    const isWorkdir = computed(() => props.mode === 'workdir')
+    const staged = computed(() =>
+        isWorkdir.value
+            ? (props.files as FileEntry[]).filter(file => file.staged !== ' ' && file.staged !== '')
+            : []
+    )
+    const unstaged = computed(() =>
+        isWorkdir.value
+            ? (props.files as FileEntry[]).filter(file => file.staged === ' ' || file.staged === '')
+            : []
+    )
+    const commitFileList = computed(() => (isWorkdir.value ? [] : (props.files as CommitFile[])))
+    const shortHash = computed(() => props.commitHash.slice(0, 7))
     const message = ref('')
     const amend = ref(false)
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
+
+    // inline diff of a file changed by the selected commit
+    const openCommitFile = ref<string | null>(null)
+    const commitDiffLines = ref<DiffLine[]>([])
+
+    watch(openCommitFile, async path => {
+        commitDiffLines.value = []
+        if (!path || !props.commitHash) return
+        try {
+            commitDiffLines.value = await window.api.commitFileDiff(props.commitHash, path)
+        } catch {
+            /* ignore */
+        }
+    })
+
+    function toggleCommitFile(path: string) {
+        openCommitFile.value = openCommitFile.value === path ? null : path
+    }
+
+    function escapeHtml(text: string) {
+        return text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    }
 
     async function run(fn: () => Promise<unknown>, ok: string) {
         try {
@@ -97,7 +132,7 @@
     }
 
     function badgeClass(badge: string) {
-        const status = badge === '?' ? 'U' : badge
+        const status = badge === '?' || badge === 'R' || badge === 'C' ? 'M' : badge
         return `b-${status.toLowerCase()}`
     }
 </script>
@@ -109,11 +144,15 @@
                 <FileDiff
                     width="16"
                     height="16" /><strong>Changes</strong>
+                <span
+                    v-if="mode === 'commit'"
+                    class="panel-commit-chip">{{ shortHash }}</span>
             </div>
             <span class="panel-count">{{ files.length }}</span>
         </div>
 
         <div class="file-groups">
+            <template v-if="mode === 'workdir'">
             <div class="group-header">
                 <h4>
                     Staged files <span>{{ staged.length }}</span>
@@ -206,6 +245,63 @@
                 class="group-empty">
                 Working tree clean
             </div>
+            </template>
+
+            <!-- files changed by the selected commit -->
+            <template v-else>
+                <div
+                    v-for="file in commitFileList"
+                    :key="`commit:${file.path}`"
+                    class="commit-file-block">
+                    <div
+                        class="file-row"
+                        :class="{ selected: openCommitFile === file.path }"
+                        @click="toggleCommitFile(file.path)">
+                        <span
+                            class="badge"
+                            :class="badgeClass(file.status)"
+                            >{{ file.status }}</span
+                        >
+                        <span
+                            class="file-path"
+                            :title="file.path"
+                            >{{ file.path }}</span
+                        >
+                        <span class="commit-file-stats">
+                            <span
+                                v-if="file.additions"
+                                class="stat-add">+{{ file.additions }}</span
+                            >
+                            <span
+                                v-if="file.deletions"
+                                class="stat-del">−{{ file.deletions }}</span
+                            >
+                        </span>
+                    </div>
+                    <div
+                        v-if="openCommitFile === file.path"
+                        class="commit-inline-diff">
+                        <div
+                            v-for="(line, index) in commitDiffLines"
+                            :key="index"
+                            class="diff-line"
+                            :class="line.type">
+                            <!-- eslint-disable-next-line vue/no-v-html -->
+                            <pre v-html="escapeHtml(line.text)" />
+                        </div>
+                        <div
+                            v-if="commitDiffLines.length === 0"
+                            class="group-empty">
+                            No textual changes
+                        </div>
+                    </div>
+                </div>
+                <div
+                    v-if="commitFileList.length === 0"
+                    class="group-empty">
+                    No changed files
+                </div>
+            </template>
 
             <div
                 v-if="menu"
@@ -233,7 +329,9 @@
             </div>
         </div>
 
-        <div class="commit-box">
+        <div
+            v-if="mode === 'workdir'"
+            class="commit-box">
             <label class="amend-toggle">
                 <input
                     v-model="amend"

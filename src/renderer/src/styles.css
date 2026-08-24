@@ -896,6 +896,32 @@ kbd {
     font-size: 10px;
     text-align: center;
 }
+.panel-commit-chip {
+    padding: 1px 6px;
+    color: var(--teal);
+    background: rgba(67, 201, 182, 0.11);
+    border: 1px solid rgba(67, 201, 182, 0.28);
+    border-radius: 3px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+}
+.commit-file-stats {
+    display: inline-flex;
+    flex: none;
+    gap: 5px;
+    font-family: 'SF Mono', Menlo, monospace;
+    font-size: 10px;
+    font-weight: 600;
+}
+.commit-inline-diff {
+    max-height: 220px;
+    margin: 2px 8px 6px 24px;
+    padding: 4px 0;
+    overflow: auto;
+    background: var(--diff-bg);
+    border: 1px solid var(--line-soft);
+    border-radius: 4px;
+}
 .commit-box {
     display: flex;
     flex-direction: column;
