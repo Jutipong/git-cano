@@ -116,6 +116,12 @@ const api = {
     recentList: (): Promise<string[]> => call('recent:list'),
     recentAdd: (p: string): Promise<boolean> => call('recent:add', p),
     recentRemove: (p: string): Promise<boolean> => call('recent:remove', p),
+
+    /* client-side logging — forwarded to the main-process log file (fire-and-forget) */
+    clientLog: (level: 'info' | 'warn' | 'error', message: string): void => {
+        ipcRenderer.send('app:log', level, message)
+    },
+
     /* external repo change notifications (main-process .git watcher) */
     onRepoChanged: (callback: (repoPath: string) => void): (() => void) => {
         const listener = (_event: Electron.IpcRendererEvent, repoPath: string) => callback(repoPath)

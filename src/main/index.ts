@@ -79,6 +79,8 @@ import {
     updateSubmodules,
 } from './git'
 
+import { log, summarize, summarizeArgs } from './logger'
+
 let win: BrowserWindow | null = null
 
 /* forward external repo changes (commits made outside the app) to the renderer */
@@ -109,13 +111,18 @@ function createWindow(): void {
     }
 }
 
-/* wrap handlers so errors surface as {__error} to the renderer */
+/* wrap handlers so errors surface as {__error} to the renderer;
+ * every call is logged (channel + args + duration + outcome) */
 function handle(channel: string, fn: (...args: never[]) => Promise<unknown> | unknown): void {
     ipcMain.handle(channel, async (_e, ...args) => {
+        const started = Date.now()
         try {
-            return await (fn as (...a: unknown[]) => Promise<unknown> | unknown)(...args)
+            const result = await (fn as (...a: unknown[]) => Promise<unknown> | unknown)(...args)
+            log('debug', 'ipc', `${channel} ok ${Date.now() - started}ms ${summarizeArgs(args)}`)
+            return result
         } catch (err) {
             const message = err instanceof Error ? err.message.replace(/^Error:\s*(spawn|fatal:)?\s*/i, '') : String(err)
+            log('warn', 'ipc', `${channel} ERR ${message} ${summarizeArgs(args)}`)
             return { __error: message }
         }
     })
@@ -126,7 +133,17 @@ function requireRepo(): boolean {
     return true
 }
 
+/* client-side error/log forwarding from the renderer (fire-and-forget).
+ * registered directly on ipcMain — NOT via handle() so these calls don't
+ * get logged themselves */
+const LOG_LEVELS = new Set(['info', 'warn', 'error'])
+ipcMain.on('app:log', (_e, level: string, message: unknown) => {
+    const safeLevel = LOG_LEVELS.has(level) ? (level as 'info' | 'warn' | 'error') : 'info'
+    log(safeLevel, 'renderer', summarize(message))
+})
+
 app.whenReady().then(() => {
+    log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.OPEN_GIT_LOG_LEVEL ?? 'auto'})`)
     /* ---- repo lifecycle ---- */
     handle('repo:pickAndOpen', async () => {
         const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
