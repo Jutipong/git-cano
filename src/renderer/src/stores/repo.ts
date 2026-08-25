@@ -123,6 +123,9 @@ export const useRepoStore = defineStore('repo', () => {
                 window.api.repoState(),
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
+            // drop stale responses: only apply if this repo is still the ACTIVE tab,
+            // otherwise a slow previous-tab reply would clobber the current view
+            if (tabs.value[activeTab.value]?.path !== status.path) return
             commits.value = log
             hasMore.value = log.length >= logLimit.value
             repoState.value = state
@@ -148,6 +151,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     async function closeTab(index: number) {
         const tab = tabs.value[index]
+        const wasActive = index === activeTab.value
         const stillOpen = await window.api.closeRepo(tab.path).catch(() => false)
         const remaining = tabs.value.filter((_, i) => i !== index)
         tabs.value = remaining
@@ -157,6 +161,11 @@ export const useRepoStore = defineStore('repo', () => {
             selectedCommit.value = null
         }
         syncSession()
+        if (wasActive && remaining.length > 0) {
+            // re-sync the active repo in main — closing the active tab usually keeps the
+            // same numeric index, so the activeTab watcher would never fire on its own
+            await selectTab(activeTab.value)
+        }
     }
 
     async function setActive(index: number) {

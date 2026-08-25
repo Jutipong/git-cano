@@ -213,7 +213,7 @@
                         :title="entry.command === 'drop' ? 'Restore commit' : 'Drop commit'"
                         :disabled="running || Boolean(pausedMessage)"
                         @click="update(index, { command: entry.command === 'drop' ? 'pick' : 'drop' })">
-                        <Plus
+                        <i-lucide-plus
                             v-if="entry.command === 'drop'"
                             width="13"
                             height="13" />

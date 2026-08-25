@@ -30,14 +30,23 @@
     const pending = ref(false)
 
     const isWorkdir = computed(() => props.mode === 'workdir')
+    // untracked files arrive as index='?' (mapped to 'A' in the store) + working_dir='?'.
+    // they must NOT count as staged, otherwise they can never leave the Staged group
+    // after "Unstage all" (git reset makes newly-added files untracked again)
+    const isUntracked = (file: FileEntry) => file.unstaged === '?'
     const staged = computed(() =>
         isWorkdir.value
-            ? (props.files as FileEntry[]).filter(file => file.staged !== ' ' && file.staged !== '')
+            ? (props.files as FileEntry[]).filter(
+                  file => file.staged !== ' ' && file.staged !== '' && !isUntracked(file)
+              )
             : []
     )
+    const untracked = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isUntracked) : []))
     const unstaged = computed(() =>
         isWorkdir.value
-            ? (props.files as FileEntry[]).filter(file => file.staged === ' ' || file.staged === '')
+            ? (props.files as FileEntry[]).filter(
+                  file => !isUntracked(file) && (file.staged === ' ' || file.staged === '')
+              )
             : []
     )
     const commitFileList = computed(() => (isWorkdir.value ? [] : (props.files as CommitFile[])))
@@ -97,6 +106,7 @@
 
     const stagedRows = computed(() => makeRows(staged.value, 'staged'))
     const unstagedRows = computed(() => makeRows(unstaged.value, 'unstaged'))
+    const untrackedRows = computed(() => makeRows(untracked.value, 'untracked'))
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
 
     async function run(fn: () => Promise<unknown>, ok: string | null) {
@@ -208,7 +218,7 @@
     <div class="file-panel">
         <div class="panel-heading">
             <div class="panel-heading-title">
-                <FileDiff
+                <i-lucide-file-diff
                     width="16"
                     height="16" /><strong>{{ mode === 'commit' ? 'Commit Changes' : 'Changes' }}</strong>
                 <span class="panel-file-num">{{ files.length }}</span>
@@ -412,6 +422,83 @@
                 class="group-empty">
                 Working tree clean
             </div>
+
+            <template v-if="untracked.length > 0">
+            <div class="group-header">
+                <h4>
+                    Untracked <span>{{ untracked.length }}</span>
+                </h4>
+                <div class="group-header-actions">
+                    <button
+                        class="link-btn good"
+                        @click="stageAll()">
+                        Stage all
+                    </button>
+                </div>
+            </div>
+            <template
+                v-for="row in untrackedRows"
+                :key="row.key">
+                <div
+                    v-if="row.kind === 'dir'"
+                    class="dir-row"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="toggleDir(row.fullPath)">
+                    <i-lucide-chevron-right
+                        v-if="collapsedDirs.has(row.fullPath)"
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-chevron-down
+                        v-else
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-folder
+                        class="dir-icon"
+                        width="14"
+                        height="14" />
+                    <span
+                        class="file-path dir-name"
+                        :title="row.fullPath">{{ row.name }}</span>
+                    <span class="dir-count">{{ row.count }}</span>
+                </div>
+                <div
+                    v-else
+                    class="file-row"
+                    :class="{ selected: selected?.path === row.fullPath && !selected.staged }"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="emit('select', { path: row.fullPath, staged: false })"
+                    @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: row.fullPath }">
+                    <span
+                        class="badge"
+                        :class="badgeClass('?')"
+                        >?</span
+                    >
+                    <span
+                        class="file-path"
+                        title="Untracked — not part of git history yet"
+                        >{{ row.name }}</span
+                    >
+                    <button
+                        class="icon-btn"
+                        title="Stage"
+                        @click.stop="stage(row.file!)">
+                        <i-lucide-plus
+                            width="14"
+                            height="14" />
+                    </button>
+                    <button
+                        class="icon-btn danger"
+                        title="Discard (deletes the file)"
+                        @click.stop="discard(row.file!)">
+                        <i-lucide-rotate-ccw
+                            width="13"
+                            height="13" />
+                    </button>
+                </div>
+            </template>
+            </template>
             </template>
 
             <!-- files changed by the selected commit -->

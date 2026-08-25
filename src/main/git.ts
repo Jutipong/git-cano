@@ -5,6 +5,8 @@ import type { FSWatcher } from 'node:fs'
 
 import { simpleGit, type SimpleGit } from 'simple-git'
 
+import { log, maskUrl } from './logger'
+
 import type {
     BlameLine,
     BranchInfo,
@@ -24,6 +26,13 @@ import type {
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 
+/** SimpleGit instance with a debug hook that records every raw git command. */
+function createGit(dir: string): SimpleGit {
+    return simpleGit(dir, {
+        debug: (data: string) => log('debug', 'git', maskUrl(data)),
+    })
+}
+
 export function getRepo(): { path: string; git: SimpleGit } {
     if (!activeRepoPath) throw new Error('No repository opened')
     const instance = repoInstances.get(activeRepoPath)
@@ -32,19 +41,22 @@ export function getRepo(): { path: string; git: SimpleGit } {
 }
 
 export async function openRepo(dir: string): Promise<RepoStatus> {
-    const g = repoInstances.get(dir) ?? simpleGit(dir)
+    const g = repoInstances.get(dir) ?? createGit(dir)
     if (!(await g.checkIsRepo())) {
         throw new Error(`"${dir}" is not a git repository`)
     }
+    const reopened = repoInstances.has(dir)
     repoInstances.set(dir, g)
     activeRepoPath = dir
     watchRepo(dir)
+    log('info', 'repo', `${reopened ? 'reopen' : 'open'} ${dir}`)
     return getStatus()
 }
 
 export function setActiveRepo(dir: string): void {
     if (!repoInstances.has(dir)) throw new Error(`Repository "${dir}" is not open`)
     activeRepoPath = dir
+    log('info', 'repo', `active -> ${dir}`)
 }
 
 export function listOpenRepos(): string[] {
@@ -58,6 +70,9 @@ export function closeRepo(dir?: string): void {
     unwatchRepo(target)
     if (activeRepoPath === target) {
         activeRepoPath = repoInstances.keys().next().value ?? null
+        log('info', 'repo', `close ${target} — active falls back to ${activeRepoPath ?? 'none'}`)
+    } else {
+        log('info', 'repo', `close ${target}`)
     }
 }
 
@@ -77,8 +92,18 @@ function watchRepo(dir: string): void {
     const watchers: FSWatcher[] = []
     const emit = () => emitRepoChanged(dir)
     try {
-        // HEAD/index/config live at the top level of .git
-        watchers.push(fs.watch(gitDir, emit))
+        // HEAD/config live at the top level of .git.
+        // `index` is deliberately ignored: every `git status` run rewrites the
+        // index stat-cache, which would fire the watcher and make the renderer
+        // refresh again — an endless self-sustaining refresh loop.
+        // `.lock` files are transient git-internal bookkeeping, same story.
+        watchers.push(
+            fs.watch(gitDir, (_event, filename) => {
+                const name = typeof filename === 'string' ? filename : ''
+                if (!name || name === 'index' || name.endsWith('.lock')) return
+                emit()
+            })
+        )
         // branch refs update on commit/checkout — recursive works on macOS/Windows
         watchers.push(fs.watch(path.join(gitDir, 'refs'), { recursive: true } as never, emit))
     } catch {
@@ -139,10 +164,14 @@ export async function getStatus(): Promise<RepoStatus> {
 /* ---------------- Binary / image detection ---------------- */
 
 export async function getDiffMeta(file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
     const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']
     const ext = path.extname(file).toLowerCase()
     const image = IMAGE_EXTS.includes(ext)
+    // untracked files produce no git diff/numstat — sniff the file on disk instead
+    if (!staged && (await isUntracked(g, file))) {
+        return { binary: image ? false : isBinaryFile(p, file), image }
+    }
     try {
         const numstat = await g.raw(['diff', ...(staged ? ['--cached'] : []), '--numstat', '--no-color', '--', file])
         const line = numstat.trim().split('\n')[0]
@@ -277,9 +306,16 @@ export async function unstage(paths: string[]): Promise<void> {
 
 export async function unstageAll(): Promise<void> {
     const { git: g } = getRepo()
-    const status = await g.status()
-    const paths = status.files.map(f => f.path)
-    if (paths.length) await unstage(paths)
+    // mixed reset unstages everything without touching the worktree —
+    // never enumerate paths here: repos with thousands of staged files
+    // (e.g. node_modules) overflow the OS exec arg limit (E2BIG).
+    try {
+        await g.reset(['--'])
+        return
+    } catch {
+        /* fresh repo without HEAD yet — clear the index instead */
+    }
+    await g.raw(['rm', '--cached', '-r', '--ignore-unmatch', '--quiet', '.'])
 }
 
 export async function discard(path_: string): Promise<void> {
@@ -297,10 +333,10 @@ export async function discard(path_: string): Promise<void> {
 
 export async function discardAll(): Promise<void> {
     const { git: g } = getRepo()
+    // restore ALL tracked files from the index via a single '.' pathspec —
+    // enumerating paths overflows the OS exec arg limit on big repos (E2BIG)
     const status = await g.status()
-    // restore tracked files to their index state (staged changes survive)
-    const tracked = status.files.filter(f => f.working_dir !== '?').map(f => f.path)
-    if (tracked.length) await g.checkout(['--', ...tracked])
+    if (status.files.some(f => f.working_dir !== '?')) await g.checkout(['--', '.'])
     // untracked files/directories -> remove
     if (status.files.some(f => f.working_dir === '?')) await g.clean(['f', 'd'])
 }
@@ -314,7 +350,12 @@ export async function commit(message: string): Promise<string> {
 /* ---------------- Diff ---------------- */
 
 export async function getDiff(file: string, staged: boolean): Promise<DiffLine[]> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    // untracked files have no HEAD/index entry to diff against — render the
+    // whole file as a set of additions so its content can actually be read
+    if (!staged && (await isUntracked(g, file))) {
+        return getUntrackedDiff(p, file)
+    }
     const args = staged ? ['diff', '--cached', '--no-color', '--', file] : ['diff', '--no-color', '--', file]
     let text = ''
     try {
@@ -323,6 +364,42 @@ export async function getDiff(file: string, staged: boolean): Promise<DiffLine[]
         /* empty diff */
     }
     return parseDiff(text, file)
+}
+
+/** true when `git status --porcelain` marks the path as `??` (untracked) */
+async function isUntracked(g: SimpleGit, file: string): Promise<boolean> {
+    try {
+        const out = await g.raw(['status', '--porcelain', '--', file])
+        return out.trimStart().startsWith('??')
+    } catch {
+        return false
+    }
+}
+
+/** crude binary sniff: a NUL byte in the first 8KB marks the file as binary */
+function isBinaryFile(repoPath: string, file: string): boolean {
+    try {
+        const buf = fs.readFileSync(path.join(repoPath, file))
+        return buf.subarray(0, 8000).includes(0)
+    } catch {
+        return false
+    }
+}
+
+/** show an untracked file's whole content as an add-only diff */
+function getUntrackedDiff(repoPath: string, file: string): DiffLine[] {
+    let content = ''
+    try {
+        content = fs.readFileSync(path.join(repoPath, file), 'utf8')
+    } catch {
+        return [{ type: 'meta', oldNo: null, newNo: null, text: `diff --git a/${file} b/${file}` }]
+    }
+    const lineTexts = content.split('\n')
+    if (lineTexts.length && lineTexts[lineTexts.length - 1] === '') lineTexts.pop()
+    const lines: DiffLine[] = [{ type: 'meta', oldNo: null, newNo: null, text: `diff --git a/${file} b/${file}` }]
+    lines.push({ type: 'hunk', oldNo: null, newNo: null, text: `@@ -0,0 +1,${lineTexts.length} @@` })
+    lineTexts.forEach((text, i) => lines.push({ type: 'add', oldNo: null, newNo: i + 1, text: `+${text}` }))
+    return lines
 }
 
 function parseDiff(text: string, file?: string): DiffLine[] {
@@ -657,13 +734,22 @@ export interface TagRef {
 
 export async function listTags(): Promise<TagRef[]> {
     const { git: g } = getRepo()
-    const text = await g.raw(['for-each-ref', 'refs/tags', '--format=%(refname:short)%x1f%(objectname)'])
+    // NOTE: for-each-ref does NOT expand %x1f escapes (only pretty-format does),
+    // so the separator must be a real control character embedded in the string.
+    // %(*objectname) = peeled commit hash (present only for annotated tags);
+    // fall back to %(objectname) for lightweight tags
+    const SEP = '\x1f'
+    const text = await g.raw([
+        'for-each-ref',
+        'refs/tags',
+        `--format=%(refname:short)${SEP}%(*objectname)${SEP}%(objectname)`,
+    ])
     return text
         .split('\n')
         .filter(Boolean)
         .map(line => {
-            const [name, hash] = line.split('\x1f')
-            return { name, hash }
+            const [name, peeled, object] = line.split(SEP)
+            return { name, hash: peeled || object }
         })
 }
 
