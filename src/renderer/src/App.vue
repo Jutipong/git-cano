@@ -175,22 +175,63 @@
 
 <template>
     <div class="app">
-        <Toolbar
-            v-if="repo"
-            :repo="repo"
-            :refresh="repoStore.refresh" />
-        <ConflictBanner
-            v-if="repo && (repoState.merging || repoState.rebasing || conflicts.length)"
-            :conflicts="conflicts"
-            :state="repoState"
-            :refresh="repoStore.refresh" />
-        <TabBar
-            :tabs="tabs"
-            :active-index="activeTab"
-            @select="index => repoStore.setActive(index)"
-            @close="repoStore.closeTab($event)"
-            @open-new="openNewRepo()"
-            @reorder="(from, to) => repoStore.reorderTabs(from, to)" />
+        <template v-if="repo">
+            <Sidebar
+                :repo="repo"
+                :refresh="repoStore.refresh"
+                @interactive-rebase="rebaseBase = $event" />
+            <div
+                class="panel-splitter"
+                @mousedown="event => beginResize('left', event)" />
+            <div class="app-main">
+                <Toolbar
+                    :repo="repo"
+                    :refresh="repoStore.refresh" />
+                <ConflictBanner
+                    v-if="repoState.merging || repoState.rebasing || conflicts.length"
+                    :conflicts="conflicts"
+                    :state="repoState"
+                    :refresh="repoStore.refresh" />
+                <TabBar
+                    :tabs="tabs"
+                    :active-index="activeTab"
+                    @select="index => repoStore.setActive(index)"
+                    @close="repoStore.closeTab($event)"
+                    @open-new="openNewRepo()"
+                    @reorder="(from, to) => repoStore.reorderTabs(from, to)" />
+                <div class="app-body">
+                    <div class="center-column">
+                        <GraphView
+                            :commits="commits"
+                            :has-more="hasMore"
+                            :commit-open="!!selectedCommit"
+                            :build-commit-menu="buildCommitMenu"
+                            @select-commit="selectedCommit = $event"
+                            @close-commit="selectedCommit = null"
+                            @load-more="repoStore.loadMore()" />
+                    </div>
+                    <div
+                        class="panel-splitter"
+                        @mousedown="event => beginResize('right', event)" />
+                    <div
+                        class="right-pane"
+                        :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
+                        <FilePanel
+                            :files="selectedCommit ? repoStore.commitFiles : repo.files"
+                            :mode="selectedCommit ? 'commit' : 'workdir'"
+                            :commit-hash="selectedCommit?.hash"
+                            :selected="selectedFile"
+                            :commit-message="repoStore.commitMessage"
+                            :commit-author="repoStore.commitAuthor"
+                            :commit-date="repoStore.commitDate"
+                            :refresh="repoStore.refresh"
+                            @select="selectedFile = $event"
+                            @show-history="historyFile = $event"
+                            @show-blame="blameFile = $event" />
+                    </div>
+                </div>
+            </div>
+        </template>
         <div
             v-if="!repo"
             class="app-empty">
@@ -207,46 +248,6 @@
                     height="15" />
                 Open repository
             </button>
-        </div>
-        <div
-            v-else
-            class="app-body">
-            <Sidebar
-                :repo="repo"
-                :refresh="repoStore.refresh"
-                @interactive-rebase="rebaseBase = $event" />
-            <div
-                class="panel-splitter"
-                @mousedown="event => beginResize('left', event)" />
-            <div class="center-column">
-                <GraphView
-                    :commits="commits"
-                    :has-more="hasMore"
-                    :commit-open="!!selectedCommit"
-                    :build-commit-menu="buildCommitMenu"
-                    @select-commit="selectedCommit = $event"
-                    @close-commit="selectedCommit = null"
-                    @load-more="repoStore.loadMore()" />
-            </div>
-            <div
-                class="panel-splitter"
-                @mousedown="event => beginResize('right', event)" />
-            <div
-                class="right-pane"
-                :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
-                <FilePanel
-                    :files="selectedCommit ? repoStore.commitFiles : repo.files"
-                    :mode="selectedCommit ? 'commit' : 'workdir'"
-                    :commit-hash="selectedCommit?.hash"
-                    :selected="selectedFile"
-                    :commit-message="repoStore.commitMessage"
-                    :commit-author="repoStore.commitAuthor"
-                    :commit-date="repoStore.commitDate"
-                    :refresh="repoStore.refresh"
-                    @select="selectedFile = $event"
-                    @show-history="historyFile = $event"
-                    @show-blame="blameFile = $event" />
-            </div>
         </div>
         <!-- diff overlay: floats over tab bar + sidebar + graph, stops before the right pane -->
         <DiffView

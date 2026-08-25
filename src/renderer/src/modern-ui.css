@@ -71,11 +71,20 @@ body {
 .app {
     position: relative;
     min-width: 980px;
+    flex-direction: row;
     gap: 0;
     padding: 8px;
     background:
         radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--teal) 8%, transparent), transparent 42%),
         var(--canvas);
+}
+
+/* Right of the sidebar: toolbar + tab bar stacked over graph/changes. */
+.app-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
 }
 
 .app-empty {
@@ -132,6 +141,7 @@ body {
     height: 48px;
     flex-basis: 48px;
     gap: 4px;
+    margin-top: 6px;
     padding: 0 8px;
     background: var(--surface-0);
     border: 1px solid var(--line-soft);
@@ -222,9 +232,9 @@ body {
     /* The splitter itself provides the card gap; avoid doubling it with flex gap. */
     gap: 0;
     margin-top: 6px;
-    border: 1px solid var(--line-soft);
-    border-radius: 12px;
-    overflow: hidden;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
 }
 
 .diff-overlay {
