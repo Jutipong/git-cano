@@ -156,7 +156,11 @@ body {
         border-color 0.15s ease,
         opacity 0.15s ease,
         box-shadow 0.15s ease,
-        transform 0.15s ease;
+        transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tab-move {
+    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .repo-tab:hover {
@@ -183,31 +187,11 @@ body {
 }
 
 .repo-tab.dragging {
-    opacity: 0.45;
-    transform: scale(1.04);
+    opacity: 0.9;
+    transform: scale(1.05) rotate(-1deg);
     cursor: grabbing;
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-}
-
-.repo-tab.drop-before::before,
-.repo-tab.drop-after::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    bottom: -4px;
-    width: 3px;
-    border-radius: 999px;
-    background: var(--teal);
-    box-shadow: 0 0 6px color-mix(in srgb, var(--teal) 60%, transparent);
-    pointer-events: none;
-}
-
-.repo-tab.drop-before::before {
-    left: -5px;
-}
-
-.repo-tab.drop-after::after {
-    right: -5px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
+    z-index: 10;
 }
 
 .tab-close {
