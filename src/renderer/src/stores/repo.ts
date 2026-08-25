@@ -8,14 +8,22 @@ export interface RepoTab {
     status: RepoStatus
 }
 
-function loadSavedSession(): { paths: string[]; active: number } {
+interface PersistedSession {
+    paths: string[]
+    active: number
+}
+
+/** one-time migration from the pre-pinia 'ogit-session' localStorage key */
+function loadLegacySession(): PersistedSession | null {
     try {
         const raw = localStorage.getItem('ogit-session')
-        if (raw) return JSON.parse(raw) as { paths: string[]; active: number }
+        if (!raw) return null
+        const parsed = JSON.parse(raw) as PersistedSession
+        localStorage.removeItem('ogit-session')
+        return Array.isArray(parsed.paths) ? { paths: parsed.paths, active: parsed.active ?? 0 } : null
     } catch {
-        /* ignore */
+        return null
     }
-    return { paths: [], active: 0 }
 }
 
 export const useRepoStore = defineStore('repo', () => {
@@ -31,6 +39,7 @@ export const useRepoStore = defineStore('repo', () => {
     const commitAuthor = ref('')
     const commitDate = ref('')
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
+    const session = ref<PersistedSession>(loadLegacySession() ?? { paths: [], active: 0 })
 
     // modal states
     const rebaseBase = ref<string | null>(null)
@@ -90,7 +99,6 @@ export const useRepoStore = defineStore('repo', () => {
         const remaining = tabs.value.filter((_, i) => i !== index)
         tabs.value = remaining
         activeTab.value = Math.max(0, activeTab.value > index ? activeTab.value - 1 : Math.min(activeTab.value, remaining.length - 1))
-        if (remaining.length === 0) localStorage.removeItem('ogit-session')
         if (!stillOpen) {
             commits.value = []
             selectedCommit.value = null
@@ -122,7 +130,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     /** Session restore on launch */
     async function init() {
-        const saved = loadSavedSession()
+        const saved = session.value
         const paths = saved.paths.length ? saved.paths : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
         let openedCount = 0
         for (const path of paths) {
@@ -178,10 +186,9 @@ export const useRepoStore = defineStore('repo', () => {
             .catch(() => {})
     })
 
-    // persist open tabs for next launch
+    // keep persisted session in sync with open tabs
     watch([tabs, activeTab], () => {
-        if (!tabs.value.length) return
-        localStorage.setItem('ogit-session', JSON.stringify({ paths: tabs.value.map(tab => tab.path), active: activeTab.value }))
+        session.value = { paths: tabs.value.map(tab => tab.path), active: activeTab.value }
     })
 
     return {
@@ -213,4 +220,8 @@ export const useRepoStore = defineStore('repo', () => {
         init,
         loadMore,
     }
+}, {
+    persist: {
+        pick: ['session'],
+    },
 })
