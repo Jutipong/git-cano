@@ -53,6 +53,23 @@ export const useRepoStore = defineStore('repo', () => {
     const repo = computed<RepoStatus | null>(() => tabs.value[activeTab.value]?.status ?? null)
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
 
+    /** true while init() is restoring the previous session — suppress persistence so a
+     *  partially-restored state can never clobber the saved tab list */
+    let restoringSession = false
+
+    /** persist the open-tab session; called only from user actions, never during restore */
+    function syncSession() {
+        if (restoringSession) return
+        session.value = { paths: tabs.value.map(tab => tab.path), active: activeTab.value }
+        // write synchronously (same key/shape as pinia-plugin-persistedstate) so the
+        // last action survives even if the app quits before the async subscriber runs
+        try {
+            localStorage.setItem('repo', JSON.stringify({ session: session.value }))
+        } catch {
+            /* storage unavailable — in-memory session still works */
+        }
+    }
+
     function addTab(status: RepoStatus) {
         void window.api.recentAdd(status.path).catch(() => {})
         const existingIndex = tabs.value.findIndex(tab => tab.path === status.path)
@@ -63,6 +80,7 @@ export const useRepoStore = defineStore('repo', () => {
         }
         tabs.value.push({ path: status.path, name: status.name, status })
         activeTab.value = tabs.value.length - 1
+        syncSession()
     }
 
     async function refresh() {
@@ -92,6 +110,7 @@ export const useRepoStore = defineStore('repo', () => {
         activeTab.value = index
         selectedFile.value = null
         selectedCommit.value = null
+        syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
         await refresh()
     }
@@ -106,6 +125,7 @@ export const useRepoStore = defineStore('repo', () => {
             commits.value = []
             selectedCommit.value = null
         }
+        syncSession()
     }
 
     async function setActive(index: number) {
@@ -125,6 +145,7 @@ export const useRepoStore = defineStore('repo', () => {
         } else if (from > activeTab.value && target <= activeTab.value) {
             activeTab.value++
         }
+        syncSession()
     }
 
     async function openPath(path: string) {
@@ -133,22 +154,32 @@ export const useRepoStore = defineStore('repo', () => {
 
     /** Session restore on launch */
     async function init() {
-        const saved = session.value
-        const paths = saved.paths.length ? saved.paths : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
-        let openedCount = 0
-        for (const path of paths) {
-            try {
-                // oxlint-disable-next-line no-await-in-loop
-                // oxlint-disable-next-line no-await-in-loop
-                addTab(await window.api.openPath(path))
-                openedCount++
-            } catch {
-                /* repo moved/deleted — skip */
+        restoringSession = true
+        let paths: string[] = []
+        try {
+            const saved = session.value
+            paths = saved.paths.length ? saved.paths : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
+            let openedCount = 0
+            for (const path of paths) {
+                try {
+                    // oxlint-disable-next-line no-await-in-loop
+                    addTab(await window.api.openPath(path))
+                    openedCount++
+                } catch {
+                    /* repo moved/deleted — skip (saved session is NOT rewritten,
+                       so transient failures don't lose tabs permanently) */
+                }
             }
-        }
-        if (openedCount > 0 && saved.active >= 0 && saved.active < tabs.value.length) {
-            activeTab.value = saved.active
-            await selectTab(activeTab.value)
+            if (openedCount > 0 && saved.active >= 0 && saved.active < tabs.value.length) {
+                activeTab.value = saved.active
+                await selectTab(activeTab.value)
+            }
+        } finally {
+            // persist the restored tabs only when everything opened cleanly;
+            // otherwise keep the saved list so the next launch retries the failures
+            const allOpened = paths.length > 0 && paths.every(p => tabs.value.some(tab => tab.path === p))
+            restoringSession = false
+            if (allOpened) syncSession()
         }
     }
 
@@ -189,11 +220,6 @@ export const useRepoStore = defineStore('repo', () => {
             .catch(() => {})
     })
 
-    // keep persisted session in sync with open tabs
-    watch([tabs, activeTab], () => {
-        session.value = { paths: tabs.value.map(tab => tab.path), active: activeTab.value }
-    })
-
     return {
         tabs,
         activeTab,
@@ -203,6 +229,8 @@ export const useRepoStore = defineStore('repo', () => {
         selectedFile,
         selectedCommit,
         pendingFocusHash,
+        // must be exposed for pinia-plugin-persistedstate to see/persist it
+        session,
         commitFiles,
         commitMessage,
         commitAuthor,
