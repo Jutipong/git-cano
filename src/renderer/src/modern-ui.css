@@ -141,7 +141,6 @@ body {
     height: 48px;
     flex-basis: 48px;
     gap: 4px;
-    margin-top: 6px;
     padding: 0 8px;
     background: var(--surface-0);
     border: 1px solid var(--line-soft);
@@ -231,7 +230,7 @@ body {
 .app-body {
     /* The splitter itself provides the card gap; avoid doubling it with flex gap. */
     gap: 0;
-    margin-top: 6px;
+    margin-top: 8px;
     border: none;
     border-radius: 0;
     overflow: visible;

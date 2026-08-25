@@ -184,9 +184,6 @@
                 class="panel-splitter"
                 @mousedown="event => beginResize('left', event)" />
             <div class="app-main">
-                <Toolbar
-                    :repo="repo"
-                    :refresh="repoStore.refresh" />
                 <ConflictBanner
                     v-if="repoState.merging || repoState.rebasing || conflicts.length"
                     :conflicts="conflicts"
