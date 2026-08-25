@@ -13,17 +13,43 @@ interface PersistedSession {
     active: number
 }
 
-/** one-time migration from the pre-pinia 'ogit-session' localStorage key */
-function loadLegacySession(): PersistedSession | null {
+const SESSION_STORAGE_KEY = 'repo'
+const LEGACY_SESSION_STORAGE_KEY = 'ogit-session'
+
+function isPersistedSession(value: unknown): value is PersistedSession {
+    if (!value || typeof value !== 'object') return false
+    const candidate = value as { paths?: unknown; active?: unknown }
+    return (
+        Array.isArray(candidate.paths) &&
+        candidate.paths.every(path => typeof path === 'string' && path.length > 0) &&
+        Number.isInteger(candidate.active) &&
+        (candidate.active as number) >= 0
+    )
+}
+
+function parsePersistedSession(raw: string | null, wrapped: boolean): PersistedSession | null {
+    if (!raw) return null
     try {
-        const raw = localStorage.getItem('ogit-session')
-        if (!raw) return null
-        const parsed = JSON.parse(raw) as PersistedSession
-        localStorage.removeItem('ogit-session')
-        return Array.isArray(parsed.paths) ? { paths: parsed.paths, active: parsed.active ?? 0 } : null
+        const parsed: unknown = JSON.parse(raw)
+        const value =
+            wrapped && parsed && typeof parsed === 'object' && 'session' in parsed ? (parsed as { session?: unknown }).session : parsed
+        return isPersistedSession(value) ? value : null
     } catch {
         return null
     }
+}
+
+function loadSavedSession(): { session: PersistedSession; fromLegacy: boolean } {
+    try {
+        const current = parsePersistedSession(localStorage.getItem(SESSION_STORAGE_KEY), true)
+        if (current) return { session: current, fromLegacy: false }
+
+        const legacy = parsePersistedSession(localStorage.getItem(LEGACY_SESSION_STORAGE_KEY), false)
+        if (legacy) return { session: legacy, fromLegacy: true }
+    } catch {
+        /* storage unavailable */
+    }
+    return { session: { paths: [], active: 0 }, fromLegacy: false }
 }
 
 export const useRepoStore = defineStore('repo', () => {
@@ -39,7 +65,9 @@ export const useRepoStore = defineStore('repo', () => {
     const commitAuthor = ref('')
     const commitDate = ref('')
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
-    const session = ref<PersistedSession>(loadLegacySession() ?? { paths: [], active: 0 })
+    const loadedSession = loadSavedSession()
+    const session = ref<PersistedSession>(loadedSession.session)
+    let legacyMigrationPending = loadedSession.fromLegacy
 
     // modal states
     const rebaseBase = ref<string | null>(null)
@@ -54,17 +82,19 @@ export const useRepoStore = defineStore('repo', () => {
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
 
     /** true while init() is restoring the previous session — suppress persistence so a
-     *  partially-restored state can never clobber the saved tab list */
+     * partially-restored state can never clobber the saved tab list */
     let restoringSession = false
 
-    /** persist the open-tab session; called only from user actions, never during restore */
+    /** Persist the open-tab session; called only from user actions, never during restore. */
     function syncSession() {
         if (restoringSession) return
         session.value = { paths: tabs.value.map(tab => tab.path), active: activeTab.value }
-        // write synchronously (same key/shape as pinia-plugin-persistedstate) so the
-        // last action survives even if the app quits before the async subscriber runs
         try {
-            localStorage.setItem('repo', JSON.stringify({ session: session.value }))
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ session: session.value }))
+            if (legacyMigrationPending) {
+                localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY)
+                legacyMigrationPending = false
+            }
         } catch {
             /* storage unavailable — in-memory session still works */
         }
@@ -76,6 +106,7 @@ export const useRepoStore = defineStore('repo', () => {
         if (existingIndex >= 0) {
             tabs.value[existingIndex].status = status
             activeTab.value = existingIndex
+            syncSession()
             return
         }
         tabs.value.push({ path: status.path, name: status.name, status })
@@ -99,7 +130,7 @@ export const useRepoStore = defineStore('repo', () => {
             if (index >= 0) tabs.value[index].status = status
             return branches
         } catch (error) {
-            useUiStore().notify(String(error))
+            useUiTransientStore().notify(String(error))
             return undefined
         }
     }
@@ -158,6 +189,7 @@ export const useRepoStore = defineStore('repo', () => {
         let paths: string[] = []
         try {
             const saved = session.value
+            const savedActivePath = saved.paths[saved.active]
             paths = saved.paths.length ? saved.paths : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
             let openedCount = 0
             for (const path of paths) {
@@ -170,8 +202,9 @@ export const useRepoStore = defineStore('repo', () => {
                        so transient failures don't lose tabs permanently) */
                 }
             }
-            if (openedCount > 0 && saved.active >= 0 && saved.active < tabs.value.length) {
-                activeTab.value = saved.active
+            const restoredActive = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
+            if (openedCount > 0 && restoredActive >= 0) {
+                activeTab.value = restoredActive
                 await selectTab(activeTab.value)
             }
         } finally {
@@ -229,8 +262,6 @@ export const useRepoStore = defineStore('repo', () => {
         selectedFile,
         selectedCommit,
         pendingFocusHash,
-        // must be exposed for pinia-plugin-persistedstate to see/persist it
-        session,
         commitFiles,
         commitMessage,
         commitAuthor,
@@ -252,8 +283,4 @@ export const useRepoStore = defineStore('repo', () => {
         init,
         loadMore,
     }
-}, {
-    persist: {
-        pick: ['session'],
-    },
 })

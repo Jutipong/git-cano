@@ -392,6 +392,24 @@ body {
     opacity: 1;
 }
 
+.commit-selection-ring {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: commit-ring-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes commit-ring-pulse {
+    0%,
+    100% {
+        opacity: 0.55;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 0.95;
+        transform: scale(1.08);
+    }
+}
+
 .file-row.selected {
     background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
 }

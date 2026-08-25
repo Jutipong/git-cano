@@ -14,7 +14,7 @@ export default defineConfig({
         },
         build: {
             rollupOptions: {
-                external: ['simple-git'],
+                external: ['electron', 'simple-git'],
             },
         },
     },

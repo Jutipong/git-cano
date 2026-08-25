@@ -14,6 +14,7 @@
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
+    const uiTransient = useUiTransientStore()
     const { tabs, activeTab, commits, hasMore, selectedFile, selectedCommit, repoState, rebaseBase, historyFile, blameFile, toolsOpen } =
         storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
@@ -22,13 +23,13 @@
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
 
     // toast notifications สำหรับทุก component ที่ inject('notify')
-    provide('notify', (message: string) => ui.notify(message))
+    provide('notify', (message: string) => uiTransient.notify(message))
 
     function openNewRepo() {
         window.api
             .pickAndOpen()
             .then((status: RepoStatus | null) => status && repoStore.addTab(status))
-            .catch((error: unknown) => ui.notify(String(error), 'error'))
+            .catch((error: unknown) => uiTransient.notify(String(error), 'error'))
     }
 
     const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
@@ -67,7 +68,7 @@
             if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
                 event.preventDefault()
                 void repoStore.refresh()
-                ui.notify('Repository refreshed', 'success')
+                uiTransient.notify('Repository refreshed', 'success')
             }
             if (event.shiftKey && event.key.toLowerCase() === 'f') {
                 event.preventDefault()
@@ -124,9 +125,9 @@
             try {
                 await fn()
                 await repoStore.refresh()
-                ui.notify(label, 'success')
+                uiTransient.notify(label, 'success')
             } catch (error) {
-                ui.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+                uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
             }
         }
         return [
@@ -264,7 +265,7 @@
                 message => {
                     rebaseBase = null
                     void repoStore.refresh()
-                    ui.notify(message, 'success')
+                    uiTransient.notify(message, 'success')
                 }
             " />
         <FileHistoryModal
@@ -281,17 +282,17 @@
             :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
         <div
-            v-if="ui.toast"
+            v-if="uiTransient.toast"
             class="toast"
-            :class="`toast-${ui.toast.type}`"
+            :class="`toast-${uiTransient.toast.type}`"
             role="status"
             aria-live="polite">
             <span
                 class="toast-icon"
                 aria-hidden="true">
-                {{ ui.toast.type === 'success' ? '✓' : ui.toast.type === 'error' ? '×' : ui.toast.type === 'warning' ? '!' : 'i' }}
+                {{ uiTransient.toast.type === 'success' ? '✓' : uiTransient.toast.type === 'error' ? '×' : uiTransient.toast.type === 'warning' ? '!' : 'i' }}
             </span>
-            <span>{{ ui.toast.message }}</span>
+            <span>{{ uiTransient.toast.message }}</span>
         </div>
     </div>
 </template>

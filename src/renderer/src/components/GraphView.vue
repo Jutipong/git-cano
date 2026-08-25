@@ -2,7 +2,6 @@
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
 
     import { useRepoStore } from '../stores/repo'
-    import { useUiStore } from '../stores/ui'
     import { formatShortDate } from '../utils/format'
 
     import type { CommitNode, MenuItem } from '@shared/types'
@@ -25,7 +24,7 @@
     const laneW = 24
     const rowH = 28
 
-    const ui = useUiStore()
+    const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
     const selectedHash = ref<string | null>(null)
     const menu = ref<MenuState | null>(null)
@@ -33,7 +32,7 @@
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
 
-    const normalizedQuery = computed(() => ui.searchQuery.trim().toLowerCase())
+    const normalizedQuery = computed(() => uiTransient.searchQuery.trim().toLowerCase())
     const visibleCommits = computed(() =>
         normalizedQuery.value
             ? props.commits.filter(commit =>
@@ -118,13 +117,13 @@
                     width="15"
                     height="15" />
                 <input
-                    v-model="ui.searchQuery"
+                    v-model="uiTransient.searchQuery"
                     placeholder="Search commits" />
                 <button
-                    v-if="ui.searchQuery"
+                    v-if="uiTransient.searchQuery"
                     type="button"
                     class="search-clear"
-                    @click="ui.searchQuery = ''">
+                    @click="uiTransient.searchQuery = ''">
                     ×
                 </button>
             </label>
@@ -182,9 +181,10 @@
                         :key="`node-${commit.hash}`">
                         <circle
                             v-if="selectedHash === commit.hash || dropTargetHash === commit.hash"
+                            :class="{ 'commit-selection-ring': selectedHash === commit.hash }"
                             :cx="nodeX(commit)"
                             :cy="nodeY(index)"
-                            r="10"
+                            r="8"
                             fill="none"
                             :stroke="dropTargetHash === commit.hash ? 'var(--teal)' : 'var(--text)'"
                             stroke-width="1.5"

@@ -1,21 +1,23 @@
-// Ensures node_modules/electron/path.txt exists without a trailing newline.
-// (pnpm relinking can wipe it; electron v33 does not trim newlines, so we
-// always write the file with printf-style exact content.)
+// Ensures Electron's path marker and binary survive pnpm relinking.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const electronDir = join(root, 'node_modules', 'electron')
 const pathTxt = join(electronDir, 'path.txt')
+const platformPath = 'Electron.app/Contents/MacOS/Electron'
+const executable = join(electronDir, 'dist', platformPath)
 
-if (!existsSync(pathTxt)) {
-    writeFileSync(pathTxt, 'Electron.app/Contents/MacOS/Electron')
-    process.stdout.write('[fix-electron-path] wrote path.txt\n')
-} else {
-    const content = readFileSync(pathTxt, 'utf8')
-    if (content !== content.trim()) {
-        writeFileSync(pathTxt, content.trim())
-        process.stdout.write('[fix-electron-path] trimmed path.txt\n')
-    }
+const content = existsSync(pathTxt) ? readFileSync(pathTxt, 'utf8').trim() : ''
+if (content !== platformPath) {
+    writeFileSync(pathTxt, platformPath)
+    process.stdout.write('[fix-electron-path] repaired path.txt\n')
+}
+
+if (!existsSync(executable)) {
+    process.stdout.write('[fix-electron-path] downloading Electron binary\n')
+    const result = spawnSync(process.execPath, [join(electronDir, 'install.js')], { stdio: 'inherit' })
+    if (result.status !== 0) process.exit(result.status ?? 1)
 }

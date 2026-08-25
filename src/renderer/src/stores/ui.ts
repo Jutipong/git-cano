@@ -1,27 +1,3 @@
-let toastTimer: ReturnType<typeof setTimeout> | null = null
-
-type ToastKind = 'success' | 'error' | 'warning' | 'info'
-
-interface ToastMessage {
-    message: string
-    type: ToastKind
-}
-
-function inferToastKind(message: string): ToastKind {
-    const value = message.toLowerCase()
-
-    if (/error|failed|failure|fatal|cannot|invalid|unable|denied|rejected|not found|conflict|couldn.t|can.t/.test(value)) {
-        return 'error'
-    }
-    if (/warning|discard|abort|aborted|enter .* first|nothing to|no .* found|clean/.test(value)) {
-        return 'warning'
-    }
-    if (/success|completed|created|fetched|pulled|pushed|staged|unstaged|merged|resolved|checked out|copied|refreshed|continued|reverted|cherry-picked|reset|committed|theme/.test(value)) {
-        return 'success'
-    }
-    return 'info'
-}
-
 export const useUiStore = defineStore(
     'ui',
     () => {
@@ -29,7 +5,6 @@ export const useUiStore = defineStore(
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(140)
-        const searchQuery = ref('')
         const fileViewMode = ref<'tree' | 'flat'>('tree')
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
@@ -37,16 +12,8 @@ export const useUiStore = defineStore(
             remote: true,
             stashes: true,
         })
-        const toast = ref<ToastMessage | null>(null)
-
         function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {
             sidebarSections.value[key] = !sidebarSections.value[key]
-        }
-
-        function notify(message: string, type?: ToastKind) {
-            toast.value = { message, type: type ?? inferToastKind(message) }
-            if (toastTimer) clearTimeout(toastTimer)
-            toastTimer = setTimeout(() => (toast.value = null), 4000)
         }
 
         function toggleTheme() {
@@ -63,11 +30,8 @@ export const useUiStore = defineStore(
             sidebarWidth,
             rightPanelWidth,
             summaryHeight,
-            searchQuery,
             fileViewMode,
             sidebarSections,
-            toast,
-            notify,
             toggleSection,
             toggleTheme,
         }
