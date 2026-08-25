@@ -74,8 +74,6 @@ const api = {
     createStash: (message: string, includeUntracked: boolean): Promise<void> => call('stash:create', message, includeUntracked),
     applyStash: (index: number, pop: boolean): Promise<void> => call('stash:apply', index, pop),
     dropStash: (index: number): Promise<void> => call('stash:drop', index),
-    renameStash: (index: number, message: string): Promise<void> => call('stash:rename', index, message),
-    duplicateStash: (index: number, message: string): Promise<void> => call('stash:duplicate', index, message),
 
     /* tags */
     tags: (): Promise<{ name: string; hash: string }[]> => call('tag:list'),

@@ -634,24 +634,6 @@ body {
     border-color: var(--teal-dark);
 }
 
-/* orange confirm button (stash rename mode) */
-.btn.warn {
-    color: #fff;
-    background: var(--orange);
-    border-color: var(--orange);
-    font-weight: 650;
-}
-
-.btn.warn:hover {
-    background: color-mix(in srgb, var(--orange) 82%, #fff);
-    border-color: color-mix(in srgb, var(--orange) 82%, #fff);
-}
-
-.btn.warn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-}
-
 /* dedicated context menu for the STASHES section */
 .stash-menu {
     position: fixed;

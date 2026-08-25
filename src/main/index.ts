@@ -22,8 +22,6 @@ import {
     createStash,
     applyStash,
     dropStash,
-    renameStash,
-    duplicateStash,
     revertCommit,
     checkoutCommit,
     getRepoState,
@@ -443,14 +441,6 @@ app.whenReady().then(() => {
     handle('stash:drop', (index: number) => {
         requireRepo()
         return dropStash(index as number)
-    })
-    handle('stash:rename', (index: number, message: string) => {
-        requireRepo()
-        return renameStash(index as number, message as string)
-    })
-    handle('stash:duplicate', (index: number, message: string) => {
-        requireRepo()
-        return duplicateStash(index as number, message as string)
     })
 
     /* recent repos persisted in userData/recent.json */

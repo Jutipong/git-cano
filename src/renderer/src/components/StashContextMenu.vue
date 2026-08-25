@@ -2,8 +2,6 @@
     import type { StashEntry } from '@shared/types'
 
     import CircleCheck from '~icons/lucide/circle-check'
-    import Copy from '~icons/lucide/copy'
-    import Pencil from '~icons/lucide/pencil'
     import Zap from '~icons/lucide/zap'
 
     export interface StashMenuState {
@@ -17,8 +15,6 @@
         (e: 'close'): void
         (e: 'apply', stash: StashEntry): void
         (e: 'pop', stash: StashEntry): void
-        (e: 'rename', stash: StashEntry): void
-        (e: 'duplicate', stash: StashEntry): void
     }>()
     const root = ref<HTMLElement | null>(null)
 
@@ -38,21 +34,19 @@
         document.removeEventListener('keydown', onKey)
     })
 
-    function act(kind: 'apply' | 'pop' | 'rename' | 'duplicate') {
+    function act(kind: 'apply' | 'pop') {
         const stash = props.menu?.stash
         if (!stash) return
         emit('close')
         if (kind === 'apply') emit('apply', stash)
-        else if (kind === 'pop') emit('pop', stash)
-        else if (kind === 'rename') emit('rename', stash)
-        else emit('duplicate', stash)
+        else emit('pop', stash)
     }
 
     function menuStyle() {
         if (!props.menu) return {}
         return {
             left: `${Math.min(props.menu.x, window.innerWidth - 220)}px`,
-            top: `${Math.min(props.menu.y, window.innerHeight - 5 * 34)}px`,
+            top: `${Math.min(props.menu.y, window.innerHeight - 3 * 34)}px`,
         }
     }
 </script>
@@ -80,25 +74,6 @@
                 width="13"
                 height="13" />
             Pop
-        </button>
-        <div class="stash-menu-separator" />
-        <button
-            class="stash-menu-item"
-            @click="act('rename')">
-            <Pencil
-                class="stash-menu-ic"
-                width="13"
-                height="13" />
-            Rename…
-        </button>
-        <button
-            class="stash-menu-item"
-            @click="act('duplicate')">
-            <Copy
-                class="stash-menu-ic"
-                width="13"
-                height="13" />
-            Duplicate…
         </button>
     </div>
 </template>

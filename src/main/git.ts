@@ -432,26 +432,6 @@ export async function dropStash(index: number): Promise<void> {
     await g.raw(['stash', 'drop', `stash@{${index}}`])
 }
 
-/** Re-create the stash entry with a new message on top of refs/stash. Shifts existing indices by +1. */
-async function storeStashCopy(index: number, message: string): Promise<void> {
-    const { git: g } = getRepo()
-    const stashes = await listStashes()
-    const stash = stashes.find(s => s.index === index)
-    if (!stash) throw new Error(`Stash @{${index}} not found`)
-    await g.raw(['stash', 'store', '-m', message, stash.hash])
-}
-
-export async function renameStash(index: number, message: string): Promise<void> {
-    await storeStashCopy(index, message)
-    // the copy landed at index 0 — the original slid down one slot; drop it
-    const { git: g } = getRepo()
-    await g.raw(['stash', 'drop', `stash@{${index + 1}}`])
-}
-
-export async function duplicateStash(index: number, message: string): Promise<void> {
-    await storeStashCopy(index, message)
-}
-
 export async function revertCommit(hash: string): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['revert', '--no-edit', hash])

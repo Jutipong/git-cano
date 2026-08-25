@@ -15,14 +15,9 @@
             ui.sidebarSections.stashes = value
         },
     })
-    type FormMode = 'create' | 'rename' | 'duplicate'
-    const form = ref<{ mode: FormMode; index?: number } | null>(null)
+    const creating = ref(false)
     const message = ref('')
     const menu = ref<StashMenuState | null>(null)
-
-    const formTitle = computed(() =>
-        form.value?.mode === 'rename' ? 'Rename stash' : form.value?.mode === 'duplicate' ? 'Duplicate stash' : 'New stash'
-    )
 
     async function load() {
         try {
@@ -45,32 +40,22 @@
         }
     }
 
-    function openForm(mode: FormMode, stash?: StashEntry) {
+    function openCreate() {
         expanded.value = true
-        form.value = { mode, index: stash?.index }
-        if (mode === 'create') message.value = ''
-        else {
-            const name = stash?.message.replace(/^On [^:]+: /, '') ?? ''
-            message.value = mode === 'rename' ? name : `${name} (copy)`
-        }
-    }
-
-    function closeForm() {
-        form.value = null
+        creating.value = true
         message.value = ''
     }
 
-    function submitForm() {
-        if (!form.value || !message.value.trim()) return
+    function closeCreate() {
+        creating.value = false
+        message.value = ''
+    }
+
+    function submitCreate() {
+        if (!message.value.trim()) return
         const text = message.value.trim()
-        if (form.value.mode === 'create') {
-            void run(() => window.api.createStash(text, true), 'Changes stashed')
-        } else if (form.value.mode === 'rename') {
-            void run(() => window.api.renameStash(form.value!.index!, text), 'Stash renamed')
-        } else {
-            void run(() => window.api.duplicateStash(form.value!.index!, text), 'Stash duplicated')
-        }
-        closeForm()
+        void run(() => window.api.createStash(text, true), 'Changes stashed')
+        closeCreate()
     }
 
     function dropStash(stash: StashEntry) {
@@ -122,10 +107,10 @@
                 </h3>
             </button>
             <button
-                v-if="!form"
+                v-if="!creating"
                 class="icon-btn accent-icon"
                 title="Create stash"
-                @click="openForm('create')">
+                @click="openCreate()">
                 <i-lucide-plus
                     width="15"
                     height="15" />
@@ -133,32 +118,32 @@
         </div>
         <template v-if="expanded">
             <div
-                v-if="form"
+                v-if="creating"
                 class="stash-create">
                 <input
                     v-model="message"
                     autofocus
-                    :placeholder="formTitle"
-                    @keydown.enter="submitForm()" />
+                    placeholder="Stash message"
+                    @keydown.enter="submitCreate()" />
                 <div class="stash-create-actions">
                     <button
                         class="btn small"
-                        @click="closeForm()">
+                        @click="closeCreate()">
                         Cancel
                     </button>
                     <button
-                        :class="['btn small', form.mode === 'rename' ? 'warn' : 'primary']"
+                        class="btn primary small"
                         :disabled="!message.trim()"
-                        @click="submitForm()">
+                        @click="submitCreate()">
                         <i-lucide-check
                             width="13"
                             height="13" />
-                        {{ form.mode === 'rename' ? 'Rename' : 'Save' }}
+                        Save
                     </button>
                 </div>
             </div>
             <div
-                v-if="stashes.length === 0 && !form"
+                v-if="stashes.length === 0 && !creating"
                 class="sidebar-empty">
                 No stashes
             </div>
@@ -187,8 +172,6 @@
             :menu="menu"
             @close="menu = null"
             @apply="onApply"
-            @pop="onPop"
-            @rename="stash => openForm('rename', stash)"
-            @duplicate="stash => openForm('duplicate', stash)" />
+            @pop="onPop" />
     </div>
 </template>
