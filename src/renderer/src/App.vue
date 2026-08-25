@@ -8,6 +8,7 @@
     import RebaseEditor from './components/RebaseEditor.vue'
     import Sidebar from './components/Sidebar.vue'
     import TabBar from './components/TabBar.vue'
+    import TagCreateModal from './components/TagCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
 
     import type { CommitNode, MenuItem, RepoStatus } from '@shared/types'
@@ -22,6 +23,7 @@
     const conflicts = computed(() => repoStore.conflicts)
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
+    const tagTarget = ref<CommitNode | null>(null)
 
     // toast notifications สำหรับทุก component ที่ inject('notify')
     provide('notify', (message: string, type?: ToastKind) => uiTransient.notify(message, type))
@@ -154,8 +156,7 @@
             {
                 label: 'Create tag here…',
                 action: () => {
-                    const name = window.prompt(`Tag name at ${commit.shortHash}:`)
-                    if (name?.trim()) void run(`Tag ${name.trim()} created`, () => window.api.createTag(name.trim(), commit.hash))
+                    tagTarget.value = commit
                 },
             },
             {
@@ -283,6 +284,10 @@
             v-if="blameFile"
             :file="blameFile"
             @close="blameFile = null" />
+        <TagCreateModal
+            v-if="tagTarget"
+            :commit="tagTarget"
+            @close="tagTarget = null" />
         <ToolsModal
             v-if="toolsOpen"
             :bisect-active="repoState.bisectActive"

@@ -190,9 +190,9 @@
             ],
         }
     }
-    function createTagOnHead() {
-        const name = window.prompt('Tag name:')
-        if (name?.trim()) void run(() => window.api.createTag(name.trim()), `Tag ${name.trim()} created`)
+    function focusTag(tag: { name: string; hash: string }) {
+        if (!tag.hash) return
+        repoStore.pendingFocusHash = tag.hash
     }
     function openBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
         menu.value = { x: event.clientX, y: event.clientY, items: buildBranchMenu(branch) }
@@ -445,14 +445,6 @@
                         TAGS <span class="section-count">{{ tags.length }}</span>
                     </h3>
                 </button>
-                <button
-                    class="icon-btn accent-icon"
-                    title="New tag on HEAD"
-                    @click="createTagOnHead">
-                    <i-lucide-plus
-                        width="15"
-                        height="15" />
-                </button>
             </div>
             <template v-if="tagsExpanded">
             <div
@@ -464,7 +456,8 @@
                 v-for="tag in tags"
                 :key="tag.name"
                 class="branch-row tag-row"
-                :title="`${tag.name} (${tag.hash.slice(0, 7)})`"
+                :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
+                @click="focusTag(tag)"
                 @contextmenu.prevent="openTagContextMenu(tag, $event)">
                 <i-lucide-tag
                     width="13"
@@ -474,7 +467,7 @@
                     <button
                         class="icon-btn danger"
                         :title="`Delete tag ${tag.name}`"
-                        @click="deleteTag(tag.name)">
+                        @click.stop="deleteTag(tag.name)">
                         <i-lucide-trash2
                             width="13"
                             height="13" />

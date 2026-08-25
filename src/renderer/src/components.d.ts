@@ -28,6 +28,7 @@ declare module 'vue' {
     ILucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     ILucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
     ILucideColumns2: typeof import('~icons/lucide/columns2')['default']
+    ILucideFileDiff: typeof import('~icons/lucide/file-diff')['default']
     ILucideFolder: typeof import('~icons/lucide/folder')['default']
     ILucideFolderGit2: typeof import('~icons/lucide/folder-git2')['default']
     ILucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']
@@ -64,6 +65,7 @@ declare module 'vue' {
     StashContextMenu: typeof import('./components/StashContextMenu.vue')['default']
     StashPanel: typeof import('./components/StashPanel.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
+    TagCreateModal: typeof import('./components/TagCreateModal.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']
     Welcome: typeof import('./components/Welcome.vue')['default']
   }

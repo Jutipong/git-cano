@@ -490,7 +490,7 @@ body {
     padding: 0;
 }
 
-/* stash create form: actions right-aligned, both buttons evenly sized */
+/* stash/tag create form: actions right-aligned, both buttons evenly sized */
 .stash-create-actions {
     justify-content: flex-end;
 }
@@ -614,6 +614,7 @@ body {
 .commit-box textarea,
 .new-branch input,
 .stash-create input,
+.tag-modal-body > input:not([type='checkbox']),
 .clone-box input,
 .tools-body input,
 .remote-add input,
