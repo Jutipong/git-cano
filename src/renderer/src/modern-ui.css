@@ -427,6 +427,21 @@ body {
     border-radius: 999px;
 }
 
+/* ahead/behind chip inside the pull/push buttons; inherits each button's accent color */
+.sync-count {
+    display: inline-flex;
+    align-items: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    color: inherit;
+    background: color-mix(in srgb, currentColor 15%, transparent);
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 650;
+    line-height: 1;
+}
+
 .group-header-actions {
     display: inline-flex;
     flex: none;

@@ -228,6 +228,9 @@
                         width="15"
                         height="15" />
                     <span>Pull</span>
+                    <span
+                        v-if="repo.behind"
+                        class="sync-count">{{ repo.behind }}</span>
                 </button>
                 <button
                     class="toolbar-action primary-action"
@@ -239,6 +242,9 @@
                         width="15"
                         height="15" />
                     <span>Push</span>
+                    <span
+                        v-if="repo.ahead"
+                        class="sync-count">{{ repo.ahead }}</span>
                 </button>
             </div>
         </div>
