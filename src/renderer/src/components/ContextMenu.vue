@@ -65,7 +65,6 @@
                 v-if="item.separatorBefore"
                 class="context-menu-separator" />
             <button
-                v-else
                 class="context-menu-item"
                 :class="{ danger: item.danger, green: item.tone === 'green', orange: item.tone === 'orange' }"
                 @click="

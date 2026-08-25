@@ -61,6 +61,7 @@ declare module 'vue' {
     RebaseEditor: typeof import('./components/RebaseEditor.vue')['default']
     RemoteManager: typeof import('./components/RemoteManager.vue')['default']
     Sidebar: typeof import('./components/Sidebar.vue')['default']
+    StashContextMenu: typeof import('./components/StashContextMenu.vue')['default']
     StashPanel: typeof import('./components/StashPanel.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']

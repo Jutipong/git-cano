@@ -2,7 +2,7 @@
     import type { StashEntry } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
 
-    import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
+    import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -15,9 +15,14 @@
             ui.sidebarSections.stashes = value
         },
     })
-    const creating = ref(false)
+    type FormMode = 'create' | 'rename' | 'duplicate'
+    const form = ref<{ mode: FormMode; index?: number } | null>(null)
     const message = ref('')
-    const menu = ref<MenuState | null>(null)
+    const menu = ref<StashMenuState | null>(null)
+
+    const formTitle = computed(() =>
+        form.value?.mode === 'rename' ? 'Rename stash' : form.value?.mode === 'duplicate' ? 'Duplicate stash' : 'New stash'
+    )
 
     async function load() {
         try {
@@ -40,11 +45,32 @@
         }
     }
 
-    async function create() {
-        if (!message.value.trim()) return
-        await run(() => window.api.createStash(message.value.trim(), true), 'Changes stashed')
+    function openForm(mode: FormMode, stash?: StashEntry) {
+        expanded.value = true
+        form.value = { mode, index: stash?.index }
+        if (mode === 'create') message.value = ''
+        else {
+            const name = stash?.message.replace(/^On [^:]+: /, '') ?? ''
+            message.value = mode === 'rename' ? name : `${name} (copy)`
+        }
+    }
+
+    function closeForm() {
+        form.value = null
         message.value = ''
-        creating.value = false
+    }
+
+    function submitForm() {
+        if (!form.value || !message.value.trim()) return
+        const text = message.value.trim()
+        if (form.value.mode === 'create') {
+            void run(() => window.api.createStash(text, true), 'Changes stashed')
+        } else if (form.value.mode === 'rename') {
+            void run(() => window.api.renameStash(form.value!.index!, text), 'Stash renamed')
+        } else {
+            void run(() => window.api.duplicateStash(form.value!.index!, text), 'Stash duplicated')
+        }
+        closeForm()
     }
 
     function dropStash(stash: StashEntry) {
@@ -52,45 +78,11 @@
         void run(() => window.api.dropStash(stash.index), 'Stash dropped')
     }
 
-    function openMenu(stash: StashEntry, event: MouseEvent) {
-        const name = stash.message.replace(/^On [^:]+: /, '')
-        menu.value = {
-            x: event.clientX,
-            y: event.clientY,
-            items: [
-                {
-                    label: 'Apply',
-                    icon: 'circle-check',
-                    tone: 'green',
-                    action: () => void run(() => window.api.applyStash(stash.index, false), 'Stash applied'),
-                },
-                {
-                    label: 'Pop',
-                    icon: 'zap',
-                    tone: 'orange',
-                    action: () => void run(() => window.api.applyStash(stash.index, true), 'Stash popped'),
-                },
-                {
-                    label: 'Rename…',
-                    icon: 'pencil',
-                    separatorBefore: true,
-                    action: () => {
-                        const next = window.prompt(`Rename stash:`, name)
-                        if (next?.trim() && next.trim() !== name) {
-                            void run(() => window.api.renameStash(stash.index, next.trim()), 'Stash renamed')
-                        }
-                    },
-                },
-                {
-                    label: 'Duplicate…',
-                    icon: 'copy',
-                    action: () => {
-                        const next = window.prompt(`Duplicate stash as:`, `${name} (copy)`)
-                        if (next?.trim()) void run(() => window.api.duplicateStash(stash.index, next.trim()), 'Stash duplicated')
-                    },
-                },
-            ],
-        }
+    function onApply(stash: StashEntry) {
+        void run(() => window.api.applyStash(stash.index, false), 'Stash applied')
+    }
+    function onPop(stash: StashEntry) {
+        void run(() => window.api.applyStash(stash.index, true), 'Stash popped')
     }
 
     function formatDate(value: string): string {
@@ -130,13 +122,10 @@
                 </h3>
             </button>
             <button
-                v-if="!creating"
+                v-if="!form"
                 class="icon-btn accent-icon"
                 title="Create stash"
-                @click="() => {
-                    expanded = true
-                    creating = true
-                }">
+                @click="openForm('create')">
                 <i-lucide-plus
                     width="15"
                     height="15" />
@@ -144,32 +133,32 @@
         </div>
         <template v-if="expanded">
             <div
-                v-if="creating"
+                v-if="form"
                 class="stash-create">
                 <input
                     v-model="message"
                     autofocus
-                    placeholder="Stash message"
-                    @keydown.enter="create()" />
+                    :placeholder="formTitle"
+                    @keydown.enter="submitForm()" />
                 <div class="stash-create-actions">
                     <button
                         class="btn small"
-                        @click="creating = false">
+                        @click="closeForm()">
                         Cancel
                     </button>
                     <button
-                        class="btn primary small"
+                        :class="['btn small', form.mode === 'rename' ? 'warn' : 'primary']"
                         :disabled="!message.trim()"
-                        @click="create()">
+                        @click="submitForm()">
                         <i-lucide-check
                             width="13"
                             height="13" />
-                        Save
+                        {{ form.mode === 'rename' ? 'Rename' : 'Save' }}
                     </button>
                 </div>
             </div>
             <div
-                v-if="stashes.length === 0 && !creating"
+                v-if="stashes.length === 0 && !form"
                 class="sidebar-empty">
                 No stashes
             </div>
@@ -177,7 +166,7 @@
                 v-for="stash in stashes"
                 :key="`${stash.hash}-${stash.index}`"
                 class="stash-row"
-                @contextmenu.prevent="openMenu(stash, $event)">
+                @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, stash }">
                 <div class="stash-copy">
                     <strong>{{ stash.message.replace(/^On [^:]+: /, '') }}</strong>
                     <span>{{ formatDate(stash.date) }}</span>
@@ -194,8 +183,12 @@
                 </div>
             </div>
         </template>
-        <ContextMenuVue
+        <StashContextMenu
             :menu="menu"
-            @close="menu = null" />
+            @close="menu = null"
+            @apply="onApply"
+            @pop="onPop"
+            @rename="stash => openForm('rename', stash)"
+            @duplicate="stash => openForm('duplicate', stash)" />
     </div>
 </template>
