@@ -51,7 +51,6 @@
             { additions: 0, deletions: 0 }
         )
     })
-    const shortHash = computed(() => props.commitHash.slice(0, 7))
     const ui = useUiStore()
     const message = ref('')
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
@@ -194,14 +193,6 @@
         return `b-${status.toLowerCase()}`
     }
 
-    function copyFullHash() {
-        if (!props.commitHash) return
-        void navigator.clipboard
-            .writeText(props.commitHash)
-            .then(() => notify('Full hash copied'))
-            .catch(() => notify('Copy failed'))
-    }
-
     // commit title convention: <=50 ideal, 72 hard cap
     const firstLine = computed(() => message.value.split('\n')[0] ?? '')
     const subjectCountClass = computed(() =>
@@ -215,15 +206,8 @@
             <div class="panel-heading-title">
                 <FileDiff
                     width="16"
-                    height="16" /><strong>Changes</strong>
+                    height="16" /><strong>{{ mode === 'commit' ? 'Commit Changes' : 'Changes' }}</strong>
                 <span class="panel-file-num">{{ files.length }}</span>
-                <button
-                    v-if="mode === 'commit'"
-                    class="panel-commit-chip"
-                    :title="`Copy full hash\n${commitHash}`"
-                    @click="copyFullHash()">
-                    {{ shortHash }}
-                </button>
             </div>
             <div class="panel-heading-side">
                 <span

@@ -132,6 +132,14 @@
         }
         return [
             {
+                label: 'Copy full hash',
+                action: () =>
+                    void navigator.clipboard
+                        .writeText(commit.hash)
+                        .then(() => uiTransient.notify('Hash copied', 'success'))
+                        .catch(() => uiTransient.notify('Copy failed', 'error')),
+            },
+            {
                 label: `Checkout ${commit.shortHash}`,
                 action: () => void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash)),
             },
