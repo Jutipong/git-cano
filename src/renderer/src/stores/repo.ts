@@ -47,6 +47,9 @@ export const useRepoStore = defineStore('repo', () => {
     const blameFile = ref<string | null>(null)
     const toolsOpen = ref(false)
 
+    // hash the graph should scroll+select to (set from sidebar branch clicks)
+    const pendingFocusHash = ref<string | null>(null)
+
     const repo = computed<RepoStatus | null>(() => tabs.value[activeTab.value]?.status ?? null)
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
 
@@ -199,6 +202,7 @@ export const useRepoStore = defineStore('repo', () => {
         hasMore,
         selectedFile,
         selectedCommit,
+        pendingFocusHash,
         commitFiles,
         commitMessage,
         commitAuthor,

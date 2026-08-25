@@ -13,8 +13,8 @@
 
     const ui = useUiStore()
     const repoStore = useRepoStore()
-    const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number }[]>([])
-    const remote = ref<{ name: string; current: boolean }[]>([])
+    const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
+    const remote = ref<{ name: string; current: boolean; commitHash?: string }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
     const showNew = ref(false)
     const localExpanded = computed({
@@ -44,6 +44,15 @@
 
     function actFetch() {
         void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
+    }
+
+    function focusBranch(branch: { name: string; commitHash?: string }) {
+        const hash =
+            branch.commitHash ??
+            repoStore.commits.find(commit =>
+                commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`)
+            )?.hash
+        if (hash) repoStore.pendingFocusHash = hash
     }
     function actPull() {
         void sync('Pull', () => window.api.pull(), 'Pull completed')
@@ -287,8 +296,9 @@
                 class="branch-row"
                 :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
                 draggable="true"
+                @click="focusBranch(branch)"
                 @dblclick="!branch.current && checkoutBranch(branch.name)"
-                :title="branch.current ? 'Current branch' : 'Double-click to checkout'"
+                :title="branch.current ? 'Current branch' : 'Click to locate · Double-click to checkout'"
                 @contextmenu.prevent="openBranchContextMenu(branch, $event)"
                 @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
                 @dragover="onDragOver(branch.name, $event)"
@@ -373,8 +383,9 @@
                 v-for="branch in remote"
                 :key="branch.name"
                 class="branch-row remote"
+                @click="focusBranch(branch)"
                 @dblclick="checkoutRemote(branch.name)"
-                title="Double-click to checkout">
+                title="Click to locate · Double-click to checkout">
                 <i-lucide-globe2
                     width="14"
                     height="14" />

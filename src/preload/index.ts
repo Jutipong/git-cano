@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import type { CommitDetails, CommitNode, DiffLine, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
+import type { BranchInfo, CommitDetails, CommitNode, DiffLine, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
 
 /** Unwrap errors sent as {__error} from main */
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -56,8 +56,7 @@ const api = {
     lastCommitMessage: (): Promise<string> => call('commit:lastMessage'),
 
     /* branches */
-    branches: (): Promise<{ local: { name: string; current: boolean }[]; remote: { name: string; current: boolean }[] }> =>
-        call('branch:list'),
+    branches: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> => call('branch:list'),
     createBranch: (name: string, checkout: boolean): Promise<void> => call('branch:create', name, checkout),
     checkout: (ref: string): Promise<void> => call('branch:checkout', ref),
     deleteBranch: (name: string): Promise<void> => call('branch:delete', name),

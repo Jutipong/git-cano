@@ -32,6 +32,8 @@ export interface RepoStatus {
 export interface BranchInfo {
     name: string
     current: boolean
+    /** commit SHA this branch points to */
+    commitHash?: string
     /** commits on this branch not yet pushed to upstream */
     ahead?: number
     /** commits on upstream not yet pulled */

@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
 
+    import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { formatShortDate } from '../utils/format'
 
@@ -25,6 +26,7 @@
     const rowH = 28
 
     const ui = useUiStore()
+    const repoStore = useRepoStore()
     const selectedHash = ref<string | null>(null)
     const menu = ref<MenuState | null>(null)
     const dropTargetHash = ref<string | null>(null)
@@ -75,6 +77,27 @@
     function formatDate(iso: string): string {
         return formatShortDate(iso)
     }
+
+    // scroll the graph to the commit a clicked sidebar branch points to, then select it
+    watch(
+        [() => repoStore.pendingFocusHash, rowIndex],
+        ([hash]) => {
+            if (!hash) return
+            const index = rowIndex.value.get(hash)
+            const el = scrollEl.value
+            if (!el) return
+            if (index === undefined) {
+                // tip not in the loaded log window yet — keep the request alive and load more
+                if (props.hasMore) emit('load-more')
+                else repoStore.pendingFocusHash = null
+                return
+            }
+            el.scrollTop = Math.max(0, index * rowH - el.clientHeight / 2)
+            onScroll()
+            select(visibleCommits.value[index])
+            repoStore.pendingFocusHash = null
+        }
+    )
 </script>
 
 <template>

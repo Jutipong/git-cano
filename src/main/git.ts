@@ -439,26 +439,33 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
     const local: BranchInfo[] = []
     const remote: BranchInfo[] = []
 
-    // ahead/behind counts vs upstream, per local branch
-    // (note: Apple Git does not expand %x1f in for-each-ref format, use | as separator)
+    // ahead/behind counts vs upstream + tip commit SHA, per ref
+    // (note: Apple Git does not expand %x1f in for-each-ref format, use | as separator;
+    //  simple-git's branch().commit is only the abbreviated hash — use %(objectname) for full SHAs)
     const trackText = await g.raw([
         'for-each-ref',
-        '--format=%(refname:short)|%(upstream:track)',
+        '--format=%(refname:short)|%(upstream:track)|%(objectname)',
         'refs/heads',
+        'refs/remotes',
     ])
-    const track = new Map<string, { ahead: number; behind: number }>()
+    const track = new Map<string, { ahead?: number; behind?: number; commitHash?: string }>()
     for (const line of trackText.split('\n')) {
         if (!line.trim()) continue
-        const [name, t = ''] = line.split('|')
+        const [name, t = '', commitHash = ''] = line.split('|')
+        if (name.endsWith('/HEAD')) continue
         const ahead = /\bahead (\d+)/.exec(t)?.[1]
         const behind = /\bbehind (\d+)/.exec(t)?.[1]
-        if (ahead || behind) track.set(name, { ahead: Number(ahead ?? 0), behind: Number(behind ?? 0) })
+        track.set(name, {
+            ...(ahead ? { ahead: Number(ahead) } : {}),
+            ...(behind ? { behind: Number(behind) } : {}),
+            ...(commitHash ? { commitHash } : {}),
+        })
     }
 
     for (const ref of b.all) {
         if (ref.includes('HEAD') || ref.includes('->')) continue
         const info: BranchInfo = { name: ref, current: b.current === ref }
-        Object.assign(info, track.get(ref))
+        Object.assign(info, track.get(ref) ?? track.get(ref.replace(/^remotes\//, '')))
         if (ref.startsWith('remotes/') || !b.branches[ref]) remote.push(info)
         else local.push(info)
     }
