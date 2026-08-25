@@ -183,7 +183,7 @@
                     :key="commit.hash"
                     class="graph-row"
                     :class="{ selected: selectedHash === commit.hash, 'drop-target': dropTargetHash === commit.hash }"
-                    :style="{ height: `${rowH}px` }"
+                    :style="{ height: `${rowH}px`, '--graph-w': `${graphW}px` }"
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
                     @click="select(commit)"

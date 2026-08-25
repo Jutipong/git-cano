@@ -368,11 +368,28 @@ body {
     min-width: 590px;
     height: 28px;
     border-bottom-color: rgba(174, 187, 203, 0.07);
+    --row-tint: var(--surface-selected);
 }
 
-.graph-row:hover,
-.graph-row.selected {
-    background: var(--surface-selected);
+.graph-row.drop-target {
+    --row-tint: rgba(67, 201, 182, 0.12);
+}
+
+.graph-row::before {
+    content: '';
+    position: absolute;
+    inset: 2px 6px 2px var(--graph-w, 64px);
+    background: var(--row-tint);
+    border-radius: 999px;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
+.graph-row:hover::before,
+.graph-row.selected::before {
+    opacity: 1;
 }
 
 .file-row.selected {

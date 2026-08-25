@@ -700,7 +700,7 @@ kbd {
 }
 .graph-row:hover,
 .graph-row.selected {
-    background: var(--surface-selected);
+    background: transparent;
 }
 .graph-cell {
     flex: 0 0 auto;
@@ -1417,7 +1417,7 @@ kbd {
     cursor: copy;
 }
 .graph-row.drop-target {
-    background: rgba(67, 201, 182, 0.12);
+    background: transparent;
 }
 
 /* Conflict banner */
