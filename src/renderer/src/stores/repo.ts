@@ -102,6 +102,20 @@ export const useRepoStore = defineStore('repo', () => {
         await selectTab(index)
     }
 
+    function reorderTabs(from: number, to: number) {
+        if (from === to || from < 0 || to < 0 || from >= tabs.value.length || to >= tabs.value.length) return
+        const [moved] = tabs.value.splice(from, 1)
+        tabs.value.splice(to, 0, moved)
+        const target = to
+        if (activeTab.value === from) {
+            activeTab.value = target
+        } else if (from < activeTab.value && target >= activeTab.value) {
+            activeTab.value--
+        } else if (from > activeTab.value && target <= activeTab.value) {
+            activeTab.value++
+        }
+    }
+
     async function openPath(path: string) {
         addTab(await window.api.openPath(path))
     }
@@ -193,6 +207,7 @@ export const useRepoStore = defineStore('repo', () => {
         refresh,
         selectTab,
         setActive,
+        reorderTabs,
         closeTab,
         openPath,
         init,

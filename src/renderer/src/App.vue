@@ -188,7 +188,8 @@
             :active-index="activeTab"
             @select="index => repoStore.setActive(index)"
             @close="repoStore.closeTab($event)"
-            @open-new="openNewRepo()" />
+            @open-new="openNewRepo()"
+            @reorder="(from, to) => repoStore.reorderTabs(from, to)" />
         <div
             v-if="!repo"
             class="app-empty">
