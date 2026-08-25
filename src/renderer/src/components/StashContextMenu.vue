@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import type { StashEntry } from '@shared/types'
 
-    import CircleCheck from '~icons/lucide/circle-check'
+    import Download from '~icons/lucide/download'
     import Zap from '~icons/lucide/zap'
 
     export interface StashMenuState {
@@ -60,7 +60,7 @@
         <button
             class="stash-menu-item green"
             @click="act('apply')">
-            <CircleCheck
+            <Download
                 class="stash-menu-ic"
                 width="13"
                 height="13" />
