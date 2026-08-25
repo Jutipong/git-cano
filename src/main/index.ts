@@ -22,6 +22,8 @@ import {
     createStash,
     applyStash,
     dropStash,
+    renameStash,
+    duplicateStash,
     revertCommit,
     checkoutCommit,
     getRepoState,
@@ -56,6 +58,7 @@ import {
     listTags,
     createTag,
     deleteTag,
+    renameTag,
     pushTags,
     listRemotes,
     addRemote,
@@ -347,6 +350,10 @@ app.whenReady().then(() => {
         requireRepo()
         return deleteTag(name as string)
     })
+    handle('tag:rename', (oldName: string, newName: string) => {
+        requireRepo()
+        return renameTag(oldName as string, newName as string)
+    })
     handle('tag:push', () => {
         requireRepo()
         return pushTags()
@@ -436,6 +443,14 @@ app.whenReady().then(() => {
     handle('stash:drop', (index: number) => {
         requireRepo()
         return dropStash(index as number)
+    })
+    handle('stash:rename', (index: number, message: string) => {
+        requireRepo()
+        return renameStash(index as number, message as string)
+    })
+    handle('stash:duplicate', (index: number, message: string) => {
+        requireRepo()
+        return duplicateStash(index as number, message as string)
     })
 
     /* recent repos persisted in userData/recent.json */

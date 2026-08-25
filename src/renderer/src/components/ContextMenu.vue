@@ -1,6 +1,13 @@
 <script setup lang="ts">
     import type { MenuItem } from '@shared/types'
 
+    import CircleCheck from '~icons/lucide/circle-check'
+    import Copy from '~icons/lucide/copy'
+    import Pencil from '~icons/lucide/pencil'
+    import Trash2 from '~icons/lucide/trash2'
+    import Zap from '~icons/lucide/zap'
+    import type { FunctionalComponent } from 'vue'
+
     export interface MenuState {
         x: number
         y: number
@@ -10,6 +17,15 @@
     const props = defineProps<{ menu: MenuState | null }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const root = ref<HTMLElement | null>(null)
+
+    /* registry of icons usable by menu items (referenced by key in MenuItem.icon) */
+    const ICONS: Record<string, FunctionalComponent> = {
+        'circle-check': CircleCheck,
+        zap: Zap,
+        pencil: Pencil,
+        copy: Copy,
+        trash: Trash2,
+    }
 
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
@@ -51,13 +67,19 @@
             <button
                 v-else
                 class="context-menu-item"
-                :class="{ danger: item.danger }"
+                :class="{ danger: item.danger, green: item.tone === 'green', orange: item.tone === 'orange' }"
                 @click="
                     () => {
                         emit('close')
                         item.action?.()
                     }
                 ">
+                <component
+                    :is="ICONS[item.icon]"
+                    v-if="item.icon && ICONS[item.icon]"
+                    class="menu-ic"
+                    width="13"
+                    height="13" />
                 {{ item.label }}
             </button>
         </template>

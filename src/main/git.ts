@@ -198,7 +198,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     const { git: g } = getRepo()
     const SEP = '\x1f'
     const REC = '\x1e'
-    const fmt = ['%H', '%P', '%h', '%an', '%ad', '%d', '%s'].join(SEP)
+    const fmt = ['%H', '%P', '%h', '%an', '%ad', '%d', '%s', '%b'].join(SEP)
 
     const text = await g.raw(['log', '--all', `--pretty=format:${fmt}${REC}`, '--date=iso', `--max-count=${limit}`, '--'])
 
@@ -206,7 +206,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     for (const line of text.split(REC)) {
         const t = line.replace(/^\n/, '')
         if (!t.trim()) continue
-        const [hash, parents, shortHash, author, date, refsRaw, subject] = t.split(SEP)
+        const [hash, parents, shortHash, author, date, refsRaw, subject, bodyRaw] = t.split(SEP)
         const refs = refsRaw
             ? refsRaw
                   .trim()
@@ -223,6 +223,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
             author,
             date,
             subject,
+            body: bodyRaw ? bodyRaw.trim() || undefined : undefined,
             refs,
             lane: 0,
         })
@@ -429,6 +430,26 @@ export async function applyStash(index: number, pop: boolean): Promise<void> {
 export async function dropStash(index: number): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['stash', 'drop', `stash@{${index}}`])
+}
+
+/** Re-create the stash entry with a new message on top of refs/stash. Shifts existing indices by +1. */
+async function storeStashCopy(index: number, message: string): Promise<void> {
+    const { git: g } = getRepo()
+    const stashes = await listStashes()
+    const stash = stashes.find(s => s.index === index)
+    if (!stash) throw new Error(`Stash @{${index}} not found`)
+    await g.raw(['stash', 'store', '-m', message, stash.hash])
+}
+
+export async function renameStash(index: number, message: string): Promise<void> {
+    await storeStashCopy(index, message)
+    // the copy landed at index 0 — the original slid down one slot; drop it
+    const { git: g } = getRepo()
+    await g.raw(['stash', 'drop', `stash@{${index + 1}}`])
+}
+
+export async function duplicateStash(index: number, message: string): Promise<void> {
+    await storeStashCopy(index, message)
 }
 
 export async function revertCommit(hash: string): Promise<void> {
@@ -679,6 +700,14 @@ export async function createTag(name: string, targetHash: string | null, message
 export async function deleteTag(name: string): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['tag', '-d', name])
+}
+
+/** Rename a local tag: create a tag on the same commit, then delete the old one. */
+export async function renameTag(oldName: string, newName: string): Promise<void> {
+    const { git: g } = getRepo()
+    if (!newName.trim()) throw new Error('Tag name is required')
+    await g.raw(['tag', newName.trim(), oldName])
+    await g.raw(['tag', '-d', oldName])
 }
 
 export async function pushTags(): Promise<string> {

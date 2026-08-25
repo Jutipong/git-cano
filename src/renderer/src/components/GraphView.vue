@@ -31,6 +31,21 @@
     const dropTargetHash = ref<string | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
+    const expandedHash = ref<string | null>(null)
+
+    function toggleMessage(hash: string) {
+        expandedHash.value = expandedHash.value === hash ? null : hash
+    }
+
+    function fullMessage(commit: CommitNode): string {
+        return [commit.subject, commit.body].filter(Boolean).join('\n\n')
+    }
+
+    function onKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape') expandedHash.value = null
+    }
+    onMounted(() => window.addEventListener('keydown', onKeydown))
+    onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
     const normalizedQuery = computed(() => uiTransient.searchQuery.trim().toLowerCase())
     const visibleCommits = computed(() =>
@@ -61,6 +76,7 @@
 
     function select(commit: CommitNode) {
         selectedHash.value = commit.hash
+        if (expandedHash.value && expandedHash.value !== commit.hash) expandedHash.value = null
         emit('select-commit', commit)
     }
 
@@ -205,7 +221,11 @@
                     v-for="commit in renderedCommits"
                     :key="commit.hash"
                     class="graph-row"
-                    :class="{ selected: selectedHash === commit.hash, 'drop-target': dropTargetHash === commit.hash }"
+                    :class="{
+                        selected: selectedHash === commit.hash,
+                        'drop-target': dropTargetHash === commit.hash,
+                        'msg-expanded': expandedHash === commit.hash
+                    }"
                     :style="{ height: `${rowH}px`, '--graph-w': `${graphW}px` }"
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
@@ -233,9 +253,30 @@
                             :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }">
                             {{ ref.replace('HEAD -> ', '') }}
                         </span>
+                        <button
+                            v-if="commit.body"
+                            class="msg-toggle"
+                            :title="expandedHash === commit.hash ? 'Collapse message' : 'Show full message'"
+                            @click.stop="toggleMessage(commit.hash)">
+                            <i-lucide-chevron-down
+                                v-if="expandedHash === commit.hash"
+                                width="12"
+                                height="12" />
+                            <i-lucide-chevron-right
+                                v-else
+                                width="12"
+                                height="12" />
+                        </button>
                     </span>
                     <span class="commit-author">{{ commit.author }}</span>
                     <span class="commit-date">{{ formatDate(commit.date) }}</span>
+                    <div
+                        v-if="expandedHash === commit.hash"
+                        class="commit-msg-popover"
+                        @click.stop>
+                        <div class="cmp-meta">{{ [commit.author, formatDate(commit.date), commit.shortHash].join(' · ') }}</div>
+                        <pre class="cmp-message">{{ fullMessage(commit) }}</pre>
+                    </div>
                 </div>
                 <div
                     :style="{ height: `${Math.max(0, (visibleCommits.length - visibleRange[1]) * rowH)}px` }"

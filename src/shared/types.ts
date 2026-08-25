@@ -7,6 +7,8 @@ export interface CommitNode {
     author: string
     date: string
     subject: string
+    /** commit body (everything after the title line) — only fetched for the graph log */
+    body?: string
     refs: string[] // e.g. ["HEAD -> main", "origin/main", "tag: v1.0"]
     lane: number
 }
@@ -86,6 +88,10 @@ export interface MenuItem {
     label: string
     action?: () => void
     danger?: boolean
+    /** accent color for the row: green (apply-like) or orange (pop-like) */
+    tone?: 'green' | 'orange'
+    /** icon key rendered before the label — must exist in ContextMenu's icon registry */
+    icon?: string
     separatorBefore?: boolean
 }
 

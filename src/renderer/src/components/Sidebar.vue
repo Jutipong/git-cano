@@ -163,6 +163,33 @@
     function deleteTag(name: string) {
         if (window.confirm(`Delete tag "${name}"?`)) void run(() => window.api.deleteTag(name), `Tag ${name} deleted`)
     }
+    function openTagContextMenu(tag: { name: string }, event: MouseEvent) {
+        menu.value = {
+            x: event.clientX,
+            y: event.clientY,
+            items: [
+                {
+                    label: 'Rename…',
+                    icon: 'pencil',
+                    action: () => {
+                        const next = window.prompt(`Rename tag "${tag.name}" to:`, tag.name)
+                        if (next?.trim() && next.trim() !== tag.name) {
+                            void run(() => window.api.renameTag(tag.name, next.trim()), `Tag ${next.trim()} created`)
+                        }
+                    },
+                },
+                {
+                    label: `Delete ${tag.name}`,
+                    icon: 'trash',
+                    danger: true,
+                    separatorBefore: true,
+                    action: () => {
+                        if (window.confirm(`Delete tag "${tag.name}"?`)) void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
+                    },
+                },
+            ],
+        }
+    }
     function createTagOnHead() {
         const name = window.prompt('Tag name:')
         if (name?.trim()) void run(() => window.api.createTag(name.trim()), `Tag ${name.trim()} created`)
@@ -437,7 +464,8 @@
                 v-for="tag in tags"
                 :key="tag.name"
                 class="branch-row tag-row"
-                :title="`${tag.name} (${tag.hash.slice(0, 7)})`">
+                :title="`${tag.name} (${tag.hash.slice(0, 7)})`"
+                @contextmenu.prevent="openTagContextMenu(tag, $event)">
                 <i-lucide-tag
                     width="13"
                     height="13" />

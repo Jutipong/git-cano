@@ -418,6 +418,90 @@ body {
     opacity: 1;
 }
 
+/* chevron that expands a commit's full message in the history */
+.msg-toggle {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin-left: 2px;
+    color: var(--text-muted);
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    cursor: pointer;
+}
+
+.msg-toggle:hover {
+    color: var(--text);
+    background: var(--surface-2);
+}
+
+.graph-row.msg-expanded {
+    z-index: 30;
+}
+
+/* floating full-message card anchored under the expanded row */
+.commit-msg-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: var(--graph-w);
+    z-index: 40;
+    max-width: min(560px, calc(100% - var(--graph-w) - 24px));
+    min-width: 260px;
+    padding: 10px 14px;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.commit-msg-popover .cmp-meta {
+    margin-bottom: 6px;
+    color: var(--text-muted);
+    font-size: 10.5px;
+}
+
+.commit-msg-popover .cmp-message {
+    max-height: 240px;
+    margin: 0;
+    overflow: auto;
+    color: var(--text-secondary);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* stash rows hover like branch rows: pill highlight */
+.stash-row {
+    margin: 1px 6px;
+    border-radius: 999px;
+}
+
+/* keep the Drop icon a full-size circular icon button like the branch delete button */
+.stash-actions .icon-btn {
+    width: 25px;
+    height: 25px;
+    padding: 0;
+}
+
+/* stash create form: actions right-aligned, both buttons evenly sized */
+.stash-create-actions {
+    justify-content: flex-end;
+}
+
+.stash-create-actions .btn {
+    min-width: 78px;
+    min-height: 27px;
+    padding: 0 12px;
+    font-weight: 600;
+}
+
 .commit-selection-ring {
     transform-box: fill-box;
     transform-origin: center;
@@ -559,6 +643,34 @@ body {
     border-color: var(--line-soft);
     border-radius: 12px;
     box-shadow: 0 18px 50px var(--shadow);
+}
+
+/* menu rows lay out as flex so the optional leading icon aligns with the label */
+.context-menu-item {
+    display: flex;
+    align-items: center;
+}
+
+.context-menu-item .menu-ic {
+    flex: 0 0 auto;
+    margin-right: 7px;
+}
+
+/* accent-toned rows (stash Apply / Pop) */
+.context-menu-item.green {
+    color: var(--teal);
+}
+
+.context-menu-item.green:hover {
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
+.context-menu-item.orange {
+    color: var(--orange);
+}
+
+.context-menu-item.orange:hover {
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
 }
 
 .modal-overlay {

@@ -74,11 +74,14 @@ const api = {
     createStash: (message: string, includeUntracked: boolean): Promise<void> => call('stash:create', message, includeUntracked),
     applyStash: (index: number, pop: boolean): Promise<void> => call('stash:apply', index, pop),
     dropStash: (index: number): Promise<void> => call('stash:drop', index),
+    renameStash: (index: number, message: string): Promise<void> => call('stash:rename', index, message),
+    duplicateStash: (index: number, message: string): Promise<void> => call('stash:duplicate', index, message),
 
     /* tags */
     tags: (): Promise<{ name: string; hash: string }[]> => call('tag:list'),
     createTag: (name: string, hash?: string | null, message?: string): Promise<void> => call('tag:create', name, hash ?? null, message),
     deleteTag: (name: string): Promise<void> => call('tag:delete', name),
+    renameTag: (oldName: string, newName: string): Promise<void> => call('tag:rename', oldName, newName),
     pushTags: (): Promise<string> => call('tag:push'),
 
     /* remotes management */
