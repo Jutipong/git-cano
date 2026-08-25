@@ -299,6 +299,23 @@ body {
     letter-spacing: 0.75px;
 }
 
+/* file-group counts render as small chips next to the header label */
+.group-header h4 span {
+    display: inline-flex;
+    align-items: center;
+    min-width: 17px;
+    height: 16px;
+    justify-content: center;
+    padding: 0 6px;
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 650;
+    line-height: 1;
+}
+
 .branch-row,
 .file-row {
     min-height: 26px;

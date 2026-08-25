@@ -994,11 +994,11 @@ kbd {
     background: var(--surface-hover);
 }
 .view-toggle.refresh-btn {
-    color: var(--green);
+    color: var(--orange);
 }
 .view-toggle.refresh-btn:hover {
-    color: var(--green);
-    background: color-mix(in srgb, var(--green) 15%, transparent);
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 15%, transparent);
 }
 .dir-row {
     display: flex;
