@@ -6,9 +6,10 @@
     import StashPanel from './StashPanel.vue'
 
     import type { MenuItem, RepoStatus } from '@shared/types'
+    import type { ToastKind } from '../stores/uiTransient'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
 
     const ui = useUiStore()
@@ -43,7 +44,7 @@
     const syncBusy = ref<string | null>(null)
 
     function actFetch() {
-        void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
+        void sync('Fetch', () => window.api.fetch(), 'Fetch completed', 'fetch')
     }
 
     function focusBranch(branch: { name: string; commitHash?: string }) {
@@ -55,16 +56,16 @@
         if (hash) repoStore.pendingFocusHash = hash
     }
     function actPull() {
-        void sync('Pull', () => window.api.pull(), 'Pull completed')
+        void sync('Pull', () => window.api.pull(), 'Pull completed', 'pull')
     }
     function actPush() {
-        void sync('Push', () => window.api.push(), 'Push completed')
+        void sync('Push', () => window.api.push(), 'Push completed', 'push')
     }
 
-    async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
+    async function sync(label: string, fn: () => Promise<unknown>, ok: string, accent?: ToastKind) {
         if (syncBusy.value) return
         syncBusy.value = label
-        await run(fn, ok)
+        await run(fn, ok, accent)
         syncBusy.value = null
     }
 
@@ -85,12 +86,12 @@
 
     watch(() => props.repo, loadAll, { immediate: true })
 
-    async function run(fn: () => Promise<unknown>, ok: string) {
+    async function run(fn: () => Promise<unknown>, ok: string, accent?: ToastKind) {
         try {
             await fn()
             await props.refresh()
             await loadAll()
-            notify(ok)
+            notify(ok, accent)
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

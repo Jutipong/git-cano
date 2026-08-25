@@ -1,11 +1,21 @@
-type ToastKind = 'success' | 'error' | 'warning' | 'info'
+// semantic kinds plus action accents so a toast can pick up the color of the button that triggered it
+export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'fetch' | 'pull' | 'push' | 'stash'
 
 interface ToastMessage {
+    id: number
     message: string
     type: ToastKind
+    // 1 → just shown, 0 → about to disappear; drives the countdown ring
+    progress: number
+    deadline: number
 }
 
-let toastTimer: ReturnType<typeof setTimeout> | null = null
+let toastTicker: ReturnType<typeof setInterval> | null = null
+let nextToastId = 0
+
+// how long a toast stays on screen, and how often the countdown ring updates
+export const TOAST_DURATION = 10000
+const TOAST_TICK_MS = 50
 
 function inferToastKind(message: string): ToastKind {
     const value = message.toLowerCase()
@@ -28,17 +38,44 @@ function inferToastKind(message: string): ToastKind {
 
 export const useUiTransientStore = defineStore('uiTransient', () => {
     const searchQuery = ref('')
-    const toast = ref<ToastMessage | null>(null)
+    const toasts = ref<ToastMessage[]>([])
+
+    function stopToastTicker() {
+        if (toastTicker) clearInterval(toastTicker)
+        toastTicker = null
+    }
+
+    function ensureToastTicker() {
+        if (toastTicker) return
+        toastTicker = setInterval(() => {
+            const now = Date.now()
+            toasts.value = toasts.value.filter(t => {
+                t.progress = Math.max(0, (t.deadline - now) / TOAST_DURATION)
+                return t.progress > 0
+            })
+            if (!toasts.value.length) stopToastTicker()
+        }, TOAST_TICK_MS)
+    }
+
+    function dismissToast(id: number) {
+        toasts.value = toasts.value.filter(t => t.id !== id)
+    }
 
     function notify(message: string, type?: ToastKind) {
-        toast.value = { message, type: type ?? inferToastKind(message) }
-        if (toastTimer) clearTimeout(toastTimer)
-        toastTimer = setTimeout(() => (toast.value = null), 4000)
+        toasts.value.push({
+            id: ++nextToastId,
+            message,
+            type: type ?? inferToastKind(message),
+            progress: 1,
+            deadline: Date.now() + TOAST_DURATION,
+        })
+        ensureToastTicker()
     }
 
     return {
         searchQuery,
-        toast,
+        toasts,
         notify,
+        dismissToast,
     }
 })

@@ -11,6 +11,7 @@
     import ToolsModal from './components/ToolsModal.vue'
 
     import type { CommitNode, MenuItem, RepoStatus } from '@shared/types'
+    import type { ToastKind } from './stores/uiTransient'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -23,7 +24,7 @@
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
 
     // toast notifications สำหรับทุก component ที่ inject('notify')
-    provide('notify', (message: string) => uiTransient.notify(message))
+    provide('notify', (message: string, type?: ToastKind) => uiTransient.notify(message, type))
 
     function openNewRepo() {
         window.api
@@ -287,18 +288,50 @@
             :bisect-active="repoState.bisectActive"
             :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
-        <div
-            v-if="uiTransient.toast"
-            class="toast"
-            :class="`toast-${uiTransient.toast.type}`"
-            role="status"
-            aria-live="polite">
-            <span
-                class="toast-icon"
-                aria-hidden="true">
-                {{ uiTransient.toast.type === 'success' ? '✓' : uiTransient.toast.type === 'error' ? '×' : uiTransient.toast.type === 'warning' ? '!' : 'i' }}
-            </span>
-            <span>{{ uiTransient.toast.message }}</span>
+        <div class="toast-stack">
+            <TransitionGroup name="toast">
+                <div
+                    v-for="t in uiTransient.toasts"
+                    :key="t.id"
+                    class="toast"
+                    :class="`toast-${t.type}`"
+                    role="status">
+                    <span
+                        class="toast-icon"
+                        aria-hidden="true">
+                        {{ t.type === 'error' ? '×' : t.type === 'warning' ? '!' : t.type === 'info' ? 'i' : '✓' }}
+                    </span>
+                    <span>{{ t.message }}</span>
+                    <button
+                        class="toast-close"
+                        title="Dismiss"
+                        @click="uiTransient.dismissToast(t.id)">
+                        <svg
+                            class="toast-ring"
+                            width="22"
+                            height="22"
+                            viewBox="0 0 22 22"
+                            aria-hidden="true">
+                            <circle
+                                class="toast-ring-track"
+                                cx="11"
+                                cy="11"
+                                r="9" />
+                            <circle
+                                class="toast-ring-progress"
+                                cx="11"
+                                cy="11"
+                                r="9"
+                                :stroke-dasharray="2 * Math.PI * 9"
+                                :stroke-dashoffset="2 * Math.PI * 9 * (1 - t.progress)" />
+                        </svg>
+                        <i-lucide-x
+                            class="toast-close-icon"
+                            width="11"
+                            height="11" />
+                    </button>
+                </div>
+            </TransitionGroup>
         </div>
     </div>
 </template>

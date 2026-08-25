@@ -1,8 +1,9 @@
 <script setup lang="ts">
     import type { StashEntry } from '@shared/types'
+    import type { ToastKind } from '../stores/uiTransient'
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const stashes = ref<StashEntry[]>([])
     const ui = useUiStore()
@@ -30,7 +31,7 @@
             await fn()
             await load()
             await props.refresh()
-            notify(ok)
+            notify(ok, 'stash')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

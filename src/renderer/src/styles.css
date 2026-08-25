@@ -319,7 +319,7 @@ kbd {
     color: var(--green);
 }
 .toolbar-action.action-fetch {
-    color: var(--teal);
+    color: var(--orange);
 }
 .toolbar-action.action-pull {
     color: var(--blue);
@@ -334,7 +334,7 @@ kbd {
     color: var(--green);
 }
 .toolbar-action.action-fetch:hover {
-    color: var(--teal);
+    color: var(--orange);
 }
 .toolbar-action.action-pull:hover {
     color: var(--blue);
@@ -382,14 +382,13 @@ kbd {
     font-weight: 600;
 }
 .repo-sync-actions .action-fetch {
-    color: var(--text-secondary);
-    background: var(--surface-2);
-    border-color: var(--line-soft);
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 35%, transparent);
 }
 .repo-sync-actions .action-fetch:hover {
-    color: var(--text);
-    background: var(--surface-hover);
-    border-color: var(--line);
+    background: color-mix(in srgb, var(--orange) 22%, transparent);
+    border-color: var(--orange);
 }
 .repo-sync-actions .action-pull {
     color: var(--blue);

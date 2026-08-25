@@ -8,6 +8,7 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const buildTree: typeof import('./utils/fileTree').buildTree
   const computed: typeof import('vue').computed
   const defineEmits: typeof import('vue').defineEmits
@@ -39,6 +40,9 @@ declare global {
   // @ts-ignore
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
+  // @ts-ignore
+  export type { ToastKind } from './stores/uiTransient'
+  import('./stores/uiTransient')
   // @ts-ignore
   export type { FileNode, TreeRow } from './utils/fileTree'
   import('./utils/fileTree')
