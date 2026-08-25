@@ -144,8 +144,8 @@ body {
     padding: 0 8px;
     background: var(--surface-0);
     border: 1px solid var(--line-soft);
-    /* Match the pill shape of the repository tab buttons. */
-    border-radius: 24px;
+    /* Match the panel radius used across the workbench. */
+    border-radius: 12px;
 }
 
 .repo-tab {
