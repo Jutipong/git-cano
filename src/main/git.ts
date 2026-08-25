@@ -294,6 +294,16 @@ export async function discard(path_: string): Promise<void> {
     }
 }
 
+export async function discardAll(): Promise<void> {
+    const { git: g } = getRepo()
+    const status = await g.status()
+    // restore tracked files to their index state (staged changes survive)
+    const tracked = status.files.filter(f => f.working_dir !== '?').map(f => f.path)
+    if (tracked.length) await g.checkout(['--', ...tracked])
+    // untracked files/directories -> remove
+    if (status.files.some(f => f.working_dir === '?')) await g.clean(['f', 'd'])
+}
+
 export async function commit(message: string): Promise<string> {
     const { git: g } = getRepo()
     const res = await g.commit(message)

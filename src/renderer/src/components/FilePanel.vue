@@ -99,13 +99,13 @@
     const unstagedRows = computed(() => makeRows(unstaged.value, 'unstaged'))
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
 
-    async function run(fn: () => Promise<unknown>, ok: string) {
+    async function run(fn: () => Promise<unknown>, ok: string | null) {
         if (pending.value) return
         pending.value = true
         try {
             await fn()
             await props.refresh()
-            notify(ok)
+            if (ok) notify(ok)
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         } finally {
@@ -172,20 +172,24 @@
         U: 'Conflict',
     }
     function unstage(file: FileEntry) {
-        void run(() => window.api.unstage([file.path]), 'File unstaged')
+        void run(() => window.api.unstage([file.path]), null)
     }
     function stage(file: FileEntry) {
-        void run(() => window.api.stage([file.path]), 'File staged')
+        void run(() => window.api.stage([file.path]), null)
     }
     function unstageAll() {
-        void run(() => window.api.unstageAll(), 'Unstaged all files')
+        void run(() => window.api.unstageAll(), null)
     }
     function stageAll() {
-        void run(() => window.api.stageAll(), 'Staged all files')
+        void run(() => window.api.stageAll(), null)
     }
     function discard(file: FileEntry) {
         if (!window.confirm(`Discard changes to "${file.path}"?`)) return
         void run(() => window.api.discardFile(file.path), 'Changes discarded')
+    }
+    function discardAll() {
+        if (!window.confirm('Discard all changes?\nAll working directory changes and untracked files will be lost.')) return
+        void run(() => window.api.discardAll(), 'All changes discarded')
     }
 
     function badgeClass(badge: string) {
@@ -254,12 +258,14 @@
                 <h4>
                     Staged files <span>{{ staged.length }}</span>
                 </h4>
-                <button
-                    v-if="staged.length > 0"
-                    class="link-btn"
-                    @click="unstageAll()">
-                    Unstage all
-                </button>
+                <div class="group-header-actions">
+                    <button
+                        v-if="staged.length > 0"
+                        class="link-btn warn"
+                        @click="unstageAll()">
+                        Unstage all
+                    </button>
+                </div>
             </div>
             <template
                 v-for="row in stagedRows"
@@ -324,12 +330,20 @@
                 <h4>
                     Unstaged changes <span>{{ unstaged.length }}</span>
                 </h4>
-                <button
-                    v-if="unstaged.length > 0"
-                    class="link-btn"
-                    @click="stageAll()">
-                    Stage all
-                </button>
+                <div class="group-header-actions">
+                    <button
+                        v-if="unstaged.length > 0"
+                        class="link-btn danger"
+                        @click="discardAll()">
+                        Discard all
+                    </button>
+                    <button
+                        v-if="unstaged.length > 0"
+                        class="link-btn good"
+                        @click="stageAll()">
+                        Stage all
+                    </button>
+                </div>
             </div>
             <template
                 v-for="row in unstagedRows"

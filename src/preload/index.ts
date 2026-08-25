@@ -49,6 +49,7 @@ const api = {
     unstage: (paths: string[]): Promise<void> => call('file:unstage', paths),
     unstageAll: (): Promise<void> => call('file:unstageAll'),
     discardFile: (p: string): Promise<void> => call('file:discard', p),
+    discardAll: (): Promise<void> => call('file:discardAll'),
 
     /* commit */
     commit: (msg: string): Promise<string> => call('commit:create', msg),

@@ -299,7 +299,25 @@
                     <span
                         class="toast-icon"
                         aria-hidden="true">
-                        {{ t.type === 'error' ? '×' : t.type === 'warning' ? '!' : t.type === 'info' ? 'i' : '✓' }}
+                        <i-lucide-arrow-down-to-line
+                            v-if="t.type === 'fetch'"
+                            width="13"
+                            height="13" />
+                        <i-lucide-arrow-down
+                            v-else-if="t.type === 'pull'"
+                            width="13"
+                            height="13" />
+                        <i-lucide-arrow-up
+                            v-else-if="t.type === 'push'"
+                            width="13"
+                            height="13" />
+                        <i-lucide-archive
+                            v-else-if="t.type === 'stash'"
+                            width="13"
+                            height="13" />
+                        <template v-else>
+                            {{ t.type === 'error' ? '×' : t.type === 'warning' ? '!' : t.type === 'info' ? 'i' : '✓' }}
+                        </template>
                     </span>
                     <span>{{ t.message }}</span>
                     <button

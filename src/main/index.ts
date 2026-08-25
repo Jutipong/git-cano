@@ -10,6 +10,7 @@ import {
     createBranch,
     deleteBranch,
     discard,
+    discardAll,
     fetchAll,
     getCommitDetails,
     getDiff,
@@ -268,6 +269,10 @@ app.whenReady().then(() => {
     handle('file:discard', (p: string) => {
         requireRepo()
         return discard(p as string)
+    })
+    handle('file:discardAll', () => {
+        requireRepo()
+        return discardAll()
     })
     handle('commit:create', (message: string) => {
         requireRepo()
