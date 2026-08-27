@@ -3,7 +3,7 @@
 
     const props = defineProps<{ message: string | null }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const okBtn = useTemplateRef<HTMLButtonElement>('okBtn')
+    const closeBtn = useTemplateRef<HTMLButtonElement>('closeBtn')
 
     function onKey(event: KeyboardEvent) {
         if (event.key === 'Escape') emit('close')
@@ -13,7 +13,7 @@
     watch(
         () => props.message,
         message => {
-            if (message) okBtn.value?.focus()
+            if (message) closeBtn.value?.focus()
         },
         { flush: 'post' }
     )
@@ -49,13 +49,10 @@
             </div>
             <div class="error-dialog-actions">
                 <button
-                    ref="okBtn"
+                    ref="closeBtn"
                     class="btn primary"
                     @click="emit('close')">
-                    <i-lucide-check
-                        width="14"
-                        height="14" />
-                    OK
+                    Close
                 </button>
             </div>
         </div>
