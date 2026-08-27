@@ -2,6 +2,7 @@
     import type { StashEntry } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
 
+    import { useTemplateRef } from 'vue'
     import { formatCommitDate } from '../utils/format'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
@@ -19,6 +20,7 @@
     const creating = ref(false)
     const message = ref('')
     const menu = ref<StashMenuState | null>(null)
+    const messageInput = useTemplateRef<HTMLInputElement>('messageInput')
 
     /** stash messages get a baked-in "On <branch>: " prefix; strip it so the
      *  duplicate check matches what the user actually types */
@@ -41,6 +43,15 @@
                 meta: branch ? `${formatCommitDate(stash.date)} | branch: ${branch}` : formatCommitDate(stash.date),
             }
         })
+    )
+
+    /** focus the message input as soon as the create form mounts */
+    watch(
+        creating,
+        value => {
+            if (value) messageInput.value?.focus()
+        },
+        { flush: 'post' }
     )
 
     async function load() {
@@ -131,8 +142,8 @@
                 v-if="creating"
                 class="stash-create">
                 <input
+                    ref="messageInput"
                     v-model="message"
-                    autofocus
                     :class="{ 'input-error': isDuplicate }"
                     placeholder="Stash message"
                     @keydown.enter="submitCreate()"
