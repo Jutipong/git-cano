@@ -73,7 +73,7 @@ const api = {
 
     /* stash */
     stashes: (): Promise<StashEntry[]> => call('stash:list'),
-    createStash: (message: string, includeUntracked: boolean): Promise<void> => call('stash:create', message, includeUntracked),
+    createStash: (message: string): Promise<void> => call('stash:create', message),
     applyStash: (index: number, pop: boolean): Promise<void> => call('stash:apply', index, pop),
     dropStash: (index: number): Promise<void> => call('stash:drop', index),
 

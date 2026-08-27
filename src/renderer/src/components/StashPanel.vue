@@ -18,7 +18,6 @@
     })
     const creating = ref(false)
     const message = ref('')
-    const includeUntracked = ref(true)
     const menu = ref<StashMenuState | null>(null)
 
     /** stash messages get a baked-in "On <branch>: " prefix; strip it so the
@@ -30,6 +29,19 @@
         const text = normalizeMessage(message.value)
         return text.length > 0 && stashes.value.some(stash => normalizeMessage(stash.message) === text)
     })
+
+    /** display rows: message without the "On <branch>: " prefix, date + branch */
+    const stashRows = computed(() =>
+        stashes.value.map(stash => {
+            const match = /^On ([^:]+): /.exec(stash.message)
+            const branch = match ? match[1] : ''
+            return {
+                stash,
+                text: stash.message.replace(/^On [^:]+: /, '').trim(),
+                meta: branch ? `${formatCommitDate(stash.date)} | branch: ${branch}` : formatCommitDate(stash.date),
+            }
+        })
+    )
 
     async function load() {
         try {
@@ -61,13 +73,12 @@
     function closeCreate() {
         creating.value = false
         message.value = ''
-        includeUntracked.value = true
     }
 
     function submitCreate() {
         if (!message.value.trim() || isDuplicate.value) return
         const text = message.value.trim()
-        void run(() => window.api.createStash(text, includeUntracked.value), 'Changes stashed')
+        void run(() => window.api.createStash(text), 'Changes stashed')
         closeCreate()
     }
 
@@ -126,12 +137,6 @@
                     placeholder="Stash message"
                     @keydown.enter="submitCreate()"
                     @keydown.escape.stop="closeCreate()" />
-                <label class="stash-create-check">
-                    <input
-                        v-model="includeUntracked"
-                        type="checkbox" />
-                    Include untracked files
-                </label>
                 <div
                     v-if="isDuplicate"
                     class="stash-error">
@@ -160,13 +165,13 @@
                 No stashes
             </div>
             <div
-                v-for="stash in stashes"
-                :key="`${stash.hash}-${stash.index}`"
+                v-for="row in stashRows"
+                :key="`${row.stash.hash}-${row.stash.index}`"
                 class="stash-row"
-                @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, stash }">
+                @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, stash: row.stash }">
                 <div class="stash-copy">
-                    <strong :title="stash.message">{{ stash.message }}</strong>
-                    <span>{{ formatCommitDate(stash.date) }}</span>
+                    <strong :title="row.stash.message">{{ row.text }}</strong>
+                    <span>{{ row.meta }}</span>
                 </div>
             </div>
         </template>

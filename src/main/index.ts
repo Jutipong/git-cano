@@ -492,9 +492,9 @@ app.whenReady().then(() => {
         requireRepo()
         return listStashes()
     })
-    handle('stash:create', (message: string, includeUntracked: boolean) => {
+    handle('stash:create', (message: string) => {
         requireRepo()
-        return createStash(message as string, includeUntracked as boolean)
+        return createStash(message as string)
     })
     handle('stash:apply', (index: number, pop: boolean) => {
         requireRepo()

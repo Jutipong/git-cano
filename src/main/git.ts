@@ -493,10 +493,9 @@ export async function listStashes(): Promise<StashEntry[]> {
         })
 }
 
-export async function createStash(message: string, includeUntracked: boolean): Promise<void> {
+export async function createStash(message: string): Promise<void> {
     const { git: g } = getRepo()
-    const args = ['stash', 'push', ...(includeUntracked ? ['--include-untracked'] : []), '-m', message || 'WIP']
-    await g.raw(args)
+    await g.raw(['stash', 'push', '--include-untracked', '-m', message || 'WIP'])
 }
 
 export async function applyStash(index: number, pop: boolean): Promise<void> {

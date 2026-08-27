@@ -524,16 +524,11 @@ body {
     font-size: 11px;
 }
 
-/* stash create option row (include-untracked toggle) */
-.stash-create-check {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 8px;
-    color: var(--text-muted);
-    font-size: 12px;
-    cursor: pointer;
-    user-select: none;
+/* keep the "time | branch:" meta line on one line */
+.stash-copy span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* stash/tag create form: actions right-aligned, both buttons evenly sized */
