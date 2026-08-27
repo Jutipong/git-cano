@@ -512,11 +512,28 @@ body {
     border-radius: 999px;
 }
 
-/* keep the Drop icon a full-size circular icon button like the branch delete button */
-.stash-actions .icon-btn {
-    width: 25px;
-    height: 25px;
-    padding: 0;
+/* duplicate-name guard: red border on the message input */
+.stash-create input.input-error,
+.stash-create input.input-error:focus {
+    border-color: var(--red);
+}
+
+.stash-error {
+    margin-top: 6px;
+    color: var(--red);
+    font-size: 11px;
+}
+
+/* stash create option row (include-untracked toggle) */
+.stash-create-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
 }
 
 /* stash/tag create form: actions right-aligned, both buttons evenly sized */
@@ -709,6 +726,14 @@ body {
 
 .stash-menu-item.orange:hover {
     background: color-mix(in srgb, var(--orange) 12%, transparent);
+}
+
+.stash-menu-item.danger {
+    color: var(--red);
+}
+
+.stash-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
 .stash-menu-ic {

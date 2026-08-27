@@ -2,6 +2,7 @@
     import type { StashEntry } from '@shared/types'
 
     import Download from '~icons/lucide/download'
+    import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
 
     export interface StashMenuState {
@@ -15,6 +16,7 @@
         (e: 'close'): void
         (e: 'apply', stash: StashEntry): void
         (e: 'pop', stash: StashEntry): void
+        (e: 'drop', stash: StashEntry): void
     }>()
     const root = ref<HTMLElement | null>(null)
 
@@ -34,12 +36,13 @@
         document.removeEventListener('keydown', onKey)
     })
 
-    function act(kind: 'apply' | 'pop') {
+    function act(kind: 'apply' | 'pop' | 'drop') {
         const stash = props.menu?.stash
         if (!stash) return
         emit('close')
         if (kind === 'apply') emit('apply', stash)
-        else emit('pop', stash)
+        else if (kind === 'pop') emit('pop', stash)
+        else emit('drop', stash)
     }
 
     function menuStyle() {
@@ -74,6 +77,16 @@
                 width="13"
                 height="13" />
             Pop
+        </button>
+        <div class="stash-menu-separator" />
+        <button
+            class="stash-menu-item danger"
+            @click="act('drop')">
+            <Trash2
+                class="stash-menu-ic"
+                width="13"
+                height="13" />
+            Drop
         </button>
     </div>
 </template>

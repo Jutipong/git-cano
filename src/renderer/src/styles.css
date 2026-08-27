@@ -1345,19 +1345,6 @@ kbd {
     color: var(--text-muted);
     font-size: 10px;
 }
-.stash-actions {
-    display: none;
-    align-items: center;
-    gap: 1px;
-}
-.stash-row:hover .stash-actions {
-    display: flex;
-}
-.stash-actions .icon-btn {
-    width: auto;
-    padding: 0 4px;
-    font-size: 10px;
-}
 .sidebar-empty {
     display: flex;
     align-items: center;

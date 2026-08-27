@@ -482,14 +482,14 @@ export async function getCommitDetails(hash: string): Promise<CommitDetails> {
 
 export async function listStashes(): Promise<StashEntry[]> {
     const { git: g } = getRepo()
-    const raw = await g.raw(['stash', 'list', '--format=%gd%x1f%H%x1f%ci%x1f%s'])
+    const raw = await g.raw(['stash', 'list', '--format=%gd%x00%H%x00%ci%x00%B'])
     return raw
-        .split('\n')
+        .split(/\n(?=stash@\{)/)
         .filter(Boolean)
         .map(line => {
-            const [ref, hash, date, ...messageParts] = line.split('\x1f')
+            const [ref, hash, date, ...messageParts] = line.split('\x00')
             const match = /stash@\{(\d+)\}/.exec(ref)
-            return { index: match ? Number(match[1]) : 0, hash, date, message: messageParts.join('\x1f') }
+            return { index: match ? Number(match[1]) : 0, hash, date, message: messageParts.join('\x00').trimEnd() }
         })
 }
 
