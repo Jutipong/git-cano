@@ -512,6 +512,10 @@ body {
     border-radius: 999px;
 }
 
+.stash-row:hover .row-actions {
+    display: flex;
+}
+
 /* duplicate-name guard: red border on the message input */
 .stash-create input.input-error,
 .stash-create input.input-error:focus {

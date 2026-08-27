@@ -30,6 +30,7 @@ declare global {
   const renderDiffContent: typeof import('./utils/highlight').renderDiffContent
   const storeToRefs: typeof import('pinia').storeToRefs
   const toRefs: typeof import('vue').toRefs
+  const useAiStore: typeof import('./stores/ai').useAiStore
   const useConfirmStore: typeof import('./stores/confirm').useConfirmStore
   const useRepoStore: typeof import('./stores/repo').useRepoStore
   const useUiStore: typeof import('./stores/ui').useUiStore

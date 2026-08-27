@@ -132,3 +132,15 @@ export interface BlameLine {
     lineNumber: number
     content: string
 }
+
+/* ---- AI (OpenCode Zen Go) ---- */
+
+export interface AiConfig {
+    token: string
+    modelId: string
+}
+
+export interface AiTestResult {
+    ok: boolean
+    message: string
+}

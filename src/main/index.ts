@@ -80,6 +80,7 @@ import {
     updateSubmodules,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
+import { generateCommitMessage, getConfig, listGoModels, saveConfig, testConnection } from './opencode'
 
 let win: BrowserWindow | null = null
 
@@ -123,6 +124,20 @@ function handle(channel: string, fn: (...args: never[]) => Promise<unknown> | un
         } catch (err) {
             const message = err instanceof Error ? err.message.replace(/^Error:\s*(spawn|fatal:)?\s*/i, '') : String(err)
             log('warn', 'ipc', `${channel} ERR ${message} ${summarizeArgs(args)}`)
+            return { __error: message }
+        }
+    })
+}
+
+/* Like handle() but never logs the args — used for channels that carry secrets
+ * (the OpenCode token) across the wire. */
+function handleSensitive(channel: string, fn: (...args: never[]) => Promise<unknown> | unknown): void {
+    ipcMain.handle(channel, async (_e, ...args) => {
+        try {
+            return await (fn as (...a: unknown[]) => Promise<unknown> | unknown)(...args)
+        } catch (err) {
+            const message = err instanceof Error ? err.message.replace(/^Error:\s*(spawn|fatal:)?\s*/i, '') : String(err)
+            log('warn', 'ipc', `${channel} ERR ${message}`)
             return { __error: message }
         }
     })
@@ -534,6 +549,16 @@ app.whenReady().then(() => {
         fs.writeFileSync(file, JSON.stringify(list))
         return true
     })
+
+    /* ---- AI (OpenCode Zen Go) — see src/main/opencode.ts ---- */
+    handleSensitive('ai:getConfig', () => getConfig())
+    handleSensitive('ai:saveConfig', (_cfg: unknown) => saveConfig(_cfg as never))
+    handleSensitive('ai:test', (token: string, modelId: string) => testConnection(token as string, modelId as string))
+    handleSensitive('ai:generateCommitMessage', () => {
+        requireRepo()
+        return generateCommitMessage()
+    })
+    handle('ai:listModels', () => listGoModels())
 
     createWindow()
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
+    import { confirmDialog } from '../utils/confirm'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
     import StashPanel from './StashPanel.vue'
@@ -160,8 +161,14 @@
     function deleteBranch(name: string) {
         if (window.confirm(`Delete branch "${name}"?`)) void run(() => window.api.deleteBranch(name), `Deleted ${name}`)
     }
-    function deleteTag(name: string) {
-        if (window.confirm(`Delete tag "${name}"?`)) void run(() => window.api.deleteTag(name), `Tag ${name} deleted`)
+    async function deleteTag(name: string) {
+        const ok = await confirmDialog({
+            message: `Delete tag: ${name}`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        void run(() => window.api.deleteTag(name), `Tag ${name} deleted`)
     }
     function openTagContextMenu(tag: { name: string }, event: MouseEvent) {
         menu.value = {
@@ -183,9 +190,7 @@
                     icon: 'trash',
                     danger: true,
                     separatorBefore: true,
-                    action: () => {
-                        if (window.confirm(`Delete tag "${tag.name}"?`)) void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
-                    },
+                    action: () => void deleteTag(tag.name),
                 },
             ],
         }
@@ -467,10 +472,10 @@
                     <button
                         class="icon-btn danger"
                         :title="`Delete tag ${tag.name}`"
-                        @click.stop="deleteTag(tag.name)">
+                        @click.stop="void deleteTag(tag.name)">
                         <i-lucide-trash2
-                            width="13"
-                            height="13" />
+                            width="14"
+                            height="14" />
                     </button>
                 </span>
             </div>

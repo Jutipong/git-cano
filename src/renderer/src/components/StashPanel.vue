@@ -96,7 +96,7 @@
 
     async function dropStash(stash: StashEntry) {
         const ok = await confirmDialog({
-            message: `Delete: ${normalizeMessage(stash.message)}?`,
+            message: `Delete stashes: ${normalizeMessage(stash.message)}`,
             confirmLabel: 'Delete',
             danger: true,
         })
@@ -190,6 +190,16 @@
                     <strong :title="row.stash.message">{{ row.text }}</strong>
                     <span>{{ row.meta }}</span>
                 </div>
+                <span class="row-actions">
+                    <button
+                        class="icon-btn danger"
+                        title="Delete stash"
+                        @click.stop="void dropStash(row.stash)">
+                        <i-lucide-trash2
+                            width="14"
+                            height="14" />
+                    </button>
+                </span>
             </div>
         </template>
         <StashContextMenu

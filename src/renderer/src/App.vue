@@ -51,6 +51,7 @@
 
     onMounted(() => {
         void repoStore.init()
+        void useAiStore().load()
 
         // instant refresh when the repo changes outside the app (terminal commits, etc.)
         const unwatch = window.api.onRepoChanged(debouncedRefresh)

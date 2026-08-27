@@ -885,6 +885,20 @@ kbd {
     border-radius: 999px;
     font-size: 10.5px;
 }
+.cb-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.cb-ai-btn {
+    color: var(--teal);
+    gap: 5px;
+}
+.cb-ai-btn:hover:not(:disabled) {
+    color: var(--teal-fg, var(--text));
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+}
 .summary-counter {
     display: flex;
     justify-content: flex-end;
@@ -1887,7 +1901,7 @@ mark {
 }
 
 /* Tag rows */
-.tag-row svg {
+.tag-row > svg {
     color: var(--yellow);
 }
 
@@ -1929,6 +1943,27 @@ mark {
 }
 .tools-body input:focus {
     border-color: var(--teal);
+}
+
+/* AI (OpenCode Zen Go) tab */
+.ai-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+.ai-link {
+    color: var(--teal);
+}
+.ai-test-result {
+    font-size: 12px;
+}
+.ai-test-result.ok {
+    color: var(--green);
+}
+.ai-test-result.err {
+    color: var(--red);
 }
 
 /* Bisect active indicator */

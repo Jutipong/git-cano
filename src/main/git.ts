@@ -818,6 +818,50 @@ export async function getRawPatch(file: string, staged: boolean): Promise<string
     }
 }
 
+/** All uncommitted changes (staged + unstaged + untracked paths/content) —
+ * used as the AI commit-message context so the button works before staging. */
+export async function getChangesContext(): Promise<string> {
+    const { path: p, git: g } = getRepo()
+    const parts: string[] = []
+    try {
+        // authoritative list of changed files so the model sticks to that scope
+        const statusText = await g.raw(['status', '--porcelain'])
+        const lines = statusText.split('\n').map(line => line.trimEnd()).filter(Boolean)
+        if (lines.length) parts.push(`Changed files:\n${lines.join('\n')}`)
+    } catch {
+        /* ignore */
+    }
+    try {
+        const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
+        const unstaged = await g.raw(['diff', '--no-color', '--no-ext-diff'])
+        if (staged.trim()) parts.push(staged)
+        if (unstaged.trim()) parts.push(unstaged)
+    } catch {
+        /* no HEAD yet / no tracked changes */
+    }
+    // untracked files never appear in a git diff — attach paths + small content
+    try {
+        const untracked = await g.raw(['ls-files', '--others', '--exclude-standard'])
+        const files = untracked.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 10)
+        if (files.length) {
+            const block = files
+                .map(file => {
+                    try {
+                        const content = fs.readFileSync(path.join(p, file), 'utf8').slice(0, 4000)
+                        return `--- ${file} (new) ---\n${content}`
+                    } catch {
+                        return `--- ${file} (new) ---`
+                    }
+                })
+                .join('\n')
+            parts.push(block)
+        }
+    } catch {
+        /* ignore */
+    }
+    return parts.join('\n')
+}
+
 function writeTempPatch(patch: string): string {
     const tmp = path.join(path.dirname(getRepo().path), '.git', `open-git-patch-${Date.now()}.patch`)
     fs.writeFileSync(tmp, patch.endsWith('\n') ? patch : `${patch}\n`)

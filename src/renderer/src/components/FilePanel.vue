@@ -63,8 +63,10 @@
         )
     })
     const ui = useUiStore()
+    const ai = useAiStore()
     const message = ref('')
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
+    const generating = ref(false)
 
     // tree view state (collapse dirs; shared across groups so the same folder stays folded)
     const collapsedDirs = reactive(new Set<string>())
@@ -132,6 +134,25 @@
             'Committed successfully'
         )
         message.value = ''
+    }
+
+    /** Disabled until an OpenCode token + model are configured (Settings → ai)
+     * and there are changes to summarize (staging is NOT required). */
+    const canGenerate = computed(
+        () => isWorkdir.value && props.files.length > 0 && ai.configured && !pending.value && !generating.value
+    )
+
+    async function generateMessage() {
+        if (generating.value) return
+        generating.value = true
+        try {
+            message.value = (await window.api.ai.generateCommitMessage()).trim()
+            notify('Commit message generated', 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''))
+        } finally {
+            generating.value = false
+        }
     }
 
     const committing = computed(() => pending.value)
@@ -614,6 +635,33 @@
                 class="cb-resize-handle"
                 title="Drag to resize"
                 @mousedown="startResizeBox" />
+            <!-- AI commit-message generator (working-directory mode only) -->
+            <div
+                v-if="mode === 'workdir'"
+                class="cb-toolbar">
+                <span class="commit-box-label">Message</span>
+                <span class="spacer" />
+                <button
+                    class="btn small cb-ai-btn"
+                    :disabled="!canGenerate"
+                    :title="
+                        !ai.configured
+                            ? 'Set your OpenCode token and model in Settings → ai first'
+                            : 'Generate a commit message from the current changes'
+                    "
+                    @click="generateMessage()">
+                    <i-lucide-loader-circle
+                        v-if="generating"
+                        class="spinning"
+                        width="13"
+                        height="13" />
+                    <i-lucide-sparkles
+                        v-else
+                        width="13"
+                        height="13" />
+                    {{ generating ? 'Generating…' : 'AI generate' }}
+                </button>
+            </div>
             <!-- read-only when viewing an already-committed commit -->
             <div
                 v-if="mode === 'commit' && (commitAuthor || commitDate)"
