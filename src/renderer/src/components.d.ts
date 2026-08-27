@@ -63,6 +63,7 @@ declare module 'vue' {
     ILucideTag: typeof import('~icons/lucide/tag')['default']
     ILucideTrash2: typeof import('~icons/lucide/trash2')['default']
     ILucideX: typeof import('~icons/lucide/x')['default']
+    OpenInButton: typeof import('./components/OpenInButton.vue')['default']
     RebaseEditor: typeof import('./components/RebaseEditor.vue')['default']
     RemoteManager: typeof import('./components/RemoteManager.vue')['default']
     Sidebar: typeof import('./components/Sidebar.vue')['default']

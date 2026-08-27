@@ -1630,7 +1630,31 @@ kbd {
     background: var(--surface-0);
     border-bottom: 1px solid var(--line-soft);
 }
+/* tabs live in their own scroll region so a tab overflow never squeezes the
+   trailing actions ("+" and "Open in") — they scroll instead of cramping */
+.tab-scroll {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    overflow-y: hidden;
+    /* scrollable but without a visible scrollbar — tabs simply slide sideways */
+    scrollbar-width: none;
+}
+.tab-scroll::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+}
+.tab-track {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: max-content;
+}
 .repo-tab {
+    flex: 0 0 auto;
     display: flex;
     align-items: center;
     gap: 7px;

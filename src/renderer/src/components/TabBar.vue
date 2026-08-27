@@ -1,7 +1,5 @@
 <script setup lang="ts">
-    import ContextMenu, { type MenuState } from './ContextMenu.vue'
-
-    import type { MenuItem } from '@shared/types'
+    import OpenInButton from './OpenInButton.vue'
 
     interface Tab {
         path: string
@@ -17,38 +15,7 @@
     }>()
 
     const draggingPath = ref<string | null>(null)
-    const openInMenu = ref<MenuState | null>(null)
-
-    function buildOpenInItems(): MenuItem[] {
-        const active = props.tabs[props.activeIndex]
-        if (!active) return []
-        const run = (fn: () => Promise<unknown>) => {
-            fn().catch((error: unknown) =>
-                useUiTransientStore().notify(String(error).replace(/^Error:\s*/, ''), 'error')
-            )
-        }
-        return [
-            {
-                label: 'Open in Terminal',
-                icon: 'terminal',
-                action: () => run(() => window.api.openTerminal(active.path)),
-            },
-            {
-                label: 'Open in VS Code',
-                icon: 'vscode',
-                action: () => run(() => window.api.openInVSCode(active.path)),
-            },
-        ]
-    }
-
-    function toggleOpenIn(event: MouseEvent) {
-        if (openInMenu.value) {
-            openInMenu.value = null
-            return
-        }
-        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-        openInMenu.value = { x: rect.left, y: rect.bottom + 4, items: buildOpenInItems() }
-    }
+    const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
 
     function onDragStart(tab: Tab, e: DragEvent) {
         draggingPath.value = tab.path
@@ -86,30 +53,35 @@
     <div
         v-if="tabs.length"
         class="tab-bar">
-        <TransitionGroup name="tab">
-            <div
-                v-for="(tab, index) in tabs"
-                :key="tab.path"
-                class="repo-tab"
-                :class="{ active: index === activeIndex, dragging: tab.path === draggingPath }"
-                :title="tab.path"
-                draggable="true"
-                @dragstart="onDragStart(tab, $event)"
-                @dragover="onDragOver(index, $event)"
-                @drop="onDrop($event)"
-                @dragend="onDragEnd"
-                @click="emit('select', index)">
-                <span>{{ tab.name }}</span>
-                <button
-                    class="icon-btn danger tab-close"
-                    :title="`Close ${tab.name}`"
-                    @click.stop="emit('close', index)">
-                    <i-lucide-x
-                        width="12"
-                        height="12" />
-                </button>
-            </div>
-        </TransitionGroup>
+        <div class="tab-scroll">
+            <TransitionGroup
+                name="tab"
+                tag="div"
+                class="tab-track">
+                <div
+                    v-for="(tab, index) in tabs"
+                    :key="tab.path"
+                    class="repo-tab"
+                    :class="{ active: index === activeIndex, dragging: tab.path === draggingPath }"
+                    :title="tab.path"
+                    draggable="true"
+                    @dragstart="onDragStart(tab, $event)"
+                    @dragover="onDragOver(index, $event)"
+                    @drop="onDrop($event)"
+                    @dragend="onDragEnd"
+                    @click="emit('select', index)">
+                    <span>{{ tab.name }}</span>
+                    <button
+                        class="icon-btn danger tab-close"
+                        :title="`Close ${tab.name}`"
+                        @click.stop="emit('close', index)">
+                        <i-lucide-x
+                            width="12"
+                            height="12" />
+                    </button>
+                </div>
+            </TransitionGroup>
+        </div>
         <button
             class="icon-btn tab-new"
             title="Open another repository"
@@ -118,17 +90,6 @@
                 width="15"
                 height="15" />
         </button>
-        <button
-            class="open-in-btn"
-            title="Open active repository in external app"
-            @click="toggleOpenIn">
-            <span>Open in</span>
-            <i-lucide-chevron-down
-                width="12"
-                height="12" />
-        </button>
-        <ContextMenu
-            :menu="openInMenu"
-            @close="openInMenu = null" />
+        <OpenInButton :path="activePath" />
     </div>
 </template>
