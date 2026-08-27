@@ -15,6 +15,7 @@ declare module 'vue' {
     ConflictBanner: typeof import('./components/ConflictBanner.vue')['default']
     ContextMenu: typeof import('./components/ContextMenu.vue')['default']
     DiffView: typeof import('./components/DiffView.vue')['default']
+    ErrorDialog: typeof import('./components/ErrorDialog.vue')['default']
     FileHistoryModal: typeof import('./components/FileHistoryModal.vue')['default']
     FilePanel: typeof import('./components/FilePanel.vue')['default']
     GraphView: typeof import('./components/GraphView.vue')['default']

@@ -2,6 +2,7 @@
     import BlameModal from './components/BlameModal.vue'
     import ConflictBanner from './components/ConflictBanner.vue'
     import DiffView from './components/DiffView.vue'
+    import ErrorDialog from './components/ErrorDialog.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
     import FilePanel from './components/FilePanel.vue'
     import GraphView from './components/GraphView.vue'
@@ -293,6 +294,9 @@
             :bisect-active="repoState.bisectActive"
             :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
+        <ErrorDialog
+            :message="uiTransient.errorDialog"
+            @close="uiTransient.closeErrorDialog()" />
         <div class="toast-stack">
             <TransitionGroup name="toast">
                 <div

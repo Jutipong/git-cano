@@ -14,7 +14,7 @@ let toastTicker: ReturnType<typeof setInterval> | null = null
 let nextToastId = 0
 
 // how long a toast stays on screen, and how often the countdown ring updates
-export const TOAST_DURATION = 10000
+export const TOAST_DURATION = 4000
 const TOAST_TICK_MS = 50
 
 function inferToastKind(message: string): ToastKind {
@@ -39,6 +39,7 @@ function inferToastKind(message: string): ToastKind {
 export const useUiTransientStore = defineStore('uiTransient', () => {
     const searchQuery = ref('')
     const toasts = ref<ToastMessage[]>([])
+    const errorDialog = ref<string | null>(null)
 
     function stopToastTicker() {
         if (toastTicker) clearInterval(toastTicker)
@@ -62,20 +63,32 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
     }
 
     function notify(message: string, type?: ToastKind) {
+        const kind = type ?? inferToastKind(message)
+        if (kind === 'error') {
+            // errors go to a dedicated dialog so the message can be read clearly
+            errorDialog.value = message // last error wins
+            return
+        }
         toasts.value.push({
             id: ++nextToastId,
             message,
-            type: type ?? inferToastKind(message),
+            type: kind,
             progress: 1,
             deadline: Date.now() + TOAST_DURATION,
         })
         ensureToastTicker()
     }
 
+    function closeErrorDialog() {
+        errorDialog.value = null
+    }
+
     return {
         searchQuery,
         toasts,
+        errorDialog,
         notify,
         dismissToast,
+        closeErrorDialog,
     }
 })
