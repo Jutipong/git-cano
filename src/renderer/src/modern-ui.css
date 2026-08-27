@@ -382,6 +382,14 @@ body {
     font-weight: 650;
 }
 
+.graph-toolbar.commit-mode {
+    background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
+}
+
+.panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
+}
+
 .graph-header {
     height: 26px;
     flex-basis: 26px;

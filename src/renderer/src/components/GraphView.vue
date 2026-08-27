@@ -117,7 +117,9 @@
 
 <template>
     <main class="graph-view">
-        <div class="graph-toolbar">
+        <div
+            class="graph-toolbar"
+            :class="{ 'commit-mode': props.commitOpen }">
             <div class="graph-title">
                 <i-lucide-git-commit-horizontal
                     width="17"

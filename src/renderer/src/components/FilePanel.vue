@@ -216,7 +216,9 @@
 
 <template>
     <div class="file-panel">
-        <div class="panel-heading">
+        <div
+            class="panel-heading"
+            :class="{ 'commit-mode': mode === 'commit' }">
             <div class="panel-heading-title">
                 <i-lucide-file-diff
                     width="16"
