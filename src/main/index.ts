@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
@@ -78,7 +79,6 @@ import {
     listSubmodules,
     updateSubmodules,
 } from './git'
-
 import { log, summarize, summarizeArgs } from './logger'
 
 let win: BrowserWindow | null = null
@@ -133,6 +133,48 @@ function requireRepo(): boolean {
     return true
 }
 
+/* launch external apps (non-git) for the "Open in" tab-bar menu */
+function runCmd(cmd: string, args: string[], cwd: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const child = spawn(cmd, args, { cwd, stdio: 'ignore' })
+        child.on('error', err => reject(new Error(`Failed to launch "${cmd}": ${err.message}`)))
+        child.on('exit', code => {
+            if (code === 0) resolve()
+            else reject(new Error(`"${cmd}" exited with code ${code}`))
+        })
+    })
+}
+
+/* known locations of the VS Code `code` CLI on macOS */
+const CODE_CLI_PATHS = [
+    '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code',
+    '/usr/local/bin/code',
+    '/opt/homebrew/bin/code',
+]
+
+function openTerminal(dir: string): Promise<void> {
+    if (process.platform !== 'darwin') {
+        return Promise.reject(new Error(`Opening a terminal is not supported on ${process.platform} yet`))
+    }
+    return runCmd('open', ['-a', 'Terminal', dir], dir)
+}
+
+function openVSCode(dir: string): Promise<void> {
+    for (const candidate of CODE_CLI_PATHS) {
+        if (fs.existsSync(candidate)) {
+            return runCmd(candidate, [dir], dir)
+        }
+    }
+    if (process.platform === 'darwin') {
+        return runCmd('open', ['-a', 'Visual Studio Code', dir], dir)
+    }
+    return Promise.reject(
+        new Error(
+            'VS Code CLI not found — install the "code" command from VS Code (Cmd/Ctrl+Shift+P → "Shell Command: Install code in PATH")'
+        )
+    )
+}
+
 /* client-side error/log forwarding from the renderer (fire-and-forget).
  * registered directly on ipcMain — NOT via handle() so these calls don't
  * get logged themselves */
@@ -185,6 +227,9 @@ app.whenReady().then(() => {
         closeRepo(_dir as string | undefined)
         return isOpen()
     })
+    /* ---- open in external apps (tab-bar "Open in" menu) ---- */
+    handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
+    handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
     /* ---- log / diff ---- */
     handle('repo:log', (_limit?: number) => {
         requireRepo()

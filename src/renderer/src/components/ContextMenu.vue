@@ -1,11 +1,13 @@
 <script setup lang="ts">
-    import type { MenuItem } from '@shared/types'
-
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
     import Pencil from '~icons/lucide/pencil'
+    import SquareTerminal from '~icons/lucide/square-terminal'
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
+    import VisualStudioCode from '~icons/simple-icons/visualstudiocode'
+
+    import type { MenuItem } from '@shared/types'
     import type { FunctionalComponent } from 'vue'
 
     export interface MenuState {
@@ -24,6 +26,8 @@
         zap: Zap,
         pencil: Pencil,
         copy: Copy,
+        terminal: SquareTerminal,
+        vscode: VisualStudioCode,
         trash: Trash2,
     }
 
@@ -77,6 +81,7 @@
                     :is="ICONS[item.icon]"
                     v-if="item.icon && ICONS[item.icon]"
                     class="menu-ic"
+                    :class="`menu-ic-${item.icon}`"
                     width="13"
                     height="13" />
                 {{ item.label }}

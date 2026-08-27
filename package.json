@@ -23,6 +23,7 @@
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.126",
+    "@iconify-json/simple-icons": "^1.2.93",
     "@types/node": "^26.3.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "electron": "^44.0.0",

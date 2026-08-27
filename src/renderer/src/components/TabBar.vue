@@ -1,4 +1,8 @@
 <script setup lang="ts">
+    import ContextMenu, { type MenuState } from './ContextMenu.vue'
+
+    import type { MenuItem } from '@shared/types'
+
     interface Tab {
         path: string
         name: string
@@ -13,6 +17,38 @@
     }>()
 
     const draggingPath = ref<string | null>(null)
+    const openInMenu = ref<MenuState | null>(null)
+
+    function buildOpenInItems(): MenuItem[] {
+        const active = props.tabs[props.activeIndex]
+        if (!active) return []
+        const run = (fn: () => Promise<unknown>) => {
+            fn().catch((error: unknown) =>
+                useUiTransientStore().notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            )
+        }
+        return [
+            {
+                label: 'Open in Terminal',
+                icon: 'terminal',
+                action: () => run(() => window.api.openTerminal(active.path)),
+            },
+            {
+                label: 'Open in VS Code',
+                icon: 'vscode',
+                action: () => run(() => window.api.openInVSCode(active.path)),
+            },
+        ]
+    }
+
+    function toggleOpenIn(event: MouseEvent) {
+        if (openInMenu.value) {
+            openInMenu.value = null
+            return
+        }
+        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+        openInMenu.value = { x: rect.left, y: rect.bottom + 4, items: buildOpenInItems() }
+    }
 
     function onDragStart(tab: Tab, e: DragEvent) {
         draggingPath.value = tab.path
@@ -82,5 +118,17 @@
                 width="15"
                 height="15" />
         </button>
+        <button
+            class="open-in-btn"
+            title="Open active repository in external app"
+            @click="toggleOpenIn">
+            <span>Open in</span>
+            <i-lucide-chevron-down
+                width="12"
+                height="12" />
+        </button>
+        <ContextMenu
+            :menu="openInMenu"
+            @close="openInMenu = null" />
     </div>
 </template>
