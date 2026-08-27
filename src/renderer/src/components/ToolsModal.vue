@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import type { ToastKind } from '../stores/uiTransient'
+
     interface WorktreeInfo {
         path: string
         head: string
@@ -7,7 +9,7 @@
 
     const props = defineProps<{ bisectActive: boolean; refresh: () => Promise<unknown> }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const tab = ref<'bisect' | 'worktrees' | 'submodules'>('bisect')
     const badRef = ref('')
@@ -51,7 +53,7 @@
         try {
             await fn()
             await props.refresh()
-            notify(ok)
+            notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

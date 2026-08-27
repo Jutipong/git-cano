@@ -2,6 +2,7 @@
     import { intraLineRange, renderDiffContent } from '../utils/highlight'
 
     import type { DiffLine } from '@shared/types'
+    import type { ToastKind } from '../stores/uiTransient'
 
     interface Props {
         file: { path: string; staged: boolean } | null
@@ -10,7 +11,7 @@
     }
     const props = defineProps<Props>()
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const lines = ref<DiffLine[]>([])
     const loading = ref(false)
@@ -127,7 +128,7 @@
             // viewing unstaged diff -> stage the hunk (forward); staged diff -> unstage it (reverse)
             await window.api.stageHunks(props.file.path, props.file.staged, [hunkOrdinal], props.file.staged)
             await props.refresh()
-            notify(props.file.staged ? 'Hunk unstaged' : 'Hunk staged')
+            notify(props.file.staged ? 'Hunk unstaged' : 'Hunk staged', 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

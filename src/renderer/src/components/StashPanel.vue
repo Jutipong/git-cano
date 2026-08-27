@@ -4,6 +4,7 @@
 
     import { useTemplateRef } from 'vue'
     import { formatCommitDate } from '../utils/format'
+    import { confirmDialog } from '../utils/confirm'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()
@@ -69,7 +70,7 @@
             await fn()
             await load()
             await props.refresh()
-            notify(ok, 'stash')
+            notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }
@@ -93,9 +94,14 @@
         closeCreate()
     }
 
-    function dropStash(stash: StashEntry) {
-        if (!window.confirm(`Drop ${stash.message}?`)) return
-        void run(() => window.api.dropStash(stash.index), 'Stash dropped')
+    async function dropStash(stash: StashEntry) {
+        const ok = await confirmDialog({
+            message: `Delete: ${normalizeMessage(stash.message)}?`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        void run(() => window.api.dropStash(stash.index), 'Stash deleted')
     }
 
     function onApply(stash: StashEntry) {

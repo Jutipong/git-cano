@@ -855,6 +855,81 @@ body {
     border-top: 1px solid var(--line-soft);
 }
 
+/* dedicated confirmation dialog (replaces window.confirm) */
+.confirm-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--canvas) 72%, transparent);
+    backdrop-filter: blur(3px);
+}
+
+.confirm-dialog {
+    width: min(480px, 92vw);
+    overflow: hidden;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: 0 24px 80px var(--shadow);
+}
+
+.confirm-dialog-header {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 15px;
+    color: var(--red);
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.confirm-dialog-header:not(:has(svg)) {
+    color: var(--text);
+}
+
+.confirm-dialog-header strong {
+    color: var(--text);
+    font-size: 13px;
+}
+
+.confirm-dialog-body {
+    max-height: 48vh;
+    overflow: auto;
+    padding: 14px 16px;
+}
+
+.confirm-dialog-body pre {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+}
+
+.confirm-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 10px 15px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.btn.danger {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 14%, transparent);
+    border-color: color-mix(in srgb, var(--red) 45%, transparent);
+}
+
+.btn.danger:hover {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 24%, transparent);
+    border-color: var(--red);
+}
+
 .toast-stack {
     position: fixed;
     z-index: 70;

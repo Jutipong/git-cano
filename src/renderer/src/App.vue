@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import BlameModal from './components/BlameModal.vue'
     import ConflictBanner from './components/ConflictBanner.vue'
+    import ConfirmDialog from './components/ConfirmDialog.vue'
     import DiffView from './components/DiffView.vue'
     import ErrorDialog from './components/ErrorDialog.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
@@ -297,6 +298,7 @@
         <ErrorDialog
             :message="uiTransient.errorDialog"
             @close="uiTransient.closeErrorDialog()" />
+        <ConfirmDialog />
         <div class="toast-stack">
             <TransitionGroup name="toast">
                 <div

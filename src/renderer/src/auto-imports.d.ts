@@ -11,6 +11,7 @@ declare global {
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const buildTree: typeof import('./utils/fileTree').buildTree
   const computed: typeof import('vue').computed
+  const confirmDialog: typeof import('./utils/confirm').confirmDialog
   const defineEmits: typeof import('vue').defineEmits
   const defineProps: typeof import('vue').defineProps
   const defineStore: typeof import('pinia').defineStore
@@ -29,6 +30,7 @@ declare global {
   const renderDiffContent: typeof import('./utils/highlight').renderDiffContent
   const storeToRefs: typeof import('pinia').storeToRefs
   const toRefs: typeof import('vue').toRefs
+  const useConfirmStore: typeof import('./stores/confirm').useConfirmStore
   const useRepoStore: typeof import('./stores/repo').useRepoStore
   const useUiStore: typeof import('./stores/ui').useUiStore
   const useUiTransientStore: typeof import('./stores/uiTransient').useUiTransientStore
@@ -37,6 +39,9 @@ declare global {
 }
 // for type re-export
 declare global {
+  // @ts-ignore
+  export type { ConfirmOptions, ConfirmRequest } from './stores/confirm'
+  import('./stores/confirm')
   // @ts-ignore
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')

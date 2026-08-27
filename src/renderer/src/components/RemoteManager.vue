@@ -1,7 +1,9 @@
 <script setup lang="ts">
+    import type { ToastKind } from '../stores/uiTransient'
+
     const props = defineProps<{ refresh: () => Promise<unknown> }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     interface RemoteEntry {
         name: string
@@ -27,7 +29,7 @@
             await fn()
             await load()
             await props.refresh()
-            notify(successMessage)
+            notify(successMessage, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

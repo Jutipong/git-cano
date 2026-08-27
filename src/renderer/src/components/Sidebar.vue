@@ -44,7 +44,7 @@
     const syncBusy = ref<string | null>(null)
 
     function actFetch() {
-        void sync('Fetch', () => window.api.fetch(), 'Fetch completed', 'fetch')
+        void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
     }
 
     function focusBranch(branch: { name: string; commitHash?: string }) {
@@ -56,16 +56,16 @@
         if (hash) repoStore.pendingFocusHash = hash
     }
     function actPull() {
-        void sync('Pull', () => window.api.pull(), 'Pull completed', 'pull')
+        void sync('Pull', () => window.api.pull(), 'Pull completed')
     }
     function actPush() {
-        void sync('Push', () => window.api.push(), 'Push completed', 'push')
+        void sync('Push', () => window.api.push(), 'Push completed')
     }
 
-    async function sync(label: string, fn: () => Promise<unknown>, ok: string, accent?: ToastKind) {
+    async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
         if (syncBusy.value) return
         syncBusy.value = label
-        await run(fn, ok, accent)
+        await run(fn, ok)
         syncBusy.value = null
     }
 
@@ -86,12 +86,12 @@
 
     watch(() => props.repo, loadAll, { immediate: true })
 
-    async function run(fn: () => Promise<unknown>, ok: string, accent?: ToastKind) {
+    async function run(fn: () => Promise<unknown>, ok: string) {
         try {
             await fn()
             await props.refresh()
             await loadAll()
-            notify(ok, accent)
+            notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

@@ -1,8 +1,10 @@
 <script setup lang="ts">
     import { formatCommitDate } from '../utils/format'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
+    import { confirmDialog } from '../utils/confirm'
 
     import type { CommitFile, FileEntry } from '@shared/types'
+    import type { ToastKind } from '../stores/uiTransient'
 
     interface Props {
         files: FileEntry[] | CommitFile[]
@@ -26,7 +28,7 @@
         (e: 'show-history', path: string): void
         (e: 'show-blame', path: string): void
     }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const pending = ref(false)
 
     const isWorkdir = computed(() => props.mode === 'workdir')
@@ -115,7 +117,7 @@
         try {
             await fn()
             await props.refresh()
-            if (ok) notify(ok)
+            if (ok) notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         } finally {
@@ -197,8 +199,14 @@
         if (!window.confirm(`Discard changes to "${file.path}"?`)) return
         void run(() => window.api.discardFile(file.path), 'Changes discarded')
     }
-    function discardAll() {
-        if (!window.confirm('Discard all changes?\nAll working directory changes and untracked files will be lost.')) return
+    async function discardAll() {
+        const ok = await confirmDialog({
+            title: 'Discard all changes',
+            message: 'All working directory changes and untracked files will be lost.',
+            confirmLabel: 'Discard',
+            danger: true,
+        })
+        if (!ok) return
         void run(() => window.api.discardAll(), 'All changes discarded')
     }
 

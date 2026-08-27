@@ -14,7 +14,7 @@ let toastTicker: ReturnType<typeof setInterval> | null = null
 let nextToastId = 0
 
 // how long a toast stays on screen, and how often the countdown ring updates
-export const TOAST_DURATION = 4000
+export const TOAST_DURATION = 6000
 const TOAST_TICK_MS = 50
 
 function inferToastKind(message: string): ToastKind {

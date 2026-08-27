@@ -1,11 +1,12 @@
 <script setup lang="ts">
     import type { CommitNode } from '@shared/types'
+    import type { ToastKind } from '../stores/uiTransient'
 
     import { useRepoStore } from '../stores/repo'
 
     const props = defineProps<{ commit: CommitNode }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const repoStore = useRepoStore()
 
     const name = ref('')
@@ -50,7 +51,7 @@
             const text = annotated.value ? message.value.trim() : ''
             await window.api.createTag(trimmed, props.commit.hash, text || undefined)
             await repoStore.refresh()
-            notify(`Tag ${trimmed} created`)
+            notify(`Tag ${trimmed} created`, 'success')
             emit('close')
         } catch (err) {
             error.value = String(err).replace(/^Error:\s*/, '')

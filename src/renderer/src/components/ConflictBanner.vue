@@ -1,12 +1,13 @@
 <script setup lang="ts">
     import type { RepoState } from '@shared/types'
+    import type { ToastKind } from '../stores/uiTransient'
 
     const props = defineProps<{
         conflicts: string[]
         state: RepoState
         refresh: () => Promise<unknown>
     }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     function abortMerge() {
         void run(() => window.api.abortMerge(), 'Merge aborted')
@@ -34,7 +35,7 @@
         try {
             await fn()
             await props.refresh()
-            notify(ok)
+            notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }

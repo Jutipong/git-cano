@@ -86,7 +86,7 @@
                 class="stash-menu-ic"
                 width="13"
                 height="13" />
-            Drop
+            Delete
         </button>
     </div>
 </template>
