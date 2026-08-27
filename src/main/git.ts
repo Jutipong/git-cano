@@ -635,7 +635,7 @@ export async function markResolved(files: string[]): Promise<void> {
 
 export async function continueMerge(): Promise<void> {
     const { git: g } = getRepo()
-    await g.commit(['--no-edit'])
+    await g.raw(['commit', '--no-edit'])
 }
 
 export async function abortMerge(): Promise<void> {
@@ -715,7 +715,9 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
 export async function commitMessage(message: string, amend: boolean): Promise<string> {
     const { git: g } = getRepo()
     if (amend && !message.trim()) throw new Error('Enter a message to amend with')
-    const res = await g.commit(amend ? ['--amend', '-m', message] : ['-m', message])
+    // NOTE: simple-git already prefixes each message with -m — passing ['-m', …]
+    // would make the first -m consume the literal "-m" as the subject
+    const res = amend ? await g.commit(message, [], ['--amend']) : await g.commit(message)
     return res.commit
 }
 
@@ -1029,16 +1031,16 @@ export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[],
             switch (entry.command) {
                 case 'reword':
                     // oxlint-disable-next-line no-await-in-loop
-                    await g.commit(['--amend', '-m', entry.message || 'Reworded commit'])
+                    await g.commit(entry.message || 'Reworded commit', [], ['--amend'])
                     break
                 case 'squash':
                 case 'fixup': {
                     // oxlint-disable-next-line no-await-in-loop
                     await g.raw(['reset', '--soft', 'HEAD~1'])
                     // oxlint-disable-next-line no-await-in-loop
-                    if (entry.command === 'squash' && entry.message?.trim()) await g.commit(['-m', entry.message])
+                    if (entry.command === 'squash' && entry.message?.trim()) await g.commit(entry.message)
                     // oxlint-disable-next-line no-await-in-loop
-                    else await g.commit(['--no-edit'])
+                    else await g.raw(['commit', '--no-edit'])
                     break
                 }
                 case 'edit':
