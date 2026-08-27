@@ -430,6 +430,11 @@
                 </h4>
                 <div class="group-header-actions">
                     <button
+                        class="link-btn danger"
+                        @click="discardAll()">
+                        Discard all
+                    </button>
+                    <button
                         class="link-btn good"
                         @click="stageAll()">
                         Stage all
