@@ -1322,6 +1322,7 @@ kbd {
     gap: 5px;
     min-height: 30px;
     padding: 4px 10px 4px 16px;
+    cursor: pointer;
 }
 .stash-row:hover {
     background: var(--surface-hover);
