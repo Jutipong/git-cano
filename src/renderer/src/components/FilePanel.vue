@@ -706,8 +706,7 @@
                     v-else
                     width="15"
                     height="15" />
-                {{ committing ? 'Committing…' : 'Commit changes' }}
-                <kbd v-if="!committing">⌘↵</kbd>
+                {{ committing ? 'Committing…' : 'Commit' }}
             </button>
         </div>
     </div>
