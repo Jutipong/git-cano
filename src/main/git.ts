@@ -818,19 +818,38 @@ export async function getRawPatch(file: string, staged: boolean): Promise<string
     }
 }
 
-/** All uncommitted changes (staged + unstaged + untracked paths/content) —
- * used as the AI commit-message context so the button works before staging. */
+/** Uncommitted changes, used as the AI commit-message context.
+ * Staged-only scope when anything is staged (matches what the commit will include),
+ * otherwise falls back to all uncommitted changes (staged + unstaged + untracked). */
 export async function getChangesContext(): Promise<string> {
     const { path: p, git: g } = getRepo()
     const parts: string[] = []
+
+    let stagedFiles: string[] = []
+    let allLines: string[] = []
     try {
-        // authoritative list of changed files so the model sticks to that scope
         const statusText = await g.raw(['status', '--porcelain'])
-        const lines = statusText.split('\n').map(line => line.trimEnd()).filter(Boolean)
-        if (lines.length) parts.push(`Changed files:\n${lines.join('\n')}`)
+        allLines = statusText.split('\n').map(line => line.trimEnd()).filter(Boolean)
+        // porcelain: column 1 = index/staged state (' ' or '?' means not staged)
+        stagedFiles = allLines.filter(line => line[0] !== ' ' && line[0] !== '?')
     } catch {
         /* ignore */
     }
+
+    if (stagedFiles.length > 0) {
+        // staged-only scope — the user is preparing a specific commit
+        parts.push(`Changed files (staged for commit):\n${stagedFiles.join('\n')}`)
+        try {
+            const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
+            if (staged.trim()) parts.push(staged)
+        } catch {
+            /* no HEAD yet */
+        }
+        return parts.join('\n')
+    }
+
+    // nothing staged → summarize everything uncommitted
+    if (allLines.length) parts.push(`Changed files:\n${allLines.join('\n')}`)
     try {
         const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
         const unstaged = await g.raw(['diff', '--no-color', '--no-ext-diff'])

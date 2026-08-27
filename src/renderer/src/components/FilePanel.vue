@@ -653,12 +653,12 @@
                     <i-lucide-loader-circle
                         v-if="generating"
                         class="spinning"
-                        width="13"
-                        height="13" />
+                        width="12"
+                        height="12" />
                     <i-lucide-sparkles
                         v-else
-                        width="13"
-                        height="13" />
+                        width="12"
+                        height="12" />
                     {{ generating ? 'Generating…' : 'AI generate' }}
                 </button>
             </div>
