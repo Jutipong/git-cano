@@ -239,14 +239,12 @@ kbd {
 
 /* Top toolbar */
 .commit-search {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
     align-items: center;
     gap: 6px;
-    width: clamp(150px, 22vw, 220px);
+    width: clamp(130px, 18vw, 180px);
     height: 30px;
+    margin-left: 14px;
     padding: 0 10px;
     color: var(--text-muted);
     background: var(--surface-1);
@@ -255,14 +253,6 @@ kbd {
 }
 .commit-search:focus-within {
     border-color: var(--teal);
-}
-@media (max-width: 960px) {
-    .commit-search {
-        position: static;
-        left: auto;
-        transform: none;
-        margin-left: auto;
-    }
 }
 .commit-search input {
     min-width: 0;

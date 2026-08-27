@@ -127,7 +127,6 @@
                 <strong>Commit history</strong>
                 <span>{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
             </div>
-            <div class="spacer" />
             <label
                 class="commit-search"
                 title="Search commits">
@@ -145,6 +144,7 @@
                     ×
                 </button>
             </label>
+            <div class="spacer" />
             <button
                 v-if="props.commitOpen"
                 class="icon-btn danger commit-close-btn"
