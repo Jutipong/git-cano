@@ -68,6 +68,7 @@ declare module 'vue' {
     ILucideX: typeof import('~icons/lucide/x')['default']
     IMageMessageDots: typeof import('~icons/mage/message-dots')['default']
     IStreamlineFlexColorArtificialIntelligenceBrainChipFlat: typeof import('~icons/streamline-flex-color/artificial-intelligence-brain-chip-flat')['default']
+    LocalBranchContextMenu: typeof import('./components/LocalBranchContextMenu.vue')['default']
     OpenInButton: typeof import('./components/OpenInButton.vue')['default']
     RebaseEditor: typeof import('./components/RebaseEditor.vue')['default']
     RemoteManager: typeof import('./components/RemoteManager.vue')['default']

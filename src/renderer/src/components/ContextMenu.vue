@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
+    import GitBranch from '~icons/lucide/git-branch'
     import Pencil from '~icons/lucide/pencil'
     import SquareTerminal from '~icons/lucide/square-terminal'
     import Trash2 from '~icons/lucide/trash2'
@@ -23,6 +24,7 @@
     /* registry of icons usable by menu items (referenced by key in MenuItem.icon) */
     const ICONS: Record<string, FunctionalComponent> = {
         'circle-check': CircleCheck,
+        'git-branch': GitBranch,
         zap: Zap,
         pencil: Pencil,
         copy: Copy,

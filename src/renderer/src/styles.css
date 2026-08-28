@@ -1426,8 +1426,13 @@ kbd {
     color: var(--text);
     background: var(--surface-hover);
 }
-.context-menu-item.danger:hover {
+
+.context-menu-item.danger {
     color: var(--red);
+}
+
+.context-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 .context-menu-separator {
     height: 1px;

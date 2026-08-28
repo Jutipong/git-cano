@@ -49,6 +49,8 @@ import {
     openRepo,
     pull,
     push,
+    pushBranch,
+    pullBranch,
     stage,
     stageAll,
     unstage,
@@ -366,9 +368,9 @@ app.whenReady().then(() => {
         requireRepo()
         return listBranches()
     })
-    handle('branch:create', (name: string, co: boolean) => {
+    handle('branch:create', (name: string, co: boolean, startPoint?: string) => {
         requireRepo()
-        return createBranch(name as string, co as boolean)
+        return createBranch(name as string, co as boolean, startPoint)
     })
     handle('branch:checkout', (ref: string) => {
         requireRepo()
@@ -385,6 +387,14 @@ app.whenReady().then(() => {
     handle('branch:merge', (name: string) => {
         requireRepo()
         return merge(name as string)
+    })
+    handle('branch:push', (name: string, force: boolean) => {
+        requireRepo()
+        return pushBranch(name as string, force as boolean)
+    })
+    handle('branch:pull', (name: string) => {
+        requireRepo()
+        return pullBranch(name as string)
     })
 
     /* ---- remotes ---- */

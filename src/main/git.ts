@@ -560,10 +560,11 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
     return { local, remote }
 }
 
-export async function createBranch(name: string, checkout: boolean): Promise<void> {
+export async function createBranch(name: string, checkout: boolean, startPoint?: string): Promise<void> {
     const { git: g } = getRepo()
-    if (checkout) await g.checkoutBranch(name, 'HEAD')
-    else await g.raw(['branch', name])
+    const start = startPoint || 'HEAD'
+    if (checkout) await g.checkoutBranch(name, start)
+    else await g.raw(['branch', name, start])
 }
 
 export async function checkout(ref: string): Promise<void> {
@@ -615,6 +616,58 @@ export async function pull(): Promise<string> {
     const { git: g } = getRepo()
     const res = await g.pull(['--no-rebase'])
     return `Pulled (${res.summary.changes} changes)`
+}
+
+/** Push a *specific* branch (not necessarily the checked-out one) to its upstream (or origin). */
+export async function pushBranch(name: string, force = false): Promise<string> {
+    const { git: g } = getRepo()
+    let upstream = ''
+    try {
+        upstream = (await g.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${name}@{upstream}`])).trim()
+    } catch {
+        /* no upstream configured — fall through to origin */
+    }
+    const flags = force ? ['--force-with-lease'] : []
+    if (upstream) {
+        const slash = upstream.indexOf('/')
+        const remote = slash > 0 ? upstream.slice(0, slash) : 'origin'
+        const remoteBranch = slash > 0 ? upstream.slice(slash + 1) : name
+        await g.push([remote, `refs/heads/${name}:refs/heads/${remoteBranch}`, ...flags])
+        return force ? `${name} force-pushed` : `${name} pushed`
+    }
+    // no tracking branch — create it on origin
+    await g.push(['--set-upstream', 'origin', name, ...flags])
+    return force ? `${name} force-pushed` : `${name} pushed`
+}
+
+/** Pull a *specific* branch. For the checked-out branch this is a normal pull;
+ *  for other branches it fast-forwards the local ref without touching the working dir. */
+export async function pullBranch(name: string): Promise<string> {
+    const { git: g } = getRepo()
+    if ((await g.status()).current === name) {
+        const res = await g.pull(['--no-rebase'])
+        return `Pulled (${res.summary.changes} changes)`
+    }
+    let upstream = ''
+    try {
+        upstream = (await g.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${name}@{upstream}`])).trim()
+    } catch {
+        /* no upstream */
+    }
+    if (!upstream) throw new Error(`"${name}" has no upstream; can't pull`)
+    const slash = upstream.indexOf('/')
+    if (slash <= 0) throw new Error(`Invalid upstream for "${name}": ${upstream}`)
+    await g.fetch([upstream.slice(0, slash), upstream.slice(slash + 1)])
+    const oldTip = (await g.raw(['rev-parse', name])).trim()
+    const fetched = (await g.raw(['rev-parse', 'FETCH_HEAD'])).trim()
+    const base = (await g.raw(['merge-base', name, 'FETCH_HEAD'])).trim()
+    if (fetched === oldTip) return `${name} already up to date`
+    if (base === oldTip) {
+        await g.raw(['update-ref', `refs/heads/${name}`, 'FETCH_HEAD', oldTip])
+        return `Pulled ${name} (fast-forwarded)`
+    }
+    if (base === fetched) return `${name} already up to date`
+    throw new Error(`"${name}" diverged from its upstream; refusing to fast-forward`)
 }
 
 export async function hasRemote(): Promise<boolean> {

@@ -916,6 +916,110 @@ body {
     background: var(--line-soft);
 }
 
+/* dedicated context menu for the LOCAL BRANCHES section */
+.local-branch-menu {
+    position: fixed;
+    z-index: 50;
+    min-width: 200px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.local-branch-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 7px 11px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.local-branch-menu-item:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.local-branch-menu-item:disabled {
+    color: var(--text-muted);
+    cursor: not-allowed;
+}
+
+.local-branch-menu-item:disabled:hover {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.local-branch-menu-item.danger {
+    color: var(--red);
+}
+
+.local-branch-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.local-branch-menu-item.danger:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.local-branch-menu-item.orange {
+    color: var(--orange);
+}
+
+.local-branch-menu-item.orange:hover {
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+}
+
+.local-branch-menu-item.orange:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.local-branch-menu-item.green {
+    color: var(--green);
+}
+
+.local-branch-menu-item.green:hover {
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.local-branch-menu-item.green:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.local-branch-menu-item.blue {
+    color: var(--blue);
+}
+
+.local-branch-menu-item.blue:hover {
+    background: color-mix(in srgb, var(--blue) 12%, transparent);
+}
+
+.local-branch-menu-item.blue:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.local-branch-menu-ic {
+    flex: 0 0 auto;
+    margin-right: 7px;
+}
+
+.local-branch-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--line-soft);
+}
+
 /* cloud indicator on tag rows that already exist on the remote */
 .tag-row .tag-remote-ic {
     flex: 0 0 auto;

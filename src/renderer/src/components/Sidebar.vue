@@ -3,6 +3,7 @@
     import { useUiStore } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
+    import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
@@ -12,7 +13,6 @@
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
-    const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
 
     const ui = useUiStore()
     const repoStore = useRepoStore()
@@ -38,6 +38,7 @@
         },
     })
     const menu = ref<MenuState | null>(null)
+    const localBranchMenu = ref<LocalBranchMenuState | null>(null)
     const dropTarget = ref<string | null>(null)
     const showRemoteManager = ref(false)
     const tagMenu = ref<TagMenuState | null>(null)
@@ -109,46 +110,11 @@
         }
     }
 
-    function buildBranchMenu(branch: { name: string; current: boolean }): MenuItem[] {
-        const items: MenuItem[] = []
-        if (!branch.current) {
-            items.push({
-                label: `Checkout ${branch.name}`,
-                action: () => void run(() => window.api.checkout(branch.name), `Checked out ${branch.name}`),
-            })
-            items.push({
-                label: 'Rebase onto this branch',
-                action: () => void run(() => window.api.rebaseOnto(branch.name), `Rebased onto ${branch.name}`),
-            })
-        }
-        items.push({
-            label: 'Rename…',
-            separatorBefore: true,
-            action: () => {
-                const next = window.prompt(`Rename branch "${branch.name}" to:`, branch.name)
-                if (next && next !== branch.name) void run(() => window.api.renameBranch(branch.name, next.trim()), 'Branch renamed')
-            },
-        })
-        if (!branch.current) {
-            items.push({
-                label: 'Interactive rebase onto this branch…',
-                separatorBefore: true,
-                action: () => emit('interactive-rebase', branch.name),
-            })
-            items.push({
-                label: `Delete ${branch.name}`,
-                danger: true,
-                separatorBefore: true,
-                action: () => void deleteBranch(branch.name),
-            })
-        }
-        return items
-    }
-
     function buildRemoteBranchMenu(branch: { name: string; current: boolean }): MenuItem[] {
         return [
             {
                 label: `Checkout ${stripRemote(branch.name)}`,
+                icon: 'git-branch',
                 action: () => void checkoutRemote(branch.name),
             },
             {
@@ -202,6 +168,42 @@
             .then(() => notify('Tag name copied', 'success'))
             .catch(() => notify('Copy failed', 'error'))
     }
+    function pushLocalBranch(branch: LocalBranchMenuState['branch']) {
+        void run(() => window.api.pushBranch(branch.name), `Pushed ${branch.name}`)
+    }
+    function pullLocalBranch(branch: LocalBranchMenuState['branch']) {
+        void run(() => window.api.pullBranch(branch.name), `Pulled ${branch.name}`)
+    }
+    function forcePushBranch(branch: LocalBranchMenuState['branch']) {
+        void (async () => {
+            const ok = await confirmDialog({
+                message: `Force push ${branch.name}?\nThis will overwrite remote history.`,
+                confirmLabel: 'Force push',
+                danger: true,
+            })
+            if (!ok) return
+            void run(() => window.api.pushBranch(branch.name, true), `Force-pushed ${branch.name}`)
+        })()
+    }
+    function createBranchHere(branch: LocalBranchMenuState['branch']) {
+        const name = window.prompt(`Create branch at "${branch.name}":`)
+        if (!name?.trim()) return
+        void run(() => window.api.createBranch(name.trim(), false, branch.commitHash ?? undefined), `Created branch ${name.trim()}`)
+    }
+    function createTagHere(branch: LocalBranchMenuState['branch']) {
+        const name = window.prompt(`Create tag at "${branch.name}":`)
+        if (!name?.trim()) return
+        void run(() => window.api.createTag(name.trim(), branch.commitHash ?? null), `Tag ${name.trim()} created`)
+    }
+    function copyBranchName(branch: LocalBranchMenuState['branch']) {
+        void navigator.clipboard
+            .writeText(branch.name)
+            .then(() => notify('Branch name copied', 'success'))
+            .catch(() => notify('Copy failed', 'error'))
+    }
+    function deleteLocalBranch(branch: LocalBranchMenuState['branch']) {
+        void deleteBranch(branch.name)
+    }
     function pushTagToRemote(tag: { name: string }) {
         void (async () => {
             const ok = await confirmDialog({
@@ -242,8 +244,8 @@
         if (!tag.hash) return
         repoStore.pendingFocusHash = tag.hash
     }
-    function openBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
-        menu.value = { x: event.clientX, y: event.clientY, items: buildBranchMenu(branch) }
+    function openLocalBranchContextMenu(branch: { name: string; current: boolean; commitHash?: string }, event: MouseEvent) {
+        localBranchMenu.value = { x: event.clientX, y: event.clientY, branch, hasRemote: hasRemote.value }
     }
     function openRemoteBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
         menu.value = { x: event.clientX, y: event.clientY, items: buildRemoteBranchMenu(branch) }
@@ -356,7 +358,7 @@
                 @click="focusBranch(branch)"
                 @dblclick="!branch.current && checkoutBranch(branch.name)"
                 :title="branch.current ? 'Current branch' : 'Click to locate · Double-click to checkout'"
-                @contextmenu.prevent="openBranchContextMenu(branch, $event)"
+                @contextmenu.prevent="openLocalBranchContextMenu(branch, $event)"
                 @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
                 @dragover="onDragOver(branch.name, $event)"
                 @dragleave="dropTarget = null"
@@ -545,6 +547,16 @@
         <ContextMenuVue
             :menu="menu"
             @close="menu = null" />
+        <LocalBranchContextMenu
+            :menu="localBranchMenu"
+            @close="localBranchMenu = null"
+            @push="pushLocalBranch"
+            @pull="pullLocalBranch"
+            @force-push="forcePushBranch"
+            @delete="deleteLocalBranch"
+            @create-branch-here="createBranchHere"
+            @create-tag-here="createTagHere"
+            @copy-name="copyBranchName" />
         <TagContextMenu
             :menu="tagMenu"
             @close="tagMenu = null"

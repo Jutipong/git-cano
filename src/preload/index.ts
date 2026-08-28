@@ -60,11 +60,14 @@ const api = {
 
     /* branches */
     branches: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> => call('branch:list'),
-    createBranch: (name: string, checkout: boolean): Promise<void> => call('branch:create', name, checkout),
+    createBranch: (name: string, checkout: boolean, startPoint?: string): Promise<void> =>
+        call('branch:create', name, checkout, startPoint),
     checkout: (ref: string): Promise<void> => call('branch:checkout', ref),
     deleteBranch: (name: string): Promise<void> => call('branch:delete', name),
     deleteRemoteBranch: (ref: string): Promise<string> => call('branch:remoteDelete', ref),
     mergeBranch: (name: string): Promise<string> => call('branch:merge', name),
+    pushBranch: (name: string, force = false): Promise<string> => call('branch:push', name, force),
+    pullBranch: (name: string): Promise<string> => call('branch:pull', name),
 
     /* remotes */
     fetch: (): Promise<string> => call('remote:fetch'),
