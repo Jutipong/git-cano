@@ -152,7 +152,6 @@
         try {
             const generated = (await window.api.ai.generateCommitMessage()).trim()
             message.value = generated
-            notify('Commit message generated', 'success')
             if (autoCommit.value && generated) {
                 await run(
                     async () => {
@@ -688,21 +687,6 @@
                 </span>
             </div>
             <div class="commit-actions">
-                <button
-                    class="btn primary commit-btn"
-                    :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
-                    @click="doCommit()">
-                    <i-lucide-loader-circle
-                        v-if="committing"
-                        class="spinning"
-                        width="15"
-                        height="15" />
-                    <i-lucide-check
-                        v-else
-                        width="15"
-                        height="15" />
-                    {{ committing ? 'Committing…' : 'Commit' }}
-                </button>
                 <div
                     v-if="mode === 'workdir' && showAiGroup"
                     class="cb-ai-group">
@@ -732,6 +716,21 @@
                         Auto commit
                     </label>
                 </div>
+                <button
+                    class="btn primary commit-btn"
+                    :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
+                    @click="doCommit()">
+                    <i-lucide-loader-circle
+                        v-if="committing"
+                        class="spinning"
+                        width="15"
+                        height="15" />
+                    <i-lucide-check
+                        v-else
+                        width="15"
+                        height="15" />
+                    {{ committing ? 'Committing…' : 'Commit' }}
+                </button>
             </div>
         </div>
     </div>
