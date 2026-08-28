@@ -19,13 +19,19 @@
     const repoStore = useRepoStore()
     const ui = useUiStore()
     const uiTransient = useUiTransientStore()
-    const { tabs, activeTab, commits, hasMore, selectedFile, selectedCommit, repoState, rebaseBase, historyFile, blameFile, toolsOpen } =
+    const { tabs, activeTab, commits, hasMore, selectedFile, selectedCommit, repoState, rebaseBase, historyFile, blameFile, toolsOpen, booted } =
         storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
     const conflicts = computed(() => repoStore.conflicts)
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
+
+    // keep the splash on screen at least this long so the brand is readable even
+    // when the session restores almost instantly (will host a logo image later)
+    const SPLASH_MIN_MS = 1800
+    const splashMinElapsed = ref(false)
+    const splashVisible = computed(() => !booted.value || !splashMinElapsed.value)
 
     // toast notifications สำหรับทุก component ที่ inject('notify')
     provide('notify', (message: string, type?: ToastKind) => uiTransient.notify(message, type))
@@ -52,6 +58,7 @@
     onMounted(() => {
         void repoStore.init()
         void useAiStore().load()
+        setTimeout(() => (splashMinElapsed.value = true), SPLASH_MIN_MS)
 
         // instant refresh when the repo changes outside the app (terminal commits, etc.)
         const unwatch = window.api.onRepoChanged(debouncedRefresh)
@@ -364,5 +371,25 @@
                 </div>
             </TransitionGroup>
         </div>
+        <!-- full-window splash while the saved session restores; fades out when booted -->
+        <Transition name="splash">
+            <div
+                v-if="splashVisible"
+                class="splash-screen">
+                <div class="splash-card">
+                    <div class="splash-logo">
+                        <!-- TODO: swap for a real logo image once an asset exists -->
+                        <i-lucide-folder-git2
+                            width="34"
+                            height="34" />
+                    </div>
+                    <strong class="splash-title">Open Git</strong>
+                    <div
+                        class="splash-bar"
+                        aria-hidden="true" />
+                    <span class="splash-muted">Restoring your repositories…</span>
+                </div>
+            </div>
+        </Transition>
     </div>
 </template>

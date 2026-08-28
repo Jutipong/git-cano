@@ -60,6 +60,9 @@ export const useRepoStore = defineStore('repo', () => {
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
+    // true once the saved session finished restoring on launch — the splash screen
+    // covers the workbench until then so the partial init state is never visible
+    const booted = ref(false)
     const commitFiles = ref<CommitFile[]>([])
     const commitMessage = ref('')
     const commitAuthor = ref('')
@@ -221,6 +224,7 @@ export const useRepoStore = defineStore('repo', () => {
             // otherwise keep the saved list so the next launch retries the failures
             const allOpened = paths.length > 0 && paths.every(p => tabs.value.some(tab => tab.path === p))
             restoringSession = false
+            booted.value = true
             if (allOpened) syncSession()
         }
     }
@@ -282,6 +286,7 @@ export const useRepoStore = defineStore('repo', () => {
         toolsOpen,
         repo,
         conflicts,
+        booted,
         addTab,
         refresh,
         selectTab,
