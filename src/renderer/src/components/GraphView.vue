@@ -216,7 +216,7 @@
                                     rowIndex.get(parent) !== undefined &&
                                     rowIndex.get(parent)! > index &&
                                     index <= visibleRange[1] + 5 &&
-                                    rowIndex.get(parent)! <= visibleRange[1] + 5
+                                    rowIndex.get(parent)! >= visibleRange[0] - 5
                                 ">
                                 <path
                                     class="edge-glow"
