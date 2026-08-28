@@ -24,7 +24,14 @@
     const aiModel = ref('')
     const aiTesting = ref(false)
     const aiTestResult = ref<{ ok: boolean; message: string } | null>(null)
+    const connecting = ref(false)
+    const connectResult = ref<{ ok: boolean; message: string } | null>(null)
     const modelOptions = ref<string[]>([])
+    // keep a previously-saved model visible even if it isn't in the fetched list
+    const modelSelectOptions = computed(() => {
+        const current = aiModel.value.trim()
+        return current && !modelOptions.value.includes(current) ? [current, ...modelOptions.value] : modelOptions.value
+    })
 
     watch(tab, loadTabData)
 
@@ -66,12 +73,25 @@
         } catch {
             /* ignore */
         }
-        if (modelOptions.value.length === 0) {
-            try {
-                modelOptions.value = await window.api.ai.listModels()
-            } catch {
-                /* ignore */
+    }
+
+    /** Fetch the provider's model catalog and populate the dropdown. */
+    async function connectProvider() {
+        if (!aiToken.value.trim() || connecting.value) return
+        connecting.value = true
+        connectResult.value = null
+        try {
+            const models = await window.api.ai.listModels()
+            if (models.length === 0) {
+                connectResult.value = { ok: false, message: 'Provider returned no models' }
+            } else {
+                modelOptions.value = [...new Set(models)]
+                connectResult.value = { ok: true, message: `Connected — ${models.length} models available` }
             }
+        } catch (error) {
+            connectResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
+        } finally {
+            connecting.value = false
         }
     }
 
@@ -96,12 +116,19 @@
         try {
             await ai.save({ token: aiToken.value.trim(), modelId: aiModel.value.trim() })
             notify('AI settings saved', 'success')
+            emit('close')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }
     }
 
     onMounted(loadTabData)
+    onMounted(() => window.addEventListener('keydown', onKeydown))
+    onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+
+    function onKeydown(e: KeyboardEvent) {
+        if (e.key === 'Escape') emit('close')
+    }
 
     async function run(fn: () => Promise<unknown>, ok: string) {
         try {
@@ -145,9 +172,7 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
+    <div class="modal-overlay">
         <div class="rebase-modal tools-modal">
             <div class="rebase-modal-header">
                 <strong>Advanced tools</strong>
@@ -293,29 +318,53 @@
                     </p>
                     <label class="ai-field">
                         <span>Token</span>
-                        <input
-                            v-model="aiToken"
-                            type="password"
-                            placeholder="opencode token"
-                            autocomplete="off" />
+                        <div class="ai-token-row">
+                            <input
+                                v-model="aiToken"
+                                type="password"
+                                placeholder="opencode token"
+                                autocomplete="off" />
+                            <button
+                                class="btn primary small"
+                                :disabled="!aiToken.trim() || connecting"
+                                @click="connectProvider()">
+                                <i-lucide-loader-circle
+                                    v-if="connecting"
+                                    class="spinning"
+                                    width="13"
+                                    height="13" />
+                                <i-lucide-plug-zap
+                                    v-else
+                                    width="13"
+                                    height="13" />
+                                {{ connecting ? 'Connecting…' : 'Connect' }}
+                            </button>
+                        </div>
+                        <span
+                            v-if="connectResult"
+                            class="ai-test-result"
+                            :class="connectResult.ok ? 'ok' : 'err'">{{ connectResult.message }}</span>
                     </label>
                     <label class="ai-field">
                         <span>Model ID</span>
-                        <input
-                            v-model="aiModel"
-                            list="go-models"
-                            placeholder="e.g. kimi-k2.7-code or grok-4.6"
-                            autocomplete="off" />
-                        <datalist id="go-models">
-                            <option
-                                v-for="id in modelOptions"
-                                :key="id"
-                                :value="id" />
-                        </datalist>
+                        <div class="ai-field-select">
+                            <select v-model="aiModel">
+                                <option
+                                    v-for="id in modelSelectOptions"
+                                    :key="id"
+                                    :value="id">
+                                    {{ id }}
+                                </option>
+                            </select>
+                            <i-lucide-chevron-down
+                                class="ai-select-caret"
+                                width="14"
+                                height="14" />
+                        </div>
                     </label>
                     <div class="tools-actions">
                         <button
-                            class="btn primary small"
+                            class="btn success small"
                             :disabled="!aiToken.trim() || !aiModel.trim() || aiTesting"
                             @click="testAi()">
                             <i-lucide-flask-conical
@@ -327,7 +376,7 @@
                                 class="spinning"
                                 width="13"
                                 height="13" />
-                            {{ aiTesting ? 'Testing…' : 'Test' }}
+                            {{ aiTesting ? 'Testing…' : 'Test connect' }}
                         </button>
                         <span
                             v-if="aiTestResult"
@@ -337,7 +386,19 @@
                         <button
                             class="btn small"
                             :disabled="aiTesting"
+                            @click="emit('close')">
+                            <i-lucide-x
+                                width="13"
+                                height="13" />
+                            Close
+                        </button>
+                        <button
+                            class="btn primary small"
+                            :disabled="aiTesting"
                             @click="saveAi()">
+                            <i-lucide-save
+                                width="13"
+                                height="13" />
                             Save
                         </button>
                     </div>

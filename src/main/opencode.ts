@@ -97,7 +97,18 @@ function extractErrorDetail(text: string, status: number): string {
 function extractContent(family: Family, json: unknown): string {
     if (family === 'chat') {
         const data = json as { choices?: { message?: { content?: unknown } }[] }
-        return typeof data.choices?.[0]?.message?.content === 'string' ? data.choices[0].message.content : ''
+        const raw = data.choices?.[0]?.message?.content
+        if (typeof raw === 'string') return raw
+        if (Array.isArray(raw)) {
+            return raw
+                .map(part =>
+                    part && typeof part === 'object' && 'text' in part && typeof (part as { text?: unknown }).text === 'string'
+                        ? (part as { text: string }).text
+                        : ''
+                )
+                .join('')
+        }
+        return ''
     }
     if (family === 'messages') {
         const data = json as { content?: { text?: unknown }[] }
@@ -117,9 +128,9 @@ async function callModel(
     modelId: string,
     systemPrompt: string,
     userPrompt: string,
-    opts: { maxTokens?: number; timeoutMs?: number } = {}
+    opts: { maxTokens?: number; timeoutMs?: number; allowEmpty?: boolean } = {}
 ): Promise<string> {
-    const { maxTokens = 1024, timeoutMs = 60_000 } = opts
+    const { maxTokens = 1024, timeoutMs = 60_000, allowEmpty = false } = opts
     const family = familyOf(modelId)
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
@@ -151,7 +162,16 @@ async function callModel(
         throw new Error('Invalid response from the model API')
     }
     const content = extractContent(family, json).trim()
-    if (!content) throw new Error('Model returned an empty response')
+    if (!content && !allowEmpty) {
+        const finish = (json as { choices?: { finish_reason?: string }[] }).choices?.[0]?.finish_reason
+        if (finish === 'length') {
+            throw new Error(
+                'Model ran out of output tokens before replying (finish_reason=length) — increase the token budget or try a non-thinking model'
+            )
+        }
+        // expose the raw body so a still-failing model shows WHY it returned nothing
+        throw new Error(`Model returned an empty response (${text.slice(0, 200)})`)
+    }
     return content
 }
 
@@ -161,7 +181,7 @@ export async function testConnection(token: string, modelId: string): Promise<Ai
     const cleanModel = String(modelId ?? '').trim()
     if (!cleanToken || !cleanModel) return { ok: false, message: 'Enter both a token and a model-id first' }
     try {
-        await callModel(cleanToken, cleanModel, '', 'ping', { maxTokens: 5, timeoutMs: 30_000 })
+        await callModel(cleanToken, cleanModel, '', 'ping', { maxTokens: 64, timeoutMs: 30_000, allowEmpty: true })
         // failure details never contain the token — safe to log (model ids aren't secret)
         log('info', 'ai', `test ok (${cleanModel})`)
         return { ok: true, message: 'Connected — token & model are valid' }
@@ -214,22 +234,59 @@ export async function generateCommitMessage(): Promise<string> {
     const changes = await getChangesContext()
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
-    const content = await callModel(cfg.token, cfg.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 600 })
+    const content = await callModel(cfg.token, cfg.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 3000 })
     return stripFences(content).slice(0, 2500)
 }
 
-/** Public model catalog (no auth required) — used for the model-id autocomplete. */
+/** Fallback catalog used when the live /models fetch fails — keeps the UI usable offline. */
+const FALLBACK_MODELS = [
+    'minimax-m3',
+    'minimax-m2.7',
+    'minimax-m2.5',
+    'kimi-k3',
+    'kimi-k2.7-code',
+    'kimi-k2.6',
+    'kimi-k2.5',
+    'longcat-2.0',
+    'glm-5.3-flash',
+    'glm-5.3',
+    'glm-5.2',
+    'glm-5.1',
+    'glm-5',
+    'deepseek-v4-pro',
+    'deepseek-v4-flash',
+    'deepseek-v4-flash-vision-exp',
+    'qwen3.8-max',
+    'qwen3.8-flash',
+    'qwen3.7-max',
+    'qwen3.7-plus',
+    'qwen3.6-plus',
+    'qwen3.5-plus',
+    'mimo-v2.5-pro',
+    'mimo-v2.5',
+    'mimo-v2-pro',
+    'mimo-v2-omni',
+    'hy3',
+    'hy3-preview',
+    'gpt-5.6-luna',
+    'grok-4.6',
+    'grok-4.5',
+    'muse-spark-1.2-contributor',
+]
+
+/** Public model catalog (no auth required) — used to populate the AI model dropdown.
+ * On any failure falls back to FALLBACK_MODELS so the list is never empty. */
 export async function listGoModels(): Promise<string[]> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)
     try {
         const res = await fetch(GO_MODELS_URL, { signal: controller.signal })
-        if (!res.ok) return []
+        if (!res.ok) return FALLBACK_MODELS
         const json = (await res.json().catch(() => null)) as { data?: { id?: unknown }[] } | null
-        if (!Array.isArray(json?.data)) return []
+        if (!Array.isArray(json?.data) || json.data.length === 0) return FALLBACK_MODELS
         return json.data.map(model => (typeof model.id === 'string' ? model.id : '')).filter(Boolean)
     } catch {
-        return []
+        return FALLBACK_MODELS
     } finally {
         clearTimeout(timer)
     }

@@ -21,6 +21,12 @@
         }
     }
     onMounted(load)
+    onMounted(() => window.addEventListener('keydown', onKeydown))
+    onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+
+    function onKeydown(e: KeyboardEvent) {
+        if (e.key === 'Escape') emit('close')
+    }
 
     async function run(fn: () => Promise<unknown>, successMessage: string) {
         try {
@@ -72,9 +78,7 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
+    <div class="modal-overlay">
         <div class="rebase-modal remote-modal">
             <div class="rebase-modal-header">
                 <strong>Manage remotes</strong>
@@ -126,7 +130,7 @@
 
             <div class="rebase-modal-footer">
                 <button
-                    class="btn small"
+                    class="btn success small"
                     :disabled="!originUrl.trim() || testing"
                     title="Check that this URL is reachable"
                     @click="testUrl()">

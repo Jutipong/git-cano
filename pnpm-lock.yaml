@@ -27,9 +27,15 @@ importers:
       '@iconify-json/lucide':
         specifier: ^1.2.126
         version: 1.2.126
+      '@iconify-json/mage':
+        specifier: ^1.2.4
+        version: 1.2.4
       '@iconify-json/simple-icons':
         specifier: ^1.2.93
         version: 1.2.93
+      '@iconify-json/streamline-flex-color':
+        specifier: ^1.2.2
+        version: 1.2.2
       '@types/node':
         specifier: ^26.4.0
         version: 26.4.0
@@ -514,8 +520,14 @@ packages:
   '@iconify-json/lucide@1.2.126':
     resolution: {integrity: sha512-Fl3OfR71yeWLrlTLp6C4W5W3rJJDWH9/e70mjtq9VAldYDxvHh149JMNPz7foTeLLTE2Paynnp2aYKVL9rgF5Q==}
 
+  '@iconify-json/mage@1.2.4':
+    resolution: {integrity: sha512-QZnjHtV/RP9/bF6n7bHSnXMPX/MW5dpHqOH2pEHiEytUx76OKrUZ55YBFwrAxPz5f3BoCeWMY1wyEQQD36Bkkw==}
+
   '@iconify-json/simple-icons@1.2.93':
     resolution: {integrity: sha512-/XhANjfGYOuqvSR3TmUnkQkINvQ4GVjVuukvymRbxtVFBvIq/yiXJqCDycKcQPT401OYT9H2vIY6ihAlz1QIAw==}
+
+  '@iconify-json/streamline-flex-color@1.2.2':
+    resolution: {integrity: sha512-EphxHZHzxcR2B8AU7skOnq27cuOoZDzn69EzLysRkN+Nla7tyqF0eacsFCk70t2T9BhT3LBy9GgGeY3+Db2KPQ==}
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -1108,9 +1120,6 @@ packages:
 
   '@types/node@24.13.3':
     resolution: {integrity: sha512-Dh8vAsV36ig5wa9OX4pXvMc9D3Veibfw2wix0CUwYODLD8nkj9UsLjASr49nPg+2eKzxhBV+v7L8pXvT4e639Q==}
-
-  '@types/node@26.3.0':
-    resolution: {integrity: sha512-L3fgrnchriRC2ExBflb8j4uZZURHZfQsmQeyVzhjcHW4kkwVyo8/0h1B2MVzMTrYUJYu6G7EWs14hW/L9putqw==}
 
   '@types/node@26.4.0':
     resolution: {integrity: sha512-faiGnoIrLH/V8cibOMEAZ8pMw6oXqSukl29ra4mN8GdaB2ZewzeaLj+INpV5N+Z1eKWzY+IzaIZH2EIR6YZRNQ==}
@@ -2979,7 +2988,15 @@ snapshots:
     dependencies:
       '@iconify/types': 2.0.0
 
+  '@iconify-json/mage@1.2.4':
+    dependencies:
+      '@iconify/types': 2.0.0
+
   '@iconify-json/simple-icons@1.2.93':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/streamline-flex-color@1.2.2':
     dependencies:
       '@iconify/types': 2.0.0
 
@@ -3318,7 +3335,7 @@ snapshots:
     dependencies:
       '@types/http-cache-semantics': 4.2.0
       '@types/keyv': 3.1.4
-      '@types/node': 26.3.0
+      '@types/node': 26.4.0
       '@types/responselike': 1.0.3
 
   '@types/debug@4.1.13':
@@ -3329,13 +3346,13 @@ snapshots:
 
   '@types/fs-extra@9.0.13':
     dependencies:
-      '@types/node': 26.3.0
+      '@types/node': 26.4.0
 
   '@types/http-cache-semantics@4.2.0': {}
 
   '@types/keyv@3.1.4':
     dependencies:
-      '@types/node': 26.3.0
+      '@types/node': 26.4.0
 
   '@types/ms@2.1.0': {}
 
@@ -3343,17 +3360,13 @@ snapshots:
     dependencies:
       undici-types: 7.18.2
 
-  '@types/node@26.3.0':
-    dependencies:
-      undici-types: 8.3.0
-
   '@types/node@26.4.0':
     dependencies:
       undici-types: 8.3.0
 
   '@types/responselike@1.0.3':
     dependencies:
-      '@types/node': 26.3.0
+      '@types/node': 26.4.0
 
   '@vitejs/plugin-vue@6.0.8(vite@8.2.2(@types/node@26.4.0)(esbuild@0.28.2)(jiti@2.7.0))(vue@3.5.42(typescript@6.0.3))':
     dependencies:

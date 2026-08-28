@@ -24,7 +24,9 @@
   "devDependencies": {
     "@iconify-json/fluent-emoji-flat": "^1.2.6",
     "@iconify-json/lucide": "^1.2.126",
+    "@iconify-json/mage": "^1.2.4",
     "@iconify-json/simple-icons": "^1.2.93",
+    "@iconify-json/streamline-flex-color": "^1.2.2",
     "@types/node": "^26.4.0",
     "@vitejs/plugin-vue": "^6.0.8",
     "electron": "^44.0.0",

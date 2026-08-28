@@ -162,7 +162,7 @@
                 message.value = ''
             }
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
         } finally {
             generating.value = false
         }
@@ -652,7 +652,12 @@
             <div
                 v-if="mode === 'workdir'"
                 class="cb-toolbar">
-                <span class="commit-box-label">Message</span>
+                <span class="commit-box-label">
+                    <i-mage-message-dots
+                        width="12"
+                        height="12" />
+                    Message
+                </span>
             </div>
             <!-- read-only when viewing an already-committed commit -->
             <div
@@ -674,14 +679,25 @@
                 @keydown.enter.meta.prevent="doCommit()"
                 @keydown.enter.ctrl.prevent="doCommit()" />
             <div
-                v-if="mode === 'workdir' && message"
+                v-if="mode === 'workdir' && (showAiGroup || message)"
                 class="summary-counter">
                 <span
+                    v-if="showAiGroup"
+                    class="counter-model"
+                    :title="`Commit-message model: ${ai.modelId}`">
+                    <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
+                        width="14"
+                        height="14" />
+                    {{ ai.modelId }}
+                </span>
+                <span
                     class="muted"
-                    v-if="message.split('\n').length > 1">
+                    v-if="message && message.split('\n').length > 1">
                     body · {{ message.split('\n').length - 1 }} lines
                 </span>
-                <span :class="['subject-count', subjectCountClass]">
+                <span
+                    v-if="message"
+                    :class="['subject-count', subjectCountClass]">
                     title {{ firstLine.length }} / 72
                 </span>
             </div>

@@ -521,6 +521,16 @@ body {
     display: flex;
 }
 
+/* stash create form: card container that separates it from the list */
+.stash-create {
+    margin: 4px 6px 10px;
+    padding: 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 3px 10px var(--shadow);
+}
+
 /* duplicate-name guard: red border on the message input */
 .stash-create input.input-error,
 .stash-create input.input-error:focus {
@@ -543,6 +553,7 @@ body {
 /* stash/tag create form: actions right-aligned, both buttons evenly sized */
 .stash-create-actions {
     justify-content: flex-end;
+    margin-top: 12px;
 }
 
 .stash-create-actions .btn {
@@ -749,6 +760,7 @@ body {
 .tag-modal-body > input:not([type='checkbox']),
 .clone-box input,
 .tools-body input,
+.tools-body select,
 .remote-add input,
 .remote-url {
     background: var(--surface-0);
@@ -765,6 +777,19 @@ body {
 .btn.primary {
     background: var(--teal-dark);
     border-color: var(--teal-dark);
+}
+
+.btn.success {
+    color: var(--surface-0);
+    background: var(--green);
+    border-color: var(--green);
+    font-weight: 650;
+}
+.btn.success:hover {
+    filter: brightness(0.93);
+}
+.btn.success:disabled {
+    opacity: 0.4;
 }
 
 /* dedicated context menu for the STASHES section */

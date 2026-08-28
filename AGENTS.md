@@ -54,6 +54,23 @@ Key files:
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
   `12px` radius; rows/buttons use pill (`999px`) shapes.
 
+## Feedback: toasts & error dialog
+
+- One store owns ALL feedback: `src/renderer/src/stores/uiTransient.ts`. Components reach it via
+  `inject('notify')` (a `(message: string, type?: ToastKind) => void` provided in `App.vue`).
+  Never invent a second toast/dialog system.
+- `notify(message)` without a `type` auto-classifies via `inferToastKind()` (keyword matching:
+  `error|failed|invalid|not found|…` → **error dialog**, `success|completed|…` → green toast, etc.).
+- **Errors open `ErrorDialog.vue` (a modal), not a toast.** `App.vue` renders it from
+  `uiTransient.errorDialog`; it closes via X / Close button / ESC. Everything non-error becomes a
+  transient toast (auto-dismisses).
+- Rule: when a failure must surface clearly, ALWAYS pass the type explicitly —
+  `notify(msg, 'error')`. Do not rely on keyword inference, or messages like
+  "Model returned an empty response (…json…)" silently degrade to a toast. Example to follow:
+  AI commit-message generation failures in `FilePanel.vue` use `notify(msg, 'error')`.
+- Toasts carry kinds (`success | error | warning | info | fetch | pull | push | stash`); the
+  `push`/`pull`/`fetch`/`stash` kinds are action-accent colors for the sidebar sync card.
+
 ## Conventions
 
 - **Never commit on your own.** Only commit when the user explicitly asks (e.g. "commit").
