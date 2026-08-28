@@ -360,7 +360,6 @@ body {
 }
 
 .branch-row.current .branch-name {
-    color: var(--teal);
     font-weight: 600;
 }
 

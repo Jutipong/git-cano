@@ -472,7 +472,6 @@ kbd {
     background: var(--surface-hover);
 }
 .branch-row.current {
-    color: var(--teal);
     background: rgba(67, 201, 182, 0.1);
     border-left-color: var(--teal);
 }
