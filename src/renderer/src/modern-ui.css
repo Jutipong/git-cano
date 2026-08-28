@@ -423,6 +423,8 @@ body {
     height: 28px;
     border-bottom-color: rgba(174, 187, 203, 0.07);
     --row-tint: var(--surface-selected);
+    --row-color: var(--teal);
+    --row-start: 0px;
 }
 
 .graph-row.drop-target {
@@ -430,6 +432,21 @@ body {
 }
 
 .graph-row::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: var(--row-start);
+    right: calc(100% - var(--graph-w, 64px) + 6px);
+    background: color-mix(in srgb, var(--row-color) 16%, transparent);
+    border-radius: 999px;
+    opacity: 1;
+    z-index: -1;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+}
+
+.graph-row::after {
     content: '';
     position: absolute;
     inset: 2px 6px 2px var(--graph-w, 64px);
@@ -441,8 +458,9 @@ body {
     pointer-events: none;
 }
 
-.graph-row:hover::before,
-.graph-row.selected::before {
+.graph-row:hover::after,
+.graph-row.selected::after,
+.graph-row.drop-target::after {
     opacity: 1;
 }
 

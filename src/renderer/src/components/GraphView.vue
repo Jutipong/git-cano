@@ -380,7 +380,12 @@
                         'drop-target': dropTargetHash === commit.hash,
                         'msg-expanded': expandedHash === commit.hash
                     }"
-                    :style="{ height: `${rowH}px`, '--graph-w': `${graphW}px` }"
+                    :style="{
+                        height: `${rowH}px`,
+                        '--graph-w': `${graphW}px`,
+                        '--row-color': nodeColor(commit),
+                        '--row-start': `${Math.max(0, nodeX(commit) - laneW / 2)}px`
+                    }"
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
                     @click="select(commit)"
