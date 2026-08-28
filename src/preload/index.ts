@@ -63,6 +63,7 @@ const api = {
     createBranch: (name: string, checkout: boolean): Promise<void> => call('branch:create', name, checkout),
     checkout: (ref: string): Promise<void> => call('branch:checkout', ref),
     deleteBranch: (name: string): Promise<void> => call('branch:delete', name),
+    deleteRemoteBranch: (ref: string): Promise<string> => call('branch:remoteDelete', ref),
     mergeBranch: (name: string): Promise<string> => call('branch:merge', name),
 
     /* remotes */

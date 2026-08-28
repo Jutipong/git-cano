@@ -576,6 +576,17 @@ export async function deleteBranch(name: string): Promise<void> {
     await g.deleteLocalBranch(name, true /* force */)
 }
 
+/** Delete a branch on the remote. `ref` looks like `remotes/<remote>/<branch>`. */
+export async function deleteRemoteBranch(ref: string): Promise<string> {
+    const { git: g } = getRepo()
+    const parts = ref.replace(/^remotes\//, '').split('/')
+    const remote = parts.shift()
+    const branch = parts.join('/')
+    if (!remote || !branch) throw new Error(`Invalid remote branch reference: ${ref}`)
+    await g.push([remote, `:refs/heads/${branch}`])
+    return `Remote branch ${branch} deleted`
+}
+
 export async function merge(name: string): Promise<string> {
     const { git: g } = getRepo()
     const res = await g.merge([name, '--no-edit'])

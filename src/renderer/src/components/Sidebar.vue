@@ -145,6 +145,22 @@
         return items
     }
 
+    function buildRemoteBranchMenu(branch: { name: string; current: boolean }): MenuItem[] {
+        return [
+            {
+                label: `Checkout ${stripRemote(branch.name)}`,
+                action: () => void checkoutRemote(branch.name),
+            },
+            {
+                label: `Delete ${stripRemote(branch.name)}`,
+                icon: 'trash',
+                danger: true,
+                separatorBefore: true,
+                action: () => void deleteRemoteBranch(branch.name),
+            },
+        ]
+    }
+
     function checkoutBranch(name: string) {
         void run(() => window.api.checkout(name), `Checked out ${name}`)
     }
@@ -160,6 +176,16 @@
         })
         if (!ok) return
         void run(() => window.api.deleteBranch(name), `Deleted ${name}`)
+    }
+    async function deleteRemoteBranch(ref: string) {
+        const label = stripRemote(ref)
+        const ok = await confirmDialog({
+            message: `Delete remote branch: ${label}`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        void run(() => window.api.deleteRemoteBranch(ref), `Remote branch ${label} deleted`)
     }
     async function deleteTag(tag: { name: string; hash: string }) {
         const ok = await confirmDialog({
@@ -218,6 +244,9 @@
     }
     function openBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
         menu.value = { x: event.clientX, y: event.clientY, items: buildBranchMenu(branch) }
+    }
+    function openRemoteBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
+        menu.value = { x: event.clientX, y: event.clientY, items: buildRemoteBranchMenu(branch) }
     }
     function handleDrop(targetBranch: string, event: DragEvent) {
         event.preventDefault()
@@ -405,11 +434,22 @@
                 class="branch-row remote"
                 @click="focusBranch(branch)"
                 @dblclick="checkoutRemote(branch.name)"
-                title="Click to locate · Double-click to checkout">
+                @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
+                title="Click to locate · Double-click to checkout · Right-click for options">
                 <i-lucide-globe2
                     width="14"
                     height="14" />
-                <span>{{ stripRemote(branch.name) }}</span>
+                <span class="branch-name">{{ stripRemote(branch.name) }}</span>
+                <span class="row-actions">
+                    <button
+                        class="icon-btn danger"
+                        title="Delete remote branch"
+                        @click.stop="deleteRemoteBranch(branch.name)">
+                        <i-lucide-trash2
+                            width="14"
+                            height="14" />
+                    </button>
+                </span>
             </div>
             </template>
         </div>

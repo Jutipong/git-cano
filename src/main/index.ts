@@ -10,6 +10,7 @@ import {
     commit,
     createBranch,
     deleteBranch,
+    deleteRemoteBranch,
     discard,
     discardAll,
     fetchAll,
@@ -376,6 +377,10 @@ app.whenReady().then(() => {
     handle('branch:delete', (name: string) => {
         requireRepo()
         return deleteBranch(name as string)
+    })
+    handle('branch:remoteDelete', (ref: string) => {
+        requireRepo()
+        return deleteRemoteBranch(ref as string)
     })
     handle('branch:merge', (name: string) => {
         requireRepo()
