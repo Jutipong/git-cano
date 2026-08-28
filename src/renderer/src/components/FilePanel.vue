@@ -712,11 +712,11 @@
                     <label
                         class="cb-auto-commit cb-group-item"
                         title="When checked, AI generate stages everything and commits automatically">
-                        Auto commit
                         <input
                             v-model="ui.autoCommit"
                             type="checkbox"
                             :disabled="!canGenerate" />
+                        Auto commit
                     </label>
                     <span class="cb-ai-sep" />
                     <button
