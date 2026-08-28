@@ -47,7 +47,7 @@ declare global {
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
   // @ts-ignore
-  export type { ToastKind } from './stores/uiTransient'
+  export type { ToastKind, NotifyOptions } from './stores/uiTransient'
   import('./stores/uiTransient')
   // @ts-ignore
   export type { FileNode, TreeRow } from './utils/fileTree'

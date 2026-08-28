@@ -1,6 +1,11 @@
 // semantic kinds plus action accents so a toast can pick up the color of the button that triggered it
 export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'fetch' | 'pull' | 'push' | 'stash'
 
+export interface NotifyOptions {
+    /** render an 'error' as a red toast instead of opening the error dialog */
+    asToast?: boolean
+}
+
 interface ToastMessage {
     id: number
     message: string
@@ -62,9 +67,9 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         toasts.value = toasts.value.filter(t => t.id !== id)
     }
 
-    function notify(message: string, type?: ToastKind) {
+    function notify(message: string, type?: ToastKind, opts?: NotifyOptions) {
         const kind = type ?? inferToastKind(message)
-        if (kind === 'error') {
+        if (kind === 'error' && !opts?.asToast) {
             // errors go to a dedicated dialog so the message can be read clearly
             errorDialog.value = message // last error wins
             return

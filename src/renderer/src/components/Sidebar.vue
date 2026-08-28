@@ -9,10 +9,10 @@
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
 
     import type { MenuItem, RepoStatus } from '@shared/types'
-    import type { ToastKind } from '../stores/uiTransient'
+    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
-    const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
+    const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
     const ui = useUiStore()
     const repoStore = useRepoStore()
@@ -106,14 +106,15 @@
             await loadAll()
             notify(ok, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            // failure now shows in the error dialog — don't rely on keyword inference
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
     }
 
     function buildRemoteBranchMenu(branch: { name: string; current: boolean }): MenuItem[] {
         return [
             {
-                label: `Checkout ${stripRemote(branch.name)}`,
+                label: `Checkout ${localNameForRemote(branch.name)}`,
                 icon: 'git-branch',
                 action: () => void checkoutRemote(branch.name),
             },
@@ -130,8 +131,24 @@
     function checkoutBranch(name: string) {
         void run(() => window.api.checkout(name), `Checked out ${name}`)
     }
+    /** local branch a remote ref maps to when checked out (remotes/origin/feature → feature) */
+    function localNameForRemote(name: string) {
+        return name.replace(/^remotes\/[^/]+\//, '')
+    }
+    /** true when the remote branch is already checked out as a local branch */
+    function isRemoteCurrent(name: string) {
+        const target = localNameForRemote(name)
+        return local.value.some(b => b.name === target && b.current)
+    }
     function checkoutRemote(name: string) {
-        void run(() => window.api.checkout(stripRemote(name)), `Checked out ${stripRemote(name)}`)
+        if (isRemoteCurrent(name)) {
+            notify(`Already on ${localNameForRemote(name)}`, 'error', { asToast: true })
+            return
+        }
+        // checkout the bare branch name so git DWIMs to a local tracking branch
+        // instead of `git checkout origin/x`, which would detach HEAD
+        const target = localNameForRemote(name)
+        void run(() => window.api.checkout(target), `Checked out ${target}`)
     }
 
     async function deleteBranch(name: string) {
@@ -434,10 +451,11 @@
                 v-for="branch in remote"
                 :key="branch.name"
                 class="branch-row remote"
+                :class="{ current: isRemoteCurrent(branch.name) }"
                 @click="focusBranch(branch)"
                 @dblclick="checkoutRemote(branch.name)"
                 @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
-                title="Click to locate · Double-click to checkout · Right-click for options">
+                :title="isRemoteCurrent(branch.name) ? 'Already checked out locally' : 'Click to locate · Double-click to checkout · Right-click for options'">
                 <i-lucide-globe2
                     width="14"
                     height="14" />

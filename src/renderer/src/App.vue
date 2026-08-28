@@ -14,7 +14,7 @@
     import ToolsModal from './components/ToolsModal.vue'
 
     import type { CommitNode, MenuItem, RepoStatus } from '@shared/types'
-    import type { ToastKind } from './stores/uiTransient'
+    import type { NotifyOptions, ToastKind } from './stores/uiTransient'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -34,7 +34,7 @@
     const splashVisible = computed(() => !booted.value || !splashMinElapsed.value)
 
     // toast notifications สำหรับทุก component ที่ inject('notify')
-    provide('notify', (message: string, type?: ToastKind) => uiTransient.notify(message, type))
+    provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
 
     function openNewRepo() {
         window.api
