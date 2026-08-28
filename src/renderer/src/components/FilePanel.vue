@@ -705,6 +705,16 @@
                 <div
                     v-if="mode === 'workdir' && showAiGroup"
                     class="cb-ai-group">
+                    <label
+                        class="cb-auto-commit cb-group-item"
+                        title="When checked, AI generate stages everything and commits automatically">
+                        Auto commit
+                        <input
+                            v-model="ui.autoCommit"
+                            type="checkbox"
+                            :disabled="!canGenerate" />
+                    </label>
+                    <span class="cb-ai-sep" />
                     <button
                         class="btn small cb-ai-btn cb-group-item"
                         :disabled="!canGenerate"
@@ -720,16 +730,6 @@
                             width="16"
                             height="16" />
                     </button>
-                    <span class="cb-ai-sep" />
-                    <label
-                        class="cb-auto-commit cb-group-item"
-                        title="When checked, AI generate stages everything and commits automatically">
-                        <input
-                            v-model="ui.autoCommit"
-                            type="checkbox"
-                            :disabled="!canGenerate" />
-                        Auto commit
-                    </label>
                 </div>
                 <button
                     class="btn primary commit-btn"
