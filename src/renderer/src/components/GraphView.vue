@@ -127,6 +127,17 @@
         const r = Math.min((py - cy) * 0.5, Math.abs(px - cx), rowH * 2.5)
         return `M ${cx} ${cy} L ${cx} ${py - r} Q ${cx} ${py} ${px} ${py}`
     }
+    // short return to the trunk: leave the parent's row horizontally, then make
+    // the same rounded turn as a merge edge before running up into the child node
+    function shortReturnEdgeD(childIndex: number, parentIndex: number): string {
+        const cx = nodeX(visibleCommits.value[childIndex])
+        const cy = nodeY(childIndex)
+        const px = nodeX(visibleCommits.value[parentIndex])
+        const py = nodeY(parentIndex)
+        const r = Math.min(10, Math.abs(px - cx) / 2, (py - cy) / 2)
+        const dir = cx > px ? 1 : -1
+        return `M ${cx} ${cy} L ${cx} ${py - r} Q ${cx} ${py} ${cx - dir * r} ${py} L ${px} ${py}`
+    }
     // GitKraken-style merge: leaves the merge commit horizontally along its own row,
     // turns a rounded 90° corner onto the parent's lane, then drops straight into the
     // parent node — the parent's lane stays a clean vertical rail
@@ -143,6 +154,11 @@
     function edgePath(commit: CommitNode, parent: string, childIndex: number, parentIndex: number): string {
         if (isMergeEdge(commit, parent)) return mergeEdgeD(childIndex, parentIndex)
         const gap = nodeY(parentIndex) - nodeY(childIndex)
+        const childX = nodeX(visibleCommits.value[childIndex])
+        const parentX = nodeX(visibleCommits.value[parentIndex])
+        // Short returns leave the trunk row before making the same rounded turn
+        // as the upper branch; the merge edge above remains unchanged.
+        if (parentX < childX) return shortReturnEdgeD(childIndex, parentIndex)
         // past ~5 rows the S-curve flattens into a diagonal — switch to the rail + turn
         return gap > rowH * 5 ? rejoinEdgeD(childIndex, parentIndex) : edgeD(childIndex, parentIndex)
     }
