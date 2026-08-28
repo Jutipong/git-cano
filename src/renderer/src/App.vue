@@ -70,6 +70,12 @@
         )
 
         const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                // close diff overlay first, then commit details
+                if (selectedFile.value) selectedFile.value = null
+                else if (selectedCommit.value) selectedCommit.value = null
+                return
+            }
             if (!(event.metaKey || event.ctrlKey)) return
             if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
                 event.preventDefault()
@@ -83,11 +89,6 @@
             if (event.shiftKey && event.key.toLowerCase() === 'p') {
                 event.preventDefault()
                 openNewRepo()
-            }
-            if (event.key === 'Escape') {
-                // close diff overlay first, then commit details
-                if (selectedFile.value) selectedFile.value = null
-                else if (selectedCommit.value) selectedCommit.value = null
             }
         }
 
