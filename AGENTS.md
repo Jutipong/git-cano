@@ -35,7 +35,9 @@ Key files:
   green icon styled like the panel refresh buttons — no outline.
 - **Sidebar**: fetch/pull/push sync card at the top, branch/tag sections, then the STASHES
   section; bottom actions are Settings and the theme toggle only (no stash button there —
-  stash creation lives in the STASHES section).
+  stash creation lives in the STASHES section). The STASHES and TAGS sections each have
+  their own dedicated context-menu SFC (`StashContextMenu.vue`, `TagContextMenu.vue`);
+  the shared `ContextMenu.vue` is used for branches and graph commits only.
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it).
@@ -57,6 +59,11 @@ Key files:
 - **Never commit on your own.** Only commit when the user explicitly asks (e.g. "commit").
 - Vue SFCs use 4-space indentation inside `<script setup>`; auto-imports cover vue/pinia APIs
   (no explicit `ref`/`computed` imports) — icons come from `lucide-vue-next`.
+- Per-feature context menus get their own dedicated SFC (e.g. `StashContextMenu.vue`,
+  `TagContextMenu.vue`) instead of adding more actions to the shared `ContextMenu.vue`.
+  Follow the stash pattern: export a `*MenuState` interface from the component, pass it
+  through a single `menu` prop, emit a typed event per action, and import icons directly
+  inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
 - Shared date formatting lives in `src/renderer/src/utils/format.ts`; reuse it rather than
   re-formatting dates inline.
 - Commit titles follow the usual convention (≤50 chars ideal, ≤72 hard cap); the UI enforces

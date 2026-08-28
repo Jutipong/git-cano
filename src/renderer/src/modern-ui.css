@@ -746,8 +746,81 @@ body {
     background: var(--line-soft);
 }
 
+/* dedicated context menu for the TAGS section */
+.tag-menu {
+    position: fixed;
+    z-index: 50;
+    min-width: 200px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.tag-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 7px 11px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.tag-menu-item:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.tag-menu-item.danger {
+    color: var(--red);
+}
+
+.tag-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.tag-menu-ic {
+    flex: 0 0 auto;
+    margin-right: 7px;
+}
+
+.tag-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--line-soft);
+}
+
+/* cloud indicator on tag rows that already exist on the remote */
+.tag-row .tag-remote-ic {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+}
+
 .commit-btn {
     min-height: 33px;
+}
+
+/* create-tag dialog — compact (base .rebase-modal is 820px, far too wide for this) */
+.tag-modal {
+    width: min(360px, 92vw);
+}
+
+.tag-modal .rebase-base {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tag-modal-body {
+    padding: 10px 14px;
 }
 
 .context-menu,

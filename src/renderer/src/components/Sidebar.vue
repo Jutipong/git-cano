@@ -5,6 +5,7 @@
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
     import StashPanel from './StashPanel.vue'
+    import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
 
     import type { MenuItem, RepoStatus } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
@@ -41,6 +42,9 @@
     const menu = ref<MenuState | null>(null)
     const dropTarget = ref<string | null>(null)
     const showRemoteManager = ref(false)
+    const tagMenu = ref<TagMenuState | null>(null)
+    const remoteTagNames = ref<string[]>([])
+    const hasRemote = ref(false)
 
     const syncBusy = ref<string | null>(null)
 
@@ -80,6 +84,14 @@
         }
         try {
             tags.value = await window.api.tags()
+        } catch {
+            /* ignore */
+        }
+        try {
+            // ls-remote is a network call — fail silently offline
+            const [names, has] = await Promise.all([window.api.remoteTags(), window.api.hasRemote()])
+            remoteTagNames.value = names
+            hasRemote.value = has
         } catch {
             /* ignore */
         }
@@ -161,38 +173,55 @@
     function deleteBranch(name: string) {
         if (window.confirm(`Delete branch "${name}"?`)) void run(() => window.api.deleteBranch(name), `Deleted ${name}`)
     }
-    async function deleteTag(name: string) {
+    async function deleteTag(tag: { name: string; hash: string }) {
         const ok = await confirmDialog({
-            message: `Delete tag: ${name}`,
+            message: `Delete tag: ${tag.name}`,
             confirmLabel: 'Delete',
             danger: true,
         })
         if (!ok) return
-        void run(() => window.api.deleteTag(name), `Tag ${name} deleted`)
+        void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
     }
-    function openTagContextMenu(tag: { name: string }, event: MouseEvent) {
-        menu.value = {
+    function copyTagName(tag: { name: string }) {
+        void navigator.clipboard
+            .writeText(tag.name)
+            .then(() => notify('Tag name copied', 'success'))
+            .catch(() => notify('Copy failed', 'error'))
+    }
+    function renameTag(tag: { name: string }) {
+        const next = window.prompt(`Rename tag "${tag.name}" to:`, tag.name)
+        if (next?.trim() && next.trim() !== tag.name) {
+            void run(() => window.api.renameTag(tag.name, next.trim()), `Tag ${next.trim()} created`)
+        }
+    }
+    function pushTagToRemote(tag: { name: string }) {
+        void (async () => {
+            const ok = await confirmDialog({
+                message: `Push tag: ${tag.name}`,
+                confirmLabel: 'Push',
+            })
+            if (!ok) return
+            void run(() => window.api.pushTag(tag.name), `Tag ${tag.name} pushed`)
+        })()
+    }
+    function deleteRemoteTag(tag: { name: string }) {
+        void (async () => {
+            const ok = await confirmDialog({
+                message: `Delete remote tag: ${tag.name}`,
+                confirmLabel: 'Delete',
+                danger: true,
+            })
+            if (!ok) return
+            void run(() => window.api.deleteRemoteTag(tag.name), `Remote tag ${tag.name} deleted`)
+        })()
+    }
+    function openTagMenu(tag: { name: string; hash: string }, event: MouseEvent) {
+        tagMenu.value = {
             x: event.clientX,
             y: event.clientY,
-            items: [
-                {
-                    label: 'Rename…',
-                    icon: 'pencil',
-                    action: () => {
-                        const next = window.prompt(`Rename tag "${tag.name}" to:`, tag.name)
-                        if (next?.trim() && next.trim() !== tag.name) {
-                            void run(() => window.api.renameTag(tag.name, next.trim()), `Tag ${next.trim()} created`)
-                        }
-                    },
-                },
-                {
-                    label: `Delete ${tag.name}`,
-                    icon: 'trash',
-                    danger: true,
-                    separatorBefore: true,
-                    action: () => void deleteTag(tag.name),
-                },
-            ],
+            tag,
+            onRemote: remoteTagNames.value.includes(tag.name),
+            canPush: hasRemote.value,
         }
     }
     function focusTag(tag: { name: string; hash: string }) {
@@ -463,16 +492,22 @@
                 class="branch-row tag-row"
                 :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
                 @click="focusTag(tag)"
-                @contextmenu.prevent="openTagContextMenu(tag, $event)">
+                @contextmenu.prevent="openTagMenu(tag, $event)">
                 <i-lucide-tag
                     width="13"
                     height="13" />
+                <i-lucide-cloud
+                    v-if="remoteTagNames.includes(tag.name)"
+                    class="tag-remote-ic"
+                    title="On remote"
+                    width="11"
+                    height="11" />
                 <span class="branch-name">{{ tag.name }}</span>
                 <span class="row-actions">
                     <button
                         class="icon-btn danger"
                         :title="`Delete tag ${tag.name}`"
-                        @click.stop="void deleteTag(tag.name)">
+                        @click.stop="void deleteTag(tag)">
                         <i-lucide-trash2
                             width="14"
                             height="14" />
@@ -516,6 +551,14 @@
         <ContextMenuVue
             :menu="menu"
             @close="menu = null" />
+        <TagContextMenu
+            :menu="tagMenu"
+            @close="tagMenu = null"
+            @copy-name="copyTagName"
+            @rename="renameTag"
+            @delete="deleteTag"
+            @push="pushTagToRemote"
+            @delete-remote="deleteRemoteTag" />
         <RemoteManager
             v-if="showRemoteManager"
             :refresh="props.refresh"

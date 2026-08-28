@@ -83,6 +83,9 @@ const api = {
     deleteTag: (name: string): Promise<void> => call('tag:delete', name),
     renameTag: (oldName: string, newName: string): Promise<void> => call('tag:rename', oldName, newName),
     pushTags: (): Promise<string> => call('tag:push'),
+    pushTag: (name: string): Promise<string> => call('tag:pushOne', name),
+    remoteTags: (): Promise<string[]> => call('tag:remoteList'),
+    deleteRemoteTag: (name: string): Promise<string> => call('tag:remoteDelete', name),
 
     /* remotes management */
     remotesFull: (): Promise<{ name: string; url: string }[]> => call('remote:listFull'),

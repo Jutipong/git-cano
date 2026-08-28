@@ -783,6 +783,38 @@ export async function pushTags(): Promise<string> {
     return 'Tags pushed'
 }
 
+/** Push a single local tag to origin. */
+export async function pushTag(name: string): Promise<string> {
+    const { git: g } = getRepo()
+    await g.push(['origin', `refs/tags/${name.trim()}`])
+    return `Tag ${name.trim()} pushed`
+}
+
+/** Names of tags that already exist on origin, via ls-remote (network). */
+export async function listRemoteTags(): Promise<string[]> {
+    const { git: g } = getRepo()
+    try {
+        const out = await g.raw(['ls-remote', '--tags', 'origin'])
+        const names = new Set<string>()
+        for (const line of out.split('\n')) {
+            const ref = line.split('\t')[1] ?? ''
+            if (!ref.startsWith('refs/tags/')) continue
+            // drop the peeled ^{} line of annotated tags so each tag counts once
+            names.add(ref.slice('refs/tags/'.length).replace(/\^\{\}$/, ''))
+        }
+        return [...names]
+    } catch {
+        return [] // offline / no remote — never crash the UI
+    }
+}
+
+/** Delete a tag on the remote (does not touch the local tag). */
+export async function deleteRemoteTag(name: string): Promise<string> {
+    const { git: g } = getRepo()
+    await g.push(['origin', `:refs/tags/${name.trim()}`])
+    return `Remote tag ${name.trim()} deleted`
+}
+
 /* ================= WP3: Remotes ================= */
 
 export async function listRemotes(): Promise<{ name: string; url: string }[]> {

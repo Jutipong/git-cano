@@ -31,6 +31,12 @@
         if (event.key === 'Escape') emit('close')
     }
 
+    /** Short "head" of the target commit for the header chip — subject line only, capped. */
+    const head = computed(() => {
+        const s = props.commit.subject?.trim() ?? ''
+        return s.length > 48 ? `${s.slice(0, 48).trimEnd()}…` : s
+    })
+
     /** Git forbids whitespace and these characters in ref names. */
     const TAG_NAME_FORBIDDEN = /[\s~^:?*[\]\\]/
 
@@ -68,7 +74,7 @@
         <div class="rebase-modal tag-modal">
             <div class="rebase-modal-header">
                 <strong>Create tag</strong>
-                <code class="rebase-base">{{ commit.shortHash }} · {{ commit.subject }}</code>
+                <code class="rebase-base">{{ head }}</code>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger"

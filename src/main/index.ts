@@ -59,6 +59,9 @@ import {
     deleteTag,
     renameTag,
     pushTags,
+    pushTag,
+    listRemoteTags,
+    deleteRemoteTag,
     listRemotes,
     addRemote,
     removeRemote,
@@ -432,6 +435,18 @@ app.whenReady().then(() => {
     handle('tag:push', () => {
         requireRepo()
         return pushTags()
+    })
+    handle('tag:pushOne', (name: string) => {
+        requireRepo()
+        return pushTag(name as string)
+    })
+    handle('tag:remoteList', () => {
+        requireRepo()
+        return listRemoteTags()
+    })
+    handle('tag:remoteDelete', (name: string) => {
+        requireRepo()
+        return deleteRemoteTag(name as string)
     })
     handle('remote:listFull', () => {
         requireRepo()
