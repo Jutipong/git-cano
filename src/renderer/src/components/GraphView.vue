@@ -20,13 +20,16 @@
         (e: 'load-more'): void
     }>()
 
-    // 20 lane colours (jewel/eco tones from the 5 anchors) — alternating cool/warm so
-    // adjacent lanes contrast, and deliberately NO orange (reserved for the tag chips)
+    // Signature colour for the first-parent (main) lane so the trunk reads as one line
+    const FIRST_LANE_COLOR = '#2BD9A9'
+    // 14 lane colours (vivid GitKraken-style) — alternating warm/cool so adjacent lanes
+    // contrast, and deliberately NO orange (reserved for the tag chips) and no teal
+    // (reserved for the first-parent lane above)
     const COLORS = [
-        '#249D8F', '#E76F51', '#3368A0', '#F599C6', '#A290B7',
-        '#D95D39', '#3D5A80', '#E5549C', '#16A085', '#D67AB1',
-        '#2E6E9E', '#7FB069', '#5F9E7C', '#B85C8F', '#1B7F79',
-        '#6C5B7B', '#2FA79E', '#9B7FA8', '#7E6B9C', '#527FB3',
+        '#F062A4', '#4C9AFF', '#8BC34A', '#B388FF',
+        '#EF5350', '#26C6DA', '#FFD166', '#5C6BC0',
+        '#66BB6A', '#EC407A', '#29B6F6', '#AB47BC',
+        '#FFCA28', '#7E57C2',
     ]
     const laneW = 24
     const rowH = 28
@@ -88,7 +91,11 @@
     }
 
     function nodeColor(commit: CommitNode) {
-        return COLORS[commit.lane % COLORS.length]
+        return commit.lane === 0 ? FIRST_LANE_COLOR : COLORS[(commit.lane - 1) % COLORS.length]
+    }
+    // a merge edge is any edge that leaves a non-first parent (the trunk keeps solid lines)
+    function isMergeEdge(commit: CommitNode, parent: string) {
+        return commit.parents.indexOf(parent) > 0
     }
     function nodeX(commit: CommitNode) {
         return commit.lane * laneW + laneW / 2
@@ -103,7 +110,7 @@
         const px = nodeX(visibleCommits.value[parentIndex])
         const py = nodeY(parentIndex)
         const gap = py - cy
-        const bend = Math.min(rowH * 0.55, gap * 0.5)
+        const bend = Math.min(rowH * 0.75, gap * 0.5)
         const by = py - bend
         return `M ${cx} ${cy} C ${cx} ${by}, ${px} ${by}, ${px} ${py}`
     }
@@ -211,16 +218,16 @@
                                     rowIndex.get(parent)! <= visibleRange[1] + 5
                                 ">
                                 <path
+                                    class="edge-glow"
+                                    :class="{ merge: isMergeEdge(commit, parent) }"
                                     :d="edgeD(index, rowIndex.get(parent)!)"
                                     :stroke="nodeColor(commit)"
-                                    stroke-width="3.5"
-                                    stroke-opacity="0.16"
                                     fill="none" />
                                 <path
+                                    class="edge-core"
+                                    :class="{ merge: isMergeEdge(commit, parent) }"
                                     :d="edgeD(index, rowIndex.get(parent)!)"
                                     :stroke="nodeColor(commit)"
-                                    stroke-width="1.5"
-                                    stroke-opacity="0.6"
                                     fill="none" />
                             </template>
                         </template>

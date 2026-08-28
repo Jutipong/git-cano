@@ -446,6 +446,25 @@ body {
     opacity: 1;
 }
 
+/* graph edges: thick core over a soft glow halo; merge edges go dashed */
+.edge-glow {
+    stroke-width: 7;
+    stroke-opacity: 0.14;
+    stroke-linecap: round;
+}
+.edge-core {
+    stroke-width: 2.5;
+    stroke-opacity: 0.85;
+    stroke-linecap: round;
+}
+.edge-glow.merge {
+    stroke-opacity: 0.08;
+}
+.edge-core.merge {
+    stroke-opacity: 0.7;
+    stroke-dasharray: 4 4;
+}
+
 /* graph node: selection ring + dot with transition & glow */
 .commit-ring {
     stroke: var(--text);
@@ -455,15 +474,17 @@ body {
 .commit-ring.selected,
 .commit-ring.drop-target {
     stroke-opacity: 0.9;
+    stroke-width: 2;
 }
 .commit-ring.drop-target {
     stroke: var(--teal);
 }
 .node-dot {
     transition: r 0.15s ease;
+    filter: drop-shadow(0 0 2px color-mix(in srgb, var(--node-color, var(--teal)) 55%, transparent));
 }
 .node-dot.selected {
-    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--node-color, var(--teal)) 75%, transparent));
+    filter: drop-shadow(0 0 4px color-mix(in srgb, var(--node-color, var(--teal)) 85%, transparent));
 }
 .merge-ring {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
