@@ -41,7 +41,6 @@ declare module 'vue' {
     ILucideFolderTree: typeof import('~icons/lucide/folder-tree')['default']
     ILucideGitBranch: typeof import('~icons/lucide/git-branch')['default']
     ILucideGitCommitHorizontal: typeof import('~icons/lucide/git-commit-horizontal')['default']
-    ILucideGitMerge: typeof import('~icons/lucide/git-merge')['default']
     ILucideGlobe2: typeof import('~icons/lucide/globe2')['default']
     ILucideHistory: typeof import('~icons/lucide/history')['default']
     ILucideList: typeof import('~icons/lucide/list')['default']

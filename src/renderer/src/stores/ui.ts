@@ -6,6 +6,7 @@ export const useUiStore = defineStore(
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(140)
         const fileViewMode = ref<'tree' | 'flat'>('tree')
+        const autoCommit = ref(false)
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
             tags: true,
@@ -31,6 +32,7 @@ export const useUiStore = defineStore(
             rightPanelWidth,
             summaryHeight,
             fileViewMode,
+            autoCommit,
             sidebarSections,
             toggleSection,
             toggleTheme,
@@ -44,6 +46,7 @@ export const useUiStore = defineStore(
                 'rightPanelWidth',
                 'summaryHeight',
                 'fileViewMode',
+                'autoCommit',
                 'sidebarSections',
             ],
         },

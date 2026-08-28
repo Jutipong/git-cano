@@ -117,10 +117,6 @@
                 action: () => void run(() => window.api.checkout(branch.name), `Checked out ${branch.name}`),
             })
             items.push({
-                label: 'Merge into HEAD',
-                action: () => void run(() => window.api.mergeBranch(branch.name), `Merged ${branch.name}`),
-            })
-            items.push({
                 label: 'Rebase onto this branch',
                 action: () => void run(() => window.api.rebaseOnto(branch.name), `Rebased onto ${branch.name}`),
             })
@@ -151,9 +147,6 @@
 
     function checkoutBranch(name: string) {
         void run(() => window.api.checkout(name), `Checked out ${name}`)
-    }
-    function mergeBranchIntoHead(name: string) {
-        void run(() => window.api.mergeBranch(name), `Merged ${name}`)
     }
     function checkoutRemote(name: string) {
         void run(() => window.api.checkout(stripRemote(name)), `Checked out ${stripRemote(name)}`)
@@ -356,14 +349,6 @@
                 <span
                     v-if="!branch.current"
                     class="row-actions">
-                    <button
-                        class="icon-btn"
-                        title="Merge into current branch"
-                        @click.stop="mergeBranchIntoHead(branch.name)">
-                        <i-lucide-git-merge
-                            width="14"
-                            height="14" />
-                    </button>
                     <button
                         class="icon-btn danger"
                         title="Delete branch"

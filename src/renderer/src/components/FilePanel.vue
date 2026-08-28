@@ -67,7 +67,6 @@
     const message = ref('')
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
     const generating = ref(false)
-    const autoCommit = ref(false)
 
     // tree view state (collapse dirs; shared across groups so the same folder stays folded)
     const collapsedDirs = reactive(new Set<string>())
@@ -152,7 +151,7 @@
         try {
             const generated = (await window.api.ai.generateCommitMessage()).trim()
             message.value = generated
-            if (autoCommit.value && generated) {
+            if (ui.autoCommit && generated) {
                 await run(
                     async () => {
                         await window.api.stageAll()
@@ -710,7 +709,7 @@
                         class="cb-auto-commit cb-group-item"
                         title="When checked, AI generate stages everything and commits automatically">
                         <input
-                            v-model="autoCommit"
+                            v-model="ui.autoCommit"
                             type="checkbox"
                             :disabled="!canGenerate" />
                         Auto commit
