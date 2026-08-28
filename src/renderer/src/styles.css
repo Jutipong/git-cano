@@ -439,6 +439,9 @@ kbd {
 .accent-icon {
     color: var(--teal);
 }
+.accent-green {
+    color: var(--green);
+}
 .new-branch {
     display: flex;
     gap: 6px;

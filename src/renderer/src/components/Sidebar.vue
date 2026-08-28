@@ -19,7 +19,6 @@
     const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
     const remote = ref<{ name: string; current: boolean; commitHash?: string }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
-    const showNew = ref(false)
     const localExpanded = computed({
         get: () => ui.sidebarSections.local,
         set: value => {
@@ -38,7 +37,6 @@
             ui.sidebarSections.remote = value
         },
     })
-    const newName = ref('')
     const menu = ref<MenuState | null>(null)
     const dropTarget = ref<string | null>(null)
     const showRemoteManager = ref(false)
@@ -145,10 +143,7 @@
                 label: `Delete ${branch.name}`,
                 danger: true,
                 separatorBefore: true,
-                action: () => {
-                    if (window.confirm(`Delete branch "${branch.name}"?`))
-                        void run(() => window.api.deleteBranch(branch.name), `Deleted ${branch.name}`)
-                },
+                action: () => void deleteBranch(branch.name),
             })
         }
         return items
@@ -164,15 +159,14 @@
         void run(() => window.api.checkout(stripRemote(name)), `Checked out ${stripRemote(name)}`)
     }
 
-    function createBranch() {
-        if (!newName.value.trim()) return
-        void run(() => window.api.createBranch(newName.value.trim(), true), `Created branch ${newName.value}`)
-        newName.value = ''
-        showNew.value = false
-    }
-
-    function deleteBranch(name: string) {
-        if (window.confirm(`Delete branch "${name}"?`)) void run(() => window.api.deleteBranch(name), `Deleted ${name}`)
+    async function deleteBranch(name: string) {
+        const ok = await confirmDialog({
+            message: `Delete branch: ${name}`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        void run(() => window.api.deleteBranch(name), `Deleted ${name}`)
     }
     async function deleteTag(tag: { name: string; hash: string }) {
         const ok = await confirmDialog({
@@ -328,37 +322,9 @@
                         LOCAL BRANCHES <span class="section-count">{{ local.length }}</span>
                     </h3>
                 </button>
-                <button
-                    class="icon-btn accent-icon"
-                    title="New branch"
-                    @click="
-                        () => {
-                            localExpanded = true
-                            showNew = !showNew
-                        }
-                    ">
-                    <i-lucide-plus
-                        width="15"
-                        height="15" />
-                </button>
             </div>
 
             <template v-if="localExpanded">
-            <form
-                v-if="showNew"
-                class="new-branch"
-                @submit.prevent="createBranch">
-                <input
-                    v-model="newName"
-                    autofocus
-                    placeholder="New branch name" />
-                <button
-                    type="submit"
-                    class="btn primary small">
-                    Create
-                </button>
-            </form>
-
             <div
                 v-for="branch in local"
                 :key="branch.name"
