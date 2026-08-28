@@ -245,6 +245,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
                   .split(',')
                   .map(s => s.trim())
                   .filter(Boolean)
+                  .filter(ref => !ref.endsWith('/HEAD'))
             : []
         commits.push({
             hash,

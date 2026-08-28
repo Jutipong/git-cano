@@ -254,7 +254,8 @@
                                 v-for="ref in commit.refs"
                                 :key="ref"
                                 class="ref-chip"
-                                :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }">
+                                :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }"
+                                :style="{ '--chip-color': nodeColor(commit) }">
                                 {{ ref.replace('HEAD -> ', '') }}
                             </span>
                         </span>
