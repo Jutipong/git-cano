@@ -419,7 +419,7 @@ body {
 }
 
 .graph-row {
-    min-width: 655px;
+    min-width: 590px;
     height: 28px;
     border-bottom-color: rgba(174, 187, 203, 0.07);
     --row-tint: var(--surface-selected);

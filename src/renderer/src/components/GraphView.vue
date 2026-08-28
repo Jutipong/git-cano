@@ -3,7 +3,6 @@
 
     import { useRepoStore } from '../stores/repo'
     import { formatGraphDate, formatShortDate } from '../utils/format'
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
 
     import type { CommitNode, MenuItem } from '@shared/types'
 
@@ -37,7 +36,6 @@
 
     const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
-    const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
     const selectedHash = ref<string | null>(null)
     const menu = ref<MenuState | null>(null)
     const dropTargetHash = ref<string | null>(null)
@@ -181,17 +179,6 @@
         return COLORS[hashString(name) % COLORS.length]
     }
 
-    /* ---- copy commit hash ---- */
-
-    async function copyHash(commit: CommitNode) {
-        try {
-            await navigator.clipboard.writeText(commit.hash)
-            notify(`Copied ${commit.shortHash}`, 'success')
-        } catch (err) {
-            notify(err instanceof Error ? err.message : 'Failed to copy commit hash', 'error')
-        }
-    }
-
     /* ---- search highlight inside the subject ---- */
 
     interface SubjectPart {
@@ -279,7 +266,6 @@
             <span :style="{ width: `${graphW}px` }">GRAPH</span>
             <span class="graph-message-header">COMMIT MESSAGE</span>
             <span class="graph-author-header">AUTHOR</span>
-            <span class="graph-hash-header">HASH</span>
             <span class="graph-date-header">DATE</span>
         </div>
         <div
@@ -445,10 +431,6 @@
                             :style="{ '--avatar-color': nameColor(commit.author) }">{{ commit.author.slice(0, 1).toUpperCase() }}</span>
                         <span class="author-name">{{ commit.author }}</span>
                     </span>
-                    <button
-                        class="commit-hash"
-                        :title="`Copy full hash (${commit.shortHash})`"
-                        @click.stop="copyHash(commit)">{{ commit.shortHash }}</button>
                     <span class="commit-date">{{ formatGraphDate(commit.date) }}</span>
                     <div
                         v-if="expandedHash === commit.hash"

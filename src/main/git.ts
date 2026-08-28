@@ -335,13 +335,18 @@ export async function discard(path_: string): Promise<void> {
     }
 }
 
-export async function discardAll(): Promise<void> {
+/** Discard only the unstaged changes of tracked files (index is kept). */
+export async function discardUnstaged(): Promise<void> {
     const { git: g } = getRepo()
-    // restore ALL tracked files from the index via a single '.' pathspec —
-    // enumerating paths overflows the OS exec arg limit on big repos (E2BIG)
+    // single '.' pathspec — enumerating paths overflows exec arg limits (E2BIG)
     const status = await g.status()
     if (status.files.some(f => f.working_dir !== '?')) await g.checkout(['--', '.'])
-    // untracked files/directories -> remove
+}
+
+/** Permanently delete untracked files/directories only (git clean -fd). */
+export async function discardUntracked(): Promise<void> {
+    const { git: g } = getRepo()
+    const status = await g.status()
     if (status.files.some(f => f.working_dir === '?')) await g.clean(['f', 'd'])
 }
 
@@ -980,7 +985,7 @@ export async function getChangesContext(): Promise<string> {
             const block = files
                 .map(file => {
                     try {
-                        const content = fs.readFileSync(path.join(p, file), 'utf8').slice(0, 4000)
+                        const content = fs.readFileSync(path.join(p, file), 'utf8').slice(0, 2000)
                         return `--- ${file} (new) ---\n${content}`
                     } catch {
                         return `--- ${file} (new) ---`

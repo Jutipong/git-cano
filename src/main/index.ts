@@ -12,7 +12,8 @@ import {
     deleteBranch,
     deleteRemoteBranch,
     discard,
-    discardAll,
+    discardUnstaged,
+    discardUntracked,
     fetchAll,
     getCommitDetails,
     getDiff,
@@ -354,9 +355,13 @@ app.whenReady().then(() => {
         requireRepo()
         return discard(p as string)
     })
-    handle('file:discardAll', () => {
+    handle('file:discardUnstaged', () => {
         requireRepo()
-        return discardAll()
+        return discardUnstaged()
+    })
+    handle('file:discardUntracked', () => {
+        requireRepo()
+        return discardUntracked()
     })
     handle('commit:create', (message: string) => {
         requireRepo()

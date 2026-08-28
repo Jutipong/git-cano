@@ -54,6 +54,12 @@
             : []
     )
     const commitFileList = computed(() => (isWorkdir.value ? [] : (props.files as CommitFile[])))
+    // in workdir mode a file can be both staged and unstaged (MM) — count unique paths
+    const fileCount = computed(() =>
+        isWorkdir.value
+            ? new Set((props.files as FileEntry[]).map(file => file.path)).size
+            : (props.files as CommitFile[]).length
+    )
     const commitTotals = computed(() => {
         if (!commitFileList.value.length) return null
         return commitFileList.value.reduce(
@@ -69,7 +75,16 @@
     // human-readable label for the commit-message model (falls back to the raw id)
     const commitModelName = computed(() => modelName(ai.modelId))
     const message = ref('')
-    const menu = ref<{ x: number; y: number; path: string } | null>(null)
+    const repoStore = useRepoStore()
+    // commit drafts belong to a single repo — clear when the active repo changes
+    // so a message typed for one repo can never be committed in another
+    watch(
+        () => repoStore.repo?.path,
+        () => {
+            message.value = ''
+        }
+    )
+    const menu = ref<{ x: number; y: number; path: string; untracked?: boolean } | null>(null)
     const generating = ref(false)
 
     // tree view state (collapse dirs; shared across groups so the same folder stays folded)
@@ -88,7 +103,7 @@
         try {
             await props.refresh()
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
         } finally {
             pending.value = false
         }
@@ -117,27 +132,31 @@
     const untrackedRows = computed(() => makeRows(untracked.value, 'untracked'))
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
 
-    async function run(fn: () => Promise<unknown>, ok: string | null) {
-        if (pending.value) return
+    async function run(fn: () => Promise<unknown>, ok: string | null): Promise<boolean> {
+        if (pending.value) return false
         pending.value = true
         try {
             await fn()
             await props.refresh()
             if (ok) notify(ok, 'success')
+            return true
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            return false
         } finally {
             pending.value = false
         }
     }
 
     async function doCommit() {
-        if (!message.value.trim()) return notify('Enter a commit message first')
-        await run(
-            () => window.api.commitWithAmend(message.value.trim(), false),
-            'Committed successfully'
-        )
-        message.value = ''
+        if (!message.value.trim()) {
+            notify('Enter a commit message first', 'warning')
+            return
+        }
+        const text = message.value.trim()
+        // keep the draft when the commit fails so the user doesn't lose it
+        const ok = await run(() => window.api.commitWithAmend(text, false), 'Committed successfully')
+        if (ok) message.value = ''
     }
 
     /** Disabled until an OpenCode token + model are configured (Settings → ai)
@@ -156,14 +175,16 @@
             const generated = (await window.api.ai.generateCommitMessage()).trim()
             message.value = generated
             if (ui.autoCommit && generated) {
-                await run(
+                // no confirmation — checking the auto-commit box IS the user's
+                // explicit intent, so commit straight away (stages EVERYTHING)
+                const ok = await run(
                     async () => {
                         await window.api.stageAll()
                         await window.api.commitWithAmend(generated, false)
                     },
                     'Committed successfully'
                 )
-                message.value = ''
+                if (ok) message.value = ''
             }
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
@@ -195,13 +216,38 @@
     }
 
     function pickHistory(path: string) {
+        if (menu.value?.untracked) return
         emit('show-history', path)
         menu.value = null
     }
     function pickBlame(path: string) {
+        if (menu.value?.untracked) return
         emit('show-blame', path)
         menu.value = null
     }
+
+    // close the menu on ESC / click-outside (mouseleave stays as a fallback)
+    const menuEl = ref<HTMLElement | null>(null)
+    function onMenuKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape') menu.value = null
+    }
+    function onMenuMousedown(event: MouseEvent) {
+        if (menuEl.value && !menuEl.value.contains(event.target as Node)) menu.value = null
+    }
+    watch(menu, open => {
+        if (open) {
+            window.addEventListener('keydown', onMenuKeydown)
+            // defer so the right-click that opened the menu can't immediately close it
+            setTimeout(() => window.addEventListener('mousedown', onMenuMousedown), 0)
+        } else {
+            window.removeEventListener('keydown', onMenuKeydown)
+            window.removeEventListener('mousedown', onMenuMousedown)
+        }
+    })
+    onBeforeUnmount(() => {
+        window.removeEventListener('keydown', onMenuKeydown)
+        window.removeEventListener('mousedown', onMenuMousedown)
+    })
 
     const menuStyle = computed(() =>
         menu.value
@@ -233,19 +279,38 @@
     function stageAll() {
         void run(() => window.api.stageAll(), null)
     }
-    function discard(file: FileEntry) {
-        if (!window.confirm(`Discard changes to "${file.path}"?`)) return
-        void run(() => window.api.discardFile(file.path), 'Changes discarded')
-    }
-    async function discardAll() {
+    async function discard(file: FileEntry) {
+        const untrackedFile = isUntracked(file)
         const ok = await confirmDialog({
-            title: 'Discard all changes',
-            message: 'All working directory changes and untracked files will be lost.',
+            title: untrackedFile ? 'Delete untracked file' : 'Discard changes',
+            message: untrackedFile
+                ? `"${file.path}" is not in git history and will be permanently deleted.`
+                : `Discard all uncommitted changes to "${file.path}"? This cannot be undone.`,
+            confirmLabel: untrackedFile ? 'Delete' : 'Discard',
+            danger: true,
+        })
+        if (!ok) return
+        void run(() => window.api.discardFile(file.path), untrackedFile ? 'File deleted' : 'Changes discarded')
+    }
+    async function discardUnstagedAll() {
+        const ok = await confirmDialog({
+            title: 'Discard unstaged changes',
+            message: 'All unstaged changes to tracked files will be lost. Staged changes are kept.',
             confirmLabel: 'Discard',
             danger: true,
         })
         if (!ok) return
-        void run(() => window.api.discardAll(), 'All changes discarded')
+        void run(() => window.api.discardUnstaged(), 'Unstaged changes discarded')
+    }
+    async function discardUntrackedAll() {
+        const ok = await confirmDialog({
+            title: 'Delete untracked files',
+            message: `All ${untracked.value.length} untracked files will be permanently deleted.`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        void run(() => window.api.discardUntracked(), 'Untracked files deleted')
     }
 
     function badgeClass(badge: string) {
@@ -269,7 +334,7 @@
                 <i-lucide-file-diff
                     width="16"
                     height="16" /><strong>{{ mode === 'commit' ? 'Commit Changes' : 'Changes' }}</strong>
-                <span class="panel-file-num">{{ files.length }}</span>
+                <span class="panel-file-num">{{ fileCount }}</span>
             </div>
             <div class="panel-heading-side">
                 <span
@@ -392,12 +457,14 @@
                     <button
                         v-if="unstaged.length > 0"
                         class="link-btn danger"
-                        @click="discardAll()">
+                        title="Discard all unstaged changes (staged changes are kept)"
+                        @click="discardUnstagedAll()">
                         Discard all
                     </button>
                     <button
-                        v-if="unstaged.length > 0"
+                        v-if="unstaged.length > 0 || untracked.length > 0"
                         class="link-btn good"
+                        title="Stage all changes (including untracked files)"
                         @click="stageAll()">
                         Stage all
                     </button>
@@ -468,7 +535,7 @@
             <div
                 v-if="unstaged.length === 0"
                 class="group-empty">
-                Working tree clean
+                {{ files.length === 0 ? 'Working tree clean' : 'No unstaged changes' }}
             </div>
 
             <template v-if="untracked.length > 0">
@@ -479,13 +546,9 @@
                 <div class="group-header-actions">
                     <button
                         class="link-btn danger"
-                        @click="discardAll()">
-                        Discard all
-                    </button>
-                    <button
-                        class="link-btn good"
-                        @click="stageAll()">
-                        Stage all
+                        title="Delete all untracked files (they are not in git history and cannot be recovered)"
+                        @click="discardUntrackedAll()">
+                        Discard
                     </button>
                 </div>
             </div>
@@ -522,7 +585,7 @@
                     :class="{ selected: selected?.path === row.fullPath && !selected.staged }"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                     @click="emit('select', { path: row.fullPath, staged: false })"
-                    @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: row.fullPath }">
+                    @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: row.fullPath, untracked: true }">
                     <span
                         class="badge"
                         :class="badgeClass('?')"
@@ -623,11 +686,14 @@
 
             <div
                 v-if="menu"
+                ref="menuEl"
                 class="context-menu"
                 :style="menuStyle"
                 @mouseleave="menu = null">
                 <button
                     class="context-menu-item"
+                    :disabled="menu.untracked"
+                    :title="menu.untracked ? 'Untracked files have no git history yet' : ''"
                     @click="pickHistory(menu.path)">
                     <i-lucide-history
                         width="12"
@@ -637,6 +703,8 @@
                 </button>
                 <button
                     class="context-menu-item"
+                    :disabled="menu.untracked"
+                    :title="menu.untracked ? 'Untracked files have no git history yet' : ''"
                     @click="pickBlame(menu.path)">
                     <i-lucide-scan-search
                         width="12"
@@ -705,9 +773,11 @@
                     title {{ firstLine.length }} / 72
                 </span>
             </div>
-            <div class="commit-actions">
+            <div
+                v-if="mode === 'workdir'"
+                class="commit-actions">
                 <div
-                    v-if="mode === 'workdir' && showAiGroup"
+                    v-if="showAiGroup"
                     class="cb-ai-group">
                     <label
                         class="cb-auto-commit cb-group-item"
@@ -737,7 +807,7 @@
                 </div>
                 <button
                     class="btn primary commit-btn"
-                    :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
+                    :disabled="pending || !message.trim() || staged.length === 0"
                     @click="doCommit()">
                     <i-lucide-loader-circle
                         v-if="committing"

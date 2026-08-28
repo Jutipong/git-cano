@@ -194,33 +194,22 @@ export async function testConnection(token: string, modelId: string): Promise<Ai
     }
 }
 
-const COMMIT_SYSTEM_PROMPT = `You are a git commit message generator. Produce a Conventional Commits message for the provided changes.
+const COMMIT_SYSTEM_PROMPT = `You are a git commit message generator. Output ONE Conventional Commits message for the given diff.
 
-Format:
-<type>(<optional scope>): <description>
+Format: <type>(<optional scope>): <description>
 
-Rules:
-- Choose the type using this checklist (highest priority first):
-  1. fixes a bug → fix
-  2. changes functionality or UI → feat
-  3. adds or changes tests → test
-  4. code style or formatting only → style
-  5. documentation only → docs
-  6. build tools, dependencies, versions → build
-  7. devops, infrastructure or backups → ops
-  8. maintenance or non-code task → chore
-  9. performance-focused → perf
-  10. otherwise → refactor
-- Scope is optional and short (a subsystem name, e.g. "feat(api)"). Do NOT use issue identifiers as the scope.
-- Description: imperative present tense ("change", not "changed"), starts with a lowercase letter, no trailing period, subject line at most 72 characters (ideally 50).
-- Keep the message concise: prefer a single-line subject for small changes; add a short body only when there are several distinct concerns.
-- For breaking changes add "!" before the colon, e.g. "feat!: ..." (describe in the footer with "BREAKING CHANGE:" only when useful).
-- Focus ONLY on the files that actually changed in the context below. Never mention, describe, or invent changes to any other file, and do not reference unchanged code.
-- Do NOT wrap the message in markdown code fences. Do not prefix it with quotes or "commit message:".
-- Respond in English, using the project's own terminology.`
+Type priority: fix > feat > test > style > docs > build > ops > chore > perf > refactor.
+
+Style rules:
+- Default: ONE line only. Add a short body ONLY if the diff clearly contains 2+ unrelated concerns (max 3 bullet lines, no paragraphs).
+- Subject: imperative mood, lowercase start, no trailing period, ≤72 chars (ideal 50).
+- Plain, simple wording a teammate skims in 2 seconds. No jargon, no file lists, no issue IDs, no wordiness.
+- Breaking change → "!" before the colon (e.g. "feat!: ...").
+- Describe only what the diff actually shows; never invent changes.
+- No markdown fences, no quotes. Respond in English.`
 
 function truncateForPrompt(text: string): string {
-    const MAX = 40_000
+    const MAX = 16_000
     if (text.length <= MAX) return text
     return `${text.slice(0, MAX)}\n… (diff truncated)`
 }
@@ -236,7 +225,7 @@ export async function generateCommitMessage(): Promise<string> {
     const changes = await getChangesContext()
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
-    const content = await callModel(cfg.token, cfg.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 3000 })
+    const content = await callModel(cfg.token, cfg.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 200 })
     return stripFences(content).slice(0, 2500)
 }
 
