@@ -758,7 +758,7 @@ kbd {
     white-space: nowrap;
 }
 .ref-chip.head {
-    color: #122d2c;
+    color: var(--chip-fg, #122d2c);
     background: var(--chip-color, var(--teal));
     border-color: var(--chip-color, var(--teal));
 }

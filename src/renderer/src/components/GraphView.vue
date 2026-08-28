@@ -20,7 +20,14 @@
         (e: 'load-more'): void
     }>()
 
-    const COLORS = ['#35c6b0', '#5b9cf6', '#b78af7', '#f2a65a', '#ef6b73', '#4fc3d8', '#e3bd55', '#ef82b8']
+    // 20 lane colours (jewel/eco tones from the 5 anchors) — alternating cool/warm so
+    // adjacent lanes contrast, and deliberately NO orange (reserved for the tag chips)
+    const COLORS = [
+        '#249D8F', '#E76F51', '#3368A0', '#F599C6', '#A290B7',
+        '#D95D39', '#3D5A80', '#E5549C', '#16A085', '#D67AB1',
+        '#2E6E9E', '#7FB069', '#5F9E7C', '#B85C8F', '#1B7F79',
+        '#6C5B7B', '#2FA79E', '#9B7FA8', '#7E6B9C', '#527FB3',
+    ]
     const laneW = 24
     const rowH = 28
 
@@ -89,8 +96,27 @@
     function nodeY(index: number) {
         return index * rowH + rowH / 2
     }
+    // rounded-elbow merge: leaves the child vertically, curves in near the parent
+    function edgeD(childIndex: number, parentIndex: number): string {
+        const cx = nodeX(visibleCommits.value[childIndex])
+        const cy = nodeY(childIndex)
+        const px = nodeX(visibleCommits.value[parentIndex])
+        const py = nodeY(parentIndex)
+        const gap = py - cy
+        const bend = Math.min(rowH * 0.55, gap * 0.5)
+        const by = py - bend
+        return `M ${cx} ${cy} C ${cx} ${by}, ${px} ${by}, ${px} ${py}`
+    }
     function formatDate(iso: string): string {
         return formatShortDate(iso)
+    }
+    // pick a readable text colour on the solid HEAD chip fill
+    function contrastText(hex: string): string {
+        const r = parseInt(hex.slice(1, 3), 16)
+        const g = parseInt(hex.slice(3, 5), 16)
+        const b = parseInt(hex.slice(5, 7), 16)
+        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        return luminance > 150 ? '#122d2c' : '#f5f7fa'
     }
 
     // scroll the graph to the commit a clicked sidebar branch points to, then select it
@@ -177,20 +203,26 @@
                         <template
                             v-for="parent in commit.parents"
                             :key="`${commit.hash}:${parent}`">
-                            <path
+                            <template
                                 v-if="
                                     rowIndex.get(parent) !== undefined &&
                                     rowIndex.get(parent)! > index &&
                                     index <= visibleRange[1] + 5 &&
                                     rowIndex.get(parent)! <= visibleRange[1] + 5
-                                "
-                                :d="`M ${nodeX(commit)} ${nodeY(index)}
-                     C ${nodeX(commit)} ${nodeY(index) + rowH * 0.55},
-                       ${nodeX(visibleCommits[rowIndex.get(parent)!])} ${nodeY(rowIndex.get(parent)!) + rowH * 0.55},
-                       ${nodeX(visibleCommits[rowIndex.get(parent)!])} ${nodeY(rowIndex.get(parent)!)}`"
-                                :stroke="nodeColor(commit)"
-                                stroke-width="2"
-                                fill="none" />
+                                ">
+                                <path
+                                    :d="edgeD(index, rowIndex.get(parent)!)"
+                                    :stroke="nodeColor(commit)"
+                                    stroke-width="3.5"
+                                    stroke-opacity="0.16"
+                                    fill="none" />
+                                <path
+                                    :d="edgeD(index, rowIndex.get(parent)!)"
+                                    :stroke="nodeColor(commit)"
+                                    stroke-width="1.5"
+                                    stroke-opacity="0.6"
+                                    fill="none" />
+                            </template>
                         </template>
                     </template>
                     <g
@@ -198,22 +230,38 @@
                         v-show="index >= visibleRange[0] - 5 && index <= visibleRange[1] + 5"
                         :key="`node-${commit.hash}`">
                         <circle
-                            v-if="selectedHash === commit.hash || dropTargetHash === commit.hash"
-                            :class="{ 'commit-selection-ring': selectedHash === commit.hash }"
+                            class="commit-ring"
+                            :class="{
+                                selected: selectedHash === commit.hash,
+                                'drop-target': dropTargetHash === commit.hash
+                            }"
                             :cx="nodeX(commit)"
                             :cy="nodeY(index)"
                             r="8"
                             fill="none"
-                            :stroke="dropTargetHash === commit.hash ? 'var(--teal)' : 'var(--text)'"
-                            stroke-width="1.5"
-                            opacity="0.9" />
+                            stroke-width="1.5" />
                         <circle
+                            class="node-dot"
+                            :class="{
+                                selected: selectedHash === commit.hash,
+                                merge: commit.parents.length > 1
+                            }"
+                            :style="{ '--node-color': nodeColor(commit) }"
                             :cx="nodeX(commit)"
                             :cy="nodeY(index)"
-                            :r="selectedHash === commit.hash ? 6 : 5"
+                            :r="selectedHash === commit.hash ? 7 : 6"
                             :fill="nodeColor(commit)"
                             stroke="var(--canvas)"
                             stroke-width="2" />
+                        <circle
+                            v-if="commit.parents.length > 1"
+                            class="merge-ring"
+                            :style="{ '--node-color': nodeColor(commit) }"
+                            :cx="nodeX(commit)"
+                            :cy="nodeY(index)"
+                            r="7.5"
+                            fill="none"
+                            stroke-width="1.5" />
                     </g>
                 </svg>
                 <div
@@ -255,7 +303,10 @@
                                 :key="ref"
                                 class="ref-chip"
                                 :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }"
-                                :style="{ '--chip-color': nodeColor(commit) }">
+                                :style="{
+                                    '--chip-color': nodeColor(commit),
+                                    '--chip-fg': contrastText(nodeColor(commit))
+                                }">
                                 {{ ref.replace('HEAD -> ', '') }}
                             </span>
                         </span>

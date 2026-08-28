@@ -446,6 +446,29 @@ body {
     opacity: 1;
 }
 
+/* graph node: selection ring + dot with transition & glow */
+.commit-ring {
+    stroke: var(--text);
+    stroke-opacity: 0;
+    transition: stroke-opacity 0.15s ease, stroke 0.15s ease;
+}
+.commit-ring.selected,
+.commit-ring.drop-target {
+    stroke-opacity: 0.9;
+}
+.commit-ring.drop-target {
+    stroke: var(--teal);
+}
+.node-dot {
+    transition: r 0.15s ease;
+}
+.node-dot.selected {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--node-color, var(--teal)) 75%, transparent));
+}
+.merge-ring {
+    stroke: color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
+}
+
 /* chevron that expands a commit's full message in the history */
 .msg-toggle {
     display: inline-flex;
