@@ -43,6 +43,9 @@
                 <button
                     class="btn"
                     @click="confirmStore.settle(false)">
+                    <i-lucide-x
+                        width="13"
+                        height="13" />
                     Cancel
                 </button>
                 <button
@@ -50,6 +53,10 @@
                     class="btn"
                     :class="confirmStore.current.danger ? 'danger' : 'primary'"
                     @click="confirmStore.settle(true)">
+                    <i-lucide-trash2
+                        v-if="confirmStore.current.danger"
+                        width="13"
+                        height="13" />
                     {{ confirmStore.current.confirmLabel ?? 'Confirm' }}
                 </button>
             </div>

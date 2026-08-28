@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import type { AiConfig, AiTestResult, BranchInfo, CommitDetails, CommitNode, DiffLine, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
+import type { AiConfig, AiTestResult, BranchInfo, CommitDetails, CommitNode, DiffLine, RemoteTestResult, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
 
 /** Unwrap errors sent as {__error} from main */
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -91,6 +91,7 @@ const api = {
     addRemote: (name: string, url: string): Promise<void> => call('remote:addNew', name, url),
     removeRemote: (name: string): Promise<void> => call('remote:removeOne', name),
     setRemoteUrl: (name: string, url: string): Promise<void> => call('remote:setUrl', name, url),
+    testRemoteUrl: (url: string): Promise<RemoteTestResult> => call('remote:testUrl', url),
 
     /* partial staging */
     rawPatch: (file: string, staged: boolean): Promise<string> => call('patch:raw', file, staged),

@@ -1883,7 +1883,6 @@ mark {
     gap: 9px;
     min-height: 38px;
     padding: 4px 0;
-    border-bottom: 1px solid rgba(155, 169, 191, 0.07);
 }
 .remote-row strong {
     flex: 0 0 auto;
@@ -1907,6 +1906,11 @@ mark {
     gap: 7px;
     padding: 10px 14px;
     border-top: 1px solid var(--line-soft);
+}
+
+/* add-origin form has only a URL field + button (the name is locked to origin) */
+.remote-add.origin-add {
+    grid-template-columns: 1fr auto;
 }
 .remote-add input {
     min-width: 0;

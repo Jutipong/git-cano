@@ -144,3 +144,8 @@ export interface AiTestResult {
     ok: boolean
     message: string
 }
+
+export interface RemoteTestResult {
+    ok: boolean
+    message: string
+}

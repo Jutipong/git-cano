@@ -16,6 +16,7 @@ import type {
     FileEntry,
     RebaseEntry,
     RebaseOutcome,
+    RemoteTestResult,
     RepoState,
     RepoStatus,
     StashEntry,
@@ -831,6 +832,26 @@ export async function setRemoteUrl(name: string, url: string): Promise<void> {
     const { git: g } = getRepo()
     if (!url.trim()) throw new Error('URL is required')
     await g.raw(['remote', 'set-url', name, url.trim()])
+}
+
+/** Probe a remote URL with `git ls-remote` (works outside a repo, no creds needed to start). */
+export async function testRemoteUrl(rawUrl: string): Promise<RemoteTestResult> {
+    const url = String(rawUrl ?? '').trim()
+    if (!url) return { ok: false, message: 'Enter a remote URL first' }
+    try {
+        await new Promise<void>((resolve, reject) => {
+            execFile('git', ['ls-remote', url, 'HEAD'], { timeout: 20_000 }, err => {
+                if (err) reject(new Error(err instanceof Error ? err.message : String(err)))
+                else resolve()
+            })
+        })
+        log('info', 'git', `remote url test ok (${maskUrl(url)})`)
+        return { ok: true, message: 'Remote URL is reachable' }
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err)
+        log('warn', 'git', `remote url test failed (${maskUrl(url)}): ${message.slice(0, 200)}`)
+        return { ok: false, message: message.slice(0, 300) }
+    }
 }
 
 /* ================= WP4: Hunk-level staging ================= */

@@ -5,19 +5,17 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
-    interface RemoteEntry {
-        name: string
-        url: string
-    }
-
-    const remotes = ref<RemoteEntry[]>([])
-    const newName = ref('')
-    const newUrl = ref('')
-    const editingUrl = ref<Record<string, string>>({})
+    /** the app's fetch/push/tag workflow uses `origin` exclusively (hardcoded in git.ts) */
+    const originUrl = ref('')
+    const hasOrigin = ref(false)
+    const saving = ref(false)
 
     async function load() {
         try {
-            remotes.value = await window.api.remotesFull()
+            const remotes = await window.api.remotesFull()
+            const origin = remotes.find(r => r.name === 'origin')
+            hasOrigin.value = !!origin
+            originUrl.value = origin?.url ?? ''
         } catch (error) {
             notify(String(error))
         }
@@ -35,25 +33,41 @@
         }
     }
 
-    function saveUrl(remote: RemoteEntry) {
-        void run(() => window.api.setRemoteUrl(remote.name, editingUrl.value[remote.name]), `URL of ${remote.name} updated`)
-    }
-    function removeRemote(remote: RemoteEntry) {
-        if (!window.confirm(`Remove remote "${remote.name}"?`)) return
-        void run(() => window.api.removeRemote(remote.name), `Remote ${remote.name} removed`)
-    }
-    function fetchAll() {
-        void run(() => window.api.fetch(), 'Fetched all remotes')
-    }
-    function pushTags() {
-        void run(() => window.api.pushTags(), 'Tags pushed')
+    /** Save the origin URL — on success the dialog closes (Close = discard, never auto-saves). */
+    async function save() {
+        const url = originUrl.value.trim()
+        if (!url || saving.value) return
+        saving.value = true
+        try {
+            await window.api.setRemoteUrl('origin', url)
+            notify('Remote URL saved', 'success')
+            emit('close')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''))
+        } finally {
+            saving.value = false
+        }
     }
 
-    function addRemote() {
-        if (!newName.value.trim() || !newUrl.value.trim()) return
-        void run(() => window.api.addRemote(newName.value.trim(), newUrl.value.trim()), `Remote ${newName.value} added`)
-        newName.value = ''
-        newUrl.value = ''
+    function addOrigin() {
+        const url = originUrl.value.trim()
+        if (!url) return
+        void run(() => window.api.addRemote('origin', url), 'Remote origin added')
+    }
+
+    const testing = ref(false)
+    async function testUrl() {
+        const url = originUrl.value.trim()
+        if (!url || testing.value) return
+        testing.value = true
+        try {
+            const result = await window.api.testRemoteUrl(url)
+            notify(result.message, result.ok ? 'success' : 'error')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''))
+        } finally {
+            testing.value = false
+        }
     }
 </script>
 
@@ -66,7 +80,8 @@
                 <strong>Manage remotes</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn danger"
+                    class="icon-btn"
+                    title="Close"
                     @click="emit('close')">
                     <i-lucide-x
                         width="16"
@@ -76,45 +91,28 @@
 
             <div class="remote-list">
                 <div
-                    v-for="remote in remotes"
-                    :key="remote.name"
+                    v-if="hasOrigin"
                     class="remote-row">
-                    <strong>{{ remote.name }}</strong>
+                    <strong>origin</strong>
                     <input
-                        v-model="editingUrl[remote.name]"
+                        v-model="originUrl"
                         class="remote-url"
-                        :placeholder="remote.url"
-                        @focus="editingUrl[remote.name] ??= remote.url" />
-                    <button
-                        v-if="(editingUrl[remote.name] ?? remote.url) !== remote.url"
-                        class="detail-action"
-                        @click="saveUrl(remote)">
-                        Save URL
-                    </button>
-                    <button
-                        class="icon-btn danger"
-                        :title="`Remove ${remote.name}`"
-                        @click="removeRemote(remote)">
-                        <i-lucide-link2-off
-                            width="13"
-                            height="13" />
-                    </button>
+                        placeholder="https://github.com/user/repo.git"
+                        @keydown.enter.prevent="save()" />
                 </div>
                 <div
-                    v-if="remotes.length === 0"
+                    v-else
                     class="sidebar-empty">
-                    No remotes configured
+                    origin is not configured yet
                 </div>
             </div>
 
             <form
-                class="remote-add"
-                @submit.prevent="addRemote()">
+                v-if="!hasOrigin"
+                class="remote-add origin-add"
+                @submit.prevent="addOrigin()">
                 <input
-                    v-model="newName"
-                    placeholder="name" />
-                <input
-                    v-model="newUrl"
+                    v-model="originUrl"
                     placeholder="https://github.com/user/repo.git" />
                 <button
                     type="submit"
@@ -122,22 +120,44 @@
                     <i-lucide-plus
                         width="13"
                         height="13" />
-                    Add remote
+                    Add origin
                 </button>
             </form>
 
             <div class="rebase-modal-footer">
-                <span class="rebase-hint">Editing a URL only changes where fetch/push points</span>
+                <button
+                    class="btn small"
+                    :disabled="!originUrl.trim() || testing"
+                    title="Check that this URL is reachable"
+                    @click="testUrl()">
+                    <i-lucide-loader-circle
+                        v-if="testing"
+                        class="spinning"
+                        width="13"
+                        height="13" />
+                    <i-lucide-plug-zap
+                        v-else
+                        width="13"
+                        height="13" />
+                    {{ testing ? 'Testing…' : 'Test URL' }}
+                </button>
                 <span class="spacer" />
                 <button
                     class="btn small"
-                    @click="fetchAll()">
-                    Fetch all
+                    @click="emit('close')">
+                    <i-lucide-x
+                        width="13"
+                        height="13" />
+                    Close
                 </button>
                 <button
                     class="btn primary small"
-                    @click="pushTags()">
-                    Push tags
+                    :disabled="saving || !hasOrigin || !originUrl.trim()"
+                    @click="save()">
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
+                    Save
                 </button>
             </div>
         </div>

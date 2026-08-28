@@ -65,6 +65,7 @@ import {
     addRemote,
     removeRemote,
     setRemoteUrl,
+    testRemoteUrl,
     getRawPatch,
     stageHunks,
     applyPatch,
@@ -458,6 +459,9 @@ app.whenReady().then(() => {
     handle('remote:setUrl', (name: string, url: string) => {
         requireRepo()
         return setRemoteUrl(name as string, url as string)
+    })
+    handle('remote:testUrl', (url: string) => {
+        return testRemoteUrl(url as string)
     })
     handle('patch:raw', (file: string, staged: boolean) => {
         requireRepo()
