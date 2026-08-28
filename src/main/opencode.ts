@@ -3,7 +3,9 @@ import * as path from 'node:path'
 
 import { app } from 'electron'
 
-import type { AiConfig, AiTestResult } from '@shared/types'
+import type { AiConfig, AiTestResult, GoModel } from '@shared/types'
+
+import { toGoModel } from '@shared/models'
 
 import { getChangesContext } from './git'
 import { log } from './logger'
@@ -275,18 +277,21 @@ const FALLBACK_MODELS = [
 ]
 
 /** Public model catalog (no auth required) — used to populate the AI model dropdown.
- * On any failure falls back to FALLBACK_MODELS so the list is never empty. */
-export async function listGoModels(): Promise<string[]> {
+ * Returns id + display name; on any failure falls back to FALLBACK_MODELS so the list is never empty. */
+export async function listGoModels(): Promise<GoModel[]> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)
     try {
         const res = await fetch(GO_MODELS_URL, { signal: controller.signal })
-        if (!res.ok) return FALLBACK_MODELS
+        if (!res.ok) return FALLBACK_MODELS.map(toGoModel)
         const json = (await res.json().catch(() => null)) as { data?: { id?: unknown }[] } | null
-        if (!Array.isArray(json?.data) || json.data.length === 0) return FALLBACK_MODELS
-        return json.data.map(model => (typeof model.id === 'string' ? model.id : '')).filter(Boolean)
+        if (!Array.isArray(json?.data) || json.data.length === 0) return FALLBACK_MODELS.map(toGoModel)
+        return json.data
+            .map(model => (typeof model.id === 'string' ? model.id : ''))
+            .filter(Boolean)
+            .map(toGoModel)
     } catch {
-        return FALLBACK_MODELS
+        return FALLBACK_MODELS.map(toGoModel)
     } finally {
         clearTimeout(timer)
     }

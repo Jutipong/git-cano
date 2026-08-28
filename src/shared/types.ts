@@ -145,6 +145,13 @@ export interface AiTestResult {
     message: string
 }
 
+/** A Go provider model as shown in the AI dropdown. `name` is the human-readable
+ * label (e.g. "DeepSeek V4 Pro"); `id` is what's sent to the API and persisted in config. */
+export interface GoModel {
+    id: string
+    name: string
+}
+
 export interface RemoteTestResult {
     ok: boolean
     message: string

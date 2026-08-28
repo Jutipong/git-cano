@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import type { ToastKind } from '../stores/uiTransient'
+    import type { GoModel } from '@shared/types'
 
     interface WorktreeInfo {
         path: string
@@ -26,11 +27,13 @@
     const aiTestResult = ref<{ ok: boolean; message: string } | null>(null)
     const connecting = ref(false)
     const connectResult = ref<{ ok: boolean; message: string } | null>(null)
-    const modelOptions = ref<string[]>([])
+    const modelOptions = ref<GoModel[]>([])
     // keep a previously-saved model visible even if it isn't in the fetched list
     const modelSelectOptions = computed(() => {
         const current = aiModel.value.trim()
-        return current && !modelOptions.value.includes(current) ? [current, ...modelOptions.value] : modelOptions.value
+        if (!current) return modelOptions.value
+        const known = modelOptions.value.some(m => m.id === current)
+        return known ? modelOptions.value : [{ id: current, name: current }, ...modelOptions.value]
     })
 
     watch(tab, loadTabData)
@@ -85,7 +88,12 @@
             if (models.length === 0) {
                 connectResult.value = { ok: false, message: 'Provider returned no models' }
             } else {
-                modelOptions.value = [...new Set(models)]
+                const seen = new Set<string>()
+                modelOptions.value = models.filter(m => {
+                    if (seen.has(m.id)) return false
+                    seen.add(m.id)
+                    return true
+                })
                 connectResult.value = { ok: true, message: `Connected — ${models.length} models available` }
             }
         } catch (error) {
@@ -350,10 +358,10 @@
                         <div class="ai-field-select">
                             <select v-model="aiModel">
                                 <option
-                                    v-for="id in modelSelectOptions"
-                                    :key="id"
-                                    :value="id">
-                                    {{ id }}
+                                    v-for="m in modelSelectOptions"
+                                    :key="m.id"
+                                    :value="m.id">
+                                    {{ m.name }}
                                 </option>
                             </select>
                             <i-lucide-chevron-down

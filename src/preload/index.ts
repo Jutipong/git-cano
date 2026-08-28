@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import type { AiConfig, AiTestResult, BranchInfo, CommitDetails, CommitNode, DiffLine, RemoteTestResult, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
+import type { AiConfig, AiTestResult, BranchInfo, CommitDetails, CommitNode, DiffLine, GoModel, RemoteTestResult, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
 
 /** Unwrap errors sent as {__error} from main */
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -140,7 +140,7 @@ const api = {
         saveConfig: (cfg: AiConfig): Promise<void> => call('ai:saveConfig', cfg),
         test: (token: string, modelId: string): Promise<AiTestResult> => call('ai:test', token, modelId),
         generateCommitMessage: (): Promise<string> => call('ai:generateCommitMessage'),
-        listModels: (): Promise<string[]> => call('ai:listModels'),
+        listModels: (): Promise<GoModel[]> => call('ai:listModels'),
     },
 }
 

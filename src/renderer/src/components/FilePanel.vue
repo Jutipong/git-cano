@@ -6,6 +6,8 @@
     import type { CommitFile, FileEntry } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
 
+    import { modelName } from '@shared/models'
+
     interface Props {
         files: FileEntry[] | CommitFile[]
         selected: { path: string; staged: boolean } | null
@@ -64,6 +66,8 @@
     })
     const ui = useUiStore()
     const ai = useAiStore()
+    // human-readable label for the commit-message model (falls back to the raw id)
+    const commitModelName = computed(() => modelName(ai.modelId))
     const message = ref('')
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
     const generating = ref(false)
@@ -684,11 +688,11 @@
                 <span
                     v-if="showAiGroup"
                     class="counter-model"
-                    :title="`Commit-message model: ${ai.modelId}`">
+                    :title="`Commit-message model: ${commitModelName}`">
                     <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
                         width="14"
                         height="14" />
-                    {{ ai.modelId }}
+                    {{ commitModelName }}
                 </span>
                 <span
                     class="muted"
