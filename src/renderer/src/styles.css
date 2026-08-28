@@ -702,7 +702,26 @@ kbd {
     align-items: center;
     flex: 1;
     min-width: 0;
-    gap: 0;
+    gap: 6px;
+}
+/* ref chips lead the row, subject follows on the same line */
+.subject-chips {
+    display: flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 3px;
+    overflow: hidden;
+}
+.subject-chips .ref-chip {
+    margin-left: 0;
+}
+.subject-line {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
 }
 .subject-text {
     overflow: hidden;

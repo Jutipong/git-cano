@@ -247,28 +247,34 @@
                         class="graph-cell"
                         :style="{ width: `${graphW}px` }" />
                     <span class="commit-subject">
-                        <span class="subject-text">{{ commit.subject }}</span>
                         <span
-                            v-for="ref in commit.refs"
-                            :key="ref"
-                            class="ref-chip"
-                            :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }">
-                            {{ ref.replace('HEAD -> ', '') }}
+                            v-if="commit.refs.length"
+                            class="subject-chips">
+                            <span
+                                v-for="ref in commit.refs"
+                                :key="ref"
+                                class="ref-chip"
+                                :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }">
+                                {{ ref.replace('HEAD -> ', '') }}
+                            </span>
                         </span>
-                        <button
-                            v-if="commit.body"
-                            class="msg-toggle"
-                            :title="expandedHash === commit.hash ? 'Collapse message' : 'Show full message'"
-                            @click.stop="toggleMessage(commit.hash)">
-                            <i-lucide-chevron-down
-                                v-if="expandedHash === commit.hash"
-                                width="12"
-                                height="12" />
-                            <i-lucide-chevron-right
-                                v-else
-                                width="12"
-                                height="12" />
-                        </button>
+                        <span class="subject-line">
+                            <span class="subject-text">{{ commit.subject }}</span>
+                            <button
+                                v-if="commit.body"
+                                class="msg-toggle"
+                                :title="expandedHash === commit.hash ? 'Collapse message' : 'Show full message'"
+                                @click.stop="toggleMessage(commit.hash)">
+                                <i-lucide-chevron-down
+                                    v-if="expandedHash === commit.hash"
+                                    width="12"
+                                    height="12" />
+                                <i-lucide-chevron-right
+                                    v-else
+                                    width="12"
+                                    height="12" />
+                            </button>
+                        </span>
                     </span>
                     <span class="commit-author">{{ commit.author }}</span>
                     <span class="commit-date">{{ formatDate(commit.date) }}</span>
