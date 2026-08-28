@@ -661,6 +661,42 @@ body {
     background: color-mix(in srgb, var(--surface-0) 62%, transparent);
 }
 
+.cb-auto-commit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.cb-auto-commit:hover {
+    background: var(--surface-hover);
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.cb-auto-commit:has(input:checked) {
+    color: var(--green);
+    border-color: var(--green);
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.cb-auto-commit input[type='checkbox'] {
+    width: 13px;
+    height: 13px;
+    accent-color: var(--green);
+    margin: 0;
+    cursor: pointer;
+}
+
 .commit-box textarea,
 .new-branch input,
 .stash-create input,
@@ -827,6 +863,18 @@ body {
 
 .commit-btn {
     min-height: 33px;
+}
+
+.commit-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.commit-actions .commit-btn {
+    flex: 1;
+    width: auto;
 }
 
 /* create-tag dialog — compact (base .rebase-modal is 820px, far too wide for this) */

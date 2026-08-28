@@ -67,6 +67,7 @@
     const message = ref('')
     const menu = ref<{ x: number; y: number; path: string } | null>(null)
     const generating = ref(false)
+    const autoCommit = ref(false)
 
     // tree view state (collapse dirs; shared across groups so the same folder stays folded)
     const collapsedDirs = reactive(new Set<string>())
@@ -146,8 +147,19 @@
         if (generating.value) return
         generating.value = true
         try {
-            message.value = (await window.api.ai.generateCommitMessage()).trim()
+            const generated = (await window.api.ai.generateCommitMessage()).trim()
+            message.value = generated
             notify('Commit message generated', 'success')
+            if (autoCommit.value && generated) {
+                await run(
+                    async () => {
+                        await window.api.stageAll()
+                        await window.api.commitWithAmend(generated, false)
+                    },
+                    'Committed successfully'
+                )
+                message.value = ''
+            }
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         } finally {
@@ -640,27 +652,6 @@
                 v-if="mode === 'workdir'"
                 class="cb-toolbar">
                 <span class="commit-box-label">Message</span>
-                <span class="spacer" />
-                <button
-                    class="btn small cb-ai-btn"
-                    :disabled="!canGenerate"
-                    :title="
-                        !ai.configured
-                            ? 'Set your OpenCode token and model in Settings → ai first'
-                            : 'Generate a commit message from the current changes'
-                    "
-                    @click="generateMessage()">
-                    <i-lucide-loader-circle
-                        v-if="generating"
-                        class="spinning"
-                        width="12"
-                        height="12" />
-                    <i-lucide-sparkles
-                        v-else
-                        width="12"
-                        height="12" />
-                    {{ generating ? 'Generating…' : 'AI generate' }}
-                </button>
             </div>
             <!-- read-only when viewing an already-committed commit -->
             <div
@@ -693,21 +684,51 @@
                     title {{ firstLine.length }} / 72
                 </span>
             </div>
-            <button
-                class="btn primary commit-btn"
-                :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
-                @click="doCommit()">
-                <i-lucide-loader-circle
-                    v-if="committing"
-                    class="spinning"
-                    width="15"
-                    height="15" />
-                <i-lucide-check
-                    v-else
-                    width="15"
-                    height="15" />
-                {{ committing ? 'Committing…' : 'Commit' }}
-            </button>
+            <div class="commit-actions">
+                <label
+                    class="cb-auto-commit"
+                    title="When checked, AI generate stages everything and commits automatically">
+                    <input
+                        v-model="autoCommit"
+                        type="checkbox" />
+                    Auto commit
+                </label>
+                <button
+                    class="btn small cb-ai-btn"
+                    :disabled="!canGenerate"
+                    :title="
+                        !ai.configured
+                            ? 'Set your OpenCode token and model in Settings → ai first'
+                            : 'Generate a commit message from the current changes'
+                    "
+                    @click="generateMessage()">
+                    <i-lucide-loader-circle
+                        v-if="generating"
+                        class="spinning"
+                        width="12"
+                        height="12" />
+                    <i-lucide-sparkles
+                        v-else
+                        width="12"
+                        height="12" />
+                    {{ generating ? 'Generating…' : 'AI generate' }}
+                </button>
+                <button
+                    class="btn primary commit-btn"
+                    :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
+                    @click="doCommit()">
+                    <i-lucide-loader-circle
+                        v-if="committing"
+                        class="spinning"
+                        width="15"
+                        height="15" />
+                    <i-lucide-check
+                        v-else
+                        width="15"
+                        height="15" />
+                    {{ committing ? 'Committing…' : 'Commit' }}
+                </button>
+            </div>
         </div>
     </div>
 </template>
