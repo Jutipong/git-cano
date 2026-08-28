@@ -30,6 +30,8 @@ declare module 'vue' {
     ILucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     ILucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']
     ILucideCloud: typeof import('~icons/lucide/cloud')['default']
+    ILucideCloudCheck: typeof import('~icons/lucide/cloud-check')['default']
+    ILucideCloudOff: typeof import('~icons/lucide/cloud-off')['default']
     ILucideColumns2: typeof import('~icons/lucide/columns2')['default']
     ILucideFileDiff: typeof import('~icons/lucide/file-diff')['default']
     ILucideFlaskConical: typeof import('~icons/lucide/flask-conical')['default']

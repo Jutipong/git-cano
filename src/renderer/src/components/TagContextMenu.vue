@@ -1,6 +1,5 @@
 <script setup lang="ts">
     import Copy from '~icons/lucide/copy'
-    import Pencil from '~icons/lucide/pencil'
     import Trash2 from '~icons/lucide/trash2'
     import CloudUpload from '~icons/lucide/cloud-upload'
 
@@ -18,7 +17,6 @@
     const emit = defineEmits<{
         (e: 'close'): void
         (e: 'copyName', tag: { name: string; hash: string }): void
-        (e: 'rename', tag: { name: string; hash: string }): void
         (e: 'delete', tag: { name: string; hash: string }): void
         (e: 'push', tag: { name: string; hash: string }): void
         (e: 'deleteRemote', tag: { name: string; hash: string }): void
@@ -41,12 +39,11 @@
         document.removeEventListener('keydown', onKey)
     })
 
-    function act(kind: 'copyName' | 'rename' | 'delete' | 'push' | 'deleteRemote') {
+    function act(kind: 'copyName' | 'delete' | 'push' | 'deleteRemote') {
         const tag = props.menu?.tag
         if (!tag) return
         emit('close')
         if (kind === 'copyName') emit('copyName', tag)
-        else if (kind === 'rename') emit('rename', tag)
         else if (kind === 'delete') emit('delete', tag)
         else if (kind === 'push') emit('push', tag)
         else emit('deleteRemote', tag)
@@ -100,15 +97,6 @@
             Delete tag
         </button>
         <div class="tag-menu-separator" />
-        <button
-            class="tag-menu-item"
-            @click="act('rename')">
-            <Pencil
-                class="tag-menu-ic"
-                width="13"
-                height="13" />
-            Rename…
-        </button>
         <button
             class="tag-menu-item"
             @click="act('copyName')">

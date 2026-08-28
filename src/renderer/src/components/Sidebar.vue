@@ -188,12 +188,6 @@
             .then(() => notify('Tag name copied', 'success'))
             .catch(() => notify('Copy failed', 'error'))
     }
-    function renameTag(tag: { name: string }) {
-        const next = window.prompt(`Rename tag "${tag.name}" to:`, tag.name)
-        if (next?.trim() && next.trim() !== tag.name) {
-            void run(() => window.api.renameTag(tag.name, next.trim()), `Tag ${next.trim()} created`)
-        }
-    }
     function pushTagToRemote(tag: { name: string }) {
         void (async () => {
             const ok = await confirmDialog({
@@ -500,8 +494,14 @@
                     v-if="remoteTagNames.includes(tag.name)"
                     class="tag-remote-ic"
                     title="On remote"
-                    width="11"
-                    height="11" />
+                    width="14"
+                    height="14" />
+                <i-lucide-cloud-off
+                    v-else-if="hasRemote"
+                    class="tag-remote-ic off"
+                    title="Not pushed to remote"
+                    width="14"
+                    height="14" />
                 <span class="branch-name">{{ tag.name }}</span>
                 <span class="row-actions">
                     <button
@@ -555,7 +555,6 @@
             :menu="tagMenu"
             @close="tagMenu = null"
             @copy-name="copyTagName"
-            @rename="renameTag"
             @delete="deleteTag"
             @push="pushTagToRemote"
             @delete-remote="deleteRemoteTag" />

@@ -127,9 +127,6 @@
                     width="13"
                     height="13" />
                 <h3>
-                    <i-lucide-archive
-                        width="13"
-                        height="13" />
                     STASHES <span class="section-count">{{ stashes.length }}</span>
                 </h3>
             </button>
@@ -186,6 +183,9 @@
                 :key="`${row.stash.hash}-${row.stash.index}`"
                 class="stash-row"
                 @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, stash: row.stash }">
+                <i-lucide-archive
+                    width="13"
+                    height="13" />
                 <div class="stash-copy">
                     <strong :title="row.stash.message">{{ row.text }}</strong>
                     <span>{{ row.meta }}</span>

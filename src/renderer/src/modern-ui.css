@@ -509,7 +509,13 @@ body {
 /* stash rows hover like branch rows: pill highlight */
 .stash-row {
     margin: 1px 6px;
+    padding-left: 9px;
     border-radius: 999px;
+}
+
+.stash-row > svg {
+    color: var(--text-muted);
+    flex-shrink: 0;
 }
 
 .stash-row:hover .row-actions {
@@ -799,6 +805,11 @@ body {
 /* cloud indicator on tag rows that already exist on the remote */
 .tag-row .tag-remote-ic {
     flex: 0 0 auto;
+    color: var(--green);
+}
+
+/* cloud-off: tag not pushed to remote yet */
+.tag-row .tag-remote-ic.off {
     color: var(--text-muted);
 }
 

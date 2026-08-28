@@ -57,7 +57,6 @@ import {
     listTags,
     createTag,
     deleteTag,
-    renameTag,
     pushTags,
     pushTag,
     listRemoteTags,
@@ -427,10 +426,6 @@ app.whenReady().then(() => {
     handle('tag:delete', (name: string) => {
         requireRepo()
         return deleteTag(name as string)
-    })
-    handle('tag:rename', (oldName: string, newName: string) => {
-        requireRepo()
-        return renameTag(oldName as string, newName as string)
     })
     handle('tag:push', () => {
         requireRepo()

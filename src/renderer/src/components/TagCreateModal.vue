@@ -40,10 +40,16 @@
     /** Git forbids whitespace and these characters in ref names. */
     const TAG_NAME_FORBIDDEN = /[\s~^:?*[\]\\]/
 
+    /** true when the typed name already exists on an existing tag (live, like stash) */
+    const isDuplicate = computed(() => {
+        const trimmed = name.value.trim()
+        return trimmed.length > 0 && existing.value.includes(trimmed)
+    })
+
     async function submit() {
         const trimmed = name.value.trim()
         if (!trimmed || busy.value) return
-        if (existing.value.includes(trimmed)) {
+        if (isDuplicate.value) {
             error.value = `Tag "${trimmed}" already exists`
             return
         }
@@ -89,6 +95,7 @@
                     v-model="name"
                     autofocus
                     placeholder="Tag name"
+                    @input="error = ''"
                     @keydown.enter="submit()" />
                 <label class="tag-create-annotated">
                     <input
@@ -102,7 +109,12 @@
                     placeholder="Tag message"
                     @keydown.enter="submit()" />
                 <div
-                    v-if="error"
+                    v-if="isDuplicate"
+                    class="tag-modal-error">
+                    Tag name already exists
+                </div>
+                <div
+                    v-else-if="error"
                     class="tag-modal-error">
                     {{ error }}
                 </div>

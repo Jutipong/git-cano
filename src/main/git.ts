@@ -585,7 +585,7 @@ export async function merge(name: string): Promise<string> {
 
 export async function fetchAll(): Promise<string> {
     const { git: g } = getRepo()
-    await g.fetch(['--all'])
+    await g.fetch(['--all', '--tags'])
     return 'Fetch completed'
 }
 
@@ -767,14 +767,6 @@ export async function createTag(name: string, targetHash: string | null, message
 export async function deleteTag(name: string): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['tag', '-d', name])
-}
-
-/** Rename a local tag: create a tag on the same commit, then delete the old one. */
-export async function renameTag(oldName: string, newName: string): Promise<void> {
-    const { git: g } = getRepo()
-    if (!newName.trim()) throw new Error('Tag name is required')
-    await g.raw(['tag', newName.trim(), oldName])
-    await g.raw(['tag', '-d', oldName])
 }
 
 export async function pushTags(): Promise<string> {

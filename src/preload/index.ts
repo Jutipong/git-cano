@@ -81,7 +81,6 @@ const api = {
     tags: (): Promise<{ name: string; hash: string }[]> => call('tag:list'),
     createTag: (name: string, hash?: string | null, message?: string): Promise<void> => call('tag:create', name, hash ?? null, message),
     deleteTag: (name: string): Promise<void> => call('tag:delete', name),
-    renameTag: (oldName: string, newName: string): Promise<void> => call('tag:rename', oldName, newName),
     pushTags: (): Promise<string> => call('tag:push'),
     pushTag: (name: string): Promise<string> => call('tag:pushOne', name),
     remoteTags: (): Promise<string[]> => call('tag:remoteList'),
