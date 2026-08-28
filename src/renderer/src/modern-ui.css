@@ -427,6 +427,11 @@ body {
     --row-start: 0px;
 }
 
+/* Keep graph rails and nodes crisp above the row tint. */
+.graph-canvas {
+    z-index: 3;
+}
+
 .graph-row.drop-target {
     --row-tint: rgba(67, 201, 182, 0.12);
 }
@@ -434,12 +439,12 @@ body {
 .graph-row::before {
     content: '';
     position: absolute;
-    top: 2px;
-    bottom: 2px;
+    top: 1px;
+    bottom: 1px;
     left: var(--row-start);
-    right: calc(100% - var(--graph-w, 64px) + 6px);
-    background: color-mix(in srgb, var(--row-color) 16%, transparent);
-    border-radius: 999px;
+    right: calc(100% - var(--graph-w, 64px));
+    background: color-mix(in srgb, var(--row-color) 10%, transparent);
+    border-radius: 2px;
     opacity: 1;
     z-index: -1;
     transition: opacity 0.12s ease;

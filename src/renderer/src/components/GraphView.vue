@@ -31,7 +31,7 @@
         '#66BB6A', '#EC407A', '#29B6F6', '#AB47BC',
         '#FFCA28', '#7E57C2',
     ]
-    const laneW = 24
+    const laneW = 32
     const rowH = 28
 
     const uiTransient = useUiTransientStore()
@@ -115,6 +115,18 @@
         const ease = Math.min(gap * 0.5, rowH * 2.5)
         return `M ${cx} ${cy} C ${cx} ${cy + ease}, ${px} ${py - ease}, ${px} ${py}`
     }
+    // long branch rejoin (side-branch rail falling back to the trunk many rows below):
+    // run straight along the child's lane, then turn into the parent node with a single
+    // quarter-turn near the bottom — Git Fork style. A plain S-curve over such a huge gap
+    // would render as a shallow diagonal hugging the trunk for dozens of rows.
+    function rejoinEdgeD(childIndex: number, parentIndex: number): string {
+        const cx = nodeX(visibleCommits.value[childIndex])
+        const cy = nodeY(childIndex)
+        const px = nodeX(visibleCommits.value[parentIndex])
+        const py = nodeY(parentIndex)
+        const r = Math.min((py - cy) * 0.5, Math.abs(px - cx), rowH * 2.5)
+        return `M ${cx} ${cy} L ${cx} ${py - r} Q ${cx} ${py} ${px} ${py}`
+    }
     // GitKraken-style merge: leaves the merge commit horizontally along its own row,
     // turns a rounded 90° corner onto the parent's lane, then drops straight into the
     // parent node — the parent's lane stays a clean vertical rail
@@ -129,7 +141,10 @@
         return `M ${cx} ${cy} L ${px - dir * r} ${cy} Q ${px} ${cy} ${px} ${cy + r} L ${px} ${py}`
     }
     function edgePath(commit: CommitNode, parent: string, childIndex: number, parentIndex: number): string {
-        return isMergeEdge(commit, parent) ? mergeEdgeD(childIndex, parentIndex) : edgeD(childIndex, parentIndex)
+        if (isMergeEdge(commit, parent)) return mergeEdgeD(childIndex, parentIndex)
+        const gap = nodeY(parentIndex) - nodeY(childIndex)
+        // past ~5 rows the S-curve flattens into a diagonal — switch to the rail + turn
+        return gap > rowH * 5 ? rejoinEdgeD(childIndex, parentIndex) : edgeD(childIndex, parentIndex)
     }
     // merge edges take the parent lane's colour so the elbow + drop reads as one rail
     // with the branch line below; trunk edges keep the child's colour
@@ -384,7 +399,7 @@
                         height: `${rowH}px`,
                         '--graph-w': `${graphW}px`,
                         '--row-color': nodeColor(commit),
-                        '--row-start': `${Math.max(0, nodeX(commit) - laneW / 2)}px`
+                        '--row-start': `${nodeX(commit)}px`
                     }"
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
