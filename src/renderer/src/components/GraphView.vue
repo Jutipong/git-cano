@@ -110,9 +110,10 @@
         const px = nodeX(visibleCommits.value[parentIndex])
         const py = nodeY(parentIndex)
         const gap = py - cy
-        const bend = Math.min(rowH * 0.75, gap * 0.5)
-        const by = py - bend
-        return `M ${cx} ${cy} C ${cx} ${by}, ${px} ${by}, ${px} ${py}`
+        // symmetric S-curve: spread the horizontal transition over up to ~2.5 rows per
+        // side so long branch lines sweep in smoothly (Git Fork style) instead of hooking
+        const ease = Math.min(gap * 0.5, rowH * 2.5)
+        return `M ${cx} ${cy} C ${cx} ${cy + ease}, ${px} ${py - ease}, ${px} ${py}`
     }
     function formatDate(iso: string): string {
         return formatShortDate(iso)
