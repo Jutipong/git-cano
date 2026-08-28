@@ -143,6 +143,9 @@
         () => isWorkdir.value && props.files.length > 0 && ai.configured && !pending.value && !generating.value
     )
 
+    /** AI workflow group shows once a token + model-id are configured. */
+    const showAiGroup = computed(() => ai.configured)
+
     async function generateMessage() {
         if (generating.value) return
         generating.value = true
@@ -685,34 +688,6 @@
                 </span>
             </div>
             <div class="commit-actions">
-                <label
-                    class="cb-auto-commit"
-                    title="When checked, AI generate stages everything and commits automatically">
-                    <input
-                        v-model="autoCommit"
-                        type="checkbox" />
-                    Auto commit
-                </label>
-                <button
-                    class="btn small cb-ai-btn"
-                    :disabled="!canGenerate"
-                    :title="
-                        !ai.configured
-                            ? 'Set your OpenCode token and model in Settings → ai first'
-                            : 'Generate a commit message from the current changes'
-                    "
-                    @click="generateMessage()">
-                    <i-lucide-loader-circle
-                        v-if="generating"
-                        class="spinning"
-                        width="12"
-                        height="12" />
-                    <i-lucide-sparkles
-                        v-else
-                        width="12"
-                        height="12" />
-                    {{ generating ? 'Generating…' : 'AI generate' }}
-                </button>
                 <button
                     class="btn primary commit-btn"
                     :disabled="mode === 'commit' || pending || !message.trim() || staged.length === 0"
@@ -728,6 +703,35 @@
                         height="15" />
                     {{ committing ? 'Committing…' : 'Commit' }}
                 </button>
+                <div
+                    v-if="mode === 'workdir' && showAiGroup"
+                    class="cb-ai-group">
+                    <button
+                        class="btn small cb-ai-btn cb-group-item"
+                        :disabled="!canGenerate"
+                        title="Generate a commit message from the current changes"
+                        @click="generateMessage()">
+                        <i-lucide-loader-circle
+                            v-if="generating"
+                            class="spinning"
+                            width="14"
+                            height="14" />
+                        <i-fluent-emoji-flat-robot
+                            v-else
+                            width="16"
+                            height="16" />
+                    </button>
+                    <span class="cb-ai-sep" />
+                    <label
+                        class="cb-auto-commit cb-group-item"
+                        title="When checked, AI generate stages everything and commits automatically">
+                        <input
+                            v-model="autoCommit"
+                            type="checkbox"
+                            :disabled="!canGenerate" />
+                        Auto commit
+                    </label>
+                </div>
             </div>
         </div>
     </div>

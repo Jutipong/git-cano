@@ -21,6 +21,9 @@ importers:
         specifier: ^3.5.41
         version: 3.5.41(typescript@6.0.3)
     devDependencies:
+      '@iconify-json/fluent-emoji-flat':
+        specifier: ^1.2.6
+        version: 1.2.6
       '@iconify-json/lucide':
         specifier: ^1.2.126
         version: 1.2.126
@@ -504,6 +507,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@iconify-json/fluent-emoji-flat@1.2.6':
+    resolution: {integrity: sha512-RY47RgPb47fYUiyrA64sIOL0+UU02s29sXpNBbIQRBUlPlfNFTKUmZDERGuxDs/7yNGWqQYvuaSYM1M4fRXlUw==}
 
   '@iconify-json/lucide@1.2.126':
     resolution: {integrity: sha512-Fl3OfR71yeWLrlTLp6C4W5W3rJJDWH9/e70mjtq9VAldYDxvHh149JMNPz7foTeLLTE2Paynnp2aYKVL9rgF5Q==}
@@ -2952,6 +2958,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@iconify-json/fluent-emoji-flat@1.2.6':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/lucide@1.2.126':
     dependencies:
