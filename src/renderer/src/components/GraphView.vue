@@ -21,12 +21,12 @@
     }>()
 
     // Signature colour for the first-parent (main) lane so the trunk reads as one line
-    const FIRST_LANE_COLOR = '#F062A4'
+    const FIRST_LANE_COLOR = '#4C9AFF'
     // 13 lane colours (vivid GitKraken-style) — alternating warm/cool so adjacent lanes
     // contrast, and deliberately NO orange (reserved for the tag chips) and no teal
     // (reserved for the first-parent lane above)
     const COLORS = [
-        '#4C9AFF', '#8BC34A', '#B388FF', '#EF5350',
+        '#F062A4', '#8BC34A', '#B388FF', '#EF5350',
         '#26C6DA', '#FFD166', '#5C6BC0', '#66BB6A',
         '#EC407A', '#29B6F6', '#AB47BC', '#FFCA28',
         '#7E57C2',

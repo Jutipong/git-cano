@@ -49,7 +49,6 @@ declare module 'vue' {
     ILucideMaximize: typeof import('~icons/lucide/maximize')['default']
     ILucideMinimize: typeof import('~icons/lucide/minimize')['default']
     ILucideMinus: typeof import('~icons/lucide/minus')['default']
-    ILucideMoon: typeof import('~icons/lucide/moon')['default']
     ILucidePauseCircle: typeof import('~icons/lucide/pause-circle')['default']
     ILucidePlay: typeof import('~icons/lucide/play')['default']
     ILucidePlugZap: typeof import('~icons/lucide/plug-zap')['default']
@@ -62,7 +61,6 @@ declare module 'vue' {
     ILucideSearch: typeof import('~icons/lucide/search')['default']
     ILucideSettings: typeof import('~icons/lucide/settings')['default']
     ILucideSettings2: typeof import('~icons/lucide/settings2')['default']
-    ILucideSun: typeof import('~icons/lucide/sun')['default']
     ILucideTag: typeof import('~icons/lucide/tag')['default']
     ILucideTrash2: typeof import('~icons/lucide/trash2')['default']
     ILucideX: typeof import('~icons/lucide/x')['default']
@@ -78,6 +76,7 @@ declare module 'vue' {
     TabBar: typeof import('./components/TabBar.vue')['default']
     TagContextMenu: typeof import('./components/TagContextMenu.vue')['default']
     TagCreateModal: typeof import('./components/TagCreateModal.vue')['default']
+    ThemePicker: typeof import('./components/ThemePicker.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']
     Welcome: typeof import('./components/Welcome.vue')['default']
   }

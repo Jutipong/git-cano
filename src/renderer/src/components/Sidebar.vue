@@ -7,6 +7,7 @@
     import RemoteManager from './RemoteManager.vue'
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
+    import ThemePicker from './ThemePicker.vue'
 
     import type { MenuItem, RepoStatus } from '@shared/types'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
@@ -546,19 +547,7 @@
                         width="17"
                         height="17" />
                 </button>
-                <button
-                    class="toolbar-icon-button"
-                    :title="ui.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'"
-                    @click="ui.toggleTheme()">
-                    <i-lucide-sun
-                        v-if="ui.theme === 'dark'"
-                        width="16"
-                        height="16" />
-                    <i-lucide-moon
-                        v-else
-                        width="16"
-                        height="16" />
-                </button>
+                <ThemePicker />
             </div>
         </div>
 

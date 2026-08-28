@@ -48,6 +48,9 @@ declare global {
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
   // @ts-ignore
+  export type { Theme, ThemeOption } from './stores/ui'
+  import('./stores/ui')
+  // @ts-ignore
   export type { ToastKind, NotifyOptions } from './stores/uiTransient'
   import('./stores/uiTransient')
   // @ts-ignore

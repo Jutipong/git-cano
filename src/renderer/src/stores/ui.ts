@@ -1,7 +1,22 @@
+export type Theme = 'dark' | 'light' | 'dark-simple'
+
+export interface ThemeOption {
+    value: Theme
+    label: string
+    description: string
+    icon: 'moon' | 'sun'
+}
+
+const themeOptions: ThemeOption[] = [
+    { value: 'dark', label: 'Dark', description: 'Easy on the eyes in low light', icon: 'moon' },
+    { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
+    { value: 'dark-simple', label: 'Simple Dark', description: 'HondryTravis Simple Dark palette', icon: 'moon' },
+]
+
 export const useUiStore = defineStore(
     'ui',
     () => {
-        const theme = ref<'dark' | 'light'>('dark')
+        const theme = ref<Theme>('dark')
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(140)
@@ -17,8 +32,8 @@ export const useUiStore = defineStore(
             sidebarSections.value[key] = !sidebarSections.value[key]
         }
 
-        function toggleTheme() {
-            theme.value = theme.value === 'dark' ? 'light' : 'dark'
+        function setTheme(value: Theme) {
+            theme.value = value
         }
 
         watchEffect(() => {
@@ -28,6 +43,7 @@ export const useUiStore = defineStore(
 
         return {
             theme,
+            themeOptions,
             sidebarWidth,
             rightPanelWidth,
             summaryHeight,
@@ -35,7 +51,7 @@ export const useUiStore = defineStore(
             autoCommit,
             sidebarSections,
             toggleSection,
-            toggleTheme,
+            setTheme,
         }
     },
     {
