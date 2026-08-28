@@ -115,6 +115,29 @@
         const ease = Math.min(gap * 0.5, rowH * 2.5)
         return `M ${cx} ${cy} C ${cx} ${cy + ease}, ${px} ${py - ease}, ${px} ${py}`
     }
+    // GitKraken-style merge: leaves the merge commit horizontally along its own row,
+    // turns a rounded 90° corner onto the parent's lane, then drops straight into the
+    // parent node — the parent's lane stays a clean vertical rail
+    function mergeEdgeD(childIndex: number, parentIndex: number): string {
+        const cx = nodeX(visibleCommits.value[childIndex])
+        const cy = nodeY(childIndex)
+        const px = nodeX(visibleCommits.value[parentIndex])
+        const py = nodeY(parentIndex)
+        if (px === cx) return `M ${cx} ${cy} L ${px} ${py}`
+        const r = Math.min(10, Math.abs(px - cx) / 2, (py - cy) / 2)
+        const dir = px > cx ? 1 : -1
+        return `M ${cx} ${cy} L ${px - dir * r} ${cy} Q ${px} ${cy} ${px} ${cy + r} L ${px} ${py}`
+    }
+    function edgePath(commit: CommitNode, parent: string, childIndex: number, parentIndex: number): string {
+        return isMergeEdge(commit, parent) ? mergeEdgeD(childIndex, parentIndex) : edgeD(childIndex, parentIndex)
+    }
+    // merge edges take the parent lane's colour so the elbow + drop reads as one rail
+    // with the branch line below; trunk edges keep the child's colour
+    function edgeColor(commit: CommitNode, parent: string): string {
+        const parentIndex = rowIndex.value.get(parent)
+        const parentCommit = parentIndex === undefined ? undefined : visibleCommits.value[parentIndex]
+        return isMergeEdge(commit, parent) && parentCommit ? nodeColor(parentCommit) : nodeColor(commit)
+    }
     function formatDate(iso: string): string {
         return formatShortDate(iso)
     }
@@ -294,14 +317,14 @@
                                 <path
                                     class="edge-glow"
                                     :class="{ merge: isMergeEdge(commit, parent) }"
-                                    :d="edgeD(index, rowIndex.get(parent)!)"
-                                    :stroke="nodeColor(commit)"
+                                    :d="edgePath(commit, parent, index, rowIndex.get(parent)!)"
+                                    :stroke="edgeColor(commit, parent)"
                                     fill="none" />
                                 <path
                                     class="edge-core"
                                     :class="{ merge: isMergeEdge(commit, parent) }"
-                                    :d="edgeD(index, rowIndex.get(parent)!)"
-                                    :stroke="nodeColor(commit)"
+                                    :d="edgePath(commit, parent, index, rowIndex.get(parent)!)"
+                                    :stroke="edgeColor(commit, parent)"
                                     fill="none" />
                             </template>
                         </template>
