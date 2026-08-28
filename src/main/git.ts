@@ -230,7 +230,9 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     const REC = '\x1e'
     const fmt = ['%H', '%P', '%h', '%an', '%ad', '%d', '%s', '%b'].join(SEP)
 
-    const text = await g.raw(['log', '--all', `--pretty=format:${fmt}${REC}`, '--date=iso', `--max-count=${limit}`, '--'])
+    // --branches/--remotes/--tags instead of --all: --all includes refs/stash, which
+    // renders stash commits (and their long spanning edges) as phantom lines in the graph
+    const text = await g.raw(['log', '--branches', '--remotes', '--tags', `--pretty=format:${fmt}${REC}`, '--date=iso', `--max-count=${limit}`, '--'])
 
     const commits: CommitNode[] = []
     for (const line of text.split(REC)) {
