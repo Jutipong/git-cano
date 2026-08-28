@@ -1,4 +1,4 @@
-export type Theme = 'dark' | 'light' | 'dark-simple'
+export type Theme = 'dark' | 'light' | 'dark-simple' | 'dracula'
 
 export interface ThemeOption {
     value: Theme
@@ -11,6 +11,7 @@ const themeOptions: ThemeOption[] = [
     { value: 'dark', label: 'Dark', description: 'Easy on the eyes in low light', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
     { value: 'dark-simple', label: 'Simple Dark', description: 'HondryTravis Simple Dark palette', icon: 'moon' },
+    { value: 'dracula', label: 'Dracula', description: 'Dracula GitKraken palette', icon: 'moon' },
 ]
 
 export const useUiStore = defineStore(

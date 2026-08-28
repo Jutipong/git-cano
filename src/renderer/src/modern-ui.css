@@ -115,6 +115,58 @@
     background: #444444;
 }
 
+:root[data-theme='dracula'] {
+    /* Dracula palette from draculatheme.com/gitkraken. */
+    --canvas: #282a36;
+    --surface-0: #282a36;
+    --surface-1: #282a36;
+    --surface-2: #44475a;
+    --surface-3: #343746;
+    --surface-hover: #343746;
+    --surface-selected: #44475a;
+    --line: #44475a;
+    --line-soft: rgba(98, 114, 164, 0.45);
+    --text: #f8f8f2;
+    --text-secondary: #a7aabc;
+    --text-muted: #6272a4;
+    --teal: #8be9fd;
+    --teal-dark: #bd93f9;
+    --blue: #bd93f9;
+    --green: #50fa7b;
+    --orange: #ffb86c;
+    --red: #ff5555;
+    --purple: #ff79c6;
+    --yellow: #f1fa8c;
+    --diff-bg: #282a36;
+    --diff-inline-bg: #44475a;
+    --toast-bg: #44475a;
+    --toast-border: #44475a;
+    --conflict-bg: #424450;
+    --conflict-border: #ffb86c;
+    --conflict-text: #f1fa8c;
+    --shadow: rgba(26, 26, 26, 0.8);
+}
+
+:root[data-theme='dracula'] .tok-comment {
+    color: #6272a4;
+}
+
+:root[data-theme='dracula'] .tok-string {
+    color: #f1fa8c;
+}
+
+:root[data-theme='dracula'] .tok-number {
+    color: #bd93f9;
+}
+
+:root[data-theme='dracula'] .tok-keyword {
+    color: #ff79c6;
+}
+
+:root[data-theme='dracula'] mark {
+    background: #44475a;
+}
+
 /* Modern VS Code-like workbench: panels are raised cards separated by the canvas. */
 body {
     background: var(--canvas);
