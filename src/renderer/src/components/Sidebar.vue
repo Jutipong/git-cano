@@ -45,6 +45,7 @@
     const tagMenu = ref<TagMenuState | null>(null)
     const remoteTagNames = ref<string[]>([])
     const hasRemote = ref(false)
+    const pendingRemoteTag = ref<string | null>(null)
 
     const syncBusy = ref<string | null>(null)
 
@@ -195,7 +196,10 @@
                 confirmLabel: 'Push',
             })
             if (!ok) return
-            void run(() => window.api.pushTag(tag.name), `Tag ${tag.name} pushed`)
+            pendingRemoteTag.value = tag.name
+            void run(() => window.api.pushTag(tag.name), `Tag ${tag.name} pushed`).finally(() => {
+                if (pendingRemoteTag.value === tag.name) pendingRemoteTag.value = null
+            })
         })()
     }
     function deleteRemoteTag(tag: { name: string }) {
@@ -206,7 +210,10 @@
                 danger: true,
             })
             if (!ok) return
-            void run(() => window.api.deleteRemoteTag(tag.name), `Remote tag ${tag.name} deleted`)
+            pendingRemoteTag.value = tag.name
+            void run(() => window.api.deleteRemoteTag(tag.name), `Remote tag ${tag.name} deleted`).finally(() => {
+                if (pendingRemoteTag.value === tag.name) pendingRemoteTag.value = null
+            })
         })()
     }
     function openTagMenu(tag: { name: string; hash: string }, event: MouseEvent) {
@@ -490,8 +497,14 @@
                 <i-lucide-tag
                     width="13"
                     height="13" />
+                <i-lucide-loader-2
+                    v-if="pendingRemoteTag === tag.name"
+                    class="tag-remote-ic spinning"
+                    title="Working…"
+                    width="14"
+                    height="14" />
                 <i-lucide-cloud
-                    v-if="remoteTagNames.includes(tag.name)"
+                    v-else-if="remoteTagNames.includes(tag.name)"
                     class="tag-remote-ic"
                     title="On remote"
                     width="14"
@@ -503,16 +516,6 @@
                     width="14"
                     height="14" />
                 <span class="branch-name">{{ tag.name }}</span>
-                <span class="row-actions">
-                    <button
-                        class="icon-btn danger"
-                        :title="`Delete tag ${tag.name}`"
-                        @click.stop="void deleteTag(tag)">
-                        <i-lucide-trash2
-                            width="14"
-                            height="14" />
-                    </button>
-                </span>
             </div>
             </template>
         </div>

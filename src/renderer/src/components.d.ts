@@ -46,6 +46,7 @@ declare module 'vue' {
     ILucideHistory: typeof import('~icons/lucide/history')['default']
     ILucideLink2Off: typeof import('~icons/lucide/link2-off')['default']
     ILucideList: typeof import('~icons/lucide/list')['default']
+    ILucideLoader2: typeof import('~icons/lucide/loader2')['default']
     ILucideLoaderCircle: typeof import('~icons/lucide/loader-circle')['default']
     ILucideMaximize: typeof import('~icons/lucide/maximize')['default']
     ILucideMinimize: typeof import('~icons/lucide/minimize')['default']

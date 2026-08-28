@@ -66,7 +66,7 @@
         :style="menuStyle()">
         <button
             v-if="menu && !menu.onRemote && menu.canPush"
-            class="tag-menu-item"
+            class="tag-menu-item push"
             @click="act('push')">
             <CloudUpload
                 class="tag-menu-ic"
@@ -85,7 +85,7 @@
                 class="tag-menu-ic"
                 width="13"
                 height="13" />
-            Delete remote tag
+            Delete remote
         </button>
         <button
             class="tag-menu-item danger"
@@ -94,7 +94,7 @@
                 class="tag-menu-ic"
                 width="13"
                 height="13" />
-            Delete tag
+            Delete
         </button>
         <div class="tag-menu-separator" />
         <button

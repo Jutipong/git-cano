@@ -791,6 +791,14 @@ body {
     background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
+.tag-menu-item.push {
+    color: var(--green);
+}
+
+.tag-menu-item.push:hover {
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
 .tag-menu-ic {
     flex: 0 0 auto;
     margin-right: 7px;
@@ -811,6 +819,11 @@ body {
 /* cloud-off: tag not pushed to remote yet */
 .tag-row .tag-remote-ic.off {
     color: var(--text-muted);
+}
+
+/* loader while pushing/deleting a tag on the remote */
+.tag-row .tag-remote-ic.spinning {
+    color: var(--orange);
 }
 
 .commit-btn {
