@@ -2,7 +2,8 @@
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
 
     import { useRepoStore } from '../stores/repo'
-    import { formatShortDate } from '../utils/format'
+    import { formatGraphDate, formatShortDate } from '../utils/format'
+    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
 
     import type { CommitNode, MenuItem } from '@shared/types'
 
@@ -36,6 +37,7 @@
 
     const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
+    const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
     const selectedHash = ref<string | null>(null)
     const menu = ref<MenuState | null>(null)
     const dropTargetHash = ref<string | null>(null)
@@ -118,13 +120,97 @@
     function formatDate(iso: string): string {
         return formatShortDate(iso)
     }
-    // pick a readable text colour on the solid HEAD chip fill
+    // pick a readable text colour on the solid chip fill (non-hex like "var(--orange)" → light)
     function contrastText(hex: string): string {
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#f5f7fa'
         const r = parseInt(hex.slice(1, 3), 16)
         const g = parseInt(hex.slice(3, 5), 16)
         const b = parseInt(hex.slice(5, 7), 16)
         const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
         return luminance > 150 ? '#122d2c' : '#f5f7fa'
+    }
+
+    /* ---- ref chips: kind detection, stable per-name colours, ordering ---- */
+
+    type RefKind = 'head' | 'local' | 'remote' | 'tag'
+    const REF_ORDER: Record<RefKind, number> = { head: 0, local: 1, remote: 2, tag: 3 }
+
+    // remote names of the active repo, so "feature/x" locals aren't mistaken for remotes
+    const knownRemotes = ref(new Set<string>())
+    async function loadRemotes() {
+        try {
+            const list = await window.api.remotesFull()
+            knownRemotes.value = new Set(list.map(r => r.name))
+        } catch {
+            knownRemotes.value = new Set()
+        }
+    }
+    watch(() => repoStore.repo?.path, loadRemotes, { immediate: true })
+
+    function refKind(ref: string): RefKind {
+        if (ref.startsWith('tag:')) return 'tag'
+        const name = ref.replace('HEAD -> ', '')
+        if (name !== ref) return 'head'
+        const slash = name.indexOf('/')
+        if (slash > 0 && knownRemotes.value.has(name.slice(0, slash))) return 'remote'
+        return 'local'
+    }
+    function refLabel(ref: string): string {
+        return ref.startsWith('tag:') ? ref.slice(4).trim() : ref.replace('HEAD -> ', '')
+    }
+    function sortedRefs(commit: CommitNode): string[] {
+        return [...commit.refs].sort((a, b) => REF_ORDER[refKind(a)] - REF_ORDER[refKind(b)])
+    }
+    // stable colour per ref: hash the branch name (remotes colour after their branch,
+    // so origin/main matches main) — a branch keeps its colour wherever it appears
+    function chipColor(ref: string): string {
+        const kind = refKind(ref)
+        if (kind === 'tag') return 'var(--orange)'
+        const name = refLabel(ref)
+        return nameColor(kind === 'remote' ? name.slice(name.lastIndexOf('/') + 1) : name)
+    }
+
+    /* ---- stable colours / avatar for authors ---- */
+
+    function hashString(s: string): number {
+        let h = 0
+        for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
+        return h
+    }
+    function nameColor(name: string): string {
+        return COLORS[hashString(name) % COLORS.length]
+    }
+
+    /* ---- copy commit hash ---- */
+
+    async function copyHash(commit: CommitNode) {
+        try {
+            await navigator.clipboard.writeText(commit.hash)
+            notify(`Copied ${commit.shortHash}`, 'success')
+        } catch (err) {
+            notify(err instanceof Error ? err.message : 'Failed to copy commit hash', 'error')
+        }
+    }
+
+    /* ---- search highlight inside the subject ---- */
+
+    interface SubjectPart {
+        text: string
+        hit: boolean
+    }
+    function subjectParts(subject: string): SubjectPart[] {
+        const q = normalizedQuery.value
+        if (!q) return [{ text: subject, hit: false }]
+        const lower = subject.toLowerCase()
+        const parts: SubjectPart[] = []
+        let from = 0
+        for (let at = lower.indexOf(q); at !== -1; at = lower.indexOf(q, from)) {
+            if (at > from) parts.push({ text: subject.slice(from, at), hit: false })
+            parts.push({ text: subject.slice(at, at + q.length), hit: true })
+            from = at + q.length
+        }
+        if (from < subject.length) parts.push({ text: subject.slice(from), hit: false })
+        return parts
     }
 
     // scroll the graph to the commit a clicked sidebar branch points to, then select it
@@ -193,6 +279,7 @@
             <span :style="{ width: `${graphW}px` }">GRAPH</span>
             <span class="graph-message-header">COMMIT MESSAGE</span>
             <span class="graph-author-header">AUTHOR</span>
+            <span class="graph-hash-header">HASH</span>
             <span class="graph-date-header">DATE</span>
         </div>
         <div
@@ -307,19 +394,35 @@
                             v-if="commit.refs.length"
                             class="subject-chips">
                             <span
-                                v-for="ref in commit.refs"
+                                v-for="ref in sortedRefs(commit)"
                                 :key="ref"
                                 class="ref-chip"
-                                :class="{ head: ref.startsWith('HEAD'), tag: ref.startsWith('tag:') }"
+                                :class="refKind(ref)"
                                 :style="{
-                                    '--chip-color': nodeColor(commit),
-                                    '--chip-fg': contrastText(nodeColor(commit))
+                                    '--chip-color': chipColor(ref),
+                                    '--chip-fg': contrastText(chipColor(ref))
                                 }">
-                                {{ ref.replace('HEAD -> ', '') }}
+                                <i-lucide-git-branch
+                                    v-if="refKind(ref) === 'head' || refKind(ref) === 'local'"
+                                    width="9"
+                                    height="9" />
+                                <i-lucide-cloud
+                                    v-else-if="refKind(ref) === 'remote'"
+                                    width="9"
+                                    height="9" />
+                                <i-lucide-tag
+                                    v-else
+                                    width="9"
+                                    height="9" />
+                                {{ refLabel(ref) }}
                             </span>
                         </span>
                         <span class="subject-line">
-                            <span class="subject-text">{{ commit.subject }}</span>
+                            <span class="subject-text"><template
+                                v-for="(part, pi) in subjectParts(commit.subject)"
+                                :key="pi"><mark
+                                    v-if="part.hit"
+                                    class="search-hit">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></span>
                             <button
                                 v-if="commit.body"
                                 class="msg-toggle"
@@ -336,8 +439,17 @@
                             </button>
                         </span>
                     </span>
-                    <span class="commit-author">{{ commit.author }}</span>
-                    <span class="commit-date">{{ formatDate(commit.date) }}</span>
+                    <span class="commit-author">
+                        <span
+                            class="author-avatar"
+                            :style="{ '--avatar-color': nameColor(commit.author) }">{{ commit.author.slice(0, 1).toUpperCase() }}</span>
+                        <span class="author-name">{{ commit.author }}</span>
+                    </span>
+                    <button
+                        class="commit-hash"
+                        :title="`Copy full hash (${commit.shortHash})`"
+                        @click.stop="copyHash(commit)">{{ commit.shortHash }}</button>
+                    <span class="commit-date">{{ formatGraphDate(commit.date) }}</span>
                     <div
                         v-if="expandedHash === commit.hash"
                         class="commit-msg-popover"

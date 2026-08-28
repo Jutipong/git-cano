@@ -659,7 +659,10 @@ kbd {
     min-width: 0;
 }
 .graph-author-header {
-    width: 120px;
+    width: 130px;
+}
+.graph-hash-header {
+    width: 52px;
 }
 .graph-date-header {
     width: 75px;
@@ -683,7 +686,7 @@ kbd {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 590px;
+    min-width: 655px;
     height: 28px;
     padding-right: 14px;
     border-bottom: 1px solid rgba(155, 169, 191, 0.06);
@@ -729,12 +732,50 @@ kbd {
     white-space: nowrap;
 }
 .commit-author {
-    width: 120px;
-    flex: 0 0 120px;
+    display: flex;
+    flex: 0 0 130px;
+    align-items: center;
+    gap: 6px;
+    width: 130px;
     overflow: hidden;
     color: var(--text-muted);
+}
+.author-avatar {
+    display: inline-flex;
+    flex: 0 0 16px;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    color: var(--avatar-color, var(--teal));
+    background: color-mix(in srgb, var(--avatar-color, var(--teal)) 22%, transparent);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+}
+.author-name {
+    overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+.commit-hash {
+    flex: 0 0 52px;
+    overflow: hidden;
+    padding: 2px 4px;
+    color: var(--text-muted);
+    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: copy;
+}
+.commit-hash:hover {
+    color: var(--text);
+    background: var(--surface-2);
 }
 .commit-date {
     width: 75px;

@@ -419,7 +419,7 @@ body {
 }
 
 .graph-row {
-    min-width: 590px;
+    min-width: 655px;
     height: 28px;
     border-bottom-color: rgba(174, 187, 203, 0.07);
     --row-tint: var(--surface-selected);
@@ -488,6 +488,41 @@ body {
 }
 .merge-ring {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
+}
+
+/* ref chip variants — colour comes from --chip-color (per branch name);
+   local/head = solid, remote = translucent, tag = orange */
+.ref-chip {
+    gap: 4px;
+    padding: 2px 7px;
+}
+.ref-chip > svg {
+    flex: 0 0 auto;
+    opacity: 0.85;
+}
+.ref-chip.local,
+.ref-chip.head {
+    color: var(--chip-fg, #122d2c);
+    background: var(--chip-color, var(--teal));
+    border-color: var(--chip-color, var(--teal));
+}
+.ref-chip.remote {
+    color: var(--chip-color, var(--teal));
+    background: color-mix(in srgb, var(--chip-color, var(--teal)) 8%, transparent);
+    border-color: color-mix(in srgb, var(--chip-color, var(--teal)) 38%, transparent);
+}
+.ref-chip.tag {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 35%, transparent);
+}
+
+/* highlighted search matches inside the subject */
+.search-hit {
+    padding: 0 1px;
+    color: inherit;
+    background: color-mix(in srgb, var(--teal) 32%, transparent);
+    border-radius: 3px;
 }
 
 /* chevron that expands a commit's full message in the history */
