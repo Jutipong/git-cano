@@ -140,6 +140,7 @@ function keywordsFor(mode: Mode): Set<string> {
 interface TokState {
     blockComment: boolean // inside /* … */ (script / style)
     htmlComment: boolean // inside <!-- … --> (template)
+    htmlString: boolean // inside a multi-line attribute value (template)
     backtick: boolean // inside a `template literal` (script)
 }
 
@@ -155,8 +156,10 @@ function sectionFor(filename: string): Section {
     return 'script'
 }
 
-const SECTION_OPEN = /<(template|script|style)\b/
-const SECTION_CLOSE = /<\/(template|script|style)\s*>/
+// SFC top-level blocks always start at column 0 — nested `<template v-if>`
+// elements are indented and must NOT switch the section
+const SECTION_OPEN = /^<(template|script|style)\b/
+const SECTION_CLOSE = /^<\/(template|script|style)\s*>/
 
 /** Guess the SFC section of a line when a diff hunk starts mid-file and no
     `<template>/<script>/<style>` tag has been seen yet. */
@@ -164,8 +167,8 @@ function guessSfcSection(content: string): Section {
     const t = content.trim()
     // HTML tag line (incl. comments `<!-- …` and doctype)
     if (t.startsWith('<')) return 'template'
-    // template attribute line: `class="x"`, `:class="{ … }"`, `@click="…"`
-    if (/^[\w@:#.-]+=["']/.test(t)) return 'template'
+    // template attribute line: `class="x"`, `:class="{ … }"`, `@click="…"`, bare `v-else`
+    if (/^[\w@:#.-]+=["']/.test(t) || /^v-[\w:-]+(?!=)/.test(t) || t === '">') return 'template'
     // CSS property declaration (`color: var(--x);`) — but not TS `foo: () => void`
     if (/^[-\w-]+\s*:/.test(t) && !/=>|\?/.test(t)) return 'style'
     // CSS selector / custom-property line
@@ -376,11 +379,24 @@ function renderStyle(content: string, state: TokState): string {
 /* ---------------- HTML (Vue template) ---------------- */
 
 const HTML_PATTERN =
-    /(<!--.*?-->)|(<\/?[\w-]+)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([@:#][\w.:-]+(?=\s*=)|v-[\w:-]+(?=\s*=))|([\w-]+(?=\s*=))|(\/?>)/g
+    /(<!--.*?-->)|(<\/?[\w-]+)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([@:#][\w.:-]+(?=\s*=)|v-[\w:-]+)|([\w-]+(?=\s*=))|(\/?>)/g
 
-/** Tokenize one template line, resuming/advancing HTML comment state.
-    Tags → keyword, directives (@click/:class/v-if) → keyword,
-    attribute names → type, attribute values → string. */
+function findQuote(text: string, start: number): number {
+    let i = start
+    while (i < text.length) {
+        if (text[i] === '\\') {
+            i += 2
+            continue
+        }
+        if (text[i] === '"') return i
+        i++
+    }
+    return -1
+}
+
+/** Tokenize one template line, resuming/advancing HTML comment and
+    multi-line attribute-value state. Tags → keyword, directives
+    (@click/:class/v-if) → keyword, attribute names → type, values → string. */
 function renderHtml(content: string, state: TokState): string {
     let out = ''
     let rest = content
@@ -391,6 +407,15 @@ function renderHtml(content: string, state: TokState): string {
         out += `<span class="tok-comment">${escapeHtml(rest.slice(0, end + 3))}</span>`
         rest = rest.slice(end + 3)
         state.htmlComment = false
+    }
+    // resume an attribute value opened on a previous line
+    if (state.htmlString) {
+        const end = findQuote(rest, 0)
+        if (end === -1) return `<span class="tok-string">${escapeHtml(rest)}</span>`
+        out += `<span class="tok-string">${escapeHtml(rest.slice(0, end + 1))}</span>`
+        rest = rest.slice(end + 1)
+        state.htmlString = false
+        return out + renderHtml(rest, state)
     }
     // an unterminated `<!--` puts the remainder (and following lines) in a comment
     const open = rest.indexOf('<!--')
@@ -411,7 +436,19 @@ function renderHtml(content: string, state: TokState): string {
         else if (close) out += escapeHtml(full)
         last = match.index + full.length
     }
-    out += escapeHtml(rest.slice(last))
+
+    // an attribute value left unclosed before the tag's `>` continues on the
+    // next lines (e.g. `@click="` … `">`) — color the tail as a string
+    const tail = rest.slice(last)
+    const gt = tail.indexOf('>')
+    const beforeClose = gt === -1 ? tail : tail.slice(0, gt)
+    const q = beforeClose.indexOf('"')
+    if (q === -1) {
+        out += escapeHtml(tail)
+    } else {
+        state.htmlString = true
+        out += `${escapeHtml(tail.slice(0, q))}<span class="tok-string">${escapeHtml(tail.slice(q))}</span>`
+    }
     return out
 }
 
@@ -463,7 +500,7 @@ function renderSegment(content: string, section: Section, state: TokState, keywo
     Stateless — use highlightDiffLines for multi-line constructs. */
 export function highlightLine(code: string, filename: string): string {
     const mode = modeFor(filename)
-    const state: TokState = { blockComment: false, htmlComment: false, backtick: false }
+    const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
     const section = sectionFor(filename)
     return renderSegment(code, section, state, keywordsFor(mode), mode === 'python' || mode === 'shell')
 }
@@ -484,7 +521,7 @@ export function highlightDiffLines(
     const isSfc = mode === 'vue'
     const keywords = keywordsFor(mode)
     const hashComments = mode === 'python' || mode === 'shell'
-    const state: TokState = { blockComment: false, htmlComment: false, backtick: false }
+    const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
     let section = sectionFor(filename)
     // once a real SFC section tag is seen, the file layout is known — stop guessing
     let tagged = !isSfc
@@ -511,8 +548,10 @@ export function highlightDiffLines(
                     section = 'other'
                     tagged = true
                 } else if (!tagged) {
-                    // mid-file hunk with no section tag yet — guess per line
-                    initialSection = guessSfcSection(content)
+                    // mid-file hunk with no section tag yet — guess per line;
+                    // an open string/comment pins the section to template
+                    initialSection =
+                        state.htmlString || state.htmlComment ? 'template' : guessSfcSection(content)
                     section = initialSection
                 }
             }
