@@ -826,12 +826,12 @@
                         <i-lucide-loader-circle
                             v-if="generating"
                             class="spinning"
-                            width="14"
-                            height="14" />
-                        <i-fluent-emoji-flat-robot
-                            v-else
                             width="16"
                             height="16" />
+                        <i-fluent-emoji-flat-robot
+                            v-else
+                            width="18"
+                            height="18" />
                     </button>
                 </div>
                 <button
