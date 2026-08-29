@@ -133,7 +133,7 @@
             </button>
             <button
                 v-if="!creating"
-                class="icon-btn accent-green"
+                class="icon-btn stash-add-btn"
                 title="Create stash"
                 @click="openCreate()">
                 <i-lucide-plus

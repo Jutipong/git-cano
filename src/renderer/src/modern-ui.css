@@ -322,6 +322,20 @@ body {
     background: color-mix(in srgb, var(--green) 15%, transparent);
 }
 
+/* stash + button: green on hover, mirroring the add-repo (tab-new) button */
+.stash-add-btn:hover {
+    color: var(--green);
+    border-color: transparent;
+    background: color-mix(in srgb, var(--green) 15%, transparent);
+}
+
+/* manage-remotes settings button: primary (teal) on hover */
+.remote-settings-btn:hover {
+    color: var(--teal);
+    border-color: transparent;
+    background: color-mix(in srgb, var(--teal) 15%, transparent);
+}
+
 .open-in-btn {
     align-self: center;
     display: inline-flex;

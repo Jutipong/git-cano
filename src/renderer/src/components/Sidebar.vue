@@ -455,7 +455,7 @@
                     </h3>
                 </button>
                 <button
-                    class="icon-btn accent-icon"
+                    class="icon-btn remote-settings-btn"
                     title="Manage remotes"
                     @click="
                         () => {
