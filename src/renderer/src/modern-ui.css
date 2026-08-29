@@ -427,10 +427,7 @@ body {
     background: color-mix(in srgb, var(--teal) 12%, transparent);
 }
 
-/* show-entire-file toggle wears the primary colour in both states */
-.segmented-btn.entire-file {
-    color: var(--green);
-}
+/* entire-file toggle: default color until active — active turns green via .segmented-btn.active */
 
 .segmented-divider {
     width: 1px;

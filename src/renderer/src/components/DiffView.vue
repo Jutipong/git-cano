@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
-    import { intraLineRange, isWhitespaceOnlyChange, detectMovedLines, renderDiffContent } from '../utils/highlight'
+    import { intraLineRange, isWhitespaceOnlyChange, detectMovedLines, highlightDiffLines } from '../utils/highlight'
 
     import type { DiffLine } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
@@ -275,18 +275,22 @@
         }
     }
 
-    function lineHtml(line: DiffLine): string {
-        if (line.type === 'add' || line.type === 'del') {
-            // moved lines are not an edit — no word-level <mark> on them
-            const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
-            return renderDiffContent(line.text, props.file!.path, mark)
-        }
-        if (line.type === 'ctx') {
-            // context lines carry a leading space as their diff prefix — highlight them too
-            return renderDiffContent(line.text, props.file!.path)
-        }
-        return line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    function renderOne(line: DiffLine, highlight: (content: string) => string): string {
+        const content = line.text.slice(1)
+        if (!content) return '' // empty added/removed line — draw nothing, never the +/- glyph
+        if (line.type !== 'add' && line.type !== 'del') return highlight(content)
+        // moved lines are not an edit — no word-level <mark> on them
+        const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
+        if (!mark) return highlight(content)
+        const start = Math.min(mark[0], content.length)
+        const end = Math.min(mark[1], content.length)
+        if (end <= start) return highlight(content)
+        return `${highlight(content.slice(0, start))}<mark>${highlight(content.slice(start, end))}</mark>${highlight(content.slice(end))}`
     }
+
+    /** Per-line highlighted HTML — one stateful walk so Vue SFC sections and
+        multi-line comments/template literals carry across line breaks. */
+    const htmlMap = computed(() => highlightDiffLines(lines.value, props.file?.path ?? '', renderOne))
 
     /* ---------------- Minimap ---------------- */
 
@@ -548,12 +552,7 @@
                         :class="{ active: ui.showEntireFile }"
                         :title="ui.showEntireFile ? 'Show diff only' : 'Show entire file'"
                         @click="ui.showEntireFile = !ui.showEntireFile">
-                        <i-lucide-fold-vertical
-                            v-if="ui.showEntireFile"
-                            width="15"
-                            height="15" />
                         <i-lucide-unfold-vertical
-                            v-else
                             width="15"
                             height="15" />
                     </button>
@@ -668,7 +667,7 @@
                                     <span class="ln">{{ row.left?.oldNo ?? '' }}</span>
                                     <pre
                                         v-if="row.left"
-                                        v-html="lineHtml(row.left)" />
+                                        v-html="htmlMap.get(row.left) ?? ''" />
                                     <pre v-else></pre>
                                 </div>
                             </template>
@@ -696,7 +695,7 @@
                                     <span class="ln">{{ row.right?.newNo ?? '' }}</span>
                                     <pre
                                         v-if="row.right"
-                                        v-html="lineHtml(row.right)" />
+                                        v-html="htmlMap.get(row.right) ?? ''" />
                                     <pre v-else></pre>
                                 </div>
                             </template>
@@ -714,7 +713,7 @@
                         <span class="ln">{{ line.oldNo ?? '' }}</span>
                         <span class="ln">{{ line.newNo ?? '' }}</span>
                         <!-- eslint-disable-next-line vue/no-v-html -->
-                        <pre v-html="lineHtml(line)" />
+                        <pre v-html="htmlMap.get(line) ?? ''" />
                         <button
                             v-if="!commitHash && line.type === 'hunk' && refresh && !meta?.binary"
                             class="detail-action hunk-action"

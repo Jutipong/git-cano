@@ -1,6 +1,8 @@
 /* Lightweight syntax highlighter for diff lines.
    Produces HTML with <span> tokens. Supports JS/TS-family, CSS, JSON,
-   Python, shell and falls back to a generic mode. */
+   Vue SFC (template/script/style sections), Python, shell and falls back
+   to a generic mode. Multi-line block comments and template literals are
+   tracked with a stateful walk (see highlightDiffLines). */
 
 import type { DiffLine } from '@shared/types'
 
@@ -113,11 +115,12 @@ const KEYWORDS_SH = [
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const escapeHtml = (text: string) => text.replace(/[&<>]/g, ch => ESCAPES[ch])
 
-type Mode = 'generic' | 'css' | 'json' | 'python' | 'shell'
+type Mode = 'generic' | 'css' | 'json' | 'python' | 'shell' | 'vue'
 
 function modeFor(filename: string): Mode {
     const ext = filename.slice(filename.lastIndexOf('.') + 1).toLowerCase()
     if (['css', 'scss', 'less'].includes(ext)) return 'css'
+    if (ext === 'vue') return 'vue'
     if (['json', 'jsonc', 'json5'].includes(ext)) return 'json'
     if (ext === 'py') return 'python'
     if (['sh', 'bash', 'zsh'].includes(ext) || !filename.includes('.')) return 'shell'
@@ -130,10 +133,64 @@ function keywordsFor(mode: Mode): Set<string> {
     return new Set(KEYWORDS_JS)
 }
 
+/* ---------------- multi-line state ---------------- */
+
+/** State carried across the lines of one diff so block comments and
+    template literals stay highlighted across line breaks. */
+interface TokState {
+    blockComment: boolean // inside /* … */ (script / style)
+    htmlComment: boolean // inside <!-- … --> (template)
+    backtick: boolean // inside a `template literal` (script)
+}
+
+/** Which part of the file a line belongs to (Vue SFC sections; a fixed
+    section for every other file type). */
+type Section = 'template' | 'script' | 'style' | 'json' | 'other'
+
+function sectionFor(filename: string): Section {
+    const mode = modeFor(filename)
+    if (mode === 'css') return 'style'
+    if (mode === 'json') return 'json'
+    if (mode === 'vue') return 'other'
+    return 'script'
+}
+
+const SECTION_OPEN = /<(template|script|style)\b/
+const SECTION_CLOSE = /<\/(template|script|style)\s*>/
+
+/** Guess the SFC section of a line when a diff hunk starts mid-file and no
+    `<template>/<script>/<style>` tag has been seen yet. */
+function guessSfcSection(content: string): Section {
+    const t = content.trim()
+    // HTML tag line (incl. comments `<!-- …` and doctype)
+    if (t.startsWith('<')) return 'template'
+    // template attribute line: `class="x"`, `:class="{ … }"`, `@click="…"`
+    if (/^[\w@:#.-]+=["']/.test(t)) return 'template'
+    // CSS property declaration (`color: var(--x);`) — but not TS `foo: () => void`
+    if (/^[-\w-]+\s*:/.test(t) && !/=>|\?/.test(t)) return 'style'
+    // CSS selector / custom-property line
+    if (/^[.#][\w-]+/.test(t) || /^--[\w-]+\s*:/.test(t)) return 'style'
+    return 'script'
+}
+
 /* ---------------- generic (JS/TS family, Python, shell) ---------------- */
 
-const GENERIC_PATTERN =
-    /(\/\/.*$|#(?!\{).*$|\/\*.*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)/g
+const IDENT_START = /[A-Za-z_$]/
+const IDENT = /[\w$]/
+
+function findStringEnd(text: string, start: number): number {
+    const quote = text[start]
+    let i = start + 1
+    while (i < text.length) {
+        if (text[i] === '\\') {
+            i += 2
+            continue
+        }
+        if (text[i] === quote) return i
+        i++
+    }
+    return -1
+}
 
 function genericWord(word: string, code: string, end: number, keywords: Set<string>): string {
     const escaped = escapeHtml(word)
@@ -147,20 +204,85 @@ function genericWord(word: string, code: string, end: number, keywords: Set<stri
     return escaped
 }
 
-function highlightGeneric(code: string, keywords: Set<string>): string {
+/** Tokenize one script-style line, resuming/advancing multi-line state. */
+function renderScript(content: string, state: TokState, keywords: Set<string>, hashComments: boolean): string {
     let out = ''
-    let last = 0
-    let match: RegExpExecArray | null
-    while ((match = GENERIC_PATTERN.exec(code)) !== null) {
-        out += escapeHtml(code.slice(last, match.index))
-        const [full, comment, str, num, word] = match
-        if (comment) out += `<span class="tok-comment">${escapeHtml(full)}</span>`
-        else if (str) out += `<span class="tok-string">${escapeHtml(full)}</span>`
-        else if (num) out += `<span class="tok-number">${escapeHtml(full)}</span>`
-        else if (word) out += genericWord(word, code, match.index + full.length, keywords)
-        last = match.index + full.length
+    let rest = content
+    // resume a block comment opened on a previous line
+    if (state.blockComment) {
+        const end = rest.indexOf('*/')
+        if (end === -1) return `<span class="tok-comment">${escapeHtml(rest)}</span>`
+        out += `<span class="tok-comment">${escapeHtml(rest.slice(0, end + 2))}</span>`
+        rest = rest.slice(end + 2)
+        state.blockComment = false
     }
-    out += escapeHtml(code.slice(last))
+    // resume a template literal opened on a previous line
+    if (state.backtick) {
+        const end = rest.indexOf('`')
+        if (end === -1) return `${out}<span class="tok-string">${escapeHtml(rest)}</span>`
+        out += `<span class="tok-string">${escapeHtml(rest.slice(0, end + 1))}</span>`
+        rest = rest.slice(end + 1)
+        state.backtick = false
+    }
+
+    let i = 0
+    let plain = ''
+    const flush = () => {
+        out += escapeHtml(plain)
+        plain = ''
+    }
+    while (i < rest.length) {
+        const ch = rest[i]!
+        const two = rest.slice(i, i + 2)
+        if ((hashComments && ch === '#' && two !== '#{') || two === '//') {
+            flush()
+            out += `<span class="tok-comment">${escapeHtml(rest.slice(i))}</span>`
+            break
+        }
+        if (two === '/*') {
+            const end = rest.indexOf('*/', i + 2)
+            flush()
+            if (end === -1) {
+                out += `<span class="tok-comment">${escapeHtml(rest.slice(i))}</span>`
+                state.blockComment = true
+                break
+            }
+            out += `<span class="tok-comment">${escapeHtml(rest.slice(i, end + 2))}</span>`
+            i = end + 2
+            continue
+        }
+        if (ch === '"' || ch === "'" || ch === '`') {
+            flush()
+            const end = findStringEnd(rest, i)
+            if (end === -1) {
+                out += `<span class="tok-string">${escapeHtml(rest.slice(i))}</span>`
+                if (ch === '`') state.backtick = true
+                break
+            }
+            out += `<span class="tok-string">${escapeHtml(rest.slice(i, end + 1))}</span>`
+            i = end + 1
+            continue
+        }
+        if (/[0-9]/.test(ch) && !(i > 0 && IDENT.test(rest[i - 1]!))) {
+            flush()
+            const m = /\d+(?:\.\d+)?/.exec(rest.slice(i))!
+            out += `<span class="tok-number">${escapeHtml(m[0])}</span>`
+            i += m[0].length
+            continue
+        }
+        if (IDENT_START.test(ch)) {
+            let j = i + 1
+            while (j < rest.length && IDENT.test(rest[j]!)) j++
+            const word = rest.slice(i, j)
+            flush()
+            out += genericWord(word, rest, j, keywords)
+            i = j
+            continue
+        }
+        plain += ch
+        i++
+    }
+    flush()
     return out
 }
 
@@ -232,6 +354,67 @@ function highlightCss(code: string): string {
     return cssValues(code)
 }
 
+/** CSS with block-comment state (comments spanning lines). */
+function renderStyle(content: string, state: TokState): string {
+    let rest = content
+    if (state.blockComment) {
+        const end = rest.indexOf('*/')
+        if (end === -1) return `<span class="tok-comment">${escapeHtml(rest)}</span>`
+        const out = `<span class="tok-comment">${escapeHtml(rest.slice(0, end + 2))}</span>`
+        rest = rest.slice(end + 2)
+        state.blockComment = false
+        return out + renderStyle(rest, state)
+    }
+    const open = rest.indexOf('/*')
+    if (open !== -1 && rest.indexOf('*/', open + 2) === -1) {
+        state.blockComment = true
+        return `${highlightCss(rest.slice(0, open))}<span class="tok-comment">${escapeHtml(rest.slice(open))}</span>`
+    }
+    return highlightCss(rest)
+}
+
+/* ---------------- HTML (Vue template) ---------------- */
+
+const HTML_PATTERN =
+    /(<!--.*?-->)|(<\/?[\w-]+)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([@:#][\w.:-]+(?=\s*=)|v-[\w:-]+(?=\s*=))|([\w-]+(?=\s*=))|(\/?>)/g
+
+/** Tokenize one template line, resuming/advancing HTML comment state.
+    Tags → keyword, directives (@click/:class/v-if) → keyword,
+    attribute names → type, attribute values → string. */
+function renderHtml(content: string, state: TokState): string {
+    let out = ''
+    let rest = content
+    // resume an HTML comment opened on a previous line
+    if (state.htmlComment) {
+        const end = rest.indexOf('-->')
+        if (end === -1) return `<span class="tok-comment">${escapeHtml(rest)}</span>`
+        out += `<span class="tok-comment">${escapeHtml(rest.slice(0, end + 3))}</span>`
+        rest = rest.slice(end + 3)
+        state.htmlComment = false
+    }
+    // an unterminated `<!--` puts the remainder (and following lines) in a comment
+    const open = rest.indexOf('<!--')
+    if (open !== -1 && rest.indexOf('-->', open + 4) === -1) {
+        state.htmlComment = true
+        return `${renderHtml(rest.slice(0, open), state)}<span class="tok-comment">${escapeHtml(rest.slice(open))}</span>`
+    }
+
+    let last = 0
+    let match: RegExpExecArray | null
+    while ((match = HTML_PATTERN.exec(rest)) !== null) {
+        out += escapeHtml(rest.slice(last, match.index))
+        const [full, comment, tag, str, directive, attr, close] = match
+        if (comment) out += `<span class="tok-comment">${escapeHtml(full)}</span>`
+        else if (tag || directive) out += `<span class="tok-keyword">${escapeHtml(full)}</span>`
+        else if (str) out += `<span class="tok-string">${escapeHtml(full)}</span>`
+        else if (attr) out += `<span class="tok-type">${escapeHtml(full)}</span>`
+        else if (close) out += escapeHtml(full)
+        last = match.index + full.length
+    }
+    out += escapeHtml(rest.slice(last))
+    return out
+}
+
 /* ---------------- JSON ---------------- */
 
 const JSON_PATTERN = /("(?:[^"\\]|\\.)*")(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b)|(\b(?:true|false|null)\b)/g
@@ -256,14 +439,92 @@ function highlightJson(code: string): string {
     return out
 }
 
-/* ---------------- entry point ---------------- */
+/* ---------------- section dispatch ---------------- */
 
-/** Tokenize one line of code into escaped HTML with token classes. */
+function renderSegment(content: string, section: Section, state: TokState, keywords: Set<string>, hashComments: boolean): string {
+    if (!content) return ''
+    switch (section) {
+        case 'template':
+            return renderHtml(content, state)
+        case 'style':
+            return renderStyle(content, state)
+        case 'json':
+            return highlightJson(content)
+        case 'script':
+            return renderScript(content, state, keywords, hashComments)
+        default:
+            return escapeHtml(content)
+    }
+}
+
+/* ---------------- entry points ---------------- */
+
+/** Tokenize one line of code into escaped HTML with token classes.
+    Stateless — use highlightDiffLines for multi-line constructs. */
 export function highlightLine(code: string, filename: string): string {
     const mode = modeFor(filename)
-    if (mode === 'css') return highlightCss(code)
-    if (mode === 'json') return highlightJson(code)
-    return highlightGeneric(code, keywordsFor(mode))
+    const state: TokState = { blockComment: false, htmlComment: false, backtick: false }
+    const section = sectionFor(filename)
+    return renderSegment(code, section, state, keywordsFor(mode), mode === 'python' || mode === 'shell')
+}
+
+/**
+ * Highlight a whole diff in one stateful walk, returning HTML per line.
+ * Tracks Vue SFC sections (template/script/style) and multi-line block
+ * comments / template literals. `render` lets the caller post-process each
+ * line (e.g. word-diff <mark> ranges); its `highlight` callback tokenizes a
+ * segment with the state the line started in.
+ */
+export function highlightDiffLines(
+    lines: DiffLine[],
+    filename: string,
+    render: (line: DiffLine, highlight: (content: string) => string) => string
+): Map<DiffLine, string> {
+    const mode = modeFor(filename)
+    const isSfc = mode === 'vue'
+    const keywords = keywordsFor(mode)
+    const hashComments = mode === 'python' || mode === 'shell'
+    const state: TokState = { blockComment: false, htmlComment: false, backtick: false }
+    let section = sectionFor(filename)
+    // once a real SFC section tag is seen, the file layout is known — stop guessing
+    let tagged = !isSfc
+
+    const map = new Map<DiffLine, string>()
+    for (const line of lines) {
+        if (line.type === 'hunk' || line.type === 'meta') {
+            map.set(line, escapeHtml(line.text))
+            continue
+        }
+        const content = line.text.slice(1)
+        let initialSection = section
+        const initialState: TokState = { ...state }
+        if (content) {
+            if (isSfc) {
+                const open = SECTION_OPEN.exec(content)
+                if (open) {
+                    // the tag line itself renders as HTML; following lines use the section
+                    initialSection = 'template'
+                    section = open[1] as Section
+                    tagged = true
+                } else if (SECTION_CLOSE.test(content)) {
+                    initialSection = 'template'
+                    section = 'other'
+                    tagged = true
+                } else if (!tagged) {
+                    // mid-file hunk with no section tag yet — guess per line
+                    initialSection = guessSfcSection(content)
+                    section = initialSection
+                }
+            }
+            // dry run on the full line advances multi-line state only
+            renderSegment(content, initialSection, state, keywords, hashComments)
+        }
+        map.set(
+            line,
+            render(line, seg => renderSegment(seg, initialSection, { ...initialState }, keywords, hashComments))
+        )
+    }
+    return map
 }
 
 /**

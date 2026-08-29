@@ -22,6 +22,7 @@ declare global {
   const formatDatePattern: typeof import('./utils/format').formatDatePattern
   const formatDateTime: typeof import('./utils/format').formatDateTime
   const formatShortDate: typeof import('./utils/format').formatShortDate
+  const highlightDiffLines: typeof import('./utils/highlight').highlightDiffLines
   const highlightLine: typeof import('./utils/highlight').highlightLine
   const inject: typeof import('vue').inject
   const intraLineRange: typeof import('./utils/highlight').intraLineRange
