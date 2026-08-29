@@ -457,7 +457,7 @@
                             :style="{ '--node-color': nodeColor(commit) }"
                             :cx="nodeX(commit)"
                             :cy="nodeY(index)"
-                            r="10.5"
+                            r="12"
                             fill="none"
                             stroke-width="2" />
                         <circle

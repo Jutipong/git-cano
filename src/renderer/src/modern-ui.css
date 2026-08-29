@@ -695,15 +695,15 @@ body {
 .commit-ring.selected {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
     filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent));
-    /* dotted ring that flows around the node: 8 rounded dashes fill the full
-       circle, stroke-dashoffset motion makes them travel (8 × 8.25px = 66 ≈ 2πr) */
+    /* dotted ring that flows around the node: 6 rounded dashes fill the full
+       circle, stroke-dashoffset motion makes them travel (6 × 12.57px = 75.4 ≈ 2π×12) */
     stroke-linecap: round;
-    stroke-dasharray: 3 5.25;
+    stroke-dasharray: 6 6.57;
     animation: node-dot-spin 2.2s linear infinite;
 }
 @keyframes node-dot-spin {
     to {
-        stroke-dashoffset: -66;
+        stroke-dashoffset: -75.4;
     }
 }
 .commit-ring.drop-target {
