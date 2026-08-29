@@ -512,67 +512,69 @@
         :class="{ fullscreen: isFullscreen }">
         <div class="diff-header">
             <strong>{{ file.path }}</strong>
-            <span class="chip">{{ sourceLabel }}</span>
+            <span class="diff-source">· {{ sourceLabel }}</span>
             <span
                 v-if="loading"
                 class="muted"
                 >loading…</span
             >
-            <span class="spacer" />
-            <div class="segmented">
-                <button
-                    class="segmented-btn"
-                    :class="{ active: ui.diffViewMode === 'inline' }"
-                    title="Inline (unified) view"
-                    @click="ui.diffViewMode = 'inline'">
-                    <i-lucide-rows3
-                        width="15"
-                        height="15" />
-                </button>
-                <button
-                    class="segmented-btn"
-                    :class="{ active: ui.diffViewMode === 'split' }"
-                    title="Side-by-side view"
-                    @click="ui.diffViewMode = 'split'">
-                    <i-lucide-columns2
-                        width="15"
-                        height="15" />
-                </button>
-            </div>
-            <button
-                class="icon-btn entire-file"
-                :class="{ active: ui.showEntireFile }"
-                :title="ui.showEntireFile ? 'Show diff only' : 'Show entire file'"
-                @click="ui.showEntireFile = !ui.showEntireFile">
-                <i-lucide-fold-vertical
-                    v-if="ui.showEntireFile"
-                    width="15"
-                    height="15" />
-                <i-lucide-unfold-vertical
-                    v-else
-                    width="15"
-                    height="15" />
-            </button>
-            <div class="diff-nav">
-                <button
-                    class="icon-btn"
-                    :disabled="!changeCount"
-                    title="Previous change"
-                    @click="goToChange(-1)">
-                    <i-lucide-arrow-up
-                        width="15"
-                        height="15" />
-                </button>
-                <span class="chip diff-nav-counter">{{ changeCount ? currentChange + 1 : 0 }}/{{ changeCount }}</span>
-                <button
-                    class="icon-btn"
-                    :disabled="!changeCount"
-                    title="Next change"
-                    @click="goToChange(1)">
-                    <i-lucide-arrow-down
-                        width="15"
-                        height="15" />
-                </button>
+            <div class="diff-header-center">
+                <div class="segmented">
+                    <button
+                        class="segmented-btn"
+                        :class="{ active: ui.diffViewMode === 'inline' }"
+                        title="Inline (unified) view"
+                        @click="ui.diffViewMode = 'inline'">
+                        <i-lucide-rows3
+                            width="15"
+                            height="15" />
+                    </button>
+                    <button
+                        class="segmented-btn"
+                        :class="{ active: ui.diffViewMode === 'split' }"
+                        title="Side-by-side view"
+                        @click="ui.diffViewMode = 'split'">
+                        <i-lucide-columns2
+                            width="15"
+                            height="15" />
+                    </button>
+                    <span class="segmented-divider" />
+                    <button
+                        class="segmented-btn entire-file"
+                        :class="{ active: ui.showEntireFile }"
+                        :title="ui.showEntireFile ? 'Show diff only' : 'Show entire file'"
+                        @click="ui.showEntireFile = !ui.showEntireFile">
+                        <i-lucide-fold-vertical
+                            v-if="ui.showEntireFile"
+                            width="15"
+                            height="15" />
+                        <i-lucide-unfold-vertical
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
+                <div class="diff-nav">
+                    <button
+                        class="icon-btn"
+                        :disabled="!changeCount"
+                        title="Previous change"
+                        @click="goToChange(-1)">
+                        <i-lucide-arrow-up
+                            width="15"
+                            height="15" />
+                    </button>
+                    <span class="chip diff-nav-counter">{{ changeCount ? currentChange + 1 : 0 }}/{{ changeCount }}</span>
+                    <button
+                        class="icon-btn"
+                        :disabled="!changeCount"
+                        title="Next change"
+                        @click="goToChange(1)">
+                        <i-lucide-arrow-down
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
             </div>
             <span class="spacer" />
             <button

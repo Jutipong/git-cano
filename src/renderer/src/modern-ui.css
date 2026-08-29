@@ -396,8 +396,16 @@ body {
 }
 
 /* show-entire-file toggle wears the primary colour in both states */
-.diff-header .icon-btn.entire-file {
-    color: var(--teal);
+.segmented-btn.entire-file {
+    color: var(--green);
+}
+
+.segmented-divider {
+    width: 1px;
+    height: 13px;
+    margin: 0 4px;
+    background: var(--line-soft);
+    align-self: center;
 }
 
 .icon-btn:disabled {
@@ -406,13 +414,16 @@ body {
     pointer-events: none;
 }
 
+/* change navigation — its own pill, matching the mode group */
 .diff-nav {
     display: flex;
     flex: 0 0 auto;
-    gap: 2px;
+    gap: 3px;
     align-items: center;
-    /* visually separates the nav group from the mode + entire-file controls */
-    margin-left: 10px;
+    padding: 2px;
+    background: color-mix(in srgb, var(--surface-hover) 45%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
 }
 
 .diff-nav-counter {
@@ -420,12 +431,22 @@ body {
     padding: 2px 6px;
     font-variant-numeric: tabular-nums;
     text-align: center;
+    background: transparent;
+    border: 0;
+}
+
+/* "path · source" label in the diff header */
+.diff-source {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    font-size: 11px;
+    white-space: nowrap;
 }
 
 .segmented {
     display: flex;
     flex: 0 0 auto;
-    gap: 2px;
+    gap: 3px;
     padding: 2px;
     background: color-mix(in srgb, var(--surface-hover) 45%, transparent);
     border: 1px solid var(--line-soft);
@@ -450,8 +471,8 @@ body {
 }
 
 .segmented-btn.active {
-    color: var(--teal);
-    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 14%, transparent);
 }
 
 /* hunk separator between split rows — GitKraken-style hatched gap with range text */
@@ -751,11 +772,22 @@ body {
 
 .panel-heading,
 .diff-header {
+    position: relative;
     height: 38px;
     flex-basis: 38px;
     padding-right: 12px;
     padding-left: 12px;
     background: color-mix(in srgb, var(--surface-0) 72%, var(--surface-1));
+}
+
+/* mode + entire-file + change-nav group — dead-center of the header */
+.diff-header-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
 .graph-toolbar {
