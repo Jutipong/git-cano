@@ -111,6 +111,22 @@
     color: #ff69b4;
 }
 
+:root[data-theme='dark-simple'] .tok-function {
+    color: #00e673;
+}
+
+:root[data-theme='dark-simple'] .tok-param {
+    color: #ffb86c;
+}
+
+:root[data-theme='dark-simple'] .tok-type {
+    color: #00bfff;
+}
+
+:root[data-theme='dark-simple'] .tok-support {
+    color: #8be9fd;
+}
+
 :root[data-theme='dark-simple'] mark {
     background: #444444;
 }
@@ -161,6 +177,22 @@
 
 :root[data-theme='dracula'] .tok-keyword {
     color: #ff79c6;
+}
+
+:root[data-theme='dracula'] .tok-function {
+    color: #50fa7b;
+}
+
+:root[data-theme='dracula'] .tok-param {
+    color: #ffb86c;
+}
+
+:root[data-theme='dracula'] .tok-type {
+    color: #8be9fd;
+}
+
+:root[data-theme='dracula'] .tok-support {
+    color: #8be9fd;
 }
 
 :root[data-theme='dracula'] mark {

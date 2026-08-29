@@ -1830,6 +1830,18 @@ kbd {
 .tok-keyword {
     color: #5ab2c6;
 }
+.tok-function {
+    color: var(--green);
+}
+.tok-param {
+    color: var(--orange);
+}
+.tok-type {
+    color: var(--blue);
+}
+.tok-support {
+    color: var(--teal);
+}
 mark {
     padding: 0;
     background: rgba(0, 161, 241, 0.28);

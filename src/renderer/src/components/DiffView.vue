@@ -281,6 +281,10 @@
             const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
             return renderDiffContent(line.text, props.file!.path, mark)
         }
+        if (line.type === 'ctx') {
+            // context lines carry a leading space as their diff prefix — highlight them too
+            return renderDiffContent(line.text, props.file!.path)
+        }
         return line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
     }
 
