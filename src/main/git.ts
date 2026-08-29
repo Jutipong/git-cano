@@ -558,10 +558,20 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
         })
     }
 
+    // detached HEAD has no for-each-ref entry — resolve the full SHA once so
+    // the pseudo-branch entry still supports click-to-locate in the graph
+    const detachedSha = b.detached && b.current ? await g.revparse(['HEAD']).catch(() => '') : ''
+
     for (const ref of b.all) {
         if (ref.includes('HEAD') || ref.includes('->')) continue
         const info: BranchInfo = { name: ref, current: b.current === ref }
         Object.assign(info, track.get(ref) ?? track.get(ref.replace(/^remotes\//, '')))
+        // detached HEAD surfaces as a pseudo-branch named after the short hash —
+        // flag it so the UI can label it "HEAD" and resolve its full SHA for click-to-locate
+        if (b.detached && b.current === ref) {
+            info.detached = true
+            if (detachedSha) info.commitHash = detachedSha
+        }
         if (ref.startsWith('remotes/') || !b.branches[ref]) remote.push(info)
         else local.push(info)
     }

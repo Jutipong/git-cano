@@ -13,8 +13,10 @@
     import TagCreateModal from './components/TagCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
 
-    import type { CommitNode, MenuItem, RepoStatus } from '@shared/types'
+    import type { CommitNode, RepoStatus } from '@shared/types'
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
+
+    import { confirmDialog } from './utils/confirm'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -133,64 +135,50 @@
         window.addEventListener('mouseup', onEnd)
     }
 
-    function buildCommitMenu(commit: CommitNode): MenuItem[] {
-        const run = async (label: string, fn: () => Promise<unknown>, confirmText?: string) => {
-            if (confirmText && !window.confirm(confirmText)) return
-            try {
-                await fn()
-                await repoStore.refresh()
-                uiTransient.notify(label, 'success')
-            } catch (error) {
-                uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
-            }
+    async function run(label: string, fn: () => Promise<unknown>) {
+        try {
+            await fn()
+            await repoStore.refresh()
+            uiTransient.notify(label, 'success')
+        } catch (error) {
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
-        return [
-            {
-                label: 'Copy full hash',
-                action: () =>
-                    void navigator.clipboard
-                        .writeText(commit.hash)
-                        .then(() => uiTransient.notify('Hash copied', 'success'))
-                        .catch(() => uiTransient.notify('Copy failed', 'error')),
-            },
-            {
-                label: `Checkout ${commit.shortHash}`,
-                action: () => void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash)),
-            },
-            {
-                label: 'Create branch here…',
-                action: () => {
-                    const name = window.prompt(`Create branch at ${commit.shortHash}:`)
-                    if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false))
-                },
-            },
-            {
-                label: 'Create tag here…',
-                action: () => {
-                    tagTarget.value = commit
-                },
-            },
-            {
-                label: 'Cherry-pick onto HEAD',
-                separatorBefore: true,
-                action: () => void run('Cherry-picked', () => window.api.cherryPick(commit.hash)),
-            },
-            {
-                label: 'Revert this commit',
-                action: () => void run('Commit reverted', () => window.api.revertCommit(commit.hash), `Revert commit ${commit.shortHash}?`),
-            },
-            {
-                label: `Reset current branch to ${commit.shortHash} (hard)`,
-                danger: true,
-                separatorBefore: true,
-                action: () =>
-                    void run(
-                        `Reset to ${commit.shortHash}`,
-                        () => window.api.resetTo(commit.hash, 'hard'),
-                        `Hard reset "${repoStore.repo?.branch}" to ${commit.shortHash}?\nAll uncommitted changes will be lost.`
-                    ),
-            },
-        ]
+    }
+
+    function checkoutCommit(commit: CommitNode) {
+        void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash))
+    }
+
+    function createBranchAt(commit: CommitNode) {
+        const name = window.prompt(`Create branch at ${commit.shortHash}:`)
+        // pass the commit as startPoint so the branch lands on the clicked commit, not HEAD
+        if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false, commit.hash))
+    }
+
+    function cherryPickCommit(commit: CommitNode) {
+        void run('Cherry-picked', () => window.api.cherryPick(commit.hash))
+    }
+
+    async function revertCommit(commit: CommitNode) {
+        const ok = await confirmDialog({
+            message: `Revert commit ${commit.shortHash}?`,
+            confirmLabel: 'Revert',
+        })
+        if (!ok) return
+        void run('Commit reverted', () => window.api.revertCommit(commit.hash))
+    }
+
+    async function resetTo(commit: CommitNode, mode: 'soft' | 'hard') {
+        const ok = await confirmDialog({
+            message:
+                mode === 'soft'
+                    ? `Soft reset "${repoStore.repo?.branch}" to ${commit.shortHash}?\nAll changes stay staged (nothing is lost).`
+                    : `Hard reset "${repoStore.repo?.branch}" to ${commit.shortHash}?\nAll uncommitted changes will be lost.`,
+            confirmLabel: mode === 'soft' ? 'Reset (soft)' : 'Reset (hard)',
+            danger: mode === 'hard',
+        })
+        if (!ok) return
+        void run(`Reset to ${commit.shortHash} (${mode})`, () => window.api.resetTo(commit.hash, mode))
     }
 </script>
 
@@ -223,10 +211,16 @@
                             :commits="commits"
                             :has-more="hasMore"
                             :commit-open="!!selectedCommit"
-                            :build-commit-menu="buildCommitMenu"
                             @select-commit="selectedCommit = $event"
                             @close-commit="selectedCommit = null"
-                            @load-more="repoStore.loadMore()" />
+                            @load-more="repoStore.loadMore()"
+                            @checkout="checkoutCommit"
+                            @create-branch="createBranchAt"
+                            @create-tag="tagTarget = $event"
+                            @cherry-pick="cherryPickCommit"
+                            @revert="revertCommit"
+                            @reset-soft="commit => resetTo(commit, 'soft')"
+                            @reset-hard="commit => resetTo(commit, 'hard')" />
                     </div>
                     <div
                         class="panel-splitter"

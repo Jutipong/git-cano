@@ -467,6 +467,19 @@ body {
     font-weight: 600;
 }
 
+/* detached HEAD pseudo-branch: "HEAD" in red (matches the graph HEAD chip) + faded hash */
+.branch-row .branch-detached {
+    color: var(--red);
+    font-weight: 600;
+}
+
+.branch-row .branch-detached-hash {
+    margin-left: 6px;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    font-size: 0.85em;
+}
+
 .branch-row:hover,
 .file-row:hover {
     background: var(--surface-hover);
@@ -1185,6 +1198,97 @@ body {
     height: 1px;
     margin: 4px 6px;
     background: var(--line-soft);
+}
+
+/* dedicated context menu for graph commits (right-click on a commit row) */
+.commit-menu {
+    position: fixed;
+    z-index: 50;
+    min-width: 210px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.commit-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 7px 11px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.commit-menu-item:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.commit-menu-item.orange {
+    color: var(--orange);
+}
+
+.commit-menu-item.orange:hover {
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+}
+
+.commit-menu-item.danger {
+    color: var(--red);
+}
+
+.commit-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.commit-menu-ic {
+    flex: 0 0 auto;
+    margin-right: 7px;
+}
+
+.commit-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--line-soft);
+}
+
+/* "Revert main to this commit" hover submenu (soft / hard reset) */
+.commit-menu-wrap {
+    position: relative;
+}
+
+.commit-menu-chev {
+    flex: 0 0 auto;
+    margin-left: auto;
+    opacity: 0.6;
+}
+
+.commit-menu-sub {
+    position: absolute;
+    top: -4px;
+    left: calc(100% + 4px);
+    display: none;
+    min-width: 190px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.commit-menu-wrap:hover .commit-menu-sub {
+    display: block;
+}
+
+.commit-menu-wrap:hover > .commit-menu-item {
+    color: var(--text);
+    background: var(--surface-hover);
 }
 
 /* dedicated context menu for the LOCAL BRANCHES section */

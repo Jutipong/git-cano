@@ -34,6 +34,8 @@ export interface RepoStatus {
 export interface BranchInfo {
     name: string
     current: boolean
+    /** true when this entry is the detached-HEAD pseudo-branch (name = short hash) */
+    detached?: boolean
     /** commit SHA this branch points to */
     commitHash?: string
     /** commits on this branch not yet pushed to upstream */

@@ -1,16 +1,15 @@
 <script setup lang="ts">
-    import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
+    import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
 
     import { useRepoStore } from '../stores/repo'
     import { formatGraphDate, formatShortDate } from '../utils/format'
 
-    import type { CommitNode, MenuItem } from '@shared/types'
+    import type { CommitNode } from '@shared/types'
 
     interface Props {
         commits: CommitNode[]
         hasMore: boolean
         commitOpen: boolean
-        buildCommitMenu: (commit: CommitNode) => MenuItem[]
     }
 
     const props = defineProps<Props>()
@@ -18,6 +17,13 @@
         (e: 'select-commit', commit: CommitNode): void
         (e: 'close-commit'): void
         (e: 'load-more'): void
+        (e: 'checkout', commit: CommitNode): void
+        (e: 'create-branch', commit: CommitNode): void
+        (e: 'create-tag', commit: CommitNode): void
+        (e: 'cherry-pick', commit: CommitNode): void
+        (e: 'revert', commit: CommitNode): void
+        (e: 'reset-soft', commit: CommitNode): void
+        (e: 'reset-hard', commit: CommitNode): void
     }>()
 
     // Signature colour for the first-parent (main) lane so the trunk reads as one line
@@ -37,7 +43,7 @@
     const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
     const selectedHash = ref<string | null>(null)
-    const menu = ref<MenuState | null>(null)
+    const menu = ref<CommitMenuState | null>(null)
     const dropTargetHash = ref<string | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
@@ -81,7 +87,7 @@
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
         select(commit)
-        menu.value = { x: event.clientX, y: event.clientY, items: props.buildCommitMenu(commit) }
+        menu.value = { x: event.clientX, y: event.clientY, commit }
     }
 
     function select(commit: CommitNode) {
@@ -518,8 +524,15 @@
                 </button>
             </div>
         </div>
-        <ContextMenuVue
+        <CommitContextMenu
             :menu="menu"
-            @close="menu = null" />
+            @close="menu = null"
+            @checkout="commit => emit('checkout', commit)"
+            @create-branch="commit => emit('create-branch', commit)"
+            @create-tag="commit => emit('create-tag', commit)"
+            @cherry-pick="commit => emit('cherry-pick', commit)"
+            @revert="commit => emit('revert', commit)"
+            @reset-soft="commit => emit('reset-soft', commit)"
+            @reset-hard="commit => emit('reset-hard', commit)" />
     </main>
 </template>

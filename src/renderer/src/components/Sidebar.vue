@@ -17,7 +17,7 @@
 
     const ui = useUiStore()
     const repoStore = useRepoStore()
-    const local = ref<{ name: string; current: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
+    const local = ref<{ name: string; current: boolean; detached?: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
     const remote = ref<{ name: string; current: boolean; commitHash?: string }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
     const localExpanded = computed({
@@ -375,7 +375,13 @@
                 draggable="true"
                 @click="focusBranch(branch)"
                 @dblclick="!branch.current && checkoutBranch(branch.name)"
-                :title="branch.current ? 'Current branch' : 'Click to locate · Double-click to checkout'"
+                :title="
+                    branch.detached
+                        ? 'Detached HEAD — click to locate this commit'
+                        : branch.current
+                          ? 'Current branch'
+                          : 'Click to locate · Double-click to checkout'
+                "
                 @contextmenu.prevent="openLocalBranchContextMenu(branch, $event)"
                 @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
                 @dragover="onDragOver(branch.name, $event)"
@@ -384,7 +390,13 @@
                 <i-lucide-git-branch
                     width="14"
                     height="14" />
-                <span class="branch-name">{{ branch.name }}</span>
+                <span class="branch-name">
+                    <template v-if="branch.detached">
+                        <span class="branch-detached">HEAD</span>
+                        <span class="branch-detached-hash">{{ branch.name }}</span>
+                    </template>
+                    <template v-else>{{ branch.name }}</template>
+                </span>
                 <span
                     v-if="branch.ahead || branch.behind"
                     class="track-badge">

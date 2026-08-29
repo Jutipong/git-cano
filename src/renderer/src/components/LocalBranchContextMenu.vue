@@ -10,7 +10,7 @@
     export interface LocalBranchMenuState {
         x: number
         y: number
-        branch: { name: string; current: boolean; commitHash?: string; ahead?: number; behind?: number }
+        branch: { name: string; current: boolean; detached?: boolean; commitHash?: string; ahead?: number; behind?: number }
         /** repo has a configured remote to push/pull to */
         hasRemote: boolean
     }
@@ -93,7 +93,7 @@
         <div class="local-branch-menu-separator" />
         <button
             class="local-branch-menu-item green"
-            :disabled="!menu.hasRemote"
+            :disabled="!menu.hasRemote || menu.branch.detached"
             @click="act('push')">
             <ArrowUp
                 class="local-branch-menu-ic"
@@ -103,7 +103,7 @@
         </button>
         <button
             class="local-branch-menu-item blue"
-            :disabled="!menu.hasRemote"
+            :disabled="!menu.hasRemote || menu.branch.detached"
             @click="act('pull')">
             <ArrowDown
                 class="local-branch-menu-ic"
@@ -114,7 +114,7 @@
         <div class="local-branch-menu-separator" />
         <button
             class="local-branch-menu-item orange"
-            :disabled="!menu.hasRemote"
+            :disabled="!menu.hasRemote || menu.branch.detached"
             @click="act('forcePush')">
             <Zap
                 class="local-branch-menu-ic"
@@ -124,7 +124,7 @@
         </button>
         <button
             class="local-branch-menu-item danger"
-            :disabled="menu.branch.current"
+            :disabled="menu.branch.current || menu.branch.detached"
             @click="act('delete')">
             <Trash2
                 class="local-branch-menu-ic"
