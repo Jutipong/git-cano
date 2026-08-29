@@ -257,9 +257,9 @@ app.whenReady().then(() => {
         requireRepo()
         return getLog(typeof _limit === 'number' ? _limit : 500)
     })
-    handle('file:diff', (file: string, staged: boolean) => {
+    handle('file:diff', (file: string, staged: boolean, context?: number) => {
         requireRepo()
-        return getDiff(file as string, staged as boolean)
+        return getDiff(file as string, staged as boolean, typeof context === 'number' ? context : undefined)
     })
     handle('file:diffMeta', (file: string, staged: boolean) => {
         requireRepo()
@@ -329,9 +329,9 @@ app.whenReady().then(() => {
         requireRepo()
         return renameBranch(oldName as string, newName as string)
     })
-    handle('file:commitDiff', (hash: string, file: string) => {
+    handle('file:commitDiff', (hash: string, file: string, context?: number) => {
         requireRepo()
-        return getCommitFileDiff(hash as string, file as string)
+        return getCommitFileDiff(hash as string, file as string, typeof context === 'number' ? context : undefined)
     })
 
     /* ---- staging / commit ---- */

@@ -358,14 +358,18 @@ export async function commit(message: string): Promise<string> {
 
 /* ---------------- Diff ---------------- */
 
-export async function getDiff(file: string, staged: boolean): Promise<DiffLine[]> {
+export async function getDiff(file: string, staged: boolean, context?: number): Promise<DiffLine[]> {
     const { path: p, git: g } = getRepo()
     // untracked files have no HEAD/index entry to diff against — render the
     // whole file as a set of additions so its content can actually be read
     if (!staged && (await isUntracked(g, file))) {
         return getUntrackedDiff(p, file)
     }
-    const args = staged ? ['diff', '--cached', '--no-color', '--', file] : ['diff', '--no-color', '--', file]
+    // `context` overrides the number of context lines (large value = show entire file)
+    const unified = `--unified=${context ?? 3}`
+    const args = staged
+        ? ['diff', '--cached', unified, '--no-color', '--', file]
+        : ['diff', unified, '--no-color', '--', file]
     let text = ''
     try {
         text = await g.raw(args)
@@ -764,11 +768,11 @@ export async function renameBranch(oldName: string, newName: string): Promise<vo
     await g.raw(['branch', '-m', oldName, newName])
 }
 
-export async function getCommitFileDiff(hash: string, file: string): Promise<DiffLine[]> {
+export async function getCommitFileDiff(hash: string, file: string, context?: number): Promise<DiffLine[]> {
     const { git: g } = getRepo()
     let text = ''
     try {
-        text = await g.raw(['show', '--no-color', '--format=', hash, '--', file])
+        text = await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
     } catch {
         /* empty */
     }

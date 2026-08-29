@@ -40,10 +40,10 @@ const api = {
     cherryPick: (hash: string): Promise<void> => call('commit:cherryPick', hash),
     resetTo: (target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> => call('ref:reset', target, mode),
     renameBranch: (oldName: string, newName: string): Promise<void> => call('branch:rename', oldName, newName),
-    commitFileDiff: (hash: string, file: string): Promise<DiffLine[]> => call('file:commitDiff', hash, file),
+    commitFileDiff: (hash: string, file: string, context?: number): Promise<DiffLine[]> => call('file:commitDiff', hash, file, context),
 
     /* files */
-    diff: (file: string, staged: boolean): Promise<DiffLine[]> => call('file:diff', file, staged),
+    diff: (file: string, staged: boolean, context?: number): Promise<DiffLine[]> => call('file:diff', file, staged, context),
     diffMeta: (file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> => call('file:diffMeta', file, staged),
     imageVersion: (file: string, source: 'workdir' | 'index' | 'head'): Promise<string | null> => call('file:image', file, source),
     stage: (paths: string[]): Promise<void> => call('file:stage', paths),

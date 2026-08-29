@@ -32,6 +32,10 @@ export const useUiStore = defineStore(
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(140)
         const fileViewMode = ref<'tree' | 'flat'>('tree')
+        const diffViewMode = ref<'split' | 'inline'>('split')
+        // 'hunk' mode was removed — migrate any persisted value
+        if (diffViewMode.value === ('hunk' as 'inline')) diffViewMode.value = 'inline'
+        const showEntireFile = ref(false)
         const autoCommit = ref(false)
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
@@ -67,6 +71,8 @@ export const useUiStore = defineStore(
             rightPanelWidth,
             summaryHeight,
             fileViewMode,
+            diffViewMode,
+            showEntireFile,
             autoCommit,
             sidebarSections,
             commitColumns,
@@ -84,6 +90,8 @@ export const useUiStore = defineStore(
                 'rightPanelWidth',
                 'summaryHeight',
                 'fileViewMode',
+                'diffViewMode',
+                'showEntireFile',
                 'autoCommit',
                 'sidebarSections',
                 'commitColumns',
