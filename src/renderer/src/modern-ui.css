@@ -1119,7 +1119,7 @@ body {
     padding: 10px 16px;
     border-radius: 12px;
     background: var(--surface-2);
-    border: 1px solid color-mix(in srgb, var(--teal) 45%, var(--line));
+    border: 1px solid transparent;
     box-shadow: 0 18px 50px var(--shadow);
     font-size: 12px;
     color: var(--text-secondary);
