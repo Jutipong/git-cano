@@ -454,23 +454,30 @@ body {
     background: color-mix(in srgb, var(--teal) 12%, transparent);
 }
 
-/* full-width hunk header between split rows (split view change separator) */
+/* hunk separator between split rows — GitKraken-style hatched gap with range text */
 .split-hunk-separator {
     display: flex;
+    box-sizing: border-box;
+    height: 20px;
+    align-items: center;
     min-width: max-content;
-    color: var(--text-muted);
-    background: color-mix(in srgb, var(--surface-hover) 28%, transparent);
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent 0 4px,
+        color-mix(in srgb, var(--text-muted) 14%, transparent) 4px 7px
+    );
     border-top: 1px solid var(--line-soft);
     border-bottom: 1px solid var(--line-soft);
 }
 
 .split-hunk-separator pre {
     margin: 0;
-    padding: 1px 10px;
+    padding: 0 10px;
     font-family: inherit;
     font-size: 10px;
-    line-height: 1.6;
+    line-height: 18px;
     white-space: pre;
+    color: var(--text-muted);
 }
 
 /* --- diff noise reduction (GitKraken-style) --- */

@@ -167,7 +167,8 @@ export function intraLineRange(oldText: string, newText: string): { old: [number
 /** Render a diff content line (+/- prefix stripped) with optional marked range. */
 export function renderDiffContent(line: string, filename: string, mark?: [number, number] | null): string {
     const content = line.slice(1) // strip +/- marker
-    if (!mark || !content) return highlightLine(content || line, filename)
+    if (!content) return '' // empty added/removed line — draw nothing, never the +/- glyph
+    if (!mark) return highlightLine(content, filename)
     const start = Math.min(mark[0], content.length)
     const end = Math.min(mark[1], content.length)
     if (end <= start) return highlightLine(content, filename)

@@ -105,6 +105,12 @@
         let i = 0
         while (i < lines.value.length) {
             const line = lines.value[i]
+            // File headers and no-newline markers are useful in an inline patch,
+            // but must not create an empty row in either split pane.
+            if (line.type === 'meta') {
+                i++
+                continue
+            }
             if (line.type === 'hunk') {
                 // visual separator only — changes are anchored on their first row
                 rows.push({ hunkHeader: line })
@@ -130,8 +136,16 @@
             while (i < lines.value.length && lines.value[i].type === 'del') dels.push(lines.value[i++])
             const adds: DiffLine[] = []
             while (i < lines.value.length && lines.value[i].type === 'add') adds.push(lines.value[i++])
+            // GitKraken-style block alignment: the shorter side is padded with
+            // blank rows at the TOP so both blocks bottom-align — e.g. 1 del
+            // against 26 adds keeps the del next to the LAST added line, with
+            // hatched filler rows above it.
+            const leftPad = Math.max(0, adds.length - dels.length)
+            const rightPad = Math.max(0, dels.length - adds.length)
+            const at = (arr: DiffLine[], index: number): DiffLine | undefined =>
+                index >= 0 && index < arr.length ? arr[index] : undefined
             for (let p = 0; p < Math.max(dels.length, adds.length); p++) {
-                const row: SideBySideRow = { left: dels[p], right: adds[p] }
+                const row: SideBySideRow = { left: at(dels, p - leftPad), right: at(adds, p - rightPad) }
                 if (!inChange) {
                     row.change = change++
                     inChange = true
@@ -210,14 +224,40 @@
             : changeStartIndexes.value.length
     )
 
+    /** rAF scroll animation handle — cancelled when a newer jump supersedes it */
+    let scrollAnimation: number | null = null
+
+    /** animated jump that puts the change anchor at the top of the viewport —
+     *  fixed short duration so far targets don't feel slow (unlike scrollIntoView smooth) */
+    function scrollToChange(index: number) {
+        const body = diffBody.value
+        if (!body) return
+        const el = body.querySelector(`[data-change="${index}"]`)
+        if (!el) return
+        const target = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop
+        const from = body.scrollTop
+        const distance = target - from
+        if (Math.abs(distance) < 4) return
+        if (scrollAnimation) cancelAnimationFrame(scrollAnimation)
+        if (Math.abs(distance) < 120) {
+            body.scrollTo({ top: target })
+            return
+        }
+        const duration = 160
+        const start = performance.now()
+        const step = (now: number) => {
+            const t = Math.min((now - start) / duration, 1)
+            const eased = 1 - Math.pow(1 - t, 3) // ease-out cubic
+            body.scrollTo({ top: from + distance * eased })
+            scrollAnimation = t < 1 ? requestAnimationFrame(step) : null
+        }
+        scrollAnimation = requestAnimationFrame(step)
+    }
+
     function goToChange(delta: number) {
         if (!changeCount.value) return
         currentChange.value = (currentChange.value + delta + changeCount.value) % changeCount.value
-        nextTick(() => {
-            diffBody.value
-                ?.querySelector(`[data-change="${currentChange.value}"]`)
-                ?.scrollIntoView({ block: 'start', behavior: 'smooth' })
-        })
+        nextTick(() => scrollToChange(currentChange.value))
     }
 
     async function actOnHunk(hunkOrdinal: number) {
@@ -440,6 +480,7 @@
     }
 
     onBeforeUnmount(() => {
+        if (scrollAnimation) cancelAnimationFrame(scrollAnimation)
         resizeObserver?.disconnect()
         resizeObserver = null
         if (scrollSyncTimer) clearTimeout(scrollSyncTimer)
@@ -609,7 +650,8 @@
                                 :key="index">
                                 <div
                                     v-if="row.hunkHeader"
-                                    class="split-hunk-separator">
+                                    class="split-hunk-separator"
+                                    :title="row.hunkHeader.text">
                                     <pre>{{ row.hunkHeader.text }}</pre>
                                 </div>
                                 <div
@@ -636,7 +678,8 @@
                                 :key="index">
                                 <div
                                     v-if="row.hunkHeader"
-                                    class="split-hunk-separator">
+                                    class="split-hunk-separator"
+                                    :title="row.hunkHeader.text">
                                     <pre>{{ row.hunkHeader.text }}</pre>
                                 </div>
                                 <div

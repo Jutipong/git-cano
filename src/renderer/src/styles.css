@@ -1208,6 +1208,28 @@ kbd {
     line-height: 20px;
     text-align: right;
     user-select: none;
+    /* sticky line-number gutter — stays put while the diff scrolls horizontally */
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--diff-bg);
+    border-right: 1px solid var(--line-soft);
+}
+.diff-body.split .diff-line.add .ln::after,
+.diff-body.split .diff-line.del .ln::after {
+    margin-left: 2px;
+    font-weight: 600;
+}
+.diff-body.split .diff-line.add .ln::after {
+    color: var(--green);
+    content: '+';
+}
+.diff-body.split .diff-line.del .ln::after {
+    color: var(--red);
+    content: '-';
+}
+.diff-body:not(.split) .diff-line .ln:nth-of-type(2) {
+    left: 35px;
 }
 .diff-line pre {
     margin: 0;
@@ -1857,10 +1879,13 @@ mark {
     scrollbar-width: none;
 }
 .diff-line.half.blank {
+    /* empty filler rows collapse to 0px without an explicit height, which
+       would desync the two panes — keep them as tall as a code row */
+    height: 20px;
     background: repeating-linear-gradient(
         -45deg,
         transparent 0 4px,
-        color-mix(in srgb, var(--text-muted) 10%, transparent) 4px 6px
+        color-mix(in srgb, var(--text-muted) 16%, transparent) 4px 7px
     );
 }
 .diff-line.blank pre {
