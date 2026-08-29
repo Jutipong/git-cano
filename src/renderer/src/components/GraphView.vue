@@ -409,11 +409,12 @@
                                 selected: selectedHash === commit.hash,
                                 'drop-target': dropTargetHash === commit.hash
                             }"
+                            :style="{ '--node-color': nodeColor(commit) }"
                             :cx="nodeX(commit)"
                             :cy="nodeY(index)"
-                            r="8"
+                            r="10.5"
                             fill="none"
-                            stroke-width="1.5" />
+                            stroke-width="2" />
                         <circle
                             class="node-dot"
                             :class="{

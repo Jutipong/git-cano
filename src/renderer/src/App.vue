@@ -361,7 +361,7 @@
                             {{ t.type === 'error' ? '×' : t.type === 'warning' ? '!' : t.type === 'info' ? 'i' : '✓' }}
                         </template>
                     </span>
-                    <span>{{ t.message }}</span>
+                    <span class="toast-message">{{ t.message }}</span>
                     <button
                         class="toast-close"
                         title="Dismiss"

@@ -674,12 +674,16 @@ body {
 .commit-ring {
     stroke: var(--text);
     stroke-opacity: 0;
-    transition: stroke-opacity 0.15s ease, stroke 0.15s ease;
+    transition: stroke-opacity 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
 }
 .commit-ring.selected,
 .commit-ring.drop-target {
-    stroke-opacity: 0.9;
+    stroke-opacity: 0.85;
     stroke-width: 2;
+}
+.commit-ring.selected {
+    stroke: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent));
 }
 .commit-ring.drop-target {
     stroke: var(--teal);
@@ -1702,11 +1706,12 @@ body {
     color: var(--text);
     background: color-mix(in srgb, var(--toast-accent, var(--teal)) 10%, var(--surface-2));
     border: 1px solid color-mix(in srgb, var(--toast-accent, var(--teal)) 40%, transparent);
-    border-radius: 999px;
+    /* 20px = half of the 40px min-height, so a single-line toast still reads as a pill;
+       taller (wrapped) toasts get soft corners instead of a huge curve that clips the close button */
+    border-radius: 20px;
     box-shadow: 0 12px 40px var(--shadow);
     font-size: 12.5px;
     font-weight: 550;
-    text-overflow: clip;
     transform: none;
     white-space: normal;
     line-height: 1.45;
@@ -1748,6 +1753,12 @@ body {
     font-size: 12px;
     font-weight: 800;
     line-height: 1;
+}
+
+/* let long unbroken tokens (file paths, hashes) wrap instead of overflowing the toast */
+.toast-message {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .toast-close {
