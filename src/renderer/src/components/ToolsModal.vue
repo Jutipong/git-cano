@@ -186,7 +186,7 @@
                 <strong>Advanced tools</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn danger"
+                    class="icon-btn danger commit-close-btn"
                     @click="emit('close')">
                     <i-lucide-x
                         width="16"
