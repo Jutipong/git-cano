@@ -510,6 +510,56 @@ body {
     color: var(--purple);
 }
 
+/* --- diff look & feel polish --- */
+
+/* tint the sticky number gutter with the row kind, GitKraken-style */
+.diff-line.add .ln {
+    color: color-mix(in srgb, var(--green) 60%, var(--text-muted));
+    background: color-mix(in srgb, var(--green) 9%, var(--diff-bg));
+    border-right-color: color-mix(in srgb, var(--green) 25%, var(--line-soft));
+}
+.diff-line.del .ln {
+    color: color-mix(in srgb, var(--red) 60%, var(--text-muted));
+    background: color-mix(in srgb, var(--red) 9%, var(--diff-bg));
+    border-right-color: color-mix(in srgb, var(--red) 25%, var(--line-soft));
+}
+
+/* word-level highlight: keep the row tint but make the exact edit pop */
+.diff-line.add mark {
+    background: color-mix(in srgb, var(--green) 30%, transparent);
+    border-radius: 3px;
+}
+.diff-line.del mark {
+    background: color-mix(in srgb, var(--red) 30%, transparent);
+    border-radius: 3px;
+}
+
+/* hatched filler rows: a touch quieter than the whitespace-churn hatch */
+.diff-line.half.blank {
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent 0 5px,
+        color-mix(in srgb, var(--text-muted) 10%, transparent) 5px 8px
+    );
+}
+
+/* quiet divider between the old/new panes */
+.split-pane.right {
+    border-left: 1px solid var(--line-soft);
+}
+
+/* hover: lift context rows slightly so scanning a hunk is easier */
+.diff-line.ctx:hover {
+    background: color-mix(in srgb, var(--text-muted) 7%, transparent);
+}
+
+/* hunk separator: keep the hatch, read the range like metadata */
+.split-hunk-separator pre {
+    color: color-mix(in srgb, var(--blue) 55%, var(--text-muted));
+    font-style: italic;
+    letter-spacing: 0.02em;
+}
+
 .panel-splitter {
     width: 6px;
     flex-basis: 6px;
@@ -2360,7 +2410,7 @@ body {
 
 .diff-minimap {
     position: relative;
-    flex: 0 0 56px;
+    flex: 0 0 20px;
     cursor: pointer;
     background: color-mix(in srgb, var(--surface-hover) 20%, transparent);
     border-left: 1px solid var(--line-soft);
