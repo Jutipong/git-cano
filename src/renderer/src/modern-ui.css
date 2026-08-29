@@ -402,7 +402,7 @@ body {
 
 .segmented-divider {
     width: 1px;
-    height: 13px;
+    height: 15px;
     margin: 0 4px;
     background: var(--line-soft);
     align-self: center;
@@ -456,8 +456,8 @@ body {
 .segmented-btn {
     display: grid;
     place-items: center;
-    width: 21px;
-    height: 21px;
+    width: 25px;
+    height: 25px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
