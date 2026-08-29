@@ -72,7 +72,7 @@
                     @click="emit('select', index)">
                     <span>{{ tab.name }}</span>
                     <button
-                        class="icon-btn danger tab-close"
+                        class="icon-btn danger commit-close-btn tab-close"
                         :title="`Close ${tab.name}`"
                         @click.stop="emit('close', index)">
                         <i-lucide-x

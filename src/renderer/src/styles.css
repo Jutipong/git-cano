@@ -1761,10 +1761,6 @@ kbd {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.repo-tab svg {
-    flex: 0 0 auto;
-    color: var(--teal);
-}
 .tab-close {
     width: 17px;
     height: 17px;

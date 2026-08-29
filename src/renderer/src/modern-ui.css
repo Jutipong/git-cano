@@ -249,6 +249,9 @@ body {
     border-radius: 12px;
 }
 
+/* repo tabs — inactive tabs are quiet grey pills; the teal "Open in"-style tint
+   is reserved for the active tab. No extra effects (no opacity games, gradient,
+   glow or drag transform). */
 .repo-tab {
     position: relative;
     max-width: 240px;
@@ -259,57 +262,52 @@ body {
     background: color-mix(in srgb, var(--surface-2) 45%, transparent);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
-    opacity: 0.82;
     transition:
-        background 0.15s ease,
         color 0.15s ease,
-        border-color 0.15s ease,
-        opacity 0.15s ease,
-        box-shadow 0.15s ease,
-        transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+        background 0.15s ease,
+        border-color 0.15s ease;
 }
 
 .tab-move {
-    transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: transform 0.2s ease;
 }
 
 .repo-tab:hover {
-    color: var(--text-secondary);
+    color: var(--text);
     background: var(--surface-hover);
-    opacity: 1;
+    border-color: var(--line);
 }
 
 .repo-tab.active {
     color: var(--text);
     font-weight: 650;
-    background: linear-gradient(180deg, color-mix(in srgb, var(--teal) 14%, var(--surface-2)), var(--surface-2));
-    border-color: var(--teal);
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--teal) 18%, transparent);
-}
-
-.repo-tab.active svg {
-    color: var(--teal);
-    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--teal) 40%, transparent));
+    background: color-mix(in srgb, var(--teal) 10%, transparent);
+    border-color: color-mix(in srgb, var(--teal) 35%, transparent);
 }
 
 .repo-tab.dragging {
-    opacity: 0.9;
-    transform: scale(1.05) rotate(-1deg);
+    opacity: 0.7;
     cursor: grabbing;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.28);
-    z-index: 10;
 }
 
+/* tab ✕ keeps only tab-specific bits (size comes from styles.css, hover reveal) —
+   colours/radius come from the shared .commit-close-btn style */
 .tab-close {
-    border-radius: 50%;
-    transition:
-        opacity 0.15s ease,
-        background 0.15s ease;
+    margin-left: 0;
+    transition: opacity 0.15s ease;
 }
 
-.tab-close:hover {
+/* tab ✕: quiet white icon + ring on every tab, goes red only on hover */
+.repo-tab .tab-close {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--text) 40%, transparent);
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+
+.repo-tab .tab-close:hover {
     color: var(--red);
-    background: color-mix(in srgb, var(--red) 12%, transparent);
+    border-color: color-mix(in srgb, var(--red) 40%, transparent);
+    background: color-mix(in srgb, var(--red) 18%, transparent);
 }
 
 .tab-new {
