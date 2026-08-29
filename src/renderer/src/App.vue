@@ -123,8 +123,8 @@
             const resize = resizeRef.value
             if (!resize) return
             const delta = moveEvent.clientX - resize.startX
-            if (resize.side === 'left') ui.sidebarWidth = Math.min(380, Math.max(190, resize.startWidth + delta))
-            else ui.rightPanelWidth = Math.min(600, Math.max(320, resize.startWidth - delta))
+            if (resize.side === 'left') ui.sidebarWidth = Math.min(380, Math.max(300, resize.startWidth + delta))
+            else ui.rightPanelWidth = Math.min(500, Math.max(346, resize.startWidth - delta))
         }
         const onEnd = () => {
             resizeRef.value = null
