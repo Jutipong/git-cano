@@ -40,7 +40,7 @@ export const useUiStore = defineStore(
             stashes: true,
         })
         const commitColumns = ref<Record<CommitColumn, boolean>>({ ...COMMIT_COLUMN_DEFAULTS })
-        const commitDateFormat = ref('dd/MM/yyyy')
+        const commitDateFormat = ref('dd/MM/yyyy HH:mm')
 
         function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {
             sidebarSections.value[key] = !sidebarSections.value[key]
@@ -48,7 +48,7 @@ export const useUiStore = defineStore(
 
         function resetCommitColumns() {
             commitColumns.value = { ...COMMIT_COLUMN_DEFAULTS }
-            commitDateFormat.value = 'dd/MM/yyyy'
+            commitDateFormat.value = 'dd/MM/yyyy HH:mm'
         }
 
         function setTheme(value: Theme) {

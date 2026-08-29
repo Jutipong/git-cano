@@ -3,7 +3,7 @@
     import type { ToastKind } from '../stores/uiTransient'
 
     import { useTemplateRef } from 'vue'
-    import { formatCommitDate } from '../utils/format'
+    import { formatDateTime } from '../utils/format'
     import { confirmDialog } from '../utils/confirm'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
@@ -42,7 +42,7 @@
             return {
                 stash,
                 text: stash.message.replace(/^On [^:]+: /, '').trim(),
-                meta: branch ? `${formatCommitDate(stash.date)} | branch: ${branch}` : formatCommitDate(stash.date),
+                meta: branch ? `${formatDateTime(stash.date)} | branch: ${branch}` : formatDateTime(stash.date),
             }
         })
     )

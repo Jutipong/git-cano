@@ -190,7 +190,7 @@
         return formatShortDate(iso)
     }
     // DATE column honours the user's token pattern; blank input falls back to the default
-    const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy')
+    const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
 
     // AUTHOR / DATE / HASH columns hug their content: measure the widest label
     // among loaded commits and publish the widths as CSS vars so the header

@@ -14,7 +14,7 @@
         { key: 'date', label: 'Date', hint: 'Commit date' },
     ]
 
-    const DEFAULT_DATE_FORMAT = 'dd/MM/yyyy'
+    const DEFAULT_DATE_FORMAT = 'dd/MM/yyyy HH:mm'
 
     const visibleCount = computed(() => COLUMNS.filter(column => ui.commitColumns[column.key]).length)
 
