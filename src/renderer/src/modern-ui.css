@@ -1072,6 +1072,28 @@ body {
 .btn.success:hover {
     filter: brightness(0.93);
 }
+.confirm-dialog-body input.prompt-input {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line-soft);
+    background: var(--surface-1);
+    color: var(--text);
+    font-size: 12px;
+    outline: none;
+}
+
+.confirm-dialog-body input.prompt-input:focus {
+    border-color: var(--teal);
+}
+
+.prompt-error {
+    margin-top: 6px;
+    color: var(--red);
+    font-size: 11px;
+}
+
 /* global busy overlay: shown while a user-initiated git operation is running */
 .busy-overlay {
     position: fixed;

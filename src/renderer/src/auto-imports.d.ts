@@ -17,7 +17,7 @@ declare global {
   const defineStore: typeof import('pinia').defineStore
   const flattenTree: typeof import('./utils/fileTree').flattenTree
   const formatCommitDate: typeof import('./utils/format').formatCommitDate
-  const formatGraphDate: typeof import('./utils/format').formatGraphDate
+  const formatDateTime: typeof import('./utils/format').formatDateTime
   const formatShortDate: typeof import('./utils/format').formatShortDate
   const highlightLine: typeof import('./utils/highlight').highlightLine
   const inject: typeof import('vue').inject
@@ -25,6 +25,7 @@ declare global {
   const onBeforeUnmount: typeof import('vue').onBeforeUnmount
   const onMounted: typeof import('vue').onMounted
   const onUnmounted: typeof import('vue').onUnmounted
+  const promptDialog: typeof import('./utils/prompt').promptDialog
   const provide: typeof import('vue').provide
   const reactive: typeof import('vue').reactive
   const ref: typeof import('vue').ref
@@ -33,6 +34,7 @@ declare global {
   const toRefs: typeof import('vue').toRefs
   const useAiStore: typeof import('./stores/ai').useAiStore
   const useConfirmStore: typeof import('./stores/confirm').useConfirmStore
+  const usePromptStore: typeof import('./stores/prompt').usePromptStore
   const useRepoStore: typeof import('./stores/repo').useRepoStore
   const useUiStore: typeof import('./stores/ui').useUiStore
   const useUiTransientStore: typeof import('./stores/uiTransient').useUiTransientStore
@@ -44,6 +46,9 @@ declare global {
   // @ts-ignore
   export type { ConfirmOptions, ConfirmRequest } from './stores/confirm'
   import('./stores/confirm')
+  // @ts-ignore
+  export type { PromptOptions, PromptRequest } from './stores/prompt'
+  import('./stores/prompt')
   // @ts-ignore
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')

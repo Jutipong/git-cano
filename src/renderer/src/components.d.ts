@@ -69,6 +69,7 @@ declare module 'vue' {
     IStreamlineFlexColorArtificialIntelligenceBrainChipFlat: typeof import('~icons/streamline-flex-color/artificial-intelligence-brain-chip-flat')['default']
     LocalBranchContextMenu: typeof import('./components/LocalBranchContextMenu.vue')['default']
     OpenInButton: typeof import('./components/OpenInButton.vue')['default']
+    PromptDialog: typeof import('./components/PromptDialog.vue')['default']
     RebaseEditor: typeof import('./components/RebaseEditor.vue')['default']
     RemoteManager: typeof import('./components/RemoteManager.vue')['default']
     Sidebar: typeof import('./components/Sidebar.vue')['default']

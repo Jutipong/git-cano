@@ -7,21 +7,15 @@ export function formatShortDate(value: string): string {
     return `${dd}/${mm}/${date.getFullYear()}`
 }
 
-/** Compact graph DATE column: relative under a week ("5h", "3d"), else dd/mm/yy */
-export function formatGraphDate(value: string): string {
+/** Absolute date+time as dd/mm/yyyy hh:mm (commit graph DATE column) */
+export function formatDateTime(value: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
-    const diff = Date.now() - date.getTime()
-    if (diff < 60_000) return 'now'
-    const mins = Math.floor(diff / 60_000)
-    if (mins < 60) return `${mins}m`
-    const hours = Math.floor(mins / 60)
-    if (hours < 24) return `${hours}h`
-    const days = Math.floor(hours / 24)
-    if (days < 7) return `${days}d`
     const dd = String(date.getDate()).padStart(2, '0')
     const mm = String(date.getMonth() + 1).padStart(2, '0')
-    return `${dd}/${mm}/${String(date.getFullYear()).slice(2)}`
+    const hh = String(date.getHours()).padStart(2, '0')
+    const mi = String(date.getMinutes()).padStart(2, '0')
+    return `${dd}/${mm}/${date.getFullYear()} ${hh}:${mi}`
 }
 
 /** Human-friendly commit date: Today/Yesterday/weekday, else absolute date */

@@ -7,6 +7,7 @@
     import FileHistoryModal from './components/FileHistoryModal.vue'
     import FilePanel from './components/FilePanel.vue'
     import GraphView from './components/GraphView.vue'
+    import PromptDialog from './components/PromptDialog.vue'
     import RebaseEditor from './components/RebaseEditor.vue'
     import Sidebar from './components/Sidebar.vue'
     import TabBar from './components/TabBar.vue'
@@ -17,6 +18,7 @@
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
 
     import { confirmDialog } from './utils/confirm'
+    import { promptDialog } from './utils/prompt'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -151,8 +153,19 @@
         void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash), `Checking out ${commit.shortHash}…`)
     }
 
-    function createBranchAt(commit: CommitNode) {
-        const name = window.prompt(`Create branch at ${commit.shortHash}:`)
+    async function createBranchAt(commit: CommitNode) {
+        // existing local branch names for the live duplicate check (like TagCreateModal)
+        const existing = await window.api
+            .branches()
+            .then(branches => branches.local.map(branch => branch.name))
+            .catch(() => [] as string[])
+        const name = await promptDialog({
+            title: 'Create branch here…',
+            message: `New branch at ${commit.shortHash} — ${commit.subject}`,
+            placeholder: 'branch name',
+            confirmLabel: 'Create',
+            existing,
+        })
         // pass the commit as startPoint so the branch lands on the clicked commit, not HEAD
         if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false, commit.hash), `Creating branch ${name.trim()}…`)
     }
@@ -316,6 +329,7 @@
             </div>
         </div>
         <ConfirmDialog />
+        <PromptDialog />
         <div class="toast-stack">
             <TransitionGroup name="toast">
                 <div

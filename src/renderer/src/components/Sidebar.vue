@@ -2,6 +2,7 @@
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
+    import { promptDialog } from '../utils/prompt'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -204,15 +205,27 @@
             void run(() => window.api.pushBranch(branch.name, true), `Force-pushed ${branch.name}`)
         })()
     }
-    function createBranchHere(branch: LocalBranchMenuState['branch']) {
-        const name = window.prompt(`Create branch at "${branch.name}":`)
+    async function createBranchHere(branch: LocalBranchMenuState['branch']) {
+        const name = await promptDialog({
+            title: 'Create branch here…',
+            message: `New branch at "${branch.name}"`,
+            placeholder: 'branch name',
+            confirmLabel: 'Create',
+            existing: local.value.map(b => b.name),
+        })
         if (!name?.trim()) return
-        void run(() => window.api.createBranch(name.trim(), false, branch.commitHash ?? undefined), `Created branch ${name.trim()}`)
+        void run(() => window.api.createBranch(name.trim(), false, branch.commitHash ?? undefined), `Created branch ${name.trim()}`, `Creating branch ${name.trim()}…`)
     }
-    function createTagHere(branch: LocalBranchMenuState['branch']) {
-        const name = window.prompt(`Create tag at "${branch.name}":`)
+    async function createTagHere(branch: LocalBranchMenuState['branch']) {
+        const name = await promptDialog({
+            title: 'Create tag here…',
+            message: `New tag at "${branch.name}"`,
+            placeholder: 'tag name',
+            confirmLabel: 'Create',
+            existing: tags.value.map(t => t.name),
+        })
         if (!name?.trim()) return
-        void run(() => window.api.createTag(name.trim(), branch.commitHash ?? null), `Tag ${name.trim()} created`)
+        void run(() => window.api.createTag(name.trim(), branch.commitHash ?? null), `Tag ${name.trim()} created`, `Creating tag ${name.trim()}…`)
     }
     function copyBranchName(branch: LocalBranchMenuState['branch']) {
         void navigator.clipboard

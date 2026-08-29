@@ -2,7 +2,7 @@
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
 
     import { useRepoStore } from '../stores/repo'
-    import { formatGraphDate, formatShortDate } from '../utils/format'
+    import { formatDateTime, formatShortDate } from '../utils/format'
 
     import type { CommitNode } from '@shared/types'
 
@@ -496,7 +496,7 @@
                             :style="{ '--avatar-color': nameColor(commit.author) }">{{ commit.author.slice(0, 1).toUpperCase() }}</span>
                         <span class="author-name">{{ commit.author }}</span>
                     </span>
-                    <span class="commit-date">{{ formatGraphDate(commit.date) }}</span>
+                    <span class="commit-date">{{ formatDateTime(commit.date) }}</span>
                     <div
                         v-if="expandedHash === commit.hash"
                         class="commit-msg-popover"
