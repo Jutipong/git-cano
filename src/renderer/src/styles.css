@@ -1830,17 +1830,38 @@ mark {
     background: rgba(21, 93, 189, 0.18);
 }
 
-/* Side-by-side diff */
+/* Side-by-side diff — two fixed-width columns with synced horizontal scrolling.
+   `.split-pane-content` carries the scroll width (widest line); every row fills
+   it so line backgrounds end at the same edge, GitKraken-style. */
 .diff-body.split {
+    display: flex;
+    align-items: flex-start;
     font-size: 11px;
 }
-.split-row {
-    display: flex;
-    min-width: max-content;
-}
-.diff-line.half {
+.split-pane {
     flex: 1 1 50%;
-    min-width: 340px;
+    min-width: 0;
+    max-width: 50%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+.split-pane-content {
+    min-width: 100%;
+    width: max-content;
+}
+.split-pane .diff-line.half {
+    flex: none;
+    width: 100%;
+}
+.split-pane.right {
+    scrollbar-width: none;
+}
+.diff-line.half.blank {
+    background: repeating-linear-gradient(
+        -45deg,
+        transparent 0 4px,
+        color-mix(in srgb, var(--text-muted) 10%, transparent) 4px 6px
+    );
 }
 .diff-line.blank pre {
     visibility: hidden;

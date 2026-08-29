@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
-    import { intraLineRange, renderDiffContent } from '../utils/highlight'
+    import { intraLineRange, isWhitespaceOnlyChange, detectMovedLines, renderDiffContent } from '../utils/highlight'
 
     import type { DiffLine } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
@@ -158,6 +158,32 @@
         return map
     })
 
+    /** del/add pairs that differ only in whitespace — rendered dimmed, not as real changes */
+    const wsOnly = computed(() => {
+        const set = new Set<DiffLine>()
+        for (let i = 0; i < lines.value.length - 1; i++) {
+            if (lines.value[i].type === 'del' && lines.value[i + 1].type === 'add') {
+                if (isWhitespaceOnlyChange(lines.value[i].text, lines.value[i + 1].text)) {
+                    set.add(lines.value[i])
+                    set.add(lines.value[i + 1])
+                }
+                i++
+            }
+        }
+        return set
+    })
+
+    /** lines relocated without content edits — rendered as "moved", not -/+ */
+    const movedLines = computed(() => detectMovedLines(lines.value))
+
+    /** extra CSS class for a diff line: moved wins over the ws-churn dim */
+    function lineFlagClass(line?: DiffLine): string {
+        if (!line || (line.type !== 'add' && line.type !== 'del')) return ''
+        if (movedLines.value.has(line)) return 'moved'
+        if (wsOnly.value.has(line)) return 'ws-only'
+        return ''
+    }
+
     /** Hunk header indexes within `lines` — the ordinals consumed by per-hunk staging */
     const hunkHeaderIndexes = computed(() =>
         lines.value.map((line, index) => (line.type === 'hunk' ? index : -1)).filter(index => index >= 0)
@@ -211,7 +237,9 @@
 
     function lineHtml(line: DiffLine): string {
         if (line.type === 'add' || line.type === 'del') {
-            return renderDiffContent(line.text, props.file!.path, marks.value.get(line) ?? null)
+            // moved lines are not an edit — no word-level <mark> on them
+            const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
+            return renderDiffContent(line.text, props.file!.path, mark)
         }
         return line.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
     }
@@ -386,6 +414,31 @@
         scrollSyncTimer = setTimeout(syncChangeCounter, 150)
     }
 
+    /* -------- split-view horizontal scroll sync (GitKraken-style) -------- */
+
+    const leftPaneEl = ref<HTMLElement | null>(null)
+    const rightPaneEl = ref<HTMLElement | null>(null)
+    /** guard so mirroring one pane's scrollLeft doesn't bounce back */
+    let syncingX = false
+
+    function onPaneScrollX(side: 'left' | 'right', event: Event) {
+        if (syncingX) return
+        const source = event.target as HTMLElement
+        const target = side === 'left' ? rightPaneEl.value : leftPaneEl.value
+        if (!target || target.scrollLeft === source.scrollLeft) return
+        syncingX = true
+        target.scrollLeft = source.scrollLeft
+        requestAnimationFrame(() => {
+            syncingX = false
+        })
+    }
+
+    /** horizontal offset is meaningless once the content changes */
+    function resetPaneScroll() {
+        if (leftPaneEl.value) leftPaneEl.value.scrollLeft = 0
+        if (rightPaneEl.value) rightPaneEl.value.scrollLeft = 0
+    }
+
     onBeforeUnmount(() => {
         resizeObserver?.disconnect()
         resizeObserver = null
@@ -398,7 +451,10 @@
     })
 
     watch([lines, sideBySide, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme], () =>
-        nextTick(updateMinimap)
+        nextTick(() => {
+            resetPaneScroll()
+            updateMinimap()
+        })
     )
 </script>
 
@@ -543,38 +599,60 @@
                 </div>
     
                 <template v-else-if="ui.diffViewMode === 'split'">
-                    <template
-                        v-for="(row, index) in sideBySide"
-                        :key="index">
-                        <div
-                            v-if="row.hunkHeader"
-                            class="split-hunk-separator">
-                            <pre>{{ row.hunkHeader.text }}</pre>
+                    <div
+                        ref="leftPaneEl"
+                        class="split-pane left"
+                        @scroll.passive="onPaneScrollX('left', $event)">
+                        <div class="split-pane-content">
+                            <template
+                                v-for="(row, index) in sideBySide"
+                                :key="index">
+                                <div
+                                    v-if="row.hunkHeader"
+                                    class="split-hunk-separator">
+                                    <pre>{{ row.hunkHeader.text }}</pre>
+                                </div>
+                                <div
+                                    v-else
+                                    class="diff-line half"
+                                    :class="[row.left?.type ?? 'blank', lineFlagClass(row.left)]"
+                                    :data-change="row.change">
+                                    <span class="ln">{{ row.left?.oldNo ?? '' }}</span>
+                                    <pre
+                                        v-if="row.left"
+                                        v-html="lineHtml(row.left)" />
+                                    <pre v-else></pre>
+                                </div>
+                            </template>
                         </div>
-                        <div
-                            v-else
-                            class="split-row"
-                            :data-change="row.change">
-                            <div
-                                class="diff-line half"
-                                :class="[row.left?.type ?? 'blank']">
-                                <span class="ln">{{ row.left?.oldNo ?? '' }}</span>
-                                <pre
-                                    v-if="row.left"
-                                    v-html="lineHtml(row.left)" />
-                                <pre v-else></pre>
-                            </div>
-                            <div
-                                class="diff-line half"
-                                :class="[row.right?.type ?? 'blank']">
-                                <span class="ln">{{ row.right?.newNo ?? '' }}</span>
-                                <pre
-                                    v-if="row.right"
-                                    v-html="lineHtml(row.right)" />
-                                <pre v-else></pre>
-                            </div>
+                    </div>
+                    <div
+                        ref="rightPaneEl"
+                        class="split-pane right"
+                        @scroll.passive="onPaneScrollX('right', $event)">
+                        <div class="split-pane-content">
+                            <template
+                                v-for="(row, index) in sideBySide"
+                                :key="index">
+                                <div
+                                    v-if="row.hunkHeader"
+                                    class="split-hunk-separator">
+                                    <pre>{{ row.hunkHeader.text }}</pre>
+                                </div>
+                                <div
+                                    v-else
+                                    class="diff-line half"
+                                    :class="[row.right?.type ?? 'blank', lineFlagClass(row.right)]"
+                                    :data-change="row.change">
+                                    <span class="ln">{{ row.right?.newNo ?? '' }}</span>
+                                    <pre
+                                        v-if="row.right"
+                                        v-html="lineHtml(row.right)" />
+                                    <pre v-else></pre>
+                                </div>
+                            </template>
                         </div>
-                    </template>
+                    </div>
                 </template>
     
                 <template v-else>
@@ -582,7 +660,7 @@
                         v-for="(line, index) in lines"
                         :key="index"
                         class="diff-line"
-                        :class="line.type"
+                        :class="[line.type, lineFlagClass(line)]"
                         :data-change="changeIndexMap.get(index)">
                         <span class="ln">{{ line.oldNo ?? '' }}</span>
                         <span class="ln">{{ line.newNo ?? '' }}</span>

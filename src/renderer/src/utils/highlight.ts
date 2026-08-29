@@ -2,6 +2,8 @@
    Produces HTML with <span> tokens. Supports JS/TS-family, CSS, JSON,
    Python, shell and falls back to a generic mode. */
 
+import type { DiffLine } from '@shared/types'
+
 const KEYWORDS_JS = [
     'const',
     'let',
@@ -174,4 +176,51 @@ export function renderDiffContent(line: string, filename: string, mark?: [number
         `<mark>${highlightLine(content.slice(start, end), filename)}</mark>`,
         highlightLine(content.slice(end), filename),
     ].join('')
+}
+
+/**
+ * True when a del/add pair differs only in whitespace (indent / format churn) —
+ * the collapsed-and-trimmed texts are identical.
+ */
+export function isWhitespaceOnlyChange(oldText: string, newText: string): boolean {
+    const collapse = (text: string) => text.slice(1).replace(/\s+/g, ' ').trim()
+    return collapse(oldText) === collapse(newText)
+}
+
+/**
+ * Detect lines that were MOVED (deleted from one spot and re-added unmodified
+ * elsewhere) instead of genuinely changed. Returns the set of both the del and
+ * add lines involved so the UI can render them as "moved" rather than -/+.
+ *
+ * A del only pairs with an add whose index lies OUTSIDE the del…add block the
+ * del itself belongs to — the adjacent del/add pair of a real modification
+ * never counts as a move. First match wins; each line is consumed at most once.
+ */
+export function detectMovedLines(lines: DiffLine[]): Set<DiffLine> {
+    const moved = new Set<DiffLine>()
+    const addsByKey = new Map<string, number[]>()
+    lines.forEach((line, index) => {
+        if (line.type !== 'add') return
+        const key = line.text.slice(1).trimEnd()
+        const list = addsByKey.get(key)
+        if (list) list.push(index)
+        else addsByKey.set(key, [index])
+    })
+    lines.forEach((line, index) => {
+        if (line.type !== 'del') return
+        // extent of the del…add block this del belongs to
+        let blockEnd = index
+        while (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'del') blockEnd++
+        if (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'add') {
+            while (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'add') blockEnd++
+        }
+        const list = addsByKey.get(line.text.slice(1).trimEnd())
+        if (!list?.length) return
+        const match = list.findIndex(candidate => candidate < index || candidate > blockEnd)
+        if (match === -1) return
+        const addIndex = list.splice(match, 1)[0]
+        moved.add(line)
+        moved.add(lines[addIndex])
+    })
+    return moved
 }

@@ -16,6 +16,7 @@ declare global {
   const defineEmits: typeof import('vue').defineEmits
   const defineProps: typeof import('vue').defineProps
   const defineStore: typeof import('pinia').defineStore
+  const detectMovedLines: typeof import('./utils/highlight').detectMovedLines
   const flattenTree: typeof import('./utils/fileTree').flattenTree
   const formatCommitDate: typeof import('./utils/format').formatCommitDate
   const formatDatePattern: typeof import('./utils/format').formatDatePattern
@@ -24,6 +25,7 @@ declare global {
   const highlightLine: typeof import('./utils/highlight').highlightLine
   const inject: typeof import('vue').inject
   const intraLineRange: typeof import('./utils/highlight').intraLineRange
+  const isWhitespaceOnlyChange: typeof import('./utils/highlight').isWhitespaceOnlyChange
   const onBeforeUnmount: typeof import('vue').onBeforeUnmount
   const onMounted: typeof import('vue').onMounted
   const onUnmounted: typeof import('vue').onUnmounted

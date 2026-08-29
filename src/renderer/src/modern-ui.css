@@ -473,6 +473,36 @@ body {
     white-space: pre;
 }
 
+/* --- diff noise reduction (GitKraken-style) --- */
+
+/* whitespace-only churn: still visible, but clearly de-emphasized */
+.diff-line.ws-only {
+    opacity: 0.45;
+}
+.diff-line.ws-only::after {
+    content: 'ws';
+    flex: 0 0 auto;
+    align-self: center;
+    margin-left: auto;
+    margin-right: 8px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 8px;
+    line-height: 12px;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+    user-select: none;
+}
+
+/* moved code (deleted + re-added elsewhere, unmodified): purple, not -/+ red/green */
+.diff-line.moved {
+    background: color-mix(in srgb, var(--purple) 14%, transparent);
+}
+.diff-line.moved pre {
+    color: var(--purple);
+}
+
 .panel-splitter {
     width: 6px;
     flex-basis: 6px;
