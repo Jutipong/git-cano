@@ -328,6 +328,14 @@
             repoStore.pendingFocusHash = null
         }
     )
+
+    // exiting commit view mode (toolbar ✕ or ESC) also clears the highlighted row
+    watch(
+        () => props.commitOpen,
+        open => {
+            if (!open) selectedHash.value = null
+        }
+    )
 </script>
 
 <template>
