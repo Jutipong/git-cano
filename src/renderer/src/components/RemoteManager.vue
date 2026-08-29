@@ -84,7 +84,7 @@
                 <strong>Manage remotes</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn"
+                    class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
                     <i-lucide-x

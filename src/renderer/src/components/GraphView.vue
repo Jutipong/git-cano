@@ -191,6 +191,41 @@
     }
     // DATE column honours the user's token pattern; blank input falls back to the default
     const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy')
+
+    // AUTHOR / DATE / HASH columns hug their content: measure the widest label
+    // among loaded commits and publish the widths as CSS vars so the header
+    // cells and every row stay perfectly aligned.
+    const AUTHOR_MIN_W = 88
+    const AUTHOR_MAX_W = 220
+    const DATE_MIN_W = 76
+    const HASH_MIN_W = 48
+    const UI_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    const MONO_FONT = '"SF Mono", Menlo, monospace'
+    const measureCtx = document.createElement('canvas').getContext('2d')
+    function measureText(text: string, size: number, font = UI_FONT): number {
+        if (!measureCtx) return Math.ceil(text.length * size * 0.62)
+        measureCtx.font = `${size}px ${font}`
+        return Math.ceil(measureCtx.measureText(text).width)
+    }
+    const authorW = computed(() => {
+        let widest = 0
+        for (const author of new Set(visibleCommits.value.map(commit => commit.author))) {
+            widest = Math.max(widest, measureText(author, 13))
+        }
+        // + avatar (16px), gap (6px) and a hair of breathing room
+        return Math.round(Math.min(AUTHOR_MAX_W, Math.max(AUTHOR_MIN_W, widest + 32)))
+    })
+    const dateW = computed(() => {
+        let widest = 0
+        for (const date of new Set(visibleCommits.value.map(commit => formatDatePattern(commit.date, commitDatePattern.value)))) {
+            widest = Math.max(widest, measureText(date, 11))
+        }
+        return Math.round(Math.max(DATE_MIN_W, widest + 8))
+    })
+    const hashW = computed(() => {
+        const sample = visibleCommits.value[0]?.shortHash ?? 'abcdef12345'
+        return Math.round(Math.max(HASH_MIN_W, measureText(sample, 11, MONO_FONT) + 10))
+    })
     // pick a readable text colour on the solid chip fill (non-hex like "var(--orange)" → light)
     function contrastText(hex: string): string {
         if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#f5f7fa'
@@ -296,7 +331,9 @@
 </script>
 
 <template>
-    <main class="graph-view">
+    <main
+        class="graph-view"
+        :style="{ '--author-w': `${authorW}px`, '--date-w': `${dateW}px`, '--hash-w': `${hashW}px` }">
         <div
             class="graph-toolbar"
             :class="{ 'commit-mode': props.commitOpen }">

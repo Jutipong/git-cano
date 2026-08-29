@@ -463,6 +463,11 @@ body {
     background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
 }
 
+/* active (checked-out) local branch row wears the app's primary colour */
+.branch-row.current {
+    background: color-mix(in srgb, var(--teal-dark) 24%, var(--surface-1));
+}
+
 .branch-row.current .branch-name {
     font-weight: 600;
 }
@@ -2172,23 +2177,36 @@ body {
     font-size: 11px;
 }
 
-/* AUTHOR + DATE columns: keep the full date on a single line, data hugs the
-   right edge of the column while the header label sits centered over it */
+/* AUTHOR + DATE columns: widths come from measured content (--author-w /
+   --date-w / --hash-w set on .graph-view) so the right side never wastes
+   space; AUTHOR can shrink further on narrow windows, DATE keeps one line */
 .graph-author-header,
 .commit-author {
-    width: 140px;
-    flex: 0 0 140px;
+    width: var(--author-w, 140px);
+    flex: 0 1 var(--author-w, 140px);
 }
 .graph-date-header,
 .commit-date {
-    width: 110px;
-    flex: 0 0 110px;
+    width: var(--date-w, 110px);
+    flex: 0 0 var(--date-w, 110px);
     white-space: nowrap;
-}
-.commit-date {
-    text-align: right;
 }
 .graph-author-header,
 .graph-date-header {
-    text-align: center;
+    text-align: left;
+}
+.graph-hash-header,
+.commit-hash {
+    width: var(--hash-w, 70px);
+    flex: 0 0 var(--hash-w, 70px);
+}
+/* beat `.graph-header > span` (flex: 0 0 auto) so headers track the same vars */
+.graph-header > .graph-author-header {
+    flex: 0 1 var(--author-w, 140px);
+}
+.graph-header > .graph-date-header {
+    flex: 0 0 var(--date-w, 110px);
+}
+.graph-header > .graph-hash-header {
+    flex: 0 0 var(--hash-w, 70px);
 }
