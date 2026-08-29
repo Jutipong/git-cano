@@ -321,6 +321,10 @@
             v-if="uiTransient.busy"
             class="busy-overlay">
             <div class="busy-card">
+                <i-lucide-loader-circle
+                    class="spinning"
+                    width="18"
+                    height="18" />
                 <span>{{ uiTransient.busy }}</span>
             </div>
         </div>
