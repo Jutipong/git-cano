@@ -5,6 +5,7 @@
         (e: 'opened', status: RepoStatus): void
     }>()
     const notify = inject<(m: string) => void>('notify', () => {})
+    const uiTransient = useUiTransientStore()
 
     const recent = ref<string[]>([])
     const cloneUrl = ref('')
@@ -18,21 +19,21 @@
     })
 
     function openPick() {
-        void open(() => window.api.pickAndOpen())
+        void open(() => window.api.pickAndOpen(), 'Opening repository…')
     }
     function openInit() {
-        void open(() => window.api.init())
+        void open(() => window.api.init(), 'Initializing repository…')
     }
     function openClone() {
-        if (cloneUrl.value.trim()) void open(() => window.api.clone(cloneUrl.value.trim()))
+        if (cloneUrl.value.trim()) void open(() => window.api.clone(cloneUrl.value.trim()), 'Cloning repository…')
     }
     function openRecent(entry: string) {
-        void open(() => window.api.openPath(entry))
+        void open(() => window.api.openPath(entry), 'Opening repository…')
     }
 
-    async function open(fn: () => Promise<RepoStatus | null>) {
+    async function open(fn: () => Promise<RepoStatus | null>, busyLabel: string) {
         try {
-            const status = await fn()
+            const status = await uiTransient.withBusy(fn, busyLabel)
             if (status) emit('opened', status)
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))

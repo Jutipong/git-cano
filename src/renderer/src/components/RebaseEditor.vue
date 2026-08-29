@@ -50,10 +50,14 @@
         running.value = true
         error.value = null
         try {
-            const outcome = await window.api.rebaseExecute(
-                props.baseRef,
-                plan.map(entry => ({ command: entry.command, hash: entry.hash, message: entry.message })),
-                resume
+            const outcome = await useUiTransientStore().withBusy(
+                () =>
+                    window.api.rebaseExecute(
+                        props.baseRef,
+                        plan.map(entry => ({ command: entry.command, hash: entry.hash, message: entry.message })),
+                        resume
+                    ),
+                resume ? 'Resuming rebase…' : 'Rebasing…'
             )
             if (outcome.completed) {
                 emit('complete', outcome.message)
@@ -77,7 +81,7 @@
     }
     async function abortPaused() {
         try {
-            await window.api.rebaseAbortPaused()
+            await useUiTransientStore().withBusy(() => window.api.rebaseAbortPaused(), 'Aborting rebase…')
             emit('complete', 'Rebase aborted — original state restored')
         } catch (error_) {
             error.value = String(error_).replace(/^Error:\s*/, '')

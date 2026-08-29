@@ -45,6 +45,9 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
     const searchQuery = ref('')
     const toasts = ref<ToastMessage[]>([])
     const errorDialog = ref<string | null>(null)
+    /** label of the running user-initiated operation (null = idle) — drives the busy overlay */
+    const busy = ref<string | null>(null)
+    let busyCount = 0
 
     function stopToastTicker() {
         if (toastTicker) clearInterval(toastTicker)
@@ -88,12 +91,28 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         errorDialog.value = null
     }
 
+    /**
+     * Run a user-initiated operation under the global busy overlay — all other UI
+     * interaction (branch/repo switching included) is blocked until it settles.
+     */
+    async function withBusy<T>(fn: () => Promise<T>, label = 'Working…'): Promise<T> {
+        busy.value = label
+        busyCount++
+        try {
+            return await fn()
+        } finally {
+            if (--busyCount === 0) busy.value = null
+        }
+    }
+
     return {
         searchQuery,
         toasts,
         errorDialog,
+        busy,
         notify,
         dismissToast,
         closeErrorDialog,
+        withBusy,
     }
 })

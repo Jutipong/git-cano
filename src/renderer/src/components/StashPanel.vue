@@ -9,6 +9,7 @@
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
+    const uiTransient = useUiTransientStore()
 
     const stashes = ref<StashEntry[]>([])
     const ui = useUiStore()
@@ -65,9 +66,9 @@
     onMounted(load)
     watch(() => props.repoPath, load)
 
-    async function run(fn: () => Promise<unknown>, ok: string) {
+    async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
-            await fn()
+            await uiTransient.withBusy(fn, busyLabel)
             await load()
             await props.refresh()
             notify(ok, 'success')
@@ -90,7 +91,7 @@
     function submitCreate() {
         if (!message.value.trim() || isDuplicate.value) return
         const text = message.value.trim()
-        void run(() => window.api.createStash(text), 'Changes stashed')
+        void run(() => window.api.createStash(text), 'Changes stashed', 'Creating stash…')
         closeCreate()
     }
 
@@ -101,14 +102,14 @@
             danger: true,
         })
         if (!ok) return
-        void run(() => window.api.dropStash(stash.index), 'Stash deleted')
+        void run(() => window.api.dropStash(stash.index), 'Stash deleted', 'Dropping stash…')
     }
 
     function onApply(stash: StashEntry) {
-        void run(() => window.api.applyStash(stash.index, false), 'Stash applied')
+        void run(() => window.api.applyStash(stash.index, false), 'Stash applied', 'Applying stash…')
     }
     function onPop(stash: StashEntry) {
-        void run(() => window.api.applyStash(stash.index, true), 'Stash popped')
+        void run(() => window.api.applyStash(stash.index, true), 'Stash popped', 'Popping stash…')
     }
 </script>
 

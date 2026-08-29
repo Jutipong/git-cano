@@ -30,7 +30,7 @@
 
     async function run(fn: () => Promise<unknown>, successMessage: string) {
         try {
-            await fn()
+            await useUiTransientStore().withBusy(fn, 'Working…')
             await load()
             await props.refresh()
             notify(successMessage, 'success')

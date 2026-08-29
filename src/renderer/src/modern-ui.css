@@ -1072,6 +1072,30 @@ body {
 .btn.success:hover {
     filter: brightness(0.93);
 }
+/* global busy overlay: shown while a user-initiated git operation is running */
+.busy-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--canvas) 55%, transparent);
+    cursor: wait;
+}
+
+.busy-card {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    box-shadow: 0 18px 50px var(--shadow);
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 .btn.success:disabled {
     opacity: 0.4;
 }

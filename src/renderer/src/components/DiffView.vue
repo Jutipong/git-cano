@@ -126,7 +126,10 @@
         if (!props.file || !props.refresh || rawPatch.value.trim() === '') return
         try {
             // viewing unstaged diff -> stage the hunk (forward); staged diff -> unstage it (reverse)
-            await window.api.stageHunks(props.file.path, props.file.staged, [hunkOrdinal], props.file.staged)
+            await useUiTransientStore().withBusy(
+                () => window.api.stageHunks(props.file!.path, props.file!.staged, [hunkOrdinal], props.file!.staged),
+                props.file.staged ? 'Unstaging…' : 'Staging…'
+            )
             await props.refresh()
             notify(props.file.staged ? 'Hunk unstaged' : 'Hunk staged', 'success')
         } catch (error) {

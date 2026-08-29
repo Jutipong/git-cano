@@ -14,6 +14,7 @@
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
+    const uiTransient = useUiTransientStore()
 
     const ui = useUiStore()
     const repoStore = useRepoStore()
@@ -71,7 +72,7 @@
     async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
         if (syncBusy.value) return
         syncBusy.value = label
-        await run(fn, ok)
+        await run(fn, ok, `${label}ing…`)
         syncBusy.value = null
     }
 
@@ -100,9 +101,9 @@
 
     watch(() => props.repo, loadAll, { immediate: true })
 
-    async function run(fn: () => Promise<unknown>, ok: string) {
+    async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
-            await fn()
+            await uiTransient.withBusy(fn, busyLabel)
             await props.refresh()
             await loadAll()
             notify(ok, 'success')

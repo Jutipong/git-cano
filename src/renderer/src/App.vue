@@ -39,8 +39,8 @@
     provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
 
     function openNewRepo() {
-        window.api
-            .pickAndOpen()
+        uiTransient
+            .withBusy(() => window.api.pickAndOpen(), 'Opening repository…')
             .then((status: RepoStatus | null) => status && repoStore.addTab(status))
             .catch((error: unknown) => uiTransient.notify(String(error), 'error'))
     }
@@ -79,6 +79,8 @@
         )
 
         const onKeyDown = (event: KeyboardEvent) => {
+            // block all global shortcuts while a git operation holds the busy overlay
+            if (uiTransient.busy) return
             if (event.key === 'Escape') {
                 // close diff overlay first, then commit details
                 if (selectedFile.value) selectedFile.value = null
@@ -135,9 +137,9 @@
         window.addEventListener('mouseup', onEnd)
     }
 
-    async function run(label: string, fn: () => Promise<unknown>) {
+    async function run(label: string, fn: () => Promise<unknown>, busyLabel = 'Working…') {
         try {
-            await fn()
+            await uiTransient.withBusy(fn, busyLabel)
             await repoStore.refresh()
             uiTransient.notify(label, 'success')
         } catch (error) {
@@ -146,17 +148,17 @@
     }
 
     function checkoutCommit(commit: CommitNode) {
-        void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash))
+        void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash), `Checking out ${commit.shortHash}…`)
     }
 
     function createBranchAt(commit: CommitNode) {
         const name = window.prompt(`Create branch at ${commit.shortHash}:`)
         // pass the commit as startPoint so the branch lands on the clicked commit, not HEAD
-        if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false, commit.hash))
+        if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false, commit.hash), `Creating branch ${name.trim()}…`)
     }
 
     function cherryPickCommit(commit: CommitNode) {
-        void run('Cherry-picked', () => window.api.cherryPick(commit.hash))
+        void run('Cherry-picked', () => window.api.cherryPick(commit.hash), 'Cherry-picking…')
     }
 
     async function revertCommit(commit: CommitNode) {
@@ -165,7 +167,7 @@
             confirmLabel: 'Revert',
         })
         if (!ok) return
-        void run('Commit reverted', () => window.api.revertCommit(commit.hash))
+        void run('Commit reverted', () => window.api.revertCommit(commit.hash), 'Reverting commit…')
     }
 
     async function resetTo(commit: CommitNode, mode: 'soft' | 'hard') {
@@ -178,7 +180,7 @@
             danger: mode === 'hard',
         })
         if (!ok) return
-        void run(`Reset to ${commit.shortHash} (${mode})`, () => window.api.resetTo(commit.hash, mode))
+        void run(`Reset to ${commit.shortHash} (${mode})`, () => window.api.resetTo(commit.hash, mode), `Resetting to ${commit.shortHash}…`)
     }
 </script>
 
@@ -301,6 +303,18 @@
         <ErrorDialog
             :message="uiTransient.errorDialog"
             @close="uiTransient.closeErrorDialog()" />
+        <!-- global busy overlay: blocks ALL interaction (incl. tab switching) while a git op runs -->
+        <div
+            v-if="uiTransient.busy"
+            class="busy-overlay">
+            <div class="busy-card">
+                <i-lucide-loader-circle
+                    class="spinning"
+                    width="18"
+                    height="18" />
+                <span>{{ uiTransient.busy }}</span>
+            </div>
+        </div>
         <ConfirmDialog />
         <div class="toast-stack">
             <TransitionGroup name="toast">

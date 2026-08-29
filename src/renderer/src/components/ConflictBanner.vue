@@ -8,6 +8,7 @@
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
+    const uiTransient = useUiTransientStore()
 
     function abortMerge() {
         void run(() => window.api.abortMerge(), 'Merge aborted')
@@ -33,7 +34,7 @@
 
     async function run(fn: () => Promise<unknown>, ok: string) {
         try {
-            await fn()
+            await uiTransient.withBusy(fn, 'Resolving conflicts…')
             await props.refresh()
             notify(ok, 'success')
         } catch (error) {

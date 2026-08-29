@@ -31,6 +31,7 @@
         (e: 'show-blame', path: string): void
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
+    const uiTransient = useUiTransientStore()
     const pending = ref(false)
 
     const isWorkdir = computed(() => props.mode === 'workdir')
@@ -132,11 +133,11 @@
     const untrackedRows = computed(() => makeRows(untracked.value, 'untracked'))
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
 
-    async function run(fn: () => Promise<unknown>, ok: string | null): Promise<boolean> {
+    async function run(fn: () => Promise<unknown>, ok: string | null, busyLabel = 'Working…'): Promise<boolean> {
         if (pending.value) return false
         pending.value = true
         try {
-            await fn()
+            await uiTransient.withBusy(fn, busyLabel)
             await props.refresh()
             if (ok) notify(ok, 'success')
             return true
@@ -155,7 +156,7 @@
         }
         const text = message.value.trim()
         // keep the draft when the commit fails so the user doesn't lose it
-        const ok = await run(() => window.api.commitWithAmend(text, false), 'Committed successfully')
+        const ok = await run(() => window.api.commitWithAmend(text, false), 'Committed successfully', 'Committing…')
         if (ok) message.value = ''
     }
 
@@ -172,7 +173,7 @@
         if (generating.value) return
         generating.value = true
         try {
-            const generated = (await window.api.ai.generateCommitMessage()).trim()
+            const generated = (await uiTransient.withBusy(() => window.api.ai.generateCommitMessage(), 'Generating commit message…')).trim()
             message.value = generated
             if (ui.autoCommit && generated) {
                 // no confirmation — checking the auto-commit box IS the user's

@@ -142,6 +142,7 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     async function selectTab(index: number) {
+        if (useUiTransientStore().busy) return
         const tab = tabs.value[index]
         if (!tab) return
         activeTab.value = index
@@ -153,6 +154,7 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     async function closeTab(index: number) {
+        if (useUiTransientStore().busy) return
         const tab = tabs.value[index]
         const wasActive = index === activeTab.value
         const stillOpen = await window.api.closeRepo(tab.path).catch(() => false)
@@ -172,6 +174,7 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     async function setActive(index: number) {
+        if (useUiTransientStore().busy) return
         activeTab.value = index
         await selectTab(index)
     }
@@ -192,6 +195,7 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     async function openPath(path: string) {
+        if (useUiTransientStore().busy) return
         addTab(await window.api.openPath(path))
     }
 

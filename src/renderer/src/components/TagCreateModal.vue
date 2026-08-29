@@ -61,7 +61,7 @@
         error.value = ''
         try {
             const text = annotated.value ? message.value.trim() : ''
-            await window.api.createTag(trimmed, props.commit.hash, text || undefined)
+            await useUiTransientStore().withBusy(() => window.api.createTag(trimmed, props.commit.hash, text || undefined), 'Creating tag…')
             await repoStore.refresh()
             notify(`Tag ${trimmed} created`, 'success')
             emit('close')
