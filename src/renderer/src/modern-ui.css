@@ -637,8 +637,9 @@ body {
     content: '';
     position: absolute;
     inset: 2px 6px 2px var(--graph-w, 64px);
+    margin-left: 4px;
     background: var(--row-tint);
-    border-radius: 999px;
+    border-radius: 6px;
     opacity: 0;
     z-index: -1;
     transition: opacity 0.12s ease;
@@ -649,6 +650,13 @@ body {
 .graph-row.selected::after,
 .graph-row.drop-target::after {
     opacity: 1;
+}
+
+/* hover/selected highlight takes the commit's lane colour instead of the
+   neutral grey; selected keeps it while the row stays picked */
+.graph-row:hover::after,
+.graph-row.selected::after {
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 16%, transparent);
 }
 
 /* graph edges: thick core over a soft glow halo; merge edges are solid elbows that
