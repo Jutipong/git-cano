@@ -2503,6 +2503,28 @@ body {
     scrollbar-width: auto;
     scrollbar-color: auto;
 }
+/* keep the +/- marker out of the digit column so all line numbers align —
+   the .ln gutter is position:sticky, so the marker can sit absolutely in its
+   right padding zone while the digits stay right-aligned across every line */
+.diff-body.split .diff-line.add .ln::after,
+.diff-body.split .diff-line.del .ln::after {
+    position: absolute;
+    top: 0;
+    right: 3px;
+    margin-left: 0;
+}
+
+/* roomier gutter: a wider column gives digits and the +/- marker each their
+   own space instead of the marker crowding the digits */
+.diff-line .ln {
+    width: 44px;
+    flex: 0 0 44px;
+    padding-right: 16px;
+}
+.diff-body:not(.split) .diff-line .ln:nth-of-type(2) {
+    left: 44px;
+}
+
 /* the minimap is the single vertical position indicator — width: 0 hides the
    vertical scrollbar while height keeps the horizontal one for wide lines.
    (::-webkit-scrollbar:vertical is NOT supported by modern Chromium — the
