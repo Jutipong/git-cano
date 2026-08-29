@@ -2114,3 +2114,24 @@ body {
     color: var(--text-muted);
     font-size: 11px;
 }
+
+/* AUTHOR + DATE columns: keep the full date on a single line, data hugs the
+   right edge of the column while the header label sits centered over it */
+.graph-author-header,
+.commit-author {
+    width: 140px;
+    flex: 0 0 140px;
+}
+.graph-date-header,
+.commit-date {
+    width: 110px;
+    flex: 0 0 110px;
+    white-space: nowrap;
+}
+.commit-date {
+    text-align: right;
+}
+.graph-author-header,
+.graph-date-header {
+    text-align: center;
+}

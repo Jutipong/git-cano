@@ -36,7 +36,7 @@
 
     /** author · date chip reuses the commit history DATE column format (ui.commitDateFormat) */
     const commitDateText = computed(() =>
-        props.commitDate ? formatDatePattern(props.commitDate, ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm') : ''
+        props.commitDate ? formatDatePattern(props.commitDate, ui.commitDateFormat.trim() || 'dd/MM/yyyy') : ''
     )
 
     /** Copy the full commit hash (only the 7-char short hash is displayed) */

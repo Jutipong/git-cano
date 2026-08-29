@@ -36,7 +36,7 @@
                 <strong>Error</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn danger"
+                    class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
                     <i-lucide-x
@@ -52,6 +52,9 @@
                     ref="closeBtn"
                     class="btn primary"
                     @click="emit('close')">
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
                     Close
                 </button>
             </div>

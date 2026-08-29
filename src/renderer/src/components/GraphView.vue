@@ -190,7 +190,7 @@
         return formatShortDate(iso)
     }
     // DATE column honours the user's token pattern; blank input falls back to the default
-    const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
+    const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy')
     // pick a readable text colour on the solid chip fill (non-hex like "var(--orange)" → light)
     function contrastText(hex: string): string {
         if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#f5f7fa'

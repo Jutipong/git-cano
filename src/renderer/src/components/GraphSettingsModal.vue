@@ -14,7 +14,7 @@
         { key: 'date', label: 'Date', hint: 'Commit date' },
     ]
 
-    const DEFAULT_DATE_FORMAT = 'dd/MM/yyyy HH:mm'
+    const DEFAULT_DATE_FORMAT = 'dd/MM/yyyy'
 
     const visibleCount = computed(() => COLUMNS.filter(column => ui.commitColumns[column.key]).length)
 
@@ -45,7 +45,7 @@
                 <strong>Commit history settings</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn danger"
+                    class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
                     <i-lucide-x
@@ -87,13 +87,20 @@
             <div class="graph-settings-actions">
                 <button
                     class="btn small"
+                    title="Restore default columns and date format"
                     @click="ui.resetCommitColumns()">
+                    <i-lucide-rotate-ccw
+                        width="13"
+                        height="13" />
                     Reset to defaults
                 </button>
                 <span class="spacer" />
                 <button
                     class="btn primary small"
                     @click="emit('close')">
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
                     Done
                 </button>
             </div>

@@ -53,6 +53,9 @@ Key files:
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
   `12px` radius; rows/buttons use pill (`999px`) shapes.
+- **Close (✕) buttons** always use the `.icon-btn danger commit-close-btn` style (red outline +
+  tinted background, hover intensifies — see `.commit-close-btn` in `styles.css`). Reuse that
+  class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
 
 ## Feedback: toasts & error dialog
 
