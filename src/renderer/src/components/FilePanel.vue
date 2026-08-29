@@ -365,6 +365,7 @@
                     >
                 </span>
                 <button
+                    v-if="mode === 'workdir'"
                     class="view-toggle refresh-btn"
                     title="Refresh changes"
                     :disabled="pending"
