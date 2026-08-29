@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { formatCommitDate } from '../utils/format'
+    import { formatDatePattern } from '../utils/format'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { confirmDialog } from '../utils/confirm'
 
@@ -33,6 +33,20 @@
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
     const pending = ref(false)
+
+    /** author · date chip reuses the commit history DATE column format (ui.commitDateFormat) */
+    const commitDateText = computed(() =>
+        props.commitDate ? formatDatePattern(props.commitDate, ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm') : ''
+    )
+
+    /** Copy the full commit hash (only the 7-char short hash is displayed) */
+    function copyHash() {
+        if (!props.commitHash) return
+        navigator.clipboard
+            .writeText(props.commitHash)
+            .then(() => notify('Hash copied', 'success'))
+            .catch(() => notify('Copy failed', 'error'))
+    }
 
     const isWorkdir = computed(() => props.mode === 'workdir')
     // untracked files arrive as index='?' (mapped to 'A' in the store) + working_dir='?'.
@@ -735,8 +749,21 @@
             <!-- read-only when viewing an already-committed commit -->
             <div
                 v-if="mode === 'commit' && (commitAuthor || commitDate)"
-                class="readonly-meta">
-                {{ [commitAuthor, commitDate ? formatCommitDate(commitDate) : ''].filter(Boolean).join(' · ') }}
+                class="readonly-meta-row">
+                <span class="readonly-meta readonly-meta-start">
+                    {{ [commitAuthor, commitDateText].filter(Boolean).join(' · ') }}
+                </span>
+                <button
+                    v-if="commitHash"
+                    class="readonly-meta readonly-meta-end"
+                    type="button"
+                    title="Copy commit hash"
+                    @click="copyHash">
+                    <i-lucide-copy
+                        width="10"
+                        height="10" />
+                    {{ commitHash.slice(0, 7) }}
+                </button>
             </div>
             <textarea
                 v-if="mode === 'commit'"

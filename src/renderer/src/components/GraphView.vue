@@ -2,7 +2,10 @@
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
 
     import { useRepoStore } from '../stores/repo'
-    import { formatDateTime, formatShortDate } from '../utils/format'
+    import { useUiStore } from '../stores/ui'
+    import { formatDatePattern, formatShortDate } from '../utils/format'
+
+    import GraphSettingsModal from './GraphSettingsModal.vue'
 
     import type { CommitNode } from '@shared/types'
 
@@ -42,7 +45,9 @@
 
     const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
+    const ui = useUiStore()
     const selectedHash = ref<string | null>(null)
+    const showSettings = ref(false)
     const menu = ref<CommitMenuState | null>(null)
     const dropTargetHash = ref<string | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
@@ -71,7 +76,13 @@
               )
             : props.commits
     )
-    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, 64))
+    // graph lane width collapses to 0 when the GRAPH column is hidden, so the
+    // absolutely-positioned svg (edges + nodes) disappears with the header column
+    const graphW = computed(() =>
+        ui.commitColumns.graph
+            ? Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, 64)
+            : 0
+    )
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
     const totalHeight = computed(() => visibleCommits.value.length * rowH)
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
@@ -178,6 +189,8 @@
     function formatDate(iso: string): string {
         return formatShortDate(iso)
     }
+    // DATE column honours the user's token pattern; blank input falls back to the default
+    const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
     // pick a readable text colour on the solid chip fill (non-hex like "var(--orange)" → light)
     function contrastText(hex: string): string {
         if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#f5f7fa'
@@ -313,6 +326,14 @@
             </label>
             <div class="spacer" />
             <button
+                class="icon-btn graph-settings-btn"
+                title="Commit history settings"
+                @click="showSettings = true">
+                <i-lucide-settings
+                    width="14"
+                    height="14" />
+            </button>
+            <button
                 v-if="props.commitOpen"
                 class="icon-btn danger commit-close-btn"
                 title="Close commit details (show working directory)"
@@ -323,10 +344,21 @@
             </button>
         </div>
         <div class="graph-header">
-            <span :style="{ width: `${graphW}px` }">GRAPH</span>
-            <span class="graph-message-header">COMMIT MESSAGE</span>
-            <span class="graph-author-header">AUTHOR</span>
-            <span class="graph-date-header">DATE</span>
+            <span
+                v-if="ui.commitColumns.graph"
+                :style="{ width: `${graphW}px` }">GRAPH</span>
+            <span
+                v-if="ui.commitColumns.message"
+                class="graph-message-header">COMMIT MESSAGE</span>
+            <span
+                v-if="ui.commitColumns.author"
+                class="graph-author-header">AUTHOR</span>
+            <span
+                v-if="ui.commitColumns.hash"
+                class="graph-hash-header">HASH</span>
+            <span
+                v-if="ui.commitColumns.date"
+                class="graph-date-header">DATE</span>
         </div>
         <div
             ref="scrollEl"
@@ -334,6 +366,7 @@
             @scroll.passive="onScroll">
             <template v-if="totalHeight > 0">
                 <svg
+                    v-if="ui.commitColumns.graph"
                     class="graph-canvas"
                     :width="graphW"
                     :height="totalHeight"
@@ -438,9 +471,12 @@
                     "
                     @dragleave="dropTargetHash = null">
                     <div
+                        v-if="ui.commitColumns.graph"
                         class="graph-cell"
                         :style="{ width: `${graphW}px` }" />
-                    <span class="commit-subject">
+                    <span
+                        v-if="ui.commitColumns.message"
+                        class="commit-subject">
                         <span
                             v-if="commit.refs.length"
                             class="subject-chips">
@@ -481,22 +517,29 @@
                                 @click.stop="toggleMessage(commit.hash)">
                                 <i-lucide-chevron-down
                                     v-if="expandedHash === commit.hash"
-                                    width="12"
-                                    height="12" />
+                                    width="13"
+                                    height="13" />
                                 <i-lucide-chevron-right
                                     v-else
-                                    width="12"
-                                    height="12" />
+                                    width="13"
+                                    height="13" />
                             </button>
                         </span>
                     </span>
-                    <span class="commit-author">
+                    <span
+                        v-if="ui.commitColumns.author"
+                        class="commit-author">
                         <span
                             class="author-avatar"
                             :style="{ '--avatar-color': nameColor(commit.author) }">{{ commit.author.slice(0, 1).toUpperCase() }}</span>
                         <span class="author-name">{{ commit.author }}</span>
                     </span>
-                    <span class="commit-date">{{ formatDateTime(commit.date) }}</span>
+                    <span
+                        v-if="ui.commitColumns.hash"
+                        class="commit-hash">{{ commit.shortHash }}</span>
+                    <span
+                        v-if="ui.commitColumns.date"
+                        class="commit-date">{{ formatDatePattern(commit.date, commitDatePattern) }}</span>
                     <div
                         v-if="expandedHash === commit.hash"
                         class="commit-msg-popover"
@@ -534,5 +577,8 @@
             @revert="commit => emit('revert', commit)"
             @reset-soft="commit => emit('reset-soft', commit)"
             @reset-hard="commit => emit('reset-hard', commit)" />
+        <GraphSettingsModal
+            v-if="showSettings"
+            @close="showSettings = false" />
     </main>
 </template>

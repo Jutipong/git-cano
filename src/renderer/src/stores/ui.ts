@@ -1,5 +1,15 @@
 export type Theme = 'dark' | 'light' | 'dark-simple' | 'dracula'
 
+export type CommitColumn = 'graph' | 'message' | 'author' | 'hash' | 'date'
+
+export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
+    graph: true,
+    message: true,
+    author: true,
+    hash: false,
+    date: true,
+}
+
 export interface ThemeOption {
     value: Theme
     label: string
@@ -29,8 +39,16 @@ export const useUiStore = defineStore(
             remote: true,
             stashes: true,
         })
+        const commitColumns = ref<Record<CommitColumn, boolean>>({ ...COMMIT_COLUMN_DEFAULTS })
+        const commitDateFormat = ref('dd/MM/yyyy HH:mm')
+
         function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {
             sidebarSections.value[key] = !sidebarSections.value[key]
+        }
+
+        function resetCommitColumns() {
+            commitColumns.value = { ...COMMIT_COLUMN_DEFAULTS }
+            commitDateFormat.value = 'dd/MM/yyyy HH:mm'
         }
 
         function setTheme(value: Theme) {
@@ -51,7 +69,10 @@ export const useUiStore = defineStore(
             fileViewMode,
             autoCommit,
             sidebarSections,
+            commitColumns,
+            commitDateFormat,
             toggleSection,
+            resetCommitColumns,
             setTheme,
         }
     },
@@ -65,6 +86,8 @@ export const useUiStore = defineStore(
                 'fileViewMode',
                 'autoCommit',
                 'sidebarSections',
+                'commitColumns',
+                'commitDateFormat',
             ],
         },
     }

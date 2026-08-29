@@ -907,16 +907,34 @@ kbd {
     border-style: dashed;
     cursor: default;
 }
-.readonly-meta {
-    align-self: flex-end;
-    /* cancel the resize handle's extra bottom margin so the chip sits evenly (7px above / 7px below) */
+.readonly-meta-row {
+    /* cancel the resize handle's extra bottom margin so the chips sit evenly (7px above / 7px below) */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     margin-top: -7px;
+}
+.readonly-meta {
+    display: inline-flex;
+    align-items: center;
     padding: 2px 8px;
     color: var(--text-secondary);
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
     font-size: 10.5px;
+}
+.readonly-meta-end {
+    gap: 4px;
+    font-family: 'SF Mono', Menlo, monospace;
+    cursor: pointer;
+    transition: border-color 0.12s ease, color 0.12s ease, background 0.12s ease;
+}
+.readonly-meta-end:hover {
+    color: var(--text);
+    border-color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 8%, transparent);
 }
 .cb-toolbar {
     display: flex;

@@ -8,6 +8,7 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const buildTree: typeof import('./utils/fileTree').buildTree
   const computed: typeof import('vue').computed
@@ -17,6 +18,7 @@ declare global {
   const defineStore: typeof import('pinia').defineStore
   const flattenTree: typeof import('./utils/fileTree').flattenTree
   const formatCommitDate: typeof import('./utils/format').formatCommitDate
+  const formatDatePattern: typeof import('./utils/format').formatDatePattern
   const formatDateTime: typeof import('./utils/format').formatDateTime
   const formatShortDate: typeof import('./utils/format').formatShortDate
   const highlightLine: typeof import('./utils/highlight').highlightLine
@@ -53,7 +55,7 @@ declare global {
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
   // @ts-ignore
-  export type { Theme, ThemeOption } from './stores/ui'
+  export type { Theme, CommitColumn, ThemeOption } from './stores/ui'
   import('./stores/ui')
   // @ts-ignore
   export type { ToastKind, NotifyOptions } from './stores/uiTransient'

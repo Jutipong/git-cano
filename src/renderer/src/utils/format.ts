@@ -18,6 +18,27 @@ export function formatDateTime(value: string): string {
     return `${dd}/${mm}/${date.getFullYear()} ${hh}:${mi}`
 }
 
+/** Token-based date formatting for the commit graph DATE column.
+ *  Tokens: yyyy · yy · MM (month) · dd · HH (24h) · hh (12h) · mm (minutes) · ss · a (AM/PM) */
+export function formatDatePattern(value: string, pattern: string): string {
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const h24 = date.getHours()
+    const tokens: Record<string, string> = {
+        yyyy: String(date.getFullYear()),
+        yy: String(date.getFullYear()).slice(-2),
+        MM: pad(date.getMonth() + 1),
+        dd: pad(date.getDate()),
+        HH: pad(h24),
+        hh: pad(h24 % 12 || 12),
+        mm: pad(date.getMinutes()),
+        ss: pad(date.getSeconds()),
+        a: h24 < 12 ? 'AM' : 'PM',
+    }
+    return pattern.replace(/yyyy|yy|MM|dd|HH|hh|mm|ss|a/g, token => tokens[token] ?? token)
+}
+
 /** Human-friendly commit date: Today/Yesterday/weekday, else absolute date */
 export function formatCommitDate(value: string): string {
     const date = new Date(value)
