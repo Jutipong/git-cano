@@ -350,7 +350,10 @@
         if (!cssW || !stripH) return
         const rows = minimapRows()
         if (!rows.length) return
-        const barH = Math.min(2, stripH / rows.length)
+        // bars always fill the strip — if the drawn area (mapH) were shorter
+        // than the strip, the viewport indicator would shrink/drift out of
+        // sync with the native scrollbar thumb (visible on shorter diffs)
+        const barH = stripH / rows.length
         minimapMapH = barH * rows.length
         const dpr = window.devicePixelRatio || 1
         canvas.width = Math.round(cssW * dpr)

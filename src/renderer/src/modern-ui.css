@@ -2494,3 +2494,37 @@ body {
     border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
     border-radius: 4px;
 }
+
+/* the minimap is the single vertical position indicator — hide the native
+   vertical scrollbar but keep the horizontal one for wide lines.
+   The global `*` scrollbar-width/color rule disables ::-webkit-scrollbar
+   styling, so opt back into it on .diff-body first. */
+.diff-body {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+}
+/* the minimap is the single vertical position indicator — width: 0 hides the
+   vertical scrollbar while height keeps the horizontal one for wide lines.
+   (::-webkit-scrollbar:vertical is NOT supported by modern Chromium — the
+   whole rule would be dropped — so set both axes in one unqualified rule) */
+.diff-body::-webkit-scrollbar {
+    width: 0;
+    height: 10px;
+}
+.diff-body::-webkit-scrollbar-thumb {
+    background: #2b333e;
+    border-radius: 999px;
+}
+:root[data-theme='dark-simple'] .diff-body::-webkit-scrollbar-thumb {
+    background: #2c2f32;
+}
+:root[data-theme='dracula'] .diff-body::-webkit-scrollbar-thumb {
+    background: #44475a;
+}
+:root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
+    background: #c5ced9;
+}
+.diff-body::-webkit-scrollbar-track,
+.diff-body::-webkit-scrollbar-corner {
+    background: transparent;
+}
