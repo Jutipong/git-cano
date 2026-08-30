@@ -64,6 +64,39 @@
     --shadow: rgba(90, 80, 50, 0.18);
 }
 
+:root[data-theme='dark-modern'] {
+    /* VS Code "Dark Modern" (microsoft/vscode theme-defaults dark_modern.json,
+       token colors from its include dark_plus.json). */
+    --canvas: #181818;
+    --surface-0: #181818;
+    --surface-1: #1f1f1f;
+    --surface-2: #222222;
+    --surface-3: #2b2b2b;
+    --surface-hover: #2b2b2b;
+    --surface-selected: #313131;
+    --line: #2b2b2b;
+    --line-soft: rgba(255, 255, 255, 0.09);
+    --text: #cccccc;
+    --text-secondary: #9d9d9d;
+    --text-muted: #868686;
+    --teal: #0078d4;
+    --teal-dark: #026ec1;
+    --blue: #4daafc;
+    --green: #2ea043;
+    --orange: #e2c08d;
+    --red: #f85149;
+    --purple: #c586c0;
+    --yellow: #cca700;
+    --diff-bg: #1f1f1f;
+    --diff-inline-bg: #313131;
+    --toast-bg: #1f1f1f;
+    --toast-border: #2b2b2b;
+    --conflict-bg: #313131;
+    --conflict-border: #616161;
+    --conflict-text: #e2c08d;
+    --shadow: rgba(0, 0, 0, 0.5);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -1718,17 +1751,27 @@ kbd {
     font-size: 11px;
 }
 
-/* Repository tabs */
+/* no outer card: the bar is transparent — the two inner capsules carry the
+   surface treatment instead */
 .tab-bar {
     z-index: 5;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     height: 38px;
     flex: 0 0 38px;
     padding: 0 8px;
-    background: var(--surface-0);
-    border-bottom: 1px solid var(--line-soft);
+}
+/* left group: all repo tabs live inside this single capsule; it owns the
+   overflow so tab overflow scrolls inside the capsule instead of squeezing
+   the trailing actions */
+.tab-group {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border-radius: 999px;
 }
 /* tabs live in their own scroll region so a tab overflow never squeezes the
    trailing actions ("+" and "Open in") — they scroll instead of cramping */
@@ -1762,9 +1805,8 @@ kbd {
     padding: 0 9px;
     color: var(--text-muted);
     background: transparent;
-    border: 1px solid transparent;
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
+    border: none;
+    border-radius: 999px;
     cursor: pointer;
     font-size: 12px;
 }
@@ -1775,7 +1817,6 @@ kbd {
 .repo-tab.active {
     color: var(--text);
     background: var(--surface-2);
-    border-color: var(--line-soft);
 }
 .repo-tab > span {
     flex: 1;
@@ -1809,6 +1850,92 @@ kbd {
     color: var(--text);
     background: var(--surface-hover);
     border-color: var(--line);
+}
+/* search-commits button in the actions group — same shape as tab-new but
+   neutral-coloured (focuses the commit search input) */
+.tab-search {
+    align-self: center;
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    transition:
+        background 0.15s ease,
+        color 0.15s ease,
+        border-color 0.15s ease;
+}
+.tab-search:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+    border-color: var(--line);
+}
+/* repo search: input that expands inside the actions pill + results dropdown */
+.tab-search-input {
+    flex: 0 1 auto;
+    width: 150px;
+    height: 26px;
+    padding: 0 10px;
+    font: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface-0);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    outline: none;
+}
+.tab-search-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    max-height: 260px;
+    padding: 4px;
+    overflow-y: auto;
+}
+.tab-search-result {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    padding: 6px 10px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.tab-search-result:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+.tab-search-result.active {
+    color: var(--text);
+    font-weight: 650;
+}
+.tab-search-result-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.tab-search-empty {
+    padding: 8px 10px;
+    color: var(--text-muted);
+    font-size: 11px;
+}
+/* right group: trailing actions ("+" and "Open in") as a plain button group —
+   no capsule, just the buttons sitting together */
+.tab-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
 }
 
 .graph-load-more {

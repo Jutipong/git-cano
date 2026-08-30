@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import { nextTick } from 'vue'
+
     import OpenInButton from './OpenInButton.vue'
 
     interface Tab {
@@ -16,6 +18,58 @@
 
     const draggingPath = ref<string | null>(null)
     const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
+
+    // repo search: click the 🔍 button → an input expands in the pill, matching
+    // open tabs (case-insensitive substring) show in a dropdown below
+    const searchOpen = ref(false)
+    const searchQuery = ref('')
+    const searchInput = ref<HTMLInputElement | null>(null)
+
+    const searchResults = computed(() => {
+        const query = searchQuery.value.trim().toLowerCase()
+        return props.tabs
+            .map((tab, index) => ({ tab, index }))
+            .filter(({ tab }) => tab.name.toLowerCase().includes(query))
+    })
+
+    function toggleSearch() {
+        if (searchOpen.value) {
+            closeSearch()
+            return
+        }
+        searchOpen.value = true
+        nextTick(() => searchInput.value?.focus())
+    }
+
+    function closeSearch() {
+        searchOpen.value = false
+        searchQuery.value = ''
+    }
+
+    function pickResult(index: number) {
+        emit('select', index)
+        closeSearch()
+    }
+
+    function onSearchKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            event.stopPropagation()
+            closeSearch()
+        } else if (event.key === 'Enter' && searchResults.value.length) {
+            pickResult(searchResults.value[0].index)
+        }
+    }
+
+    function onDocPointerDown(event: PointerEvent) {
+        if (!searchOpen.value) return
+        // clicks inside the actions pill (incl. the toggle button) are handled
+        // by their own handlers — anything outside closes the search
+        if ((event.target as HTMLElement | null)?.closest('.tab-actions')) return
+        closeSearch()
+    }
+
+    onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
+    onUnmounted(() => document.removeEventListener('pointerdown', onDocPointerDown))
 
     function onDragStart(tab: Tab, e: DragEvent) {
         draggingPath.value = tab.path
@@ -53,43 +107,84 @@
     <div
         v-if="tabs.length"
         class="tab-bar">
-        <div class="tab-scroll">
-            <TransitionGroup
-                name="tab"
-                tag="div"
-                class="tab-track">
-                <div
-                    v-for="(tab, index) in tabs"
-                    :key="tab.path"
-                    class="repo-tab"
-                    :class="{ active: index === activeIndex, dragging: tab.path === draggingPath }"
-                    :title="tab.path"
-                    draggable="true"
-                    @dragstart="onDragStart(tab, $event)"
-                    @dragover="onDragOver(index, $event)"
-                    @drop="onDrop($event)"
-                    @dragend="onDragEnd"
-                    @click="emit('select', index)">
-                    <span>{{ tab.name }}</span>
-                    <button
-                        class="icon-btn danger commit-close-btn tab-close"
-                        :title="`Close ${tab.name}`"
-                        @click.stop="emit('close', index)">
-                        <i-lucide-x
-                            width="12"
-                            height="12" />
-                    </button>
-                </div>
-            </TransitionGroup>
+        <div class="tab-group">
+            <div class="tab-scroll">
+                <TransitionGroup
+                    name="tab"
+                    tag="div"
+                    class="tab-track">
+                    <div
+                        v-for="(tab, index) in tabs"
+                        :key="tab.path"
+                        class="repo-tab"
+                        :class="{ active: index === activeIndex, dragging: tab.path === draggingPath }"
+                        :title="tab.path"
+                        draggable="true"
+                        @dragstart="onDragStart(tab, $event)"
+                        @dragover="onDragOver(index, $event)"
+                        @drop="onDrop($event)"
+                        @dragend="onDragEnd"
+                        @click="emit('select', index)">
+                        <span>{{ tab.name }}</span>
+                        <button
+                            class="icon-btn danger commit-close-btn tab-close"
+                            :title="`Close ${tab.name}`"
+                            @click.stop="emit('close', index)">
+                            <i-lucide-x
+                                width="12"
+                                height="12" />
+                        </button>
+                    </div>
+                </TransitionGroup>
+            </div>
         </div>
-        <button
-            class="icon-btn tab-new"
-            title="Open another repository"
-            @click="emit('open-new')">
-            <i-lucide-plus
-                width="15"
-                height="15" />
-        </button>
-        <OpenInButton :path="activePath" />
+        <div class="tab-actions">
+            <button
+                class="icon-btn tab-search"
+                :class="{ open: searchOpen }"
+                title="Search open repositories"
+                @click="toggleSearch">
+                <i-lucide-search
+                    width="15"
+                    height="15" />
+            </button>
+            <input
+                v-if="searchOpen"
+                ref="searchInput"
+                v-model="searchQuery"
+                class="tab-search-input"
+                type="text"
+                placeholder="Search open repos…"
+                @keydown="onSearchKeydown" />
+            <span class="tab-actions-sep" />
+            <OpenInButton :path="activePath" />
+            <span class="tab-actions-sep" />
+            <button
+                class="icon-btn tab-new"
+                title="Open another repository"
+                @click="emit('open-new')">
+                <i-lucide-plus
+                    width="15"
+                    height="15" />
+            </button>
+            <div
+                v-if="searchOpen"
+                class="tab-search-pop">
+                <button
+                    v-for="{ tab, index } in searchResults"
+                    :key="tab.path"
+                    class="tab-search-result"
+                    :class="{ active: index === activeIndex }"
+                    :title="tab.path"
+                    @click="pickResult(index)">
+                    <span class="tab-search-result-name">{{ tab.name }}</span>
+                </button>
+                <div
+                    v-if="!searchResults.length"
+                    class="tab-search-empty">
+                    No matching repository
+                </div>
+            </div>
+        </div>
     </div>
 </template>

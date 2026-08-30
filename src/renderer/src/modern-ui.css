@@ -100,6 +100,75 @@
     background: #444444;
 }
 
+:root[data-theme='dark-modern'] {
+    /* VS Code "Dark Modern" — mirrors the block in styles.css; this file loads
+       after it and overrides the look & feel. */
+    --canvas: #181818;
+    --surface-0: #181818;
+    --surface-1: #1f1f1f;
+    --surface-2: #222222;
+    --surface-3: #2b2b2b;
+    --surface-hover: #2b2b2b;
+    --surface-selected: #313131;
+    --line: #2b2b2b;
+    --line-soft: rgba(255, 255, 255, 0.09);
+    --text: #cccccc;
+    --text-secondary: #9d9d9d;
+    --text-muted: #868686;
+    --teal: #0078d4;
+    --teal-dark: #026ec1;
+    --blue: #4daafc;
+    --green: #2ea043;
+    --orange: #e2c08d;
+    --red: #f85149;
+    --purple: #c586c0;
+    --yellow: #cca700;
+    --diff-bg: #1f1f1f;
+    --diff-inline-bg: #313131;
+    --toast-bg: #1f1f1f;
+    --toast-border: #2b2b2b;
+    --conflict-bg: #313131;
+    --conflict-border: #616161;
+    --conflict-text: #e2c08d;
+    --shadow: rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme='dark-modern'] .tok-comment {
+    color: #6a9955;
+}
+
+:root[data-theme='dark-modern'] .tok-string {
+    color: #ce9178;
+}
+
+:root[data-theme='dark-modern'] .tok-number {
+    color: #b5cea8;
+}
+
+:root[data-theme='dark-modern'] .tok-keyword {
+    color: #569cd6;
+}
+
+:root[data-theme='dark-modern'] .tok-function {
+    color: #dcdcaa;
+}
+
+:root[data-theme='dark-modern'] .tok-param {
+    color: #9cdcfe;
+}
+
+:root[data-theme='dark-modern'] .tok-type {
+    color: #4ec9b0;
+}
+
+:root[data-theme='dark-modern'] .tok-support {
+    color: #4ec9b0;
+}
+
+:root[data-theme='dark-modern'] mark {
+    background: #613214;
+}
+
 /* Modern VS Code-like workbench: panels are raised cards separated by the canvas. */
 body {
     background: var(--canvas);
@@ -171,20 +240,103 @@ body {
     border-color: transparent;
 }
 
+/* no outer card: the bar itself is transparent — only the two inner
+   capsules (tabs group + actions group) carry the surface treatment */
 .tab-bar {
     height: 48px;
     flex-basis: 48px;
-    gap: 4px;
+    gap: 6px;
     padding: 0 8px;
-    background: var(--surface-0);
-    border: 1px solid var(--line-soft);
-    /* Match the panel radius used across the workbench. */
-    border-radius: 12px;
+    background: transparent;
+    border: none;
+    border-radius: 0;
 }
 
-/* repo tabs — inactive tabs are quiet grey pills; the teal "Open in"-style tint
-   is reserved for the active tab. No extra effects (no opacity games, gradient,
-   glow or drag transform). */
+/* grouped tab bar (Telegram-header style): one big capsule wraps all repo
+   tabs — individual tabs are flat segments inside it, the teal tint stays
+   reserved for the active tab. Trailing actions ("+" + "Open in") share one
+   pill of their own, styled like the AI-workflow group. */
+.tab-group {
+    min-height: 34px;
+    padding: 0 6px;
+    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+/* actions group ("+" + "Open in" share one pill, same treatment as the
+   AI-workflow group .cb-ai-group: flat children + thin separator inside) */
+.tab-actions {
+    position: relative;
+    min-height: 34px;
+    gap: 2px;
+    padding: 3px 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+.tab-actions-sep {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 14px;
+    background: var(--line-soft);
+}
+
+/* children go flat inside the shared pill; each keeps its own accent on hover
+   (green for "+", teal for "Open in") */
+.tab-actions .tab-new,
+.tab-actions .tab-search,
+.tab-actions .open-in-btn {
+    background: transparent;
+    border-color: transparent;
+}
+
+.tab-actions .tab-new,
+.tab-actions .tab-search {
+    align-self: center;
+    width: 28px;
+    height: 28px;
+}
+
+.tab-actions .open-in-btn {
+    margin-left: 0;
+    height: 28px;
+}
+
+.tab-actions .tab-new:hover {
+    background: color-mix(in srgb, var(--green) 15%, transparent);
+}
+
+.tab-actions .tab-search:hover,
+.tab-actions .tab-search.open {
+    color: var(--text);
+    background: color-mix(in srgb, var(--text) 10%, transparent);
+}
+
+.tab-actions .open-in-btn:hover {
+    background: color-mix(in srgb, var(--teal) 18%, transparent);
+}
+
+/* repo search: expanding input + results dropdown */
+.tab-search-input:focus {
+    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+}
+
+.tab-search-pop {
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.tab-search-result.active {
+    background: color-mix(in srgb, var(--teal) 10%, transparent);
+}
+
+/* repo tabs — flat quiet segments inside the shared capsule; only the active
+   tab gets its own pill (teal "Open in"-style tint). No extra effects (no
+   opacity games, gradient, glow or drag transform). */
 .repo-tab {
     position: relative;
     max-width: 240px;
@@ -192,8 +344,8 @@ body {
     padding: 0 12px;
     min-height: 28px;
     color: var(--text-muted);
-    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
-    border: 1px solid var(--line-soft);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 999px;
     transition:
         color 0.15s ease,
@@ -208,7 +360,7 @@ body {
 .repo-tab:hover {
     color: var(--text);
     background: var(--surface-hover);
-    border-color: var(--line);
+    border-color: transparent;
 }
 
 .repo-tab.active {
@@ -2484,6 +2636,9 @@ body {
 }
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
     background: #ebe4d5;
+}
+:root[data-theme='dark-modern'] .diff-body::-webkit-scrollbar-thumb {
+    background: #313131;
 }
 .diff-body::-webkit-scrollbar-track,
 .diff-body::-webkit-scrollbar-corner {

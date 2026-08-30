@@ -47,6 +47,10 @@
             .catch((error: unknown) => uiTransient.notify(String(error), 'error'))
     }
 
+    function focusCommitSearch() {
+        document.querySelector<HTMLInputElement>('.commit-search input')?.focus()
+    }
+
     const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
     let refreshTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -97,7 +101,7 @@
             }
             if (event.shiftKey && event.key.toLowerCase() === 'f') {
                 event.preventDefault()
-                document.querySelector<HTMLInputElement>('.commit-search input')?.focus()
+                focusCommitSearch()
             }
             if (event.shiftKey && event.key.toLowerCase() === 'p') {
                 event.preventDefault()

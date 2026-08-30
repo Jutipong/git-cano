@@ -1,4 +1,4 @@
-export type Theme = 'dark-simple' | 'light'
+export type Theme = 'dark-simple' | 'light' | 'dark-modern'
 
 export type CommitColumn = 'author' | 'hash' | 'date'
 // 'graph' and 'message' are not part of this state — they're the commit history
@@ -19,6 +19,7 @@ export interface ThemeOption {
 
 const themeOptions: ThemeOption[] = [
     { value: 'dark-simple', label: 'Simple Dark', description: 'HondryTravis Simple Dark palette', icon: 'moon' },
+    { value: 'dark-modern', label: 'Dark Modern', description: 'VS Code Dark Modern palette', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
 ]
 
@@ -31,7 +32,8 @@ export const useUiStore = defineStore(
         // after this setup function has already executed.
         watchEffect(() => {
             const savedTheme = theme.value as string
-            if (savedTheme !== 'dark-simple' && savedTheme !== 'light') theme.value = 'dark-simple'
+            if (savedTheme !== 'dark-simple' && savedTheme !== 'light' && savedTheme !== 'dark-modern')
+                theme.value = 'dark-simple'
         })
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
