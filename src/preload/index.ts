@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 import type {
     AiConfig,
+    AiProvider,
     AiTestResult,
     BranchInfo,
     CommitDetails,
@@ -144,9 +145,10 @@ const api = {
     ai: {
         getConfig: (): Promise<AiConfig> => call('ai:getConfig'),
         saveConfig: (cfg: AiConfig): Promise<void> => call('ai:saveConfig', cfg),
-        test: (token: string, modelId: string): Promise<AiTestResult> => call('ai:test', token, modelId),
+        test: (provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> =>
+            call('ai:test', provider, token, modelId),
         generateCommitMessage: (): Promise<string> => call('ai:generateCommitMessage'),
-        listModels: (): Promise<GoModel[]> => call('ai:listModels'),
+        listModels: (provider: AiProvider, token: string): Promise<GoModel[]> => call('ai:listModels', provider, token),
     },
 }
 

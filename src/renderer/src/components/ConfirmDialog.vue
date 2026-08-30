@@ -52,8 +52,12 @@
                     class="btn"
                     :class="confirmStore.current.danger ? 'danger' : 'primary'"
                     @click="confirmStore.settle(true)">
+                    <i-lucide-rotate-ccw
+                        v-if="confirmStore.current.confirmIcon === 'reset'"
+                        width="13"
+                        height="13" />
                     <i-lucide-trash2
-                        v-if="confirmStore.current.danger"
+                        v-else-if="confirmStore.current.danger"
                         width="13"
                         height="13" />
                     {{ confirmStore.current.confirmLabel ?? 'Confirm' }}

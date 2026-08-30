@@ -3,7 +3,7 @@
     import Sun from '~icons/lucide/sun'
 
     import type { ToastKind } from '../stores/uiTransient'
-    import type { GoModel } from '@shared/types'
+    import type { AiConfig, AiProvider, AiProviderConfig, GoModel } from '@shared/types'
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, ZOOM_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
 
@@ -25,8 +25,32 @@
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
 
     const ai = useAiStore()
-    const aiToken = ref('')
-    const aiModel = ref('')
+    const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
+        { value: 'opencode-go', label: 'OpenCode Go' },
+        { value: 'openrouter', label: 'OpenRouter' },
+    ]
+    const selectedProvider = ref<AiProvider>('opencode-go')
+    const providerDrafts = reactive<Record<AiProvider, AiProviderConfig>>({
+        'opencode-go': { token: '', modelId: '', models: [] },
+        openrouter: { token: '', modelId: '', models: [] },
+    })
+    const aiToken = computed({
+        get: () => providerDrafts[selectedProvider.value].token,
+        set: value => {
+            const draft = providerDrafts[selectedProvider.value]
+            if (draft.token === value) return
+            draft.token = value
+            draft.modelId = ''
+            draft.models = []
+            modelOptions.value = []
+            connectResult.value = null
+            aiTestResult.value = null
+        },
+    })
+    const aiModel = computed({
+        get: () => providerDrafts[selectedProvider.value].modelId,
+        set: value => (providerDrafts[selectedProvider.value].modelId = value),
+    })
     const aiTesting = ref(false)
     const aiTestResult = ref<{ ok: boolean; message: string } | null>(null)
     const connecting = ref(false)
@@ -45,8 +69,10 @@
         aiLoaded = true
         try {
             await ai.load()
-            aiToken.value = ai.token
-            aiModel.value = ai.modelId
+            selectedProvider.value = ai.config.provider
+            Object.assign(providerDrafts['opencode-go'], ai.config.opencodeGo)
+            Object.assign(providerDrafts.openrouter, ai.config.openrouter)
+            modelOptions.value = [...providerDrafts[selectedProvider.value].models]
         } catch {
         }
     }
@@ -55,22 +81,45 @@
         if (current === 'ai') await loadAiTab()
     })
 
+    watch(selectedProvider, () => {
+        modelOptions.value = [...providerDrafts[selectedProvider.value].models]
+        connectResult.value = null
+        aiTestResult.value = null
+    })
+
+    function currentConfig(): AiConfig {
+        return {
+            provider: selectedProvider.value,
+            opencodeGo: {
+                ...providerDrafts['opencode-go'],
+                models: providerDrafts['opencode-go'].models.map(model => ({ ...model })),
+            },
+            openrouter: {
+                ...providerDrafts.openrouter,
+                models: providerDrafts.openrouter.models.map(model => ({ ...model })),
+            },
+        }
+    }
+
     async function connectProvider() {
         if (!aiToken.value.trim() || connecting.value) return
         connecting.value = true
         connectResult.value = null
         try {
-            const models = await window.api.ai.listModels()
+            const models = await window.api.ai.listModels(selectedProvider.value, aiToken.value.trim())
             if (models.length === 0) {
                 connectResult.value = { ok: false, message: 'Provider returned no models' }
             } else {
                 const seen = new Set<string>()
-                modelOptions.value = models.filter(m => {
+                const uniqueModels = models.filter(m => {
                     if (seen.has(m.id)) return false
                     seen.add(m.id)
                     return true
                 })
-                connectResult.value = { ok: true, message: `Connected — ${models.length} models available` }
+                providerDrafts[selectedProvider.value].models = uniqueModels
+                modelOptions.value = uniqueModels
+                await ai.save(currentConfig())
+                connectResult.value = { ok: true, message: `Loaded — ${uniqueModels.length} models available` }
             }
         } catch (error) {
             connectResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
@@ -84,9 +133,9 @@
         aiTesting.value = true
         aiTestResult.value = null
         try {
-            const result = await window.api.ai.test(aiToken.value.trim(), aiModel.value.trim())
+            const result = await window.api.ai.test(selectedProvider.value, aiToken.value.trim(), aiModel.value.trim())
             aiTestResult.value = result
-            if (result.ok) await ai.save({ token: aiToken.value.trim(), modelId: aiModel.value.trim() })
+            if (result.ok) await ai.save(currentConfig())
         } catch (error) {
             aiTestResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
         } finally {
@@ -96,11 +145,11 @@
 
     async function saveAi() {
         try {
-            await ai.save({ token: aiToken.value.trim(), modelId: aiModel.value.trim() })
+            await ai.save(currentConfig())
             notify('AI settings saved', 'success')
             emit('close')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
     }
 
@@ -108,6 +157,8 @@
         const ok = await confirmDialog({
             message: 'Reset Appearance and Refresh settings to defaults?',
             confirmLabel: 'Reset',
+            danger: true,
+            confirmIcon: 'reset',
         })
         if (!ok) return
         ui.resetGeneral()
@@ -235,7 +286,7 @@
                     <div class="tools-actions tools-reset-row">
                         <span class="spacer" />
                         <button
-                            class="btn small"
+                            class="btn danger small"
                             title="Restore Appearance and Refresh settings to defaults"
                             @click="resetGeneral()">
                             <i-lucide-rotate-ccw
@@ -247,13 +298,36 @@
                 </template>
 
                 <template v-else>
-                    <div class="tools-section">
+                    <div class="tools-section ai-provider-section">
                         <strong class="tools-section-title">
                             <i-lucide-sparkles
                                 width="13"
                                 height="13" />
-                            OpenCode Zen Go
+                            AI Provider
                         </strong>
+                        <label class="ai-field">
+                            <span>Provider</span>
+                            <div class="ai-field-select">
+                                <select v-model="selectedProvider">
+                                    <option
+                                        v-for="option in PROVIDER_OPTIONS"
+                                        :key="option.value"
+                                        :value="option.value">
+                                        {{ option.label }}
+                                    </option>
+                                </select>
+                                <i-lucide-chevron-down
+                                    class="ai-select-caret"
+                                    width="14"
+                                    height="14" />
+                            </div>
+                        </label>
+                    </div>
+
+                    <div
+                        v-if="selectedProvider === 'opencode-go'"
+                        class="tools-section">
+                        <strong class="tools-section-title">OpenCode Go</strong>
                         <p class="tools-section-hint">
                             Generate commit messages from your staged changes. Get a token at
                             <a
@@ -271,7 +345,7 @@
                                     placeholder="opencode token"
                                     autocomplete="off" />
                                 <button
-                                    class="btn primary small"
+                                    class="btn success small"
                                     :disabled="!aiToken.trim() || connecting"
                                     @click="connectProvider()">
                                     <i-lucide-loader-circle
@@ -279,11 +353,11 @@
                                         class="spinning"
                                         width="13"
                                         height="13" />
-                                    <i-lucide-plug-zap
+                                    <i-lucide-download
                                         v-else
                                         width="13"
                                         height="13" />
-                                    {{ connecting ? 'Connecting…' : 'Connect' }}
+                                    {{ connecting ? 'Getting models…' : 'Get models' }}
                                 </button>
                             </div>
                             <span
@@ -293,6 +367,66 @@
                         </label>
                         <label class="ai-field">
                             <span>Model ID</span>
+                            <div class="ai-field-select">
+                                <select v-model="aiModel">
+                                    <option
+                                        v-for="m in modelSelectOptions"
+                                        :key="m.id"
+                                        :value="m.id">
+                                        {{ m.name }}
+                                    </option>
+                                </select>
+                                <i-lucide-chevron-down
+                                    class="ai-select-caret"
+                                    width="14"
+                                    height="14" />
+                            </div>
+                        </label>
+                    </div>
+
+                    <div
+                        v-else
+                        class="tools-section">
+                        <strong class="tools-section-title">OpenRouter</strong>
+                        <p class="tools-section-hint">
+                            Use any model available on OpenRouter. Create an API key at
+                            <a
+                                href="https://openrouter.ai/keys"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="ai-link">openrouter.ai/keys</a>.
+                        </p>
+                        <label class="ai-field">
+                            <span>API key</span>
+                            <div class="ai-token-row">
+                                <input
+                                    v-model="aiToken"
+                                    type="password"
+                                    placeholder="sk-or-v1-..."
+                                    autocomplete="off" />
+                                <button
+                                    class="btn success small"
+                                    :disabled="!aiToken.trim() || connecting"
+                                    @click="connectProvider()">
+                                    <i-lucide-loader-circle
+                                        v-if="connecting"
+                                        class="spinning"
+                                        width="13"
+                                        height="13" />
+                                    <i-lucide-download
+                                        v-else
+                                        width="13"
+                                        height="13" />
+                                    {{ connecting ? 'Getting models…' : 'Get models' }}
+                                </button>
+                            </div>
+                            <span
+                                v-if="connectResult"
+                                class="ai-test-result"
+                                :class="connectResult.ok ? 'ok' : 'err'">{{ connectResult.message }}</span>
+                        </label>
+                        <label class="ai-field">
+                            <span>Model</span>
                             <div class="ai-field-select">
                                 <select v-model="aiModel">
                                     <option

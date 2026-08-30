@@ -3,6 +3,7 @@ export interface ConfirmOptions {
     message: string
     confirmLabel?: string
     danger?: boolean
+    confirmIcon?: 'reset' | 'delete'
 }
 
 export interface ConfirmRequest extends ConfirmOptions {

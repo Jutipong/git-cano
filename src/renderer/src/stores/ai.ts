@@ -1,22 +1,29 @@
+import type { AiConfig } from '@shared/types'
+
 export const useAiStore = defineStore('ai', () => {
-    const token = ref('')
-    const modelId = ref('')
+    const config = ref<AiConfig>({
+        provider: 'opencode-go',
+        opencodeGo: { token: '', modelId: '', models: [] },
+        openrouter: { token: '', modelId: '', models: [] },
+    })
+    const provider = computed(() => config.value.provider)
+    const activeConfig = computed(() => (provider.value === 'opencode-go' ? config.value.opencodeGo : config.value.openrouter))
+    const token = computed(() => activeConfig.value.token)
+    const modelId = computed(() => activeConfig.value.modelId)
     const configured = computed(() => token.value.trim() !== '' && modelId.value.trim() !== '')
 
     async function load() {
         try {
             const cfg = await window.api.ai.getConfig()
-            token.value = cfg.token
-            modelId.value = cfg.modelId
+            config.value = cfg
         } catch {
         }
     }
 
-    async function save(cfg: { token: string; modelId: string }) {
+    async function save(cfg: AiConfig) {
         await window.api.ai.saveConfig(cfg)
-        token.value = cfg.token
-        modelId.value = cfg.modelId
+        config.value = cfg
     }
 
-    return { token, modelId, configured, load, save }
+    return { config, provider, token, modelId, configured, load, save }
 })

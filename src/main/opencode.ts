@@ -3,7 +3,7 @@ import * as path from 'node:path'
 
 import { app } from 'electron'
 
-import type { AiConfig, AiTestResult, GoModel } from '@shared/types'
+import type { AiConfig, AiProvider, AiProviderConfig, AiTestResult, GoModel } from '@shared/types'
 
 import { toGoModel } from '@shared/models'
 
@@ -12,6 +12,8 @@ import { log } from './logger'
 
 const BASE_URL = 'https://opencode.ai/zen/go/v1'
 const GO_MODELS_URL = `${BASE_URL}/models`
+const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
+const OPENROUTER_MODELS_URL = `${OPENROUTER_BASE_URL}/models`
 const CONFIG_FILE = 'opencode.json'
 
 type Family = 'chat' | 'messages' | 'responses'
@@ -22,18 +24,52 @@ function configPath(): string {
 
 export function getConfig(): AiConfig {
     try {
-        const raw = JSON.parse(fs.readFileSync(configPath(), 'utf8')) as Partial<AiConfig>
+        const raw = JSON.parse(fs.readFileSync(configPath(), 'utf8')) as Partial<AiConfig> & AiProviderConfig
+        const provider = raw.provider === 'openrouter' ? raw.provider : 'opencode-go'
+        const hasLegacyConfig = typeof raw.token === 'string' || typeof raw.modelId === 'string'
+        const clean = (value: unknown): AiProviderConfig => {
+            const cfg = value && typeof value === 'object' ? (value as Partial<AiProviderConfig>) : {}
+            return {
+                token: typeof cfg.token === 'string' ? cfg.token : '',
+                modelId: typeof cfg.modelId === 'string' ? cfg.modelId : '',
+                models: Array.isArray(cfg.models)
+                    ? cfg.models.filter(
+                          model =>
+                              model &&
+                              typeof model === 'object' &&
+                              typeof model.id === 'string' &&
+                              typeof model.name === 'string'
+                      )
+                    : [],
+            }
+        }
         return {
-            token: typeof raw.token === 'string' ? raw.token : '',
-            modelId: typeof raw.modelId === 'string' ? raw.modelId : '',
+            provider,
+            opencodeGo: clean(raw.opencodeGo ?? (hasLegacyConfig ? raw : undefined)),
+            openrouter: clean(raw.openrouter),
         }
     } catch {
-        return { token: '', modelId: '' }
+        return {
+            provider: 'opencode-go',
+            opencodeGo: { token: '', modelId: '', models: [] },
+            openrouter: { token: '', modelId: '', models: [] },
+        }
     }
 }
 
 export function saveConfig(cfg: AiConfig): void {
-    const clean = { token: String(cfg.token ?? ''), modelId: String(cfg.modelId ?? '') }
+    const cleanProvider = (value: AiProviderConfig | undefined): AiProviderConfig => ({
+        token: String(value?.token ?? ''),
+        modelId: String(value?.modelId ?? ''),
+        models: Array.isArray(value?.models)
+            ? value.models.filter(model => typeof model?.id === 'string' && typeof model.name === 'string')
+            : [],
+    })
+    const clean: AiConfig = {
+        provider: cfg.provider === 'openrouter' ? 'openrouter' : 'opencode-go',
+        opencodeGo: cleanProvider(cfg.opencodeGo),
+        openrouter: cleanProvider(cfg.openrouter),
+    }
     const file = configPath()
     fs.writeFileSync(file, JSON.stringify(clean, null, 2))
     try {
@@ -117,6 +153,7 @@ function extractContent(family: Family, json: unknown): string {
 }
 
 async function callModel(
+    provider: AiProvider,
     token: string,
     modelId: string,
     systemPrompt: string,
@@ -124,17 +161,20 @@ async function callModel(
     opts: { maxTokens?: number; timeoutMs?: number; allowEmpty?: boolean } = {}
 ): Promise<string> {
     const { maxTokens = 1024, timeoutMs = 60_000, allowEmpty = false } = opts
-    const family = familyOf(modelId)
+    const family = provider === 'openrouter' ? 'chat' : familyOf(modelId)
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     let res: Response
     try {
-        res = await fetch(endpointOf(family), {
+        const baseUrl = provider === 'openrouter' ? OPENROUTER_BASE_URL : BASE_URL
+        const endpoint = provider === 'openrouter' ? `${baseUrl}/chat/completions` : endpointOf(family)
+        res = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'content-type': 'application/json',
                 authorization: `Bearer ${token}`,
                 ...(family === 'messages' ? { 'x-api-key': token } : {}),
+                ...(provider === 'openrouter' ? { 'HTTP-Referer': 'https://github.com/jutipong/open-git', 'X-Title': 'Open Git' } : {}),
             },
             body: JSON.stringify(buildBody(family, modelId, systemPrompt, userPrompt, maxTokens)),
             signal: controller.signal,
@@ -166,12 +206,12 @@ async function callModel(
     return content
 }
 
-export async function testConnection(token: string, modelId: string): Promise<AiTestResult> {
+export async function testConnection(provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> {
     const cleanToken = String(token ?? '').trim()
     const cleanModel = String(modelId ?? '').trim()
     if (!cleanToken || !cleanModel) return { ok: false, message: 'Enter both a token and a model-id first' }
     try {
-        await callModel(cleanToken, cleanModel, '', 'ping', { maxTokens: 64, timeoutMs: 30_000, allowEmpty: true })
+        await callModel(provider, cleanToken, cleanModel, '', 'ping', { maxTokens: 64, timeoutMs: 30_000, allowEmpty: true })
         log('info', 'ai', `test ok (${cleanModel})`)
         return { ok: true, message: 'Connected — token & model are valid' }
     } catch (err) {
@@ -207,11 +247,12 @@ function stripFences(text: string): string {
 
 export async function generateCommitMessage(): Promise<string> {
     const cfg = getConfig()
-    if (!cfg.token || !cfg.modelId) throw new Error('No AI configured — set your OpenCode token and model-id in Settings first')
+    const active = cfg.provider === 'openrouter' ? cfg.openrouter : cfg.opencodeGo
+    if (!active.token || !active.modelId) throw new Error(`No AI configured — set your ${cfg.provider === 'openrouter' ? 'OpenRouter API key' : 'OpenCode token'} and model-id in Settings first`)
     const changes = await getChangesContext()
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
-    const content = await callModel(cfg.token, cfg.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 200 })
+    const content = await callModel(cfg.provider, active.token, active.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 200 })
     return stripFences(content).slice(0, 2500)
 }
 
@@ -250,7 +291,18 @@ const FALLBACK_MODELS = [
     'muse-spark-1.2-contributor',
 ]
 
-export async function listGoModels(): Promise<GoModel[]> {
+export async function listModels(provider: AiProvider, token: string): Promise<GoModel[]> {
+    if (provider === 'openrouter') {
+        const cleanToken = String(token ?? '').trim()
+        if (!cleanToken) throw new Error('Enter an OpenRouter API key first')
+        const res = await fetch(OPENROUTER_MODELS_URL, { headers: { authorization: `Bearer ${cleanToken}` } })
+        if (!res.ok) throw new Error(extractErrorDetail(await res.text().catch(() => ''), res.status))
+        const json = (await res.json().catch(() => null)) as { data?: { id?: unknown; name?: unknown }[] } | null
+        if (!Array.isArray(json?.data)) return []
+        return json.data
+            .filter(model => typeof model.id === 'string')
+            .map(model => ({ id: model.id as string, name: typeof model.name === 'string' ? model.name : model.id as string }))
+    }
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)
     try {

@@ -91,7 +91,7 @@ import {
     addIgnoreRule,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
-import { generateCommitMessage, getConfig, listGoModels, saveConfig, testConnection } from './opencode'
+import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
 let win: BrowserWindow | null = null
 
@@ -600,12 +600,14 @@ app.whenReady().then(() => {
 
     handleSensitive('ai:getConfig', () => getConfig())
     handleSensitive('ai:saveConfig', (_cfg: unknown) => saveConfig(_cfg as never))
-    handleSensitive('ai:test', (token: string, modelId: string) => testConnection(token as string, modelId as string))
+    handleSensitive('ai:test', (provider: string, token: string, modelId: string) =>
+        testConnection(provider as 'opencode-go' | 'openrouter', token as string, modelId as string)
+    )
     handleSensitive('ai:generateCommitMessage', () => {
         requireRepo()
         return generateCommitMessage()
     })
-    handle('ai:listModels', () => listGoModels())
+    handleSensitive('ai:listModels', (provider: string, token: string) => listModels(provider as 'opencode-go' | 'openrouter', token as string))
 
     createWindow()
 

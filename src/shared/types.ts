@@ -131,9 +131,18 @@ export interface BlameLine {
     content: string
 }
 
-export interface AiConfig {
+export type AiProvider = 'opencode-go' | 'openrouter'
+
+export interface AiProviderConfig {
     token: string
     modelId: string
+    models: GoModel[]
+}
+
+export interface AiConfig {
+    provider: AiProvider
+    opencodeGo: AiProviderConfig
+    openrouter: AiProviderConfig
 }
 
 export interface AiTestResult {
