@@ -673,18 +673,11 @@ kbd {
     letter-spacing: 0.2px;
     white-space: nowrap;
 }
-.graph-header-actions {
-    /* fixed box (settings + close) so header columns stay aligned with the
-       rows below regardless of commit mode — rows reserve the same 52px;
-       buttons hug the right edge so a single visible button sits flush */
+.graph-graph-header {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
-    gap: 2px;
-    flex: 0 0 52px;
-}
-.graph-header-actions .commit-close-btn {
-    margin-left: 0;
+    justify-content: center;
+    gap: 4px;
 }
 .graph-author-header {
     width: 120px;
@@ -711,11 +704,11 @@ kbd {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 590px;
+    min-width: 0;
     height: 28px;
-    /* matches the header's trailing chrome (12px pad + 12px gap + 52px actions)
-       so AUTHOR/HASH/DATE line up with the header columns */
-    padding-right: 76px;
+    /* match the header's horizontal padding so every column starts and ends
+       on the same track now that the trailing actions are gone */
+    padding: 0 12px;
     border-bottom: 1px solid rgba(155, 169, 191, 0.06);
     cursor: pointer;
 }
@@ -876,6 +869,9 @@ kbd {
 }
 .panel-heading-title svg {
     color: var(--teal);
+}
+.panel-heading-title .commit-close-btn {
+    margin-left: 0;
 }
 .panel-count {
     min-width: 20px;

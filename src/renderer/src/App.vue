@@ -231,7 +231,6 @@
                             :has-more="hasMore"
                             :commit-open="!!selectedCommit"
                             @select-commit="selectedCommit = $event"
-                            @close-commit="selectedCommit = null"
                             @load-more="repoStore.loadMore()"
                             @checkout="checkoutCommit"
                             @create-branch="createBranchAt"
@@ -258,7 +257,8 @@
                             :refresh="repoStore.refresh"
                             @select="selectedFile = $event"
                             @show-history="historyFile = $event"
-                            @show-blame="blameFile = $event" />
+                            @show-blame="blameFile = $event"
+                            @close-commit="selectedCommit = null" />
                     </div>
                 </div>
             </div>

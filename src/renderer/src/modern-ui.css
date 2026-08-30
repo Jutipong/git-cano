@@ -2515,15 +2515,20 @@ body {
     width: var(--author-w, 140px);
     flex: 0 1 var(--author-w, 140px);
 }
+.commit-author {
+    justify-content: center;
+    text-align: center;
+}
 .graph-date-header,
 .commit-date {
     width: var(--date-w, 110px);
     flex: 0 0 var(--date-w, 110px);
+    text-align: center;
     white-space: nowrap;
 }
 .graph-author-header,
 .graph-date-header {
-    text-align: left;
+    text-align: center;
 }
 .graph-hash-header,
 .commit-hash {

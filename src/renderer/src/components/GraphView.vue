@@ -18,7 +18,6 @@
     const props = defineProps<Props>()
     const emit = defineEmits<{
         (e: 'select-commit', commit: CommitNode): void
-        (e: 'close-commit'): void
         (e: 'load-more'): void
         (e: 'checkout', commit: CommitNode): void
         (e: 'create-branch', commit: CommitNode): void
@@ -77,8 +76,11 @@
             : props.commits
     )
     // graph lane width: the graph column is always shown, so the absolutely-
-    // positioned svg (edges + nodes) is always laid out at its full lane width
-    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, 64))
+    // positioned svg (edges + nodes) is always laid out at its full lane width.
+    // min 120px so the header's ⚙ + "GRAPH" label fit inside the column without
+    // spilling into COMMIT MESSAGE (both header cell and row cells use graphW)
+    const GRAPH_MIN_W = 120
+    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W))
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
     const totalHeight = computed(() => visibleCommits.value.length * rowH)
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
@@ -216,7 +218,9 @@
         for (const date of new Set(visibleCommits.value.map(commit => formatDatePattern(commit.date, commitDatePattern.value)))) {
             widest = Math.max(widest, measureText(date, 11))
         }
-        return Math.round(Math.max(DATE_MIN_W, widest + 8))
+        // cap hard: a formatted date is never wider than ~130px, so a bad
+        // measurement can never leave a big hole at the right edge
+        return Math.round(Math.min(130, Math.max(DATE_MIN_W, widest + 8)))
     })
     const hashW = computed(() => {
         const sample = visibleCommits.value[0]?.shortHash ?? 'abcdef12345'
@@ -341,7 +345,19 @@
         <div
             class="graph-header"
             :class="{ 'commit-mode': props.commitOpen }">
-            <span :style="{ width: `${graphW}px` }">GRAPH</span>
+            <span
+                class="graph-graph-header"
+                :style="{ width: `${graphW}px` }">
+                <button
+                    class="icon-btn graph-settings-btn"
+                    title="Commit history settings"
+                    @click="showSettings = true">
+                    <i-lucide-settings
+                        width="14"
+                        height="14" />
+                </button>
+                GRAPH
+            </span>
             <span class="graph-message-header">
                 COMMIT MESSAGE
                 <span class="commit-count">{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
@@ -372,26 +388,6 @@
             <span
                 v-if="ui.commitColumns.date"
                 class="graph-date-header">DATE</span>
-            <span class="graph-header-actions">
-                <button
-                    v-if="!props.commitOpen"
-                    class="icon-btn graph-settings-btn"
-                    title="Commit history settings"
-                    @click="showSettings = true">
-                    <i-lucide-settings
-                        width="14"
-                        height="14" />
-                </button>
-                <button
-                    v-if="props.commitOpen"
-                    class="icon-btn danger commit-close-btn"
-                    title="Close commit details (show working directory)"
-                    @click="emit('close-commit')">
-                    <i-lucide-x
-                        width="14"
-                        height="14" />
-                </button>
-            </span>
         </div>
         <div
             ref="scrollEl"

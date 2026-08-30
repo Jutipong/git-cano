@@ -29,6 +29,7 @@
         (e: 'select', sel: { path: string; staged: boolean } | null): void
         (e: 'show-history', path: string): void
         (e: 'show-blame', path: string): void
+        (e: 'close-commit'): void
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
@@ -346,7 +347,18 @@
             class="panel-heading"
             :class="{ 'commit-mode': mode === 'commit' }">
             <div class="panel-heading-title">
+                <!-- commit mode: the ✕ replaces the file icon — closes commit view -->
+                <button
+                    v-if="mode === 'commit'"
+                    class="icon-btn danger commit-close-btn"
+                    title="Close commit details (show working directory)"
+                    @click="emit('close-commit')">
+                    <i-lucide-x
+                        width="14"
+                        height="14" />
+                </button>
                 <i-lucide-file-diff
+                    v-else
                     width="16"
                     height="16" /><strong>{{ mode === 'commit' ? 'Commit Changes' : 'Changes' }}</strong>
                 <span class="panel-file-num">{{ fileCount }}</span>
