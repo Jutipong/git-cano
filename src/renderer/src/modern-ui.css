@@ -180,9 +180,11 @@ body {
 }
 
 .tab-bar {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 6px minmax(0, 1fr) 6px var(--right-panel-width);
     height: 48px;
     flex-basis: 48px;
-    gap: 6px;
+    gap: 0;
     /* no horizontal padding — capsule edges align with the panels below (.app padding: 6px) */
     padding: 0;
     background: transparent;
@@ -191,7 +193,9 @@ body {
 }
 
 .tab-group {
+    grid-column: 3;
     min-height: 34px;
+    width: 100%;
     padding: 0 6px;
     background: color-mix(in srgb, var(--surface-2) 45%, transparent);
     border: 1px solid var(--line-soft);
@@ -199,7 +203,13 @@ body {
 }
 
 .tab-actions {
+    grid-column: 1;
     position: relative;
+    justify-self: start;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 0;
     min-height: 34px;
     gap: 2px;
     padding: 0 4px;
@@ -249,11 +259,13 @@ body {
 }
 
 .tab-sync-actions {
+    grid-column: 5;
     display: flex;
     align-items: center;
     gap: 2px;
     min-height: 34px;
-    min-width: 350px;
+    width: 100%;
+    min-width: 360px;
     padding: 0 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);

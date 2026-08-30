@@ -29,6 +29,9 @@
     const repo = computed(() => repoStore.repo)
     const conflicts = computed(() => repoStore.conflicts)
 
+    const RIGHT_PANEL_MIN_WIDTH = 360
+    if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
+
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
     const stashCreateOpen = ref(false)
@@ -122,7 +125,7 @@
             if (!resize) return
             const delta = moveEvent.clientX - resize.startX
             if (resize.side === 'left') ui.sidebarWidth = Math.min(380, Math.max(300, resize.startWidth + delta))
-            else ui.rightPanelWidth = Math.min(500, Math.max(346, resize.startWidth - delta))
+            else ui.rightPanelWidth = Math.min(500, Math.max(RIGHT_PANEL_MIN_WIDTH, resize.startWidth - delta))
         }
         const onEnd = () => {
             resizeRef.value = null
@@ -199,7 +202,12 @@
 </script>
 
 <template>
-    <div class="app">
+    <div
+        class="app"
+        :style="{
+            '--sidebar-width': `${ui.sidebarWidth}px`,
+            '--right-panel-width': `${ui.rightPanelWidth}px`,
+        }">
         <template v-if="repo">
             <TabBar
                 :tabs="tabs"

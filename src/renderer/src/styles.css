@@ -786,6 +786,7 @@ kbd {
     flex: 0 0 410px;
     flex-direction: column;
     width: 410px;
+    min-width: 360px;
     min-height: 0;
     background: var(--surface-1);
     border-left: 1px solid var(--line-soft);
