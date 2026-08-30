@@ -1,6 +1,3 @@
-// Renderer-side view of the OpenCode Zen Go config that lives in the main process.
-// `token` is prefilled for editing; the persisted copy is used by main when it
-// actually calls the model API.
 export const useAiStore = defineStore('ai', () => {
     const token = ref('')
     const modelId = ref('')
@@ -12,7 +9,6 @@ export const useAiStore = defineStore('ai', () => {
             token.value = cfg.token
             modelId.value = cfg.modelId
         } catch {
-            /* main not ready / unset — ignore */
         }
     }
 

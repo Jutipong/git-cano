@@ -65,7 +65,6 @@ export default defineConfig({
                 dirs: ['src/components'],
                 dts: 'src/components.d.ts',
                 resolvers: [
-                    // <i-lucide-git-branch /> -> inline SVG component at compile time (zero runtime)
                     IconsResolver({ prefix: 'i', enabledCollections: ['lucide', 'fluent-emoji-flat', 'streamline-flex-color', 'mage'] }),
                 ],
             }),

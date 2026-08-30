@@ -91,7 +91,6 @@ import { generateCommitMessage, getConfig, listGoModels, saveConfig, testConnect
 
 let win: BrowserWindow | null = null
 
-/* forward external repo changes (commits made outside the app) to the renderer */
 onRepoChanged(repoPath => {
     if (win && !win.isDestroyed()) win.webContents.send('repo:changed', repoPath)
 })
@@ -119,8 +118,6 @@ function createWindow(): void {
     }
 }
 
-/* wrap handlers so errors surface as {__error} to the renderer;
- * every call is logged (channel + args + duration + outcome) */
 function handle(channel: string, fn: (...args: never[]) => Promise<unknown> | unknown): void {
     ipcMain.handle(channel, async (_e, ...args) => {
         const started = Date.now()
@@ -136,8 +133,6 @@ function handle(channel: string, fn: (...args: never[]) => Promise<unknown> | un
     })
 }
 
-/* Like handle() but never logs the args — used for channels that carry secrets
- * (the OpenCode token) across the wire. */
 function handleSensitive(channel: string, fn: (...args: never[]) => Promise<unknown> | unknown): void {
     ipcMain.handle(channel, async (_e, ...args) => {
         try {
@@ -155,7 +150,6 @@ function requireRepo(): boolean {
     return true
 }
 
-/* launch external apps (non-git) for the "Open in" tab-bar menu */
 function runCmd(cmd: string, args: string[], cwd: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const child = spawn(cmd, args, { cwd, stdio: 'ignore' })
@@ -167,7 +161,6 @@ function runCmd(cmd: string, args: string[], cwd: string): Promise<void> {
     })
 }
 
-/* known locations of the VS Code `code` CLI on macOS */
 const CODE_CLI_PATHS = [
     '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code',
     '/usr/local/bin/code',
@@ -197,9 +190,6 @@ function openVSCode(dir: string): Promise<void> {
     )
 }
 
-/* client-side error/log forwarding from the renderer (fire-and-forget).
- * registered directly on ipcMain — NOT via handle() so these calls don't
- * get logged themselves */
 const LOG_LEVELS = new Set(['info', 'warn', 'error'])
 ipcMain.on('app:log', (_e, level: string, message: unknown) => {
     const safeLevel = LOG_LEVELS.has(level) ? (level as 'info' | 'warn' | 'error') : 'info'
@@ -208,7 +198,6 @@ ipcMain.on('app:log', (_e, level: string, message: unknown) => {
 
 app.whenReady().then(() => {
     log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.OPEN_GIT_LOG_LEVEL ?? 'auto'})`)
-    /* ---- repo lifecycle ---- */
     handle('repo:pickAndOpen', async () => {
         const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
         if (res.canceled || !res.filePaths[0]) return null
@@ -249,10 +238,8 @@ app.whenReady().then(() => {
         closeRepo(_dir as string | undefined)
         return isOpen()
     })
-    /* ---- open in external apps (tab-bar "Open in" menu) ---- */
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
-    /* ---- log / diff ---- */
     handle('repo:log', (_limit?: number) => {
         requireRepo()
         return getLog(typeof _limit === 'number' ? _limit : 500)
@@ -334,7 +321,6 @@ app.whenReady().then(() => {
         return getCommitFileDiff(hash as string, file as string, typeof context === 'number' ? context : undefined)
     })
 
-    /* ---- staging / commit ---- */
     handle('file:stage', (paths: string[]) => {
         requireRepo()
         return stage(paths as string[])
@@ -368,7 +354,6 @@ app.whenReady().then(() => {
         return commit(message as string)
     })
 
-    /* ---- branches ---- */
     handle('branch:list', () => {
         requireRepo()
         return listBranches()
@@ -402,7 +387,6 @@ app.whenReady().then(() => {
         return pullBranch(name as string)
     })
 
-    /* ---- remotes ---- */
     handle('remote:fetch', () => {
         requireRepo()
         return fetchAll()
@@ -536,7 +520,6 @@ app.whenReady().then(() => {
         return updateSubmodules()
     })
 
-    /* ---- stash ---- */
     handle('stash:list', () => {
         requireRepo()
         return listStashes()
@@ -554,7 +537,6 @@ app.whenReady().then(() => {
         return dropStash(index as number)
     })
 
-    /* recent repos persisted in userData/recent.json */
     handle('recent:list', () => {
         const file = path.join(app.getPath('userData'), 'recent.json')
         try {
@@ -584,7 +566,6 @@ app.whenReady().then(() => {
         return true
     })
 
-    /* ---- AI (OpenCode Zen Go) — see src/main/opencode.ts ---- */
     handleSensitive('ai:getConfig', () => getConfig())
     handleSensitive('ai:saveConfig', (_cfg: unknown) => saveConfig(_cfg as never))
     handleSensitive('ai:test', (token: string, modelId: string) => testConnection(token as string, modelId as string))

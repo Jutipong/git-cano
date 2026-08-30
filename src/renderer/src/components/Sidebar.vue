@@ -83,20 +83,16 @@
             local.value = branches.local
             remote.value = branches.remote
         } catch {
-            /* ignore */
         }
         try {
             tags.value = await window.api.tags()
         } catch {
-            /* ignore */
         }
         try {
-            // ls-remote is a network call — fail silently offline
             const [names, has] = await Promise.all([window.api.remoteTags(), window.api.hasRemote()])
             remoteTagNames.value = names
             hasRemote.value = has
         } catch {
-            /* ignore */
         }
     }
 
@@ -109,7 +105,6 @@
             await loadAll()
             notify(ok, 'success')
         } catch (error) {
-            // failure now shows in the error dialog — don't rely on keyword inference
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
     }
@@ -134,11 +129,9 @@
     function checkoutBranch(name: string) {
         void run(() => window.api.checkout(name), `Checked out ${name}`)
     }
-    /** local branch a remote ref maps to when checked out (remotes/origin/feature → feature) */
     function localNameForRemote(name: string) {
         return name.replace(/^remotes\/[^/]+\//, '')
     }
-    /** true when the remote branch is already checked out as a local branch */
     function isRemoteCurrent(name: string) {
         const target = localNameForRemote(name)
         return local.value.some(b => b.name === target && b.current)
@@ -148,8 +141,6 @@
             notify(`Already on ${localNameForRemote(name)}`, 'error', { asToast: true })
             return
         }
-        // checkout the bare branch name so git DWIMs to a local tracking branch
-        // instead of `git checkout origin/x`, which would detach HEAD
         const target = localNameForRemote(name)
         void run(() => window.api.checkout(target), `Checked out ${target}`)
     }

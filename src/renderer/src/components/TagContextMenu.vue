@@ -7,9 +7,7 @@
         x: number
         y: number
         tag: { name: string; hash: string }
-        /** tag already exists on the remote (checked via ls-remote) */
         onRemote: boolean
-        /** repo has a configured remote to push to */
         canPush: boolean
     }
 

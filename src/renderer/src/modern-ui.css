@@ -1,6 +1,6 @@
 :root,
 :root[data-theme='dark'] {
-    /* Simple Dark palette from github.com/HondryTravis/simple-dark — default theme. */
+
     --canvas: #202124;
     --surface-0: #1f2020;
     --surface-1: #202124;
@@ -32,8 +32,7 @@
 }
 
 :root[data-theme='light'] {
-    /* Simple Light Soft (github.com/HondryTravis/simple-dark) — warm paper,
-       beige raised surfaces, deep blue accents. */
+
     --canvas: #faf5e8;
     --surface-0: #f8f1e3;
     --surface-1: #faf5e8;
@@ -69,8 +68,7 @@
 }
 
 :root[data-theme='dark-modern'] {
-    /* VS Code "Dark Modern" — mirrors the block in styles.css; this file loads
-       after it and overrides the look & feel. */
+
     --canvas: #181818;
     --surface-0: #181818;
     --surface-1: #1f1f1f;
@@ -105,7 +103,6 @@
     background: #613214;
 }
 
-/* Modern VS Code-like workbench: panels are raised cards separated by the canvas. */
 body {
     background: var(--canvas);
 }
@@ -119,7 +116,6 @@ body {
     background: radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--teal) 8%, transparent), transparent 42%), var(--canvas);
 }
 
-/* Right of the sidebar: toolbar + tab bar stacked over graph/changes. */
 .app-main {
     display: flex;
     flex-direction: column;
@@ -176,8 +172,6 @@ body {
     border-color: transparent;
 }
 
-/* no outer card: the bar itself is transparent — only the two inner
-   capsules (tabs group + actions group) carry the surface treatment */
 .tab-bar {
     height: 48px;
     flex-basis: 48px;
@@ -188,10 +182,6 @@ body {
     border-radius: 0;
 }
 
-/* grouped tab bar (Telegram-header style): one big capsule wraps all repo
-   tabs — individual tabs are flat segments inside it, the teal tint stays
-   reserved for the active tab. Trailing actions ("+" + "Open in") share one
-   pill of their own, styled like the AI-workflow group. */
 .tab-group {
     min-height: 34px;
     padding: 0 6px;
@@ -200,8 +190,6 @@ body {
     border-radius: 999px;
 }
 
-/* actions group ("+" + "Open in" share one pill, same treatment as the
-   AI-workflow group .cb-ai-group: flat children + thin separator inside) */
 .tab-actions {
     position: relative;
     min-height: 34px;
@@ -219,8 +207,6 @@ body {
     background: var(--line-soft);
 }
 
-/* children go flat inside the shared pill; each keeps its own accent on hover
-   (green for "+", teal for "Open in") */
 .tab-actions .tab-new,
 .tab-actions .tab-search,
 .tab-actions .open-in-btn {
@@ -254,7 +240,6 @@ body {
     background: color-mix(in srgb, var(--teal) 18%, transparent);
 }
 
-/* repo search: expanding input + results dropdown */
 .tab-search-input:focus {
     border-color: color-mix(in srgb, var(--teal) 45%, transparent);
 }
@@ -270,9 +255,6 @@ body {
     background: color-mix(in srgb, var(--teal) 10%, transparent);
 }
 
-/* repo tabs — flat quiet segments inside the shared capsule; only the active
-   tab gets its own pill (teal "Open in"-style tint). No extra effects (no
-   opacity games, gradient, glow or drag transform). */
 .repo-tab {
     position: relative;
     max-width: 240px;
@@ -311,14 +293,11 @@ body {
     cursor: grabbing;
 }
 
-/* tab ✕ keeps only tab-specific bits (size comes from styles.css, hover reveal) —
-   colours/radius come from the shared .commit-close-btn style */
 .tab-close {
     margin-left: 0;
     transition: opacity 0.15s ease;
 }
 
-/* tab ✕: quiet white icon + ring on every tab, goes red only on hover */
 .repo-tab .tab-close {
     color: var(--text);
     border-color: color-mix(in srgb, var(--text) 40%, transparent);
@@ -343,14 +322,12 @@ body {
     background: color-mix(in srgb, var(--green) 15%, transparent);
 }
 
-/* stash + button: green on hover, mirroring the add-repo (tab-new) button */
 .stash-add-btn:hover {
     color: var(--green);
     border-color: transparent;
     background: color-mix(in srgb, var(--green) 15%, transparent);
 }
 
-/* manage-remotes settings button: primary (teal) on hover */
 .remote-settings-btn:hover {
     color: var(--teal);
     border-color: transparent;
@@ -386,7 +363,7 @@ body {
 }
 
 .app-body {
-    /* The splitter itself provides the card gap; avoid doubling it with flex gap. */
+
     gap: 0;
     margin-top: 6px;
     border: none;
@@ -395,7 +372,7 @@ body {
 }
 
 .diff-overlay {
-    /* floats as its own card over tab bar + sidebar + graph (6px = .app padding) */
+
     top: 6px;
     bottom: 6px;
     left: 6px;
@@ -409,14 +386,10 @@ body {
     border-radius: 0;
 }
 
-/* --- diff header controls: change navigation, view mode, whole file --- */
-
 .icon-btn.active {
     color: var(--teal);
     background: color-mix(in srgb, var(--teal) 12%, transparent);
 }
-
-/* entire-file toggle: default color until active — active turns green via .segmented-btn.active */
 
 .segmented-divider {
     width: 1px;
@@ -432,7 +405,6 @@ body {
     pointer-events: none;
 }
 
-/* change navigation — its own pill, matching the mode group */
 .diff-nav {
     display: flex;
     flex: 0 0 auto;
@@ -453,7 +425,6 @@ body {
     border: 0;
 }
 
-/* "path · source" label in the diff header */
 .diff-source {
     flex: 0 0 auto;
     color: var(--text-muted);
@@ -493,7 +464,6 @@ body {
     background: color-mix(in srgb, var(--green) 14%, transparent);
 }
 
-/* hunk separator between split rows — GitKraken-style hatched gap with range text */
 .split-hunk-separator {
     display: flex;
     box-sizing: border-box;
@@ -519,9 +489,6 @@ body {
     color: var(--text-muted);
 }
 
-/* --- diff noise reduction (GitKraken-style) --- */
-
-/* whitespace-only churn: still visible, but clearly de-emphasized */
 .diff-line.ws-only {
     opacity: 0.45;
 }
@@ -541,7 +508,6 @@ body {
     user-select: none;
 }
 
-/* moved code (deleted + re-added elsewhere, unmodified): purple, not -/+ red/green */
 .diff-line.moved {
     background: color-mix(in srgb, var(--purple) 14%, transparent);
 }
@@ -549,9 +515,6 @@ body {
     color: var(--purple);
 }
 
-/* --- diff look & feel polish --- */
-
-/* tint the sticky number gutter with the row kind, GitKraken-style */
 .diff-line.add .ln {
     color: color-mix(in srgb, var(--green) 60%, var(--text-muted));
     background: color-mix(in srgb, var(--green) 9%, var(--diff-bg));
@@ -563,7 +526,6 @@ body {
     border-right-color: color-mix(in srgb, var(--red) 25%, var(--line-soft));
 }
 
-/* word-level highlight: keep the row tint but make the exact edit pop */
 .diff-line.add mark {
     background: color-mix(in srgb, var(--green) 30%, transparent);
     border-radius: 3px;
@@ -573,7 +535,6 @@ body {
     border-radius: 3px;
 }
 
-/* hatched filler rows: a touch quieter than the whitespace-churn hatch */
 .diff-line.half.blank {
     background: repeating-linear-gradient(
         -45deg,
@@ -582,17 +543,14 @@ body {
     );
 }
 
-/* quiet divider between the old/new panes */
 .split-pane.right {
     border-left: 1px solid var(--line-soft);
 }
 
-/* hover: lift context rows slightly so scanning a hunk is easier */
 .diff-line.ctx:hover {
     background: color-mix(in srgb, var(--text-muted) 7%, transparent);
 }
 
-/* hunk separator: keep the hatch, read the range like metadata */
 .split-hunk-separator pre {
     color: color-mix(in srgb, var(--blue) 55%, var(--text-muted));
     font-style: italic;
@@ -647,7 +605,6 @@ body {
     letter-spacing: 0.75px;
 }
 
-/* file-group counts render as small chips next to the header label */
 .group-header h4 span {
     display: inline-flex;
     align-items: center;
@@ -686,7 +643,6 @@ body {
     background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
 }
 
-/* active (checked-out) local branch row wears the app's primary colour */
 .branch-row.current {
     background: color-mix(in srgb, var(--teal-dark) 24%, var(--surface-1));
 }
@@ -695,7 +651,6 @@ body {
     font-weight: 600;
 }
 
-/* detached HEAD pseudo-branch: "HEAD" in red (matches the graph HEAD chip) + faded hash */
 .branch-row .branch-detached {
     color: var(--red);
     font-weight: 600;
@@ -798,7 +753,6 @@ body {
     background: color-mix(in srgb, var(--surface-0) 72%, var(--surface-1));
 }
 
-/* mode + entire-file + change-nav group — dead-center of the header */
 .diff-header-center {
     position: absolute;
     left: 50%;
@@ -857,7 +811,6 @@ body {
     --row-start: 0px;
 }
 
-/* Keep graph rails and nodes crisp above the row tint. */
 .graph-canvas {
     z-index: 3;
 }
@@ -900,15 +853,11 @@ body {
     opacity: 1;
 }
 
-/* hover/selected highlight takes the commit's lane colour instead of the
-   neutral grey; selected keeps it while the row stays picked */
 .graph-row:hover::after,
 .graph-row.selected::after {
     background: color-mix(in srgb, var(--row-color, var(--teal)) 16%, transparent);
 }
 
-/* graph edges: thick core over a soft glow halo; merge edges are solid elbows that
-   drop onto the parent's lane (GitKraken style) */
 .edge-glow {
     stroke-width: 7;
     stroke-opacity: 0.14;
@@ -926,7 +875,6 @@ body {
     stroke-opacity: 0.9;
 }
 
-/* graph node: selection ring + dot with transition & glow */
 .commit-ring {
     stroke: var(--text);
     stroke-opacity: 0;
@@ -940,8 +888,7 @@ body {
 .commit-ring.selected {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
     filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent));
-    /* dotted ring that flows around the node: 6 rounded dashes fill the full
-       circle, stroke-dashoffset motion makes them travel (6 × 12.57px = 75.4 ≈ 2π×12) */
+
     stroke-linecap: round;
     stroke-dasharray: 6 6.57;
     animation: node-dot-spin 2.2s linear infinite;
@@ -965,8 +912,6 @@ body {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
 }
 
-/* ref chip variants — colour comes from --chip-color (per branch name);
-   local/head = solid, remote = translucent, tag = orange */
 .ref-chip {
     gap: 4px;
     padding: 2px 7px;
@@ -992,7 +937,6 @@ body {
     border-color: color-mix(in srgb, var(--orange) 35%, transparent);
 }
 
-/* highlighted search matches inside the subject */
 .search-hit {
     padding: 0 1px;
     color: inherit;
@@ -1000,7 +944,6 @@ body {
     border-radius: 3px;
 }
 
-/* chevron that expands a commit's full message in the history */
 .msg-toggle {
     display: inline-flex;
     flex: 0 0 auto;
@@ -1028,7 +971,6 @@ body {
     z-index: 30;
 }
 
-/* floating full-message card anchored under the expanded row */
 .commit-msg-popover {
     position: absolute;
     top: calc(100% + 4px);
@@ -1061,7 +1003,6 @@ body {
     word-break: break-word;
 }
 
-/* stash rows hover like branch rows: pill highlight */
 .stash-row {
     margin: 1px 6px;
     padding-left: 9px;
@@ -1077,7 +1018,6 @@ body {
     display: flex;
 }
 
-/* stash create form: card container that separates it from the list */
 .stash-create {
     margin: 4px 6px 10px;
     padding: 10px;
@@ -1087,7 +1027,6 @@ body {
     box-shadow: 0 3px 10px var(--shadow);
 }
 
-/* duplicate-name guard: red border on the message input */
 .stash-create input.input-error,
 .stash-create input.input-error:focus {
     border-color: var(--red);
@@ -1099,14 +1038,12 @@ body {
     font-size: 11px;
 }
 
-/* keep the "time | branch:" meta line on one line */
 .stash-copy span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* stash/tag create form: actions right-aligned, both buttons evenly sized */
 .stash-create-actions {
     justify-content: flex-end;
     margin-top: 12px;
@@ -1145,7 +1082,6 @@ body {
     border-radius: 999px;
 }
 
-/* ahead/behind chip inside the pull/push buttons; inherits each button's accent color */
 .sync-count {
     display: inline-flex;
     align-items: center;
@@ -1166,7 +1102,6 @@ body {
     gap: 6px;
 }
 
-/* group header actions render as small pills instead of plain links */
 .group-header-actions .link-btn {
     padding: 2px 10px;
     color: var(--text-secondary);
@@ -1260,12 +1195,10 @@ body {
     cursor: pointer;
 }
 
-/* AI-generate icon-only button: give the robot emoji a subtle glow */
 .cb-ai-btn [data-icon='fluent-emoji-flat:robot'] {
     filter: drop-shadow(0 0 2.5px color-mix(in srgb, var(--green) 55%, transparent));
 }
 
-/* AI workflow group: robot button + auto-commit checkbox share one pill */
 .cb-ai-group {
     display: inline-flex;
     align-items: center;
@@ -1366,7 +1299,6 @@ body {
     font-size: 11px;
 }
 
-/* global busy overlay: shown while a user-initiated git operation is running */
 .busy-overlay {
     position: fixed;
     inset: 0;
@@ -1391,7 +1323,6 @@ body {
     color: var(--text-secondary);
 }
 
-/* teal highlight that runs around the card's border while the operation runs */
 @property --busy-spin {
     syntax: '<angle>';
     inherits: false;
@@ -1433,7 +1364,6 @@ body {
     opacity: 0.4;
 }
 
-/* dedicated context menu for the STASHES section */
 .stash-menu {
     position: fixed;
     z-index: 50;
@@ -1499,7 +1429,6 @@ body {
     background: var(--line-soft);
 }
 
-/* dedicated context menu for the TAGS section */
 .tag-menu {
     position: fixed;
     z-index: 50;
@@ -1557,7 +1486,6 @@ body {
     background: var(--line-soft);
 }
 
-/* dedicated context menu for graph commits (right-click on a commit row) */
 .commit-menu {
     position: fixed;
     z-index: 50;
@@ -1615,7 +1543,6 @@ body {
     background: var(--line-soft);
 }
 
-/* "Revert main to this commit" hover submenu (soft / hard reset) */
 .commit-menu-wrap {
     position: relative;
 }
@@ -1648,7 +1575,6 @@ body {
     background: var(--surface-hover);
 }
 
-/* dedicated context menu for the LOCAL BRANCHES section */
 .local-branch-menu {
     position: fixed;
     z-index: 50;
@@ -1752,18 +1678,15 @@ body {
     background: var(--line-soft);
 }
 
-/* cloud indicator on tag rows that already exist on the remote */
 .tag-row .tag-remote-ic {
     flex: 0 0 auto;
     color: var(--green);
 }
 
-/* cloud-off: tag not pushed to remote yet */
 .tag-row .tag-remote-ic.off {
     color: var(--text-muted);
 }
 
-/* loader while pushing/deleting a tag on the remote */
 .tag-row .tag-remote-ic.spinning {
     color: var(--orange);
 }
@@ -1784,7 +1707,6 @@ body {
     width: auto;
 }
 
-/* create-tag dialog — compact (base .rebase-modal is 820px, far too wide for this) */
 .tag-modal {
     width: min(360px, 92vw);
 }
@@ -1808,7 +1730,6 @@ body {
     box-shadow: 0 18px 50px var(--shadow);
 }
 
-/* menu rows lay out as flex so the optional leading icon aligns with the label */
 .context-menu-item {
     display: flex;
     align-items: center;
@@ -1819,7 +1740,6 @@ body {
     margin-right: 7px;
 }
 
-/* brand colors for the tab-bar "Open in" icons */
 .context-menu-item .menu-ic-terminal {
     color: #2ea043;
 }
@@ -1828,7 +1748,6 @@ body {
     color: #007acc;
 }
 
-/* accent-toned rows (stash Apply / Pop) */
 .context-menu-item.green {
     color: var(--teal);
 }
@@ -1850,7 +1769,6 @@ body {
     backdrop-filter: blur(3px);
 }
 
-/* dedicated error dialog — errors from catch blocks land here instead of toasts */
 .error-dialog-overlay {
     position: fixed;
     inset: 0;
@@ -1910,7 +1828,6 @@ body {
     border-top: 1px solid var(--line-soft);
 }
 
-/* dedicated confirmation dialog (replaces window.confirm) */
 .confirm-dialog-overlay {
     position: fixed;
     inset: 0;
@@ -1994,7 +1911,7 @@ body {
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
-    /* the stack itself must not block clicks; individual toasts re-enable them */
+
     pointer-events: none;
 }
 
@@ -2011,8 +1928,7 @@ body {
     color: var(--text);
     background: color-mix(in srgb, var(--toast-accent, var(--teal)) 10%, var(--surface-2));
     border: 1px solid color-mix(in srgb, var(--toast-accent, var(--teal)) 40%, transparent);
-    /* 20px = half of the 40px min-height, so a single-line toast still reads as a pill;
-       taller (wrapped) toasts get soft corners instead of a huge curve that clips the close button */
+
     border-radius: 20px;
     box-shadow: 0 12px 40px var(--shadow);
     font-size: 12.5px;
@@ -2023,7 +1939,6 @@ body {
     pointer-events: auto;
 }
 
-/* slide in from / out to the right edge; remaining toasts glide via .toast-move */
 .toast-enter-active,
 .toast-leave-active {
     transition:
@@ -2060,7 +1975,6 @@ body {
     line-height: 1;
 }
 
-/* let long unbroken tokens (file paths, hashes) wrap instead of overflowing the toast */
 .toast-message {
     min-width: 0;
     overflow-wrap: anywhere;
@@ -2132,7 +2046,6 @@ body {
     --toast-accent: var(--teal);
 }
 
-/* action accents — match the sync/stash button colors */
 .toast-fetch {
     --toast-accent: var(--orange);
 }
@@ -2149,7 +2062,6 @@ body {
     --toast-accent: var(--purple);
 }
 
-/* The canvas should remain visible between cards without showing native bright scrollbars. */
 * {
     scrollbar-color: var(--surface-3) transparent;
     scrollbar-width: thin;
@@ -2160,9 +2072,6 @@ body {
     outline-offset: 1px;
 }
 
-/* Full-window splash: covers the workbench while the saved session restores on
-   launch, so the partial init state is never visible. Fades with a slight zoom
-   when `booted` flips to true and the real UI is already rendered beneath. */
 .splash-screen {
     position: fixed;
     inset: 0;
@@ -2271,8 +2180,6 @@ body {
     opacity: 0;
 }
 
-/* ---- commit history settings (gear in the graph header) ---- */
-
 .graph-settings-btn {
     color: var(--text-secondary);
 }
@@ -2322,7 +2229,6 @@ body {
     font-size: 12px;
 }
 
-/* pill checkbox rows, one per history column */
 .graph-settings-row {
     display: flex;
     align-items: center;
@@ -2345,7 +2251,6 @@ body {
     background: none;
 }
 
-/* always-on columns: no checkbox interaction at all — just a static checked box */
 .graph-settings-row.readonly {
     cursor: default;
 }
@@ -2412,7 +2317,6 @@ body {
     border-top: 1px solid var(--line-soft);
 }
 
-/* date-format input shown under the Date checkbox row */
 .graph-settings-format {
     display: flex;
     flex-direction: column;
@@ -2461,9 +2365,6 @@ body {
     font-size: 11px;
 }
 
-/* AUTHOR + DATE columns: widths come from measured content (--author-w /
-   --date-w / --hash-w set on .graph-view) so the right side never wastes
-   space; AUTHOR can shrink further on narrow windows, DATE keeps one line */
 .graph-author-header,
 .commit-author {
     width: var(--author-w, 140px);
@@ -2490,7 +2391,7 @@ body {
     flex: 0 0 var(--hash-w, 70px);
     text-align: center;
 }
-/* beat `.graph-header > span` (flex: 0 0 auto) so headers track the same vars */
+
 .graph-header > .graph-author-header {
     flex: 0 1 var(--author-w, 140px);
 }
@@ -2500,8 +2401,6 @@ body {
 .graph-header > .graph-hash-header {
     flex: 0 0 var(--hash-w, 70px);
 }
-
-/* --- diff minimap (VS Code-style overview strip) --- */
 
 .diff-main {
     display: flex;
@@ -2540,17 +2439,11 @@ body {
     border-radius: 4px;
 }
 
-/* the minimap is the single vertical position indicator — hide the native
-   vertical scrollbar but keep the horizontal one for wide lines.
-   The global `*` scrollbar-width/color rule disables ::-webkit-scrollbar
-   styling, so opt back into it on .diff-body first. */
 .diff-body {
     scrollbar-width: auto;
     scrollbar-color: auto;
 }
-/* keep the +/- marker out of the digit column so all line numbers align —
-   the .ln gutter is position:sticky, so the marker can sit absolutely in its
-   right padding zone while the digits stay right-aligned across every line */
+
 .diff-body.split .diff-line.add .ln::after,
 .diff-body.split .diff-line.del .ln::after {
     position: absolute;
@@ -2559,8 +2452,6 @@ body {
     margin-left: 0;
 }
 
-/* roomier gutter: a wider column gives digits and the +/- marker each their
-   own space instead of the marker crowding the digits */
 .diff-line .ln {
     width: 44px;
     flex: 0 0 44px;
@@ -2570,10 +2461,6 @@ body {
     left: 44px;
 }
 
-/* the minimap is the single vertical position indicator — width: 0 hides the
-   vertical scrollbar while height keeps the horizontal one for wide lines.
-   (::-webkit-scrollbar:vertical is NOT supported by modern Chromium — the
-   whole rule would be dropped — so set both axes in one unqualified rule) */
 .diff-body::-webkit-scrollbar {
     width: 0;
     height: 10px;

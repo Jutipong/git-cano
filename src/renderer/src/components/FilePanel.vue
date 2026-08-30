@@ -35,12 +35,10 @@
     const uiTransient = useUiTransientStore()
     const pending = ref(false)
 
-    /** author · date chip reuses the commit history DATE column format (ui.commitDateFormat) */
     const commitDateText = computed(() =>
         props.commitDate ? formatDatePattern(props.commitDate, ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm') : ''
     )
 
-    /** Copy the full commit hash (only the 7-char short hash is displayed) */
     function copyHash() {
         if (!props.commitHash) return
         navigator.clipboard
@@ -50,9 +48,6 @@
     }
 
     const isWorkdir = computed(() => props.mode === 'workdir')
-    // untracked files arrive as index='?' (mapped to 'A' in the store) + working_dir='?'.
-    // they must NOT count as staged, otherwise they can never leave the Staged group
-    // after "Unstage all" (git reset makes newly-added files untracked again)
     const isUntracked = (file: FileEntry) => file.unstaged === '?'
     const staged = computed(() =>
         isWorkdir.value
@@ -70,7 +65,6 @@
             : []
     )
     const commitFileList = computed(() => (isWorkdir.value ? [] : (props.files as CommitFile[])))
-    // in workdir mode a file can be both staged and unstaged (MM) — count unique paths
     const fileCount = computed(() =>
         isWorkdir.value
             ? new Set((props.files as FileEntry[]).map(file => file.path)).size
@@ -88,12 +82,9 @@
     })
     const ui = useUiStore()
     const ai = useAiStore()
-    // human-readable label for the commit-message model (falls back to the raw id)
     const commitModelName = computed(() => modelName(ai.modelId))
     const message = ref('')
     const repoStore = useRepoStore()
-    // commit drafts belong to a single repo — clear when the active repo changes
-    // so a message typed for one repo can never be committed in another
     watch(
         () => repoStore.repo?.path,
         () => {
@@ -103,7 +94,6 @@
     const menu = ref<{ x: number; y: number; path: string; untracked?: boolean } | null>(null)
     const generating = ref(false)
 
-    // tree view state (collapse dirs; shared across groups so the same folder stays folded)
     const collapsedDirs = reactive(new Set<string>())
     function toggleDir(path: string) {
         if (collapsedDirs.has(path)) collapsedDirs.delete(path)
@@ -170,18 +160,14 @@
             return
         }
         const text = message.value.trim()
-        // keep the draft when the commit fails so the user doesn't lose it
         const ok = await run(() => window.api.commitWithAmend(text, false), 'Committed successfully', 'Committing…')
         if (ok) message.value = ''
     }
 
-    /** Disabled until an OpenCode token + model are configured (Settings → ai)
-     * and there are changes to summarize (staging is NOT required). */
     const canGenerate = computed(
         () => isWorkdir.value && props.files.length > 0 && ai.configured && !pending.value && !generating.value
     )
 
-    /** AI workflow group shows once a token + model-id are configured. */
     const showAiGroup = computed(() => ai.configured)
 
     async function generateMessage() {
@@ -191,8 +177,6 @@
             const generated = (await uiTransient.withBusy(() => window.api.ai.generateCommitMessage(), 'Generating commit message…')).trim()
             message.value = generated
             if (ui.autoCommit && generated) {
-                // no confirmation — checking the auto-commit box IS the user's
-                // explicit intent, so commit straight away (stages EVERYTHING)
                 const ok = await run(
                     async () => {
                         await window.api.stageAll()
@@ -216,7 +200,6 @@
         const startY = event.clientY
         const startH = ui.summaryHeight
         const onMove = (moveEvent: MouseEvent) => {
-            // ลากขึ้น = สูงขึ้น
             ui.summaryHeight = Math.min(480, Math.max(140, startH + (startY - moveEvent.clientY)))
         }
         const onEnd = () => {
@@ -242,7 +225,6 @@
         menu.value = null
     }
 
-    // close the menu on ESC / click-outside (mouseleave stays as a fallback)
     const menuEl = ref<HTMLElement | null>(null)
     function onMenuKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape') menu.value = null
@@ -253,7 +235,6 @@
     watch(menu, open => {
         if (open) {
             window.addEventListener('keydown', onMenuKeydown)
-            // defer so the right-click that opened the menu can't immediately close it
             setTimeout(() => window.addEventListener('mousedown', onMenuMousedown), 0)
         } else {
             window.removeEventListener('keydown', onMenuKeydown)
@@ -334,7 +315,6 @@
         return `b-${status.toLowerCase()}`
     }
 
-    // commit title convention: <=50 ideal, 72 hard cap
     const firstLine = computed(() => message.value.split('\n')[0] ?? '')
     const subjectCountClass = computed(() =>
         firstLine.value.length > 72 ? 'over' : firstLine.value.length > 50 ? 'warn' : ''
@@ -347,7 +327,6 @@
             class="panel-heading"
             :class="{ 'commit-mode': mode === 'commit' }">
             <div class="panel-heading-title">
-                <!-- commit mode: the ✕ replaces the file icon — closes commit view -->
                 <button
                     v-if="mode === 'commit'"
                     class="icon-btn danger commit-close-btn"
@@ -645,7 +624,6 @@
             </template>
             </template>
 
-            <!-- files changed by the selected commit -->
             <template v-else>
                 <template
                     v-for="row in commitRows"
@@ -748,7 +726,6 @@
                 class="cb-resize-handle"
                 title="Drag to resize"
                 @mousedown="startResizeBox" />
-            <!-- AI commit-message generator (working-directory mode only) -->
             <div
                 v-if="mode === 'workdir'"
                 class="cb-toolbar">
@@ -759,7 +736,6 @@
                     Message
                 </span>
             </div>
-            <!-- read-only when viewing an already-committed commit -->
             <div
                 v-if="mode === 'commit' && (commitAuthor || commitDate)"
                 class="readonly-meta-row">

@@ -47,7 +47,6 @@ function loadSavedSession(): { session: PersistedSession; fromLegacy: boolean } 
         const legacy = parsePersistedSession(localStorage.getItem(LEGACY_SESSION_STORAGE_KEY), false)
         if (legacy) return { session: legacy, fromLegacy: true }
     } catch {
-        /* storage unavailable */
     }
     return { session: { paths: [], active: 0 }, fromLegacy: false }
 }
@@ -60,8 +59,6 @@ export const useRepoStore = defineStore('repo', () => {
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
-    // true once the saved session finished restoring on launch — the splash screen
-    // covers the workbench until then so the partial init state is never visible
     const booted = ref(false)
     const commitFiles = ref<CommitFile[]>([])
     const commitMessage = ref('')
@@ -72,23 +69,18 @@ export const useRepoStore = defineStore('repo', () => {
     const session = ref<PersistedSession>(loadedSession.session)
     let legacyMigrationPending = loadedSession.fromLegacy
 
-    // modal states
     const rebaseBase = ref<string | null>(null)
     const historyFile = ref<string | null>(null)
     const blameFile = ref<string | null>(null)
     const toolsOpen = ref(false)
 
-    // hash the graph should scroll+select to (set from sidebar branch clicks)
     const pendingFocusHash = ref<string | null>(null)
 
     const repo = computed<RepoStatus | null>(() => tabs.value[activeTab.value]?.status ?? null)
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
 
-    /** true while init() is restoring the previous session — suppress persistence so a
-     * partially-restored state can never clobber the saved tab list */
     let restoringSession = false
 
-    /** Persist the open-tab session; called only from user actions, never during restore. */
     function syncSession() {
         if (restoringSession) return
         session.value = { paths: tabs.value.map(tab => tab.path), active: activeTab.value }
@@ -99,7 +91,6 @@ export const useRepoStore = defineStore('repo', () => {
                 legacyMigrationPending = false
             }
         } catch {
-            /* storage unavailable — in-memory session still works */
         }
     }
 
@@ -126,8 +117,6 @@ export const useRepoStore = defineStore('repo', () => {
                 window.api.repoState(),
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
-            // drop stale responses: only apply if this repo is still the ACTIVE tab,
-            // otherwise a slow previous-tab reply would clobber the current view
             if (tabs.value[activeTab.value]?.path !== status.path) return
             commits.value = log
             hasMore.value = log.length >= logLimit.value
@@ -167,8 +156,6 @@ export const useRepoStore = defineStore('repo', () => {
         }
         syncSession()
         if (wasActive && remaining.length > 0) {
-            // re-sync the active repo in main — closing the active tab usually keeps the
-            // same numeric index, so the activeTab watcher would never fire on its own
             await selectTab(activeTab.value)
         }
     }
@@ -199,7 +186,6 @@ export const useRepoStore = defineStore('repo', () => {
         addTab(await window.api.openPath(path))
     }
 
-    /** Session restore on launch */
     async function init() {
         restoringSession = true
         let paths: string[] = []
@@ -214,8 +200,6 @@ export const useRepoStore = defineStore('repo', () => {
                     addTab(await window.api.openPath(path))
                     openedCount++
                 } catch {
-                    /* repo moved/deleted — skip (saved session is NOT rewritten,
-                       so transient failures don't lose tabs permanently) */
                 }
             }
             const restoredActive = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
@@ -224,8 +208,6 @@ export const useRepoStore = defineStore('repo', () => {
                 await selectTab(activeTab.value)
             }
         } finally {
-            // persist the restored tabs only when everything opened cleanly;
-            // otherwise keep the saved list so the next launch retries the failures
             const allOpened = paths.length > 0 && paths.every(p => tabs.value.some(tab => tab.path === p))
             restoringSession = false
             booted.value = true
@@ -237,7 +219,6 @@ export const useRepoStore = defineStore('repo', () => {
         logLimit.value += PAGE_SIZE
     }
 
-    // files changed by the selected commit — shown in the Changes panel
     watch(
         () => selectedCommit.value?.hash,
         async hash => {
@@ -255,7 +236,6 @@ export const useRepoStore = defineStore('repo', () => {
                     commitDate.value = details.date
                 }
             } catch {
-                /* ignore — details panel shows its own error */
             }
         },
         { immediate: true }

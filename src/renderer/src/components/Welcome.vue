@@ -14,7 +14,6 @@
         try {
             recent.value = await window.api.recentList()
         } catch {
-            /* ignore */
         }
     })
 

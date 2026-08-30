@@ -5,7 +5,6 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
-    /** the app's fetch/push/tag workflow uses `origin` exclusively (hardcoded in git.ts) */
     const originUrl = ref('')
     const hasOrigin = ref(false)
     const saving = ref(false)
@@ -39,7 +38,6 @@
         }
     }
 
-    /** Save the origin URL — on success the dialog closes (Close = discard, never auto-saves). */
     async function save() {
         const url = originUrl.value.trim()
         if (!url || saving.value) return

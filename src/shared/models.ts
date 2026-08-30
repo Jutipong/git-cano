@@ -1,11 +1,3 @@
-/* ---- OpenCode Zen Go model display names ----
-
- * The live /models endpoint only returns raw ids (OpenAI-style
- * { id, object, created, owned_by }) — the human-readable names come from the
- * Go docs table. Shared between main (listGoModels) and renderer (FilePanel
- * badge) so the dropdown and the commit-message counter can never drift.
- * Unlisted ids fall back to the raw id so the UI never shows a blank label. */
-
 import type { GoModel } from './types'
 
 export const MODEL_NAMES: Record<string, string> = {
@@ -40,12 +32,10 @@ export const MODEL_NAMES: Record<string, string> = {
     'hy3': 'Hy3',
 }
 
-/** Resolve a Go model id to its human-readable label (falls back to the raw id). */
 export function modelName(id: string): string {
     return MODEL_NAMES[id] ?? id
 }
 
-/** Build a dropdown entry for a Go model id. */
 export function toGoModel(id: string): GoModel {
     return { id, name: modelName(id) }
 }

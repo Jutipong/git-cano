@@ -9,7 +9,6 @@
         if (event.key === 'Escape') emit('close')
     }
 
-    // focus the OK button as soon as the dialog mounts
     watch(
         () => props.message,
         message => {

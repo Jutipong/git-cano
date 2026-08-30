@@ -23,11 +23,9 @@ import type {
     WorktreeInfo,
 } from '@shared/types'
 
-/* Multi-repo support: one SimpleGit instance per opened repo, one active at a time */
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 
-/** SimpleGit instance with a debug hook that records every raw git command. */
 function createGit(dir: string): SimpleGit {
     return simpleGit(dir, {
         debug: (data: string) => log('debug', 'git', maskUrl(data)),
@@ -77,7 +75,6 @@ export function closeRepo(dir?: string): void {
     }
 }
 
-/* ---- .git watcher: notify renderer when the repo changes externally ---- */
 const repoWatchers = new Map<string, FSWatcher[]>()
 let repoChangeCallback: ((repoPath: string) => void) | null = null
 const emitTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -93,11 +90,6 @@ function watchRepo(dir: string): void {
     const watchers: FSWatcher[] = []
     const emit = () => emitRepoChanged(dir)
     try {
-        // HEAD/config live at the top level of .git.
-        // `index` is deliberately ignored: every `git status` run rewrites the
-        // index stat-cache, which would fire the watcher and make the renderer
-        // refresh again — an endless self-sustaining refresh loop.
-        // `.lock` files are transient git-internal bookkeeping, same story.
         watchers.push(
             fs.watch(gitDir, (_event, filename) => {
                 const name = typeof filename === 'string' ? filename : ''
@@ -105,10 +97,8 @@ function watchRepo(dir: string): void {
                 emit()
             })
         )
-        // branch refs update on commit/checkout — recursive works on macOS/Windows
         watchers.push(fs.watch(path.join(gitDir, 'refs'), { recursive: true } as never, emit))
     } catch {
-        /* filesystem without fs.watch support — polling fallback still applies */
     }
     repoWatchers.set(dir, watchers)
 }
@@ -124,7 +114,6 @@ function unwatchRepo(dir: string): void {
 }
 
 function emitRepoChanged(dir: string): void {
-    // git writes several files per operation — collapse into one notification
     const existing = emitTimers.get(dir)
     if (existing) clearTimeout(existing)
     emitTimers.set(
@@ -140,8 +129,6 @@ export function isOpen(): boolean {
     return activeRepoPath !== null
 }
 
-/* ---------------- Status ---------------- */
-
 export async function getStatus(): Promise<RepoStatus> {
     const { path: p, git: g } = getRepo()
     const status = await g.status()
@@ -150,7 +137,6 @@ export async function getStatus(): Promise<RepoStatus> {
         staged: f.index === '?' ? 'A' : f.index,
         unstaged: f.working_dir,
     }))
-    // sort: staged first, then unstaged, then untracked — alphabetical within group
     const rank = (f: FileEntry) => (f.staged !== ' ' && f.staged !== '' ? 0 : f.unstaged === '?' ? 2 : 1)
     files.sort((a, b) => rank(a) - rank(b) || a.path.localeCompare(b.path))
 
@@ -162,14 +148,11 @@ export async function getStatus(): Promise<RepoStatus> {
     return { path: p, name: path.basename(p), branch, tracking, ahead, behind, files }
 }
 
-/* ---------------- Binary / image detection ---------------- */
-
 export async function getDiffMeta(file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> {
     const { path: p, git: g } = getRepo()
     const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']
     const ext = path.extname(file).toLowerCase()
     const image = IMAGE_EXTS.includes(ext)
-    // untracked files produce no git diff/numstat — sniff the file on disk instead
     if (!staged && (await isUntracked(g, file))) {
         return { binary: image ? false : isBinaryFile(p, file), image }
     }
@@ -203,7 +186,6 @@ const MIME_BY_EXT: Record<string, string> = {
     '.svg': 'image/svg+xml',
 }
 
-/** Returns a data URL for an image version: workdir | index | head */
 export async function getImageVersion(file: string, source: 'workdir' | 'index' | 'head'): Promise<string | null> {
     const { path: p } = getRepo()
     const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
@@ -222,16 +204,12 @@ export async function getImageVersion(file: string, source: 'workdir' | 'index' 
     }
 }
 
-/* ---------------- Log / Graph ---------------- */
-
 export async function getLog(limit = 500): Promise<CommitNode[]> {
     const { git: g } = getRepo()
     const SEP = '\x1f'
     const REC = '\x1e'
     const fmt = ['%H', '%P', '%h', '%an', '%ad', '%d', '%s', '%b'].join(SEP)
 
-    // --branches/--remotes/--tags instead of --all: --all includes refs/stash, which
-    // renders stash commits (and their long spanning edges) as phantom lines in the graph
     const text = await g.raw(['log', '--branches', '--remotes', '--tags', `--pretty=format:${fmt}${REC}`, '--date=iso', `--max-count=${limit}`, '--'])
 
     const commits: CommitNode[] = []
@@ -265,9 +243,8 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     return commits
 }
 
-/** Assign each commit to a visual lane (classic first-parent lane allocator). */
 function assignLanes(commits: CommitNode[]): void {
-    const lanes: string[] = [] // tip hash per lane
+    const lanes: string[] = []
     for (const c of commits) {
         let idx = lanes.indexOf(c.hash)
         if (idx === -1) {
@@ -278,18 +255,15 @@ function assignLanes(commits: CommitNode[]): void {
         lanes.splice(idx, 1)
 
         c.parents.forEach((parent, i) => {
-            if (!commits.some(x => x.hash === parent)) return // parent beyond log window
+            if (!commits.some(x => x.hash === parent)) return
             const pi = lanes.indexOf(parent)
             if (pi === -1) {
-                if (i === 0)
-                    lanes.splice(idx, 0, parent) // first parent inherits position
+                if (i === 0) lanes.splice(idx, 0, parent)
                 else lanes.push(parent)
             }
         })
     }
 }
-
-/* ---------------- Staging & Commit ---------------- */
 
 export async function stage(paths: string[]): Promise<void> {
     const { git: g } = getRepo()
@@ -303,21 +277,16 @@ export async function stageAll(): Promise<void> {
 
 export async function unstage(paths: string[]): Promise<void> {
     const { git: g } = getRepo()
-    // use rm --cached --ignore-unmatch so it works in fresh repos without HEAD too
     await g.raw(['rm', '--cached', '-r', '--ignore-unmatch', '--quiet', ...paths])
-    await g.reset(['HEAD', '--', ...paths]).catch(() => {}) // ignore when no HEAD yet
+    await g.reset(['HEAD', '--', ...paths]).catch(() => {})
 }
 
 export async function unstageAll(): Promise<void> {
     const { git: g } = getRepo()
-    // mixed reset unstages everything without touching the worktree —
-    // never enumerate paths here: repos with thousands of staged files
-    // (e.g. node_modules) overflow the OS exec arg limit (E2BIG).
     try {
         await g.reset(['--'])
         return
     } catch {
-        /* fresh repo without HEAD yet — clear the index instead */
     }
     await g.raw(['rm', '--cached', '-r', '--ignore-unmatch', '--quiet', '.'])
 }
@@ -328,22 +297,18 @@ export async function discard(path_: string): Promise<void> {
     const file = status.files.find(f => f.path === path_)
     if (!file) return
     if (file.working_dir === '?') {
-        // untracked -> delete file
         await g.raw(['clean', '-f', '--', path_])
     } else {
         await g.checkout(['--', path_])
     }
 }
 
-/** Discard only the unstaged changes of tracked files (index is kept). */
 export async function discardUnstaged(): Promise<void> {
     const { git: g } = getRepo()
-    // single '.' pathspec — enumerating paths overflows exec arg limits (E2BIG)
     const status = await g.status()
     if (status.files.some(f => f.working_dir !== '?')) await g.checkout(['--', '.'])
 }
 
-/** Permanently delete untracked files/directories only (git clean -fd). */
 export async function discardUntracked(): Promise<void> {
     const { git: g } = getRepo()
     const status = await g.status()
@@ -356,16 +321,11 @@ export async function commit(message: string): Promise<string> {
     return res.commit
 }
 
-/* ---------------- Diff ---------------- */
-
 export async function getDiff(file: string, staged: boolean, context?: number): Promise<DiffLine[]> {
     const { path: p, git: g } = getRepo()
-    // untracked files have no HEAD/index entry to diff against — render the
-    // whole file as a set of additions so its content can actually be read
     if (!staged && (await isUntracked(g, file))) {
         return getUntrackedDiff(p, file)
     }
-    // `context` overrides the number of context lines (large value = show entire file)
     const unified = `--unified=${context ?? 3}`
     const args = staged
         ? ['diff', '--cached', unified, '--no-color', '--', file]
@@ -374,12 +334,10 @@ export async function getDiff(file: string, staged: boolean, context?: number): 
     try {
         text = await g.raw(args)
     } catch {
-        /* empty diff */
     }
     return parseDiff(text, file)
 }
 
-/** true when `git status --porcelain` marks the path as `??` (untracked) */
 async function isUntracked(g: SimpleGit, file: string): Promise<boolean> {
     try {
         const out = await g.raw(['status', '--porcelain', '--', file])
@@ -389,7 +347,6 @@ async function isUntracked(g: SimpleGit, file: string): Promise<boolean> {
     }
 }
 
-/** crude binary sniff: a NUL byte in the first 8KB marks the file as binary */
 function isBinaryFile(repoPath: string, file: string): boolean {
     try {
         const buf = fs.readFileSync(path.join(repoPath, file))
@@ -399,7 +356,6 @@ function isBinaryFile(repoPath: string, file: string): boolean {
     }
 }
 
-/** show an untracked file's whole content as an add-only diff */
 function getUntrackedDiff(repoPath: string, file: string): DiffLine[] {
     let content = ''
     try {
@@ -491,8 +447,6 @@ export async function getCommitDetails(hash: string): Promise<CommitDetails> {
     }
 }
 
-/* ---------------- Stash ---------------- */
-
 export async function listStashes(): Promise<StashEntry[]> {
     const { git: g } = getRepo()
     const raw = await g.raw(['stash', 'list', '--format=%gd%x00%H%x00%ci%x00%B'])
@@ -531,17 +485,12 @@ export async function checkoutCommit(hash: string): Promise<void> {
     await g.checkout(hash)
 }
 
-/* ---------------- Branches ---------------- */
-
 export async function listBranches(): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> {
     const { git: g } = getRepo()
     const b = await g.branch(['-a'])
     const local: BranchInfo[] = []
     const remote: BranchInfo[] = []
 
-    // ahead/behind counts vs upstream + tip commit SHA, per ref
-    // (note: Apple Git does not expand %x1f in for-each-ref format, use | as separator;
-    //  simple-git's branch().commit is only the abbreviated hash — use %(objectname) for full SHAs)
     const trackText = await g.raw([
         'for-each-ref',
         '--format=%(refname:short)|%(upstream:track)|%(objectname)',
@@ -562,16 +511,12 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
         })
     }
 
-    // detached HEAD has no for-each-ref entry — resolve the full SHA once so
-    // the pseudo-branch entry still supports click-to-locate in the graph
     const detachedSha = b.detached && b.current ? await g.revparse(['HEAD']).catch(() => '') : ''
 
     for (const ref of b.all) {
         if (ref.includes('HEAD') || ref.includes('->')) continue
         const info: BranchInfo = { name: ref, current: b.current === ref }
         Object.assign(info, track.get(ref) ?? track.get(ref.replace(/^remotes\//, '')))
-        // detached HEAD surfaces as a pseudo-branch named after the short hash —
-        // flag it so the UI can label it "HEAD" and resolve its full SHA for click-to-locate
         if (b.detached && b.current === ref) {
             info.detached = true
             if (detachedSha) info.commitHash = detachedSha
@@ -596,10 +541,9 @@ export async function checkout(ref: string): Promise<void> {
 
 export async function deleteBranch(name: string): Promise<void> {
     const { git: g } = getRepo()
-    await g.deleteLocalBranch(name, true /* force */)
+    await g.deleteLocalBranch(name, true)
 }
 
-/** Delete a branch on the remote. `ref` looks like `remotes/<remote>/<branch>`. */
 export async function deleteRemoteBranch(ref: string): Promise<string> {
     const { git: g } = getRepo()
     const parts = ref.replace(/^remotes\//, '').split('/')
@@ -615,8 +559,6 @@ export async function merge(name: string): Promise<string> {
     const res = await g.merge([name, '--no-edit'])
     return res.result || 'Merged'
 }
-
-/* ---------------- Remotes ---------------- */
 
 export async function fetchAll(): Promise<string> {
     const { git: g } = getRepo()
@@ -640,14 +582,12 @@ export async function pull(): Promise<string> {
     return `Pulled (${res.summary.changes} changes)`
 }
 
-/** Push a *specific* branch (not necessarily the checked-out one) to its upstream (or origin). */
 export async function pushBranch(name: string, force = false): Promise<string> {
     const { git: g } = getRepo()
     let upstream = ''
     try {
         upstream = (await g.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${name}@{upstream}`])).trim()
     } catch {
-        /* no upstream configured — fall through to origin */
     }
     const flags = force ? ['--force-with-lease'] : []
     if (upstream) {
@@ -657,13 +597,10 @@ export async function pushBranch(name: string, force = false): Promise<string> {
         await g.push([remote, `refs/heads/${name}:refs/heads/${remoteBranch}`, ...flags])
         return force ? `${name} force-pushed` : `${name} pushed`
     }
-    // no tracking branch — create it on origin
     await g.push(['--set-upstream', 'origin', name, ...flags])
     return force ? `${name} force-pushed` : `${name} pushed`
 }
 
-/** Pull a *specific* branch. For the checked-out branch this is a normal pull;
- *  for other branches it fast-forwards the local ref without touching the working dir. */
 export async function pullBranch(name: string): Promise<string> {
     const { git: g } = getRepo()
     if ((await g.status()).current === name) {
@@ -674,7 +611,6 @@ export async function pullBranch(name: string): Promise<string> {
     try {
         upstream = (await g.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${name}@{upstream}`])).trim()
     } catch {
-        /* no upstream */
     }
     if (!upstream) throw new Error(`"${name}" has no upstream; can't pull`)
     const slash = upstream.indexOf('/')
@@ -697,8 +633,6 @@ export async function hasRemote(): Promise<boolean> {
     const remotes = await g.getRemotes()
     return remotes.length > 0
 }
-
-/* ---------------- Repo state / conflicts / rebase / advanced ---------------- */
 
 export function getRepoState(): RepoState {
     const { path: p } = getRepo()
@@ -736,7 +670,6 @@ export async function rebaseOnto(ref: string): Promise<string> {
         await g.raw(['rebase', ref])
         return `Rebased onto ${ref}`
     } catch {
-        // conflict or error — state is exposed via getRepoState(); caller decides to abort/continue
         const state = await getRepoState()
         if (state.rebasing || state.merging) throw new Error('Rebase stopped due to conflicts. Resolve them, then continue.')
         throw new Error('Rebase failed')
@@ -774,12 +707,9 @@ export async function getCommitFileDiff(hash: string, file: string, context?: nu
     try {
         text = await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
     } catch {
-        /* empty */
     }
     return parseDiff(text)
 }
-
-/* ---------------- Interactive rebase (todo editor) ---------------- */
 
 export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
     const { git: g } = getRepo()
@@ -797,13 +727,9 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
         })
 }
 
-/* ================= WP1: Amend commit ================= */
-
 export async function commitMessage(message: string, amend: boolean): Promise<string> {
     const { git: g } = getRepo()
     if (amend && !message.trim()) throw new Error('Enter a message to amend with')
-    // NOTE: simple-git already prefixes each message with -m — passing ['-m', …]
-    // would make the first -m consume the literal "-m" as the subject
     const res = amend ? await g.commit(message, [], ['--amend']) : await g.commit(message)
     return res.commit
 }
@@ -813,8 +739,6 @@ export async function getLastCommitMessage(): Promise<string> {
     return (await g.raw(['log', '-1', '--format=%B'])).trim()
 }
 
-/* ================= WP2: Tags ================= */
-
 export interface TagRef {
     name: string
     hash: string
@@ -822,10 +746,6 @@ export interface TagRef {
 
 export async function listTags(): Promise<TagRef[]> {
     const { git: g } = getRepo()
-    // NOTE: for-each-ref does NOT expand %x1f escapes (only pretty-format does),
-    // so the separator must be a real control character embedded in the string.
-    // %(*objectname) = peeled commit hash (present only for annotated tags);
-    // fall back to %(objectname) for lightweight tags
     const SEP = '\x1f'
     const text = await g.raw([
         'for-each-ref',
@@ -862,14 +782,12 @@ export async function pushTags(): Promise<string> {
     return 'Tags pushed'
 }
 
-/** Push a single local tag to origin. */
 export async function pushTag(name: string): Promise<string> {
     const { git: g } = getRepo()
     await g.push(['origin', `refs/tags/${name.trim()}`])
     return `Tag ${name.trim()} pushed`
 }
 
-/** Names of tags that already exist on origin, via ls-remote (network). */
 export async function listRemoteTags(): Promise<string[]> {
     const { git: g } = getRepo()
     try {
@@ -878,23 +796,19 @@ export async function listRemoteTags(): Promise<string[]> {
         for (const line of out.split('\n')) {
             const ref = line.split('\t')[1] ?? ''
             if (!ref.startsWith('refs/tags/')) continue
-            // drop the peeled ^{} line of annotated tags so each tag counts once
             names.add(ref.slice('refs/tags/'.length).replace(/\^\{\}$/, ''))
         }
         return [...names]
     } catch {
-        return [] // offline / no remote — never crash the UI
+        return []
     }
 }
 
-/** Delete a tag on the remote (does not touch the local tag). */
 export async function deleteRemoteTag(name: string): Promise<string> {
     const { git: g } = getRepo()
     await g.push(['origin', `:refs/tags/${name.trim()}`])
     return `Remote tag ${name.trim()} deleted`
 }
-
-/* ================= WP3: Remotes ================= */
 
 export async function listRemotes(): Promise<{ name: string; url: string }[]> {
     const { path: p, git: g } = getRepo()
@@ -920,7 +834,6 @@ export async function setRemoteUrl(name: string, url: string): Promise<void> {
     await g.raw(['remote', 'set-url', name, url.trim()])
 }
 
-/** Probe a remote URL with `git ls-remote` (works outside a repo, no creds needed to start). */
 export async function testRemoteUrl(rawUrl: string): Promise<RemoteTestResult> {
     const url = String(rawUrl ?? '').trim()
     if (!url) return { ok: false, message: 'Enter a remote URL first' }
@@ -940,8 +853,6 @@ export async function testRemoteUrl(rawUrl: string): Promise<RemoteTestResult> {
     }
 }
 
-/* ================= WP4: Hunk-level staging ================= */
-
 export async function getRawPatch(file: string, staged: boolean): Promise<string> {
     const { git: g } = getRepo()
     try {
@@ -951,9 +862,6 @@ export async function getRawPatch(file: string, staged: boolean): Promise<string
     }
 }
 
-/** Uncommitted changes, used as the AI commit-message context.
- * Staged-only scope when anything is staged (matches what the commit will include),
- * otherwise falls back to all uncommitted changes (staged + unstaged + untracked). */
 export async function getChangesContext(): Promise<string> {
     const { path: p, git: g } = getRepo()
     const parts: string[] = []
@@ -963,25 +871,20 @@ export async function getChangesContext(): Promise<string> {
     try {
         const statusText = await g.raw(['status', '--porcelain'])
         allLines = statusText.split('\n').map(line => line.trimEnd()).filter(Boolean)
-        // porcelain: column 1 = index/staged state (' ' or '?' means not staged)
         stagedFiles = allLines.filter(line => line[0] !== ' ' && line[0] !== '?')
     } catch {
-        /* ignore */
     }
 
     if (stagedFiles.length > 0) {
-        // staged-only scope — the user is preparing a specific commit
         parts.push(`Changed files (staged for commit):\n${stagedFiles.join('\n')}`)
         try {
             const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
             if (staged.trim()) parts.push(staged)
         } catch {
-            /* no HEAD yet */
         }
         return parts.join('\n')
     }
 
-    // nothing staged → summarize everything uncommitted
     if (allLines.length) parts.push(`Changed files:\n${allLines.join('\n')}`)
     try {
         const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
@@ -989,9 +892,7 @@ export async function getChangesContext(): Promise<string> {
         if (staged.trim()) parts.push(staged)
         if (unstaged.trim()) parts.push(unstaged)
     } catch {
-        /* no HEAD yet / no tracked changes */
     }
-    // untracked files never appear in a git diff — attach paths + small content
     try {
         const untracked = await g.raw(['ls-files', '--others', '--exclude-standard'])
         const files = untracked.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 10)
@@ -1009,7 +910,6 @@ export async function getChangesContext(): Promise<string> {
             parts.push(block)
         }
     } catch {
-        /* ignore */
     }
     return parts.join('\n')
 }
@@ -1020,7 +920,6 @@ function writeTempPatch(patch: string): string {
     return tmp
 }
 
-/** Apply a partial patch. target 'index' = stage/unstage; 'worktree' = discard/restore */
 export async function applyPatch(patch: string, target: 'index' | 'worktree', reverse: boolean): Promise<void> {
     const { git: g } = getRepo()
     if (!patch.trim()) throw new Error('Empty patch')
@@ -1042,12 +941,10 @@ export async function applyPatch(patch: string, target: 'index' | 'worktree', re
     }
 }
 
-/** Build a patch containing only the selected hunks of a file's diff */
 export async function stageHunks(file: string, stagedView: boolean, hunkIndexes: number[], reverse: boolean): Promise<void> {
     const raw = await getRawPatch(file, stagedView)
     if (!raw.trim()) throw new Error('No changes found')
 
-    // split into header lines and hunks
     const lines = raw.split('\n')
     const hunkStarts: number[] = []
     lines.forEach((line, i) => {
@@ -1072,8 +969,6 @@ export async function stageHunks(file: string, stagedView: boolean, hunkIndexes:
     const patch = [...header, ...chosen].join('\n')
     await applyPatch(patch, 'index', reverse)
 }
-
-/* ================= WP5: Blame & file history ================= */
 
 export async function getFileHistory(file: string, limit = 200): Promise<CommitNode[]> {
     const { git: g } = getRepo()
@@ -1117,8 +1012,6 @@ export async function getBlame(file: string): Promise<BlameLine[]> {
     }
     return result
 }
-
-/* ================= WP6: Rebase edit/split (pause/resume) ================= */
 
 const BACKUP_FILE = 'open-git-rebase-backup'
 
@@ -1175,10 +1068,8 @@ export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[],
                     break
                 }
                 case 'edit':
-                    // pause: user amends the commit manually, then continues
                     return { completed: false, message: `Paused at ${entry.hash.slice(0, 7)} for editing` }
                 case 'split':
-                    // pause: uncommit but keep its changes staged so user can commit pieces
                     // oxlint-disable-next-line no-await-in-loop
                     await g.raw(['reset', '--soft', 'HEAD~1'])
                     return { completed: false, message: `Paused after unpacking ${entry.hash.slice(0, 7)} — its changes are staged` }
@@ -1206,8 +1097,6 @@ export async function abortPausedRebase(): Promise<void> {
     fs.promises.unlink(backupFile).catch(() => {})
 }
 
-/* ================= WP7: Bisect ================= */
-
 export async function bisectStart(badRef: string, goodRef?: string): Promise<void> {
     const { git: g } = getRepo()
     const args = ['bisect', 'start', badRef]
@@ -1224,8 +1113,6 @@ export async function bisectReset(): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['bisect', 'reset'])
 }
-
-/* ================= WP8: Worktrees & submodules ================= */
 
 export async function listWorktrees(): Promise<WorktreeInfo[]> {
     const { git: g } = getRepo()

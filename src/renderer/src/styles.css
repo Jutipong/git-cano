@@ -1,6 +1,6 @@
 :root,
 :root[data-theme='dark'] {
-    /* Simple Dark Soft (github.com/HondryTravis/simple-dark) */
+
     --canvas: #202124;
     --surface-0: #1f2020;
     --surface-1: #202124;
@@ -32,8 +32,7 @@
 }
 
 :root[data-theme='light'] {
-    /* Simple Light Soft (github.com/HondryTravis/simple-dark) — warm paper,
-       beige raised surfaces, deep blue accents. */
+
     --canvas: #faf5e8;
     --surface-0: #f8f1e3;
     --surface-1: #faf5e8;
@@ -65,8 +64,7 @@
 }
 
 :root[data-theme='dark-modern'] {
-    /* VS Code "Dark Modern" (microsoft/vscode theme-defaults dark_modern.json,
-       token colors from its include dark_plus.json). */
+
     --canvas: #181818;
     --surface-0: #181818;
     --surface-1: #1f1f1f;
@@ -127,7 +125,6 @@ button {
     flex: 1;
 }
 
-/* Shared controls */
 .btn {
     display: inline-flex;
     align-items: center;
@@ -242,7 +239,6 @@ kbd {
     font-size: 10px;
 }
 
-/* Application shell */
 .app {
     display: flex;
     flex-direction: column;
@@ -271,7 +267,6 @@ kbd {
     opacity: 0.75;
 }
 
-/* Top toolbar */
 .commit-search {
     display: flex;
     align-items: center;
@@ -363,7 +358,6 @@ kbd {
     color: var(--blue);
 }
 
-/* Left navigation */
 .sidebar {
     display: flex;
     flex: 0 0 244px;
@@ -581,7 +575,6 @@ kbd {
     border-color: var(--line);
 }
 
-/* Center history */
 .center-column {
     position: relative;
     display: flex;
@@ -602,7 +595,7 @@ kbd {
 .diff-view.fullscreen {
     position: fixed;
     z-index: 60;
-    /* override the inline `right` offset bound by the app-layout */
+
     inset: 0 !important;
     box-shadow: none;
 }
@@ -706,8 +699,7 @@ kbd {
     gap: 12px;
     min-width: 0;
     height: 28px;
-    /* match the header's horizontal padding so every column starts and ends
-       on the same track now that the trailing actions are gone */
+
     padding: 0 12px;
     border-bottom: 1px solid rgba(155, 169, 191, 0.06);
     cursor: pointer;
@@ -727,7 +719,7 @@ kbd {
     min-width: 0;
     gap: 6px;
 }
-/* ref chips lead the row, subject follows on the same line */
+
 .subject-chips {
     display: flex;
     align-items: center;
@@ -836,7 +828,6 @@ kbd {
     font-size: 10px;
 }
 
-/* Changes and diff panel */
 .right-pane {
     display: flex;
     flex: 0 0 410px;
@@ -934,7 +925,7 @@ kbd {
     cursor: default;
 }
 .readonly-meta-row {
-    /* cancel the resize handle's extra bottom margin so the chips sit evenly (7px above / 7px below) */
+
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -1234,7 +1225,7 @@ kbd {
     line-height: 20px;
     text-align: right;
     user-select: none;
-    /* sticky line-number gutter — stays put while the diff scrolls horizontally */
+
     position: sticky;
     left: 0;
     z-index: 1;
@@ -1285,7 +1276,6 @@ kbd {
     color: var(--text-muted);
 }
 
-/* Welcome screen */
 .welcome {
     display: flex;
     flex-direction: column;
@@ -1503,7 +1493,6 @@ kbd {
     color: var(--red);
 }
 
-/* Context menu */
 .context-menu {
     position: fixed;
     z-index: 50;
@@ -1554,7 +1543,6 @@ kbd {
     background: var(--line-soft);
 }
 
-/* Drop targets (drag & drop) */
 .branch-row.drop-target {
     background: rgba(67, 201, 182, 0.18);
     outline: 1px dashed var(--teal);
@@ -1565,7 +1553,6 @@ kbd {
     background: transparent;
 }
 
-/* Conflict banner */
 .conflict-banner {
     flex: 0 0 auto;
     background: var(--conflict-bg);
@@ -1608,7 +1595,6 @@ kbd {
     color: var(--teal);
 }
 
-/* Interactive rebase editor */
 .modal-overlay {
     position: fixed;
     z-index: 40;
@@ -1743,8 +1729,6 @@ kbd {
     font-size: 11px;
 }
 
-/* no outer card: the bar is transparent — the two inner capsules carry the
-   surface treatment instead */
 .tab-bar {
     z-index: 5;
     display: flex;
@@ -1754,9 +1738,7 @@ kbd {
     flex: 0 0 38px;
     padding: 0 8px;
 }
-/* left group: all repo tabs live inside this single capsule; it owns the
-   overflow so tab overflow scrolls inside the capsule instead of squeezing
-   the trailing actions */
+
 .tab-group {
     flex: 1;
     min-width: 0;
@@ -1765,8 +1747,7 @@ kbd {
     overflow: hidden;
     border-radius: 999px;
 }
-/* tabs live in their own scroll region so a tab overflow never squeezes the
-   trailing actions ("+" and "Open in") — they scroll instead of cramping */
+
 .tab-scroll {
     flex: 1;
     min-width: 0;
@@ -1774,7 +1755,7 @@ kbd {
     align-items: center;
     overflow-x: auto;
     overflow-y: hidden;
-    /* scrollable but without a visible scrollbar — tabs simply slide sideways */
+
     scrollbar-width: none;
 }
 .tab-scroll::-webkit-scrollbar {
@@ -1843,8 +1824,7 @@ kbd {
     background: var(--surface-hover);
     border-color: var(--line);
 }
-/* search-commits button in the actions group — same shape as tab-new but
-   neutral-coloured (focuses the commit search input) */
+
 .tab-search {
     align-self: center;
     width: 28px;
@@ -1863,7 +1843,7 @@ kbd {
     background: var(--surface-hover);
     border-color: var(--line);
 }
-/* repo search: input that expands inside the actions pill + results dropdown */
+
 .tab-search-input {
     flex: 0 1 auto;
     width: 200px;
@@ -1920,8 +1900,7 @@ kbd {
     color: var(--text-muted);
     font-size: 11px;
 }
-/* right group: trailing actions ("+" and "Open in") as a plain button group —
-   no capsule, just the buttons sitting together */
+
 .tab-actions {
     flex: 0 0 auto;
     display: flex;
@@ -1936,7 +1915,6 @@ kbd {
     padding: 14px;
 }
 
-/* Syntax tokens — one fixed palette for every theme (the simple-dark set) */
 .tok-comment {
     color: #737373;
     font-style: italic;
@@ -1972,9 +1950,6 @@ mark {
     background: #e3dccf;
 }
 
-/* Side-by-side diff — two fixed-width columns with synced horizontal scrolling.
-   `.split-pane-content` carries the scroll width (widest line); every row fills
-   it so line backgrounds end at the same edge, GitKraken-style. */
 .diff-body.split {
     display: flex;
     align-items: flex-start;
@@ -1999,8 +1974,7 @@ mark {
     scrollbar-width: none;
 }
 .diff-line.half.blank {
-    /* empty filler rows collapse to 0px without an explicit height, which
-       would desync the two panes — keep them as tall as a code row */
+
     height: 20px;
     background: repeating-linear-gradient(
         -45deg,
@@ -2018,7 +1992,6 @@ mark {
     font-style: normal;
 }
 
-/* Image diff */
 .image-diff {
     display: flex;
     gap: 16px;
@@ -2049,7 +2022,6 @@ mark {
     border-radius: 4px;
 }
 
-/* Recent remove button */
 .recent-item {
     display: flex;
     align-items: center;
@@ -2070,7 +2042,6 @@ mark {
     opacity: 1;
 }
 
-/* Commit box resize handle */
 .cb-resize-handle {
     position: relative;
     height: 7px;
@@ -2097,12 +2068,10 @@ mark {
     background: var(--teal);
 }
 
-/* File row context menu (History / Blame) */
 .file-panel {
     position: relative;
 }
 
-/* Hunk-level actions in diff */
 .diff-line.hunk {
     position: relative;
 }
@@ -2112,7 +2081,6 @@ mark {
     align-self: center;
 }
 
-/* Remote manager */
 .remote-modal {
     width: min(640px, 92vw);
 }
@@ -2152,7 +2120,6 @@ mark {
     border-top: 1px solid var(--line-soft);
 }
 
-/* add-origin form has only a URL field + button (the name is locked to origin) */
 .remote-add.origin-add {
     grid-template-columns: 1fr auto;
 }
@@ -2170,12 +2137,10 @@ mark {
     border-color: var(--teal);
 }
 
-/* Tag rows */
 .tag-row > svg {
     color: var(--text-muted);
 }
 
-/* Tools modal */
 .tools-modal {
     width: min(600px, 92vw);
 }
@@ -2257,7 +2222,6 @@ mark {
     flex: 0 0 auto;
 }
 
-/* AI (OpenCode Zen Go) tab */
 .ai-field {
     display: flex;
     flex-direction: column;
@@ -2278,14 +2242,12 @@ mark {
     color: var(--red);
 }
 
-/* Bisect active indicator */
 .toolbar-icon-button.bisect-active {
     color: var(--orange);
     background: rgba(237, 179, 93, 0.1);
     border-color: rgba(237, 179, 93, 0.35);
 }
 
-/* Paused rebase banner inside editor */
 .rebase-paused {
     display: flex;
     align-items: center;
@@ -2311,7 +2273,6 @@ mark {
     pointer-events: none;
 }
 
-/* History modal */
 .history-modal {
     width: min(860px, 94vw);
 }
@@ -2378,7 +2339,6 @@ mark {
     color: var(--blue);
 }
 
-/* Blame modal */
 .blame-modal {
     width: min(900px, 94vw);
 }

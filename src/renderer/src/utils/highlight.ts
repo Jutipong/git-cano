@@ -1,9 +1,3 @@
-/* Lightweight syntax highlighter for diff lines.
-   Produces HTML with <span> tokens. Supports JS/TS-family, CSS, JSON,
-   Vue SFC (template/script/style sections), Python, shell and falls back
-   to a generic mode. Multi-line block comments and template literals are
-   tracked with a stateful walk (see highlightDiffLines). */
-
 import type { DiffLine } from '@shared/types'
 
 const KEYWORDS_JS = [
@@ -133,19 +127,13 @@ function keywordsFor(mode: Mode): Set<string> {
     return new Set(KEYWORDS_JS)
 }
 
-/* ---------------- multi-line state ---------------- */
-
-/** State carried across the lines of one diff so block comments and
-    template literals stay highlighted across line breaks. */
 interface TokState {
-    blockComment: boolean // inside /* … */ (script / style)
-    htmlComment: boolean // inside <!-- … --> (template)
-    htmlString: boolean // inside a multi-line attribute value (template)
-    backtick: boolean // inside a `template literal` (script)
+    blockComment: boolean
+    htmlComment: boolean
+    htmlString: boolean
+    backtick: boolean
 }
 
-/** Which part of the file a line belongs to (Vue SFC sections; a fixed
-    section for every other file type). */
 type Section = 'template' | 'script' | 'style' | 'json' | 'other'
 
 function sectionFor(filename: string): Section {
@@ -156,27 +144,17 @@ function sectionFor(filename: string): Section {
     return 'script'
 }
 
-// SFC top-level blocks always start at column 0 — nested `<template v-if>`
-// elements are indented and must NOT switch the section
 const SECTION_OPEN = /^<(template|script|style)\b/
 const SECTION_CLOSE = /^<\/(template|script|style)\s*>/
 
-/** Guess the SFC section of a line when a diff hunk starts mid-file and no
-    `<template>/<script>/<style>` tag has been seen yet. */
 function guessSfcSection(content: string): Section {
     const t = content.trim()
-    // HTML tag line (incl. comments `<!-- …` and doctype)
     if (t.startsWith('<')) return 'template'
-    // template attribute line: `class="x"`, `:class="{ … }"`, `@click="…"`, bare `v-else`
     if (/^[\w@:#.-]+=["']/.test(t) || /^v-[\w:-]+(?!=)/.test(t) || t === '">') return 'template'
-    // CSS property declaration (`color: var(--x);`) — but not TS `foo: () => void`
     if (/^[-\w-]+\s*:/.test(t) && !/=>|\?/.test(t)) return 'style'
-    // CSS selector / custom-property line
     if (/^[.#][\w-]+/.test(t) || /^--[\w-]+\s*:/.test(t)) return 'style'
     return 'script'
 }
-
-/* ---------------- generic (JS/TS family, Python, shell) ---------------- */
 
 const IDENT_START = /[A-Za-z_$]/
 const IDENT = /[\w$]/
@@ -198,20 +176,15 @@ function findStringEnd(text: string, start: number): number {
 function genericWord(word: string, code: string, end: number, keywords: Set<string>): string {
     const escaped = escapeHtml(word)
     if (keywords.has(word)) return `<span class="tok-keyword">${escaped}</span>`
-    // variable.language (this/super) — Simple Dark colors it like a constant
     if (word === 'this' || word === 'super') return `<span class="tok-number">${escaped}</span>`
-    // identifier immediately followed by '(' — function/method name
     if (/^\s*\(/.test(code.slice(end))) return `<span class="tok-function">${escaped}</span>`
-    // SCREAMING_SNAKE_CASE — module-level constant
     if (/^[A-Z][A-Z0-9_]*$/.test(word)) return `<span class="tok-type">${escaped}</span>`
     return escaped
 }
 
-/** Tokenize one script-style line, resuming/advancing multi-line state. */
 function renderScript(content: string, state: TokState, keywords: Set<string>, hashComments: boolean): string {
     let out = ''
     let rest = content
-    // resume a block comment opened on a previous line
     if (state.blockComment) {
         const end = rest.indexOf('*/')
         if (end === -1) return `<span class="tok-comment">${escapeHtml(rest)}</span>`
@@ -219,7 +192,6 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
         rest = rest.slice(end + 2)
         state.blockComment = false
     }
-    // resume a template literal opened on a previous line
     if (state.backtick) {
         const end = rest.indexOf('`')
         if (end === -1) return `${out}<span class="tok-string">${escapeHtml(rest)}</span>`
@@ -289,8 +261,6 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
     return out
 }
 
-/* ---------------- CSS ---------------- */
-
 const CSS_VALUE_PATTERN =
     /(\/\*.*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(--[\w-]+|!important)|(#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})\b)|(-?\d*\.?\d+(?:px|em|rem|ex|ch|vh|vw|vmin|vmax|%|s|ms|deg|grad|rad|turn|fr|pt|pc|in|cm|mm|q)?\b)|([A-Za-z_-][\w-]*)/g
 
@@ -306,7 +276,6 @@ function cssValues(code: string): string {
         else if (kw) out += `<span class="tok-keyword">${escapeHtml(full)}</span>`
         else if (hex || num) out += `<span class="tok-number">${escapeHtml(full)}</span>`
         else if (word) {
-            // built-in CSS function call (var, rgba, color-mix, …)
             if (/^\s*\(/.test(code.slice(match.index + full.length))) {
                 out += `<span class="tok-support">${escapeHtml(full)}</span>`
             } else {
@@ -348,16 +317,11 @@ function cssSelector(code: string): string {
 
 function highlightCss(code: string): string {
     const trimmed = code.trim()
-    // braces → selector/at-rule line (pseudo-selectors keep their ':' too)
     if (/[{}]/.test(trimmed)) return cssSelector(code)
-    // `property: value;` — single-word head before the colon, no braces
     if (/^[-\w]+\s*:/.test(trimmed)) return cssDeclaration(code)
-    // continuation of a multi-line value (e.g. under `transition:`) — colorize
-    // numbers/functions but keep bare words plain instead of guessing selectors
     return cssValues(code)
 }
 
-/** CSS with block-comment state (comments spanning lines). */
 function renderStyle(content: string, state: TokState): string {
     let rest = content
     if (state.blockComment) {
@@ -376,8 +340,6 @@ function renderStyle(content: string, state: TokState): string {
     return highlightCss(rest)
 }
 
-/* ---------------- HTML (Vue template) ---------------- */
-
 const HTML_PATTERN =
     /(<!--.*?-->)|(<\/?[\w-]+)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([@:#][\w.:-]+(?=\s*=)|v-[\w:-]+)|([\w-]+(?=\s*=))|(\/?>)/g
 
@@ -394,13 +356,9 @@ function findQuote(text: string, start: number): number {
     return -1
 }
 
-/** Tokenize one template line, resuming/advancing HTML comment and
-    multi-line attribute-value state. Tags → keyword, directives
-    (@click/:class/v-if) → keyword, attribute names → type, values → string. */
 function renderHtml(content: string, state: TokState): string {
     let out = ''
     let rest = content
-    // resume an HTML comment opened on a previous line
     if (state.htmlComment) {
         const end = rest.indexOf('-->')
         if (end === -1) return `<span class="tok-comment">${escapeHtml(rest)}</span>`
@@ -408,7 +366,6 @@ function renderHtml(content: string, state: TokState): string {
         rest = rest.slice(end + 3)
         state.htmlComment = false
     }
-    // resume an attribute value opened on a previous line
     if (state.htmlString) {
         const end = findQuote(rest, 0)
         if (end === -1) return `<span class="tok-string">${escapeHtml(rest)}</span>`
@@ -417,7 +374,6 @@ function renderHtml(content: string, state: TokState): string {
         state.htmlString = false
         return out + renderHtml(rest, state)
     }
-    // an unterminated `<!--` puts the remainder (and following lines) in a comment
     const open = rest.indexOf('<!--')
     if (open !== -1 && rest.indexOf('-->', open + 4) === -1) {
         state.htmlComment = true
@@ -437,8 +393,6 @@ function renderHtml(content: string, state: TokState): string {
         last = match.index + full.length
     }
 
-    // an attribute value left unclosed before the tag's `>` continues on the
-    // next lines (e.g. `@click="` … `">`) — color the tail as a string
     const tail = rest.slice(last)
     const gt = tail.indexOf('>')
     const beforeClose = gt === -1 ? tail : tail.slice(0, gt)
@@ -452,8 +406,6 @@ function renderHtml(content: string, state: TokState): string {
     return out
 }
 
-/* ---------------- JSON ---------------- */
-
 const JSON_PATTERN = /("(?:[^"\\]|\\.)*")(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b)|(\b(?:true|false|null)\b)/g
 
 function highlightJson(code: string): string {
@@ -464,7 +416,6 @@ function highlightJson(code: string): string {
         out += escapeHtml(code.slice(last, match.index))
         const [full, str, colon, num, kw] = match
         if (str) {
-            // a string followed by ':' is a property name
             out += colon
                 ? `<span class="tok-support">${escapeHtml(str)}</span>${escapeHtml(colon)}`
                 : `<span class="tok-string">${escapeHtml(str)}</span>`
@@ -475,8 +426,6 @@ function highlightJson(code: string): string {
     out += escapeHtml(code.slice(last))
     return out
 }
-
-/* ---------------- section dispatch ---------------- */
 
 function renderSegment(content: string, section: Section, state: TokState, keywords: Set<string>, hashComments: boolean): string {
     if (!content) return ''
@@ -494,10 +443,6 @@ function renderSegment(content: string, section: Section, state: TokState, keywo
     }
 }
 
-/* ---------------- entry points ---------------- */
-
-/** Tokenize one line of code into escaped HTML with token classes.
-    Stateless — use highlightDiffLines for multi-line constructs. */
 export function highlightLine(code: string, filename: string): string {
     const mode = modeFor(filename)
     const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
@@ -505,13 +450,6 @@ export function highlightLine(code: string, filename: string): string {
     return renderSegment(code, section, state, keywordsFor(mode), mode === 'python' || mode === 'shell')
 }
 
-/**
- * Highlight a whole diff in one stateful walk, returning HTML per line.
- * Tracks Vue SFC sections (template/script/style) and multi-line block
- * comments / template literals. `render` lets the caller post-process each
- * line (e.g. word-diff <mark> ranges); its `highlight` callback tokenizes a
- * segment with the state the line started in.
- */
 export function highlightDiffLines(
     lines: DiffLine[],
     filename: string,
@@ -523,7 +461,6 @@ export function highlightDiffLines(
     const hashComments = mode === 'python' || mode === 'shell'
     const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
     let section = sectionFor(filename)
-    // once a real SFC section tag is seen, the file layout is known — stop guessing
     let tagged = !isSfc
 
     const map = new Map<DiffLine, string>()
@@ -539,7 +476,6 @@ export function highlightDiffLines(
             if (isSfc) {
                 const open = SECTION_OPEN.exec(content)
                 if (open) {
-                    // the tag line itself renders as HTML; following lines use the section
                     initialSection = 'template'
                     section = open[1] as Section
                     tagged = true
@@ -548,14 +484,11 @@ export function highlightDiffLines(
                     section = 'other'
                     tagged = true
                 } else if (!tagged) {
-                    // mid-file hunk with no section tag yet — guess per line;
-                    // an open string/comment pins the section to template
                     initialSection =
                         state.htmlString || state.htmlComment ? 'template' : guessSfcSection(content)
                     section = initialSection
                 }
             }
-            // dry run on the full line advances multi-line state only
             renderSegment(content, initialSection, state, keywords, hashComments)
         }
         map.set(
@@ -566,10 +499,6 @@ export function highlightDiffLines(
     return map
 }
 
-/**
- * Compute intra-line changed regions between a deleted and an added line. Returns the middle (changed) segment bounds so UI can wrap them
- * in <mark>.
- */
 export function intraLineRange(oldText: string, newText: string): { old: [number, number]; new: [number, number] } | null {
     let start = 0
     const minLen = Math.min(oldText.length, newText.length)
@@ -580,15 +509,13 @@ export function intraLineRange(oldText: string, newText: string): { old: [number
         endOld--
         endNew--
     }
-    // only highlight when change is small relative to the line (looks tidy)
     if (endOld - start > 60 || endNew - start > 60) return null
     return { old: [start, endOld], new: [start, endNew] }
 }
 
-/** Render a diff content line (diff prefix stripped) with optional marked range. */
 export function renderDiffContent(line: string, filename: string, mark?: [number, number] | null): string {
-    const content = line.slice(1) // strip +/- marker (or the context-line space)
-    if (!content) return '' // empty added/removed line — draw nothing, never the +/- glyph
+    const content = line.slice(1)
+    if (!content) return ''
     if (!mark) return highlightLine(content, filename)
     const start = Math.min(mark[0], content.length)
     const end = Math.min(mark[1], content.length)
@@ -600,24 +527,11 @@ export function renderDiffContent(line: string, filename: string, mark?: [number
     ].join('')
 }
 
-/**
- * True when a del/add pair differs only in whitespace (indent / format churn) —
- * the collapsed-and-trimmed texts are identical.
- */
 export function isWhitespaceOnlyChange(oldText: string, newText: string): boolean {
     const collapse = (text: string) => text.slice(1).replace(/\s+/g, ' ').trim()
     return collapse(oldText) === collapse(newText)
 }
 
-/**
- * Detect lines that were MOVED (deleted from one spot and re-added unmodified
- * elsewhere) instead of genuinely changed. Returns the set of both the del and
- * add lines involved so the UI can render them as "moved" rather than -/+.
- *
- * A del only pairs with an add whose index lies OUTSIDE the del…add block the
- * del itself belongs to — the adjacent del/add pair of a real modification
- * never counts as a move. First match wins; each line is consumed at most once.
- */
 export function detectMovedLines(lines: DiffLine[]): Set<DiffLine> {
     const moved = new Set<DiffLine>()
     const addsByKey = new Map<string, number[]>()
@@ -630,7 +544,6 @@ export function detectMovedLines(lines: DiffLine[]): Set<DiffLine> {
     })
     lines.forEach((line, index) => {
         if (line.type !== 'del') return
-        // extent of the del…add block this del belongs to
         let blockEnd = index
         while (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'del') blockEnd++
         if (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'add') {

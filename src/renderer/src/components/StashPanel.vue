@@ -24,17 +24,13 @@
     const menu = ref<StashMenuState | null>(null)
     const messageInput = useTemplateRef<HTMLInputElement>('messageInput')
 
-    /** stash messages get a baked-in "On <branch>: " prefix; strip it so the
-     *  duplicate check matches what the user actually types */
     const normalizeMessage = (value: string) => value.replace(/^On [^:]+: /, '').trim()
 
-    /** true when the typed message already exists on an existing stash */
     const isDuplicate = computed(() => {
         const text = normalizeMessage(message.value)
         return text.length > 0 && stashes.value.some(stash => normalizeMessage(stash.message) === text)
     })
 
-    /** display rows: message without the "On <branch>: " prefix, date + branch */
     const stashRows = computed(() =>
         stashes.value.map(stash => {
             const match = /^On ([^:]+): /.exec(stash.message)
@@ -47,7 +43,6 @@
         })
     )
 
-    /** focus the message input as soon as the create form mounts */
     watch(
         creating,
         value => {
@@ -60,7 +55,6 @@
         try {
             stashes.value = await window.api.stashes()
         } catch {
-            /* ignore */
         }
     }
     onMounted(load)

@@ -1,7 +1,5 @@
 export interface FileNode {
-    /** directory segment or file basename */
     name: string
-    /** full path (prefix for directories) */
     path: string
     isDir: boolean
     children: FileNode[]
@@ -11,18 +9,14 @@ export interface TreeRow {
     key: string
     kind: 'dir' | 'file'
     name: string
-    /** directory prefix (dirs) or full file path (files) */
     fullPath: string
     depth: number
-    /** number of files beneath a directory */
     count?: number
 }
 
-/** Build a nested directory tree from a flat list of file paths. */
 export function buildTree(paths: string[]): FileNode[] {
     const root: FileNode = { name: '', path: '', isDir: true, children: [] }
     for (const path of paths) {
-        // renames arrive as "old -> new"; keep them as a single leaf
         if (path.includes(' → ')) {
             root.children.push({ name: path, path, isDir: false, children: [] })
             continue
@@ -57,7 +51,6 @@ function sortNodes(nodes: FileNode[]) {
     for (const node of nodes) if (node.isDir) sortNodes(node.children)
 }
 
-/** Flatten a tree into visible rows, skipping directories inside `collapsed`. */
 export function flattenTree(
     nodes: FileNode[],
     collapsed: ReadonlySet<string>,

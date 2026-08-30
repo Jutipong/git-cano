@@ -1,4 +1,3 @@
-/** Short absolute date as dd/mm/yyyy (commit graph DATE column) */
 export function formatShortDate(value: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
@@ -7,7 +6,6 @@ export function formatShortDate(value: string): string {
     return `${dd}/${mm}/${date.getFullYear()}`
 }
 
-/** Absolute date+time as dd/mm/yyyy hh:mm (commit graph DATE column) */
 export function formatDateTime(value: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
@@ -18,8 +16,6 @@ export function formatDateTime(value: string): string {
     return `${dd}/${mm}/${date.getFullYear()} ${hh}:${mi}`
 }
 
-/** Token-based date formatting for the commit graph DATE column.
- *  Tokens: yyyy · yy · MM (month) · dd · HH (24h) · hh (12h) · mm (minutes) · ss · a (AM/PM) */
 export function formatDatePattern(value: string, pattern: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value
@@ -39,7 +35,6 @@ export function formatDatePattern(value: string, pattern: string): string {
     return pattern.replace(/yyyy|yy|MM|dd|HH|hh|mm|ss|a/g, token => tokens[token] ?? token)
 }
 
-/** Human-friendly commit date: Today/Yesterday/weekday, else absolute date */
 export function formatCommitDate(value: string): string {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return value

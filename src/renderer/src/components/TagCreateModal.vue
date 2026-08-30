@@ -22,7 +22,6 @@
             const tags = await window.api.tags()
             existing.value = tags.map(tag => tag.name)
         } catch {
-            /* ignore — duplicate names still rejected by git */
         }
     })
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
@@ -31,16 +30,13 @@
         if (event.key === 'Escape') emit('close')
     }
 
-    /** Short "head" of the target commit for the header chip — subject line only, capped. */
     const head = computed(() => {
         const s = props.commit.subject?.trim() ?? ''
         return s.length > 48 ? `${s.slice(0, 48).trimEnd()}…` : s
     })
 
-    /** Git forbids whitespace and these characters in ref names. */
     const TAG_NAME_FORBIDDEN = /[\s~^:?*[\]\\]/
 
-    /** true when the typed name already exists on an existing tag (live, like stash) */
     const isDuplicate = computed(() => {
         const trimmed = name.value.trim()
         return trimmed.length > 0 && existing.value.includes(trimmed)

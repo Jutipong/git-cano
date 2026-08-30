@@ -17,12 +17,10 @@
 
     const ui = useUiStore()
 
-    // legacy builds persisted a boolean split toggle under this raw key — clean it up once
     localStorage.removeItem('ogit-diff-mode')
 
     type DiffViewMode = 'split' | 'inline'
 
-    /** context-line count that makes `git diff` show the whole file */
     const FULL_FILE_CONTEXT = 999_999
 
     const lines = ref<DiffLine[]>([])
@@ -47,7 +45,6 @@
         try {
             const context = ui.showEntireFile ? FULL_FILE_CONTEXT : undefined
             if (props.commitHash) {
-                // diff of a file inside a specific commit
                 lines.value = await window.api.commitFileDiff(props.commitHash, f.path, context)
                 return
             }
@@ -91,9 +88,7 @@
     interface SideBySideRow {
         left?: DiffLine
         right?: DiffLine
-        /** hunk header rendered as a full-width separator row */
         hunkHeader?: DiffLine
-        /** ordinal of the change this row belongs to (navigation anchor) */
         change?: number
     }
 
@@ -105,14 +100,11 @@
         let i = 0
         while (i < lines.value.length) {
             const line = lines.value[i]
-            // File headers and no-newline markers are useful in an inline patch,
-            // but must not create an empty row in either split pane.
             if (line.type === 'meta') {
                 i++
                 continue
             }
             if (line.type === 'hunk') {
-                // visual separator only — changes are anchored on their first row
                 rows.push({ hunkHeader: line })
                 inChange = false
                 i++
@@ -120,7 +112,6 @@
             }
             if (line.type !== 'del') {
                 if (line.type === 'add') {
-                    // add-only row: starts a new change group unless it continues one
                     rows.push({ right: line, change: inChange ? undefined : change++ })
                     inChange = true
                     i++
@@ -136,10 +127,6 @@
             while (i < lines.value.length && lines.value[i].type === 'del') dels.push(lines.value[i++])
             const adds: DiffLine[] = []
             while (i < lines.value.length && lines.value[i].type === 'add') adds.push(lines.value[i++])
-            // GitKraken-style block alignment: the shorter side is padded with
-            // blank rows at the TOP so both blocks bottom-align — e.g. 1 del
-            // against 26 adds keeps the del next to the LAST added line, with
-            // hatched filler rows above it.
             const leftPad = Math.max(0, adds.length - dels.length)
             const rightPad = Math.max(0, dels.length - adds.length)
             const at = (arr: DiffLine[], index: number): DiffLine | undefined =>
@@ -156,7 +143,6 @@
         return rows
     })
 
-    /** Word-level mark ranges for paired del/add couples, keyed by line object */
     const marks = computed(() => {
         const map = new Map<DiffLine, [number, number] | null>()
         for (let i = 0; i < lines.value.length - 1; i++) {
@@ -172,7 +158,6 @@
         return map
     })
 
-    /** del/add pairs that differ only in whitespace — rendered dimmed, not as real changes */
     const wsOnly = computed(() => {
         const set = new Set<DiffLine>()
         for (let i = 0; i < lines.value.length - 1; i++) {
@@ -187,10 +172,8 @@
         return set
     })
 
-    /** lines relocated without content edits — rendered as "moved", not -/+ */
     const movedLines = computed(() => detectMovedLines(lines.value))
 
-    /** extra CSS class for a diff line: moved wins over the ws-churn dim */
     function lineFlagClass(line?: DiffLine): string {
         if (!line || (line.type !== 'add' && line.type !== 'del')) return ''
         if (movedLines.value.has(line)) return 'moved'
@@ -198,12 +181,10 @@
         return ''
     }
 
-    /** Hunk header indexes within `lines` — the ordinals consumed by per-hunk staging */
     const hunkHeaderIndexes = computed(() =>
         lines.value.map((line, index) => (line.type === 'hunk' ? index : -1)).filter(index => index >= 0)
     )
 
-    /** indexes of lines that start a change group (first add/del after a non-change line) */
     const changeStartIndexes = computed(() => {
         const indexes: number[] = []
         for (let i = 0; i < lines.value.length; i++) {
@@ -217,18 +198,14 @@
 
     const changeIndexMap = computed(() => new Map(changeStartIndexes.value.map((lineIndex, i) => [lineIndex, i])))
 
-    /** number of change groups in the current view mode */
     const changeCount = computed(() =>
         ui.diffViewMode === 'split'
             ? sideBySide.value.reduce((count, row) => count + (row.change !== undefined ? 1 : 0), 0)
             : changeStartIndexes.value.length
     )
 
-    /** rAF scroll animation handle — cancelled when a newer jump supersedes it */
     let scrollAnimation: number | null = null
 
-    /** animated jump that puts the change anchor at the top of the viewport —
-     *  fixed short duration so far targets don't feel slow (unlike scrollIntoView smooth) */
     function scrollToChange(index: number) {
         const body = diffBody.value
         if (!body) return
@@ -247,7 +224,7 @@
         const start = performance.now()
         const step = (now: number) => {
             const t = Math.min((now - start) / duration, 1)
-            const eased = 1 - Math.pow(1 - t, 3) // ease-out cubic
+            const eased = 1 - Math.pow(1 - t, 3)
             body.scrollTo({ top: from + distance * eased })
             scrollAnimation = t < 1 ? requestAnimationFrame(step) : null
         }
@@ -263,7 +240,6 @@
     async function actOnHunk(hunkOrdinal: number) {
         if (!props.file || !props.refresh || rawPatch.value.trim() === '') return
         try {
-            // viewing unstaged diff -> stage the hunk (forward); staged diff -> unstage it (reverse)
             await useUiTransientStore().withBusy(
                 () => window.api.stageHunks(props.file!.path, props.file!.staged, [hunkOrdinal], props.file!.staged),
                 props.file.staged ? 'Unstaging…' : 'Staging…'
@@ -277,9 +253,8 @@
 
     function renderOne(line: DiffLine, highlight: (content: string) => string): string {
         const content = line.text.slice(1)
-        if (!content) return '' // empty added/removed line — draw nothing, never the +/- glyph
+        if (!content) return ''
         if (line.type !== 'add' && line.type !== 'del') return highlight(content)
-        // moved lines are not an edit — no word-level <mark> on them
         const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
         if (!mark) return highlight(content)
         const start = Math.min(mark[0], content.length)
@@ -288,25 +263,18 @@
         return `${highlight(content.slice(0, start))}<mark>${highlight(content.slice(start, end))}</mark>${highlight(content.slice(end))}`
     }
 
-    /** Per-line highlighted HTML — one stateful walk so Vue SFC sections and
-        multi-line comments/template literals carry across line breaks. */
     const htmlMap = computed(() => highlightDiffLines(lines.value, props.file?.path ?? '', renderOne))
-
-    /* ---------------- Minimap ---------------- */
 
     const minimapEl = ref<HTMLElement | null>(null)
     const minimapCanvas = ref<HTMLCanvasElement | null>(null)
     const viewportEl = ref<HTMLElement | null>(null)
     const minimapVisible = ref(false)
-    /** height of the drawn bar area inside the strip (bars may not fill it) */
     let minimapMapH = 0
     let resizeObserver: ResizeObserver | null = null
     let scrollSyncTimer: ReturnType<typeof setTimeout> | null = null
 
     type MinimapKind = 'add' | 'del'
 
-    /** minimap bars for the current mode: inline = single column from `lines`, split = two half columns.
-     *  Only add/del rows are drawn — ctx/hunk slots stay empty so bar positions match the content. */
     function minimapRows(): { kind?: MinimapKind; left?: MinimapKind; right?: MinimapKind }[] {
         const change = (type?: string) => (type === 'add' || type === 'del' ? (type as MinimapKind) : undefined)
         if (ui.diffViewMode === 'split') {
@@ -350,9 +318,6 @@
         if (!cssW || !stripH) return
         const rows = minimapRows()
         if (!rows.length) return
-        // bars always fill the strip — if the drawn area (mapH) were shorter
-        // than the strip, the viewport indicator would shrink/drift out of
-        // sync with the native scrollbar thumb (visible on shorter diffs)
         const barH = stripH / rows.length
         minimapMapH = barH * rows.length
         const dpr = window.devicePixelRatio || 1
@@ -388,14 +353,12 @@
         vp.style.top = `${(body.scrollTop / body.scrollHeight) * mapH}px`
     }
 
-    /** show/hide the strip and (re)draw it — safe to call on any relevant change */
     function updateMinimap() {
         const body = diffBody.value
         if (!body || !minimapEl.value) return
         const empty = !lines.value.length || meta.value?.binary || meta.value?.image
         const visible = !empty && body.scrollHeight > body.clientHeight + 1
         if (visible && !minimapVisible.value) {
-            // the strip just left display:none — wait for layout before measuring it
             minimapVisible.value = true
             nextTick(() => {
                 renderMinimap()
@@ -433,7 +396,6 @@
         window.addEventListener('mouseup', up)
     }
 
-    /** keep the n/m counter in sync with manual scrolling: which change group is at the top */
     function syncChangeCounter() {
         const body = diffBody.value
         if (!body || !changeCount.value || !body.scrollHeight) return
@@ -465,11 +427,8 @@
         scrollSyncTimer = setTimeout(syncChangeCounter, 150)
     }
 
-    /* -------- split-view horizontal scroll sync (GitKraken-style) -------- */
-
     const leftPaneEl = ref<HTMLElement | null>(null)
     const rightPaneEl = ref<HTMLElement | null>(null)
-    /** guard so mirroring one pane's scrollLeft doesn't bounce back */
     let syncingX = false
 
     function onPaneScrollX(side: 'left' | 'right', event: Event) {
@@ -484,7 +443,6 @@
         })
     }
 
-    /** horizontal offset is meaningless once the content changes */
     function resetPaneScroll() {
         if (leftPaneEl.value) leftPaneEl.value.scrollLeft = 0
         if (rightPaneEl.value) rightPaneEl.value.scrollLeft = 0

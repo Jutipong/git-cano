@@ -10,13 +10,10 @@ import { toGoModel } from '@shared/models'
 import { getChangesContext } from './git'
 import { log } from './logger'
 
-/* ---- OpenCode Zen Go provider: https://opencode.ai/docs/th/go/ ---- */
-
 const BASE_URL = 'https://opencode.ai/zen/go/v1'
 const GO_MODELS_URL = `${BASE_URL}/models`
 const CONFIG_FILE = 'opencode.json'
 
-/** Protocol family each Go model speaks — see the endpoints table in the Go docs. */
 type Family = 'chat' | 'messages' | 'responses'
 
 function configPath(): string {
@@ -40,15 +37,11 @@ export function saveConfig(cfg: AiConfig): void {
     const file = configPath()
     fs.writeFileSync(file, JSON.stringify(clean, null, 2))
     try {
-        // keep the token file private to the current user
         fs.chmodSync(file, 0o600)
     } catch {
-        /* non-unix filesystems may ignore chmod */
     }
 }
 
-/** Map a Go model id to its protocol family. Falls back to OpenAI-compatible chat,
- * which covers the majority of Go coding models (GLM/Kimi/DeepSeek/MiMo/LongCat/Hy3). */
 function familyOf(modelId: string): Family {
     if (/^(minimax|qwen)/i.test(modelId)) return 'messages'
     if (/^(grok|gpt-|muse)/i.test(modelId)) return 'responses'
@@ -85,7 +78,6 @@ function extractErrorDetail(text: string, status: number): string {
         const json = JSON.parse(text) as { error?: { message?: string } }
         message = json.error?.message ?? ''
     } catch {
-        /* non-JSON error body */
     }
     const fallback: Record<number, string> = {
         401: 'Invalid API token (401 Unauthorized)',
@@ -124,7 +116,6 @@ function extractContent(family: Family, json: unknown): string {
         : ''
 }
 
-/** Single POST helper shared by the "test connection" and the commit-message generator. */
 async function callModel(
     token: string,
     modelId: string,
@@ -143,7 +134,6 @@ async function callModel(
             headers: {
                 'content-type': 'application/json',
                 authorization: `Bearer ${token}`,
-                // Anthropic-style gateway also accepts the key here
                 ...(family === 'messages' ? { 'x-api-key': token } : {}),
             },
             body: JSON.stringify(buildBody(family, modelId, systemPrompt, userPrompt, maxTokens)),
@@ -171,20 +161,17 @@ async function callModel(
                 'Model ran out of output tokens before replying (finish_reason=length) — increase the token budget or try a non-thinking model'
             )
         }
-        // expose the raw body so a still-failing model shows WHY it returned nothing
         throw new Error(`Model returned an empty response (${text.slice(0, 200)})`)
     }
     return content
 }
 
-/** Send the tiniest possible completion to verify token + model work together. */
 export async function testConnection(token: string, modelId: string): Promise<AiTestResult> {
     const cleanToken = String(token ?? '').trim()
     const cleanModel = String(modelId ?? '').trim()
     if (!cleanToken || !cleanModel) return { ok: false, message: 'Enter both a token and a model-id first' }
     try {
         await callModel(cleanToken, cleanModel, '', 'ping', { maxTokens: 64, timeoutMs: 30_000, allowEmpty: true })
-        // failure details never contain the token — safe to log (model ids aren't secret)
         log('info', 'ai', `test ok (${cleanModel})`)
         return { ok: true, message: 'Connected — token & model are valid' }
     } catch (err) {
@@ -218,7 +205,6 @@ function stripFences(text: string): string {
     return text.replace(/^```(?:\w+)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
 }
 
-/** Build a commit message from all uncommitted changes (uses the saved config). */
 export async function generateCommitMessage(): Promise<string> {
     const cfg = getConfig()
     if (!cfg.token || !cfg.modelId) throw new Error('No AI configured — set your OpenCode token and model-id in Settings first')
@@ -229,7 +215,6 @@ export async function generateCommitMessage(): Promise<string> {
     return stripFences(content).slice(0, 2500)
 }
 
-/** Fallback catalog used when the live /models fetch fails — keeps the UI usable offline. */
 const FALLBACK_MODELS = [
     'minimax-m3',
     'minimax-m2.7',
@@ -265,8 +250,6 @@ const FALLBACK_MODELS = [
     'muse-spark-1.2-contributor',
 ]
 
-/** Public model catalog (no auth required) — used to populate the AI model dropdown.
- * Returns id + display name; on any failure falls back to FALLBACK_MODELS so the list is never empty. */
 export async function listGoModels(): Promise<GoModel[]> {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)

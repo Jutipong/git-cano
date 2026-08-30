@@ -10,7 +10,6 @@
         else if (event.key === 'Enter') confirmStore.settle(true)
     }
 
-    // focus the confirm button as soon as the dialog mounts
     watch(
         () => confirmStore.current,
         value => {

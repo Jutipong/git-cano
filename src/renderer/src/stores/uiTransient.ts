@@ -1,8 +1,6 @@
-// semantic kinds plus action accents so a toast can pick up the color of the button that triggered it
 export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'fetch' | 'pull' | 'push' | 'stash'
 
 export interface NotifyOptions {
-    /** render an 'error' as a red toast instead of opening the error dialog */
     asToast?: boolean
 }
 
@@ -10,7 +8,6 @@ interface ToastMessage {
     id: number
     message: string
     type: ToastKind
-    // 1 → just shown, 0 → about to disappear; drives the countdown ring
     progress: number
     deadline: number
 }
@@ -18,7 +15,6 @@ interface ToastMessage {
 let toastTicker: ReturnType<typeof setInterval> | null = null
 let nextToastId = 0
 
-// how long a toast stays on screen, and how often the countdown ring updates
 export const TOAST_DURATION = 10000
 const TOAST_TICK_MS = 50
 
@@ -45,7 +41,6 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
     const searchQuery = ref('')
     const toasts = ref<ToastMessage[]>([])
     const errorDialog = ref<string | null>(null)
-    /** label of the running user-initiated operation (null = idle) — drives the busy overlay */
     const busy = ref<string | null>(null)
     let busyCount = 0
 
@@ -73,8 +68,7 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
     function notify(message: string, type?: ToastKind, opts?: NotifyOptions) {
         const kind = type ?? inferToastKind(message)
         if (kind === 'error' && !opts?.asToast) {
-            // errors go to a dedicated dialog so the message can be read clearly
-            errorDialog.value = message // last error wins
+            errorDialog.value = message
             return
         }
         toasts.value.push({
@@ -91,10 +85,6 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         errorDialog.value = null
     }
 
-    /**
-     * Run a user-initiated operation under the global busy overlay — all other UI
-     * interaction (branch/repo switching included) is blocked until it settles.
-     */
     async function withBusy<T>(fn: () => Promise<T>, label = 'Working…'): Promise<T> {
         busy.value = label
         busyCount++

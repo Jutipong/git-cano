@@ -27,7 +27,6 @@
 
     watch(pausedMessage, value => {
         if (!value) return
-        // freeze list while paused; unfreeze reloads nothing but stops editing
     })
 
     async function loadPlan() {
@@ -252,5 +251,4 @@
 </template>
 
 <style scoped>
-    /* keep type-only import used for RebaseEntry in script */
 </style>

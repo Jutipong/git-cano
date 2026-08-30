@@ -11,7 +11,6 @@
         x: number
         y: number
         branch: { name: string; current: boolean; detached?: boolean; commitHash?: string; ahead?: number; behind?: number }
-        /** repo has a configured remote to push/pull to */
         hasRemote: boolean
     }
 

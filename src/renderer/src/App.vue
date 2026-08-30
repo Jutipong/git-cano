@@ -31,13 +31,10 @@
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
 
-    // keep the splash on screen at least this long so the brand is readable even
-    // when the session restores almost instantly (will host a logo image later)
     const SPLASH_MIN_MS = 1800
     const splashMinElapsed = ref(false)
     const splashVisible = computed(() => !booted.value || !splashMinElapsed.value)
 
-    // toast notifications สำหรับทุก component ที่ inject('notify')
     provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
 
     function openNewRepo() {
@@ -68,15 +65,12 @@
         void useAiStore().load()
         setTimeout(() => (splashMinElapsed.value = true), SPLASH_MIN_MS)
 
-        // instant refresh when the repo changes outside the app (terminal commits, etc.)
         const unwatch = window.api.onRepoChanged(debouncedRefresh)
         onUnmounted(unwatch)
 
-        // refresh when returning to the app window
         window.addEventListener('focus', debouncedRefresh)
         onUnmounted(() => window.removeEventListener('focus', debouncedRefresh))
 
-        // polling fallback (1 minute)
         refreshInterval.value = setInterval(
             () => {
                 if (repoStore.repo) void repoStore.refresh()
@@ -85,10 +79,8 @@
         )
 
         const onKeyDown = (event: KeyboardEvent) => {
-            // block all global shortcuts while a git operation holds the busy overlay
             if (uiTransient.busy) return
             if (event.key === 'Escape') {
-                // close diff overlay first, then commit details
                 if (selectedFile.value) selectedFile.value = null
                 else if (selectedCommit.value) selectedCommit.value = null
                 return
@@ -158,7 +150,6 @@
     }
 
     async function createBranchAt(commit: CommitNode) {
-        // existing local branch names for the live duplicate check (like TagCreateModal)
         const existing = await window.api
             .branches()
             .then(branches => branches.local.map(branch => branch.name))
@@ -170,7 +161,6 @@
             confirmLabel: 'Create',
             existing,
         })
-        // pass the commit as startPoint so the branch lands on the clicked commit, not HEAD
         if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false, commit.hash), `Creating branch ${name.trim()}…`)
     }
 
@@ -285,7 +275,6 @@
                 Open repository
             </button>
         </div>
-        <!-- diff overlay: floats over tab bar + sidebar + graph, stops before the right pane -->
         <DiffView
             v-if="selectedFile && repo"
             class="diff-overlay"
@@ -325,7 +314,6 @@
         <ErrorDialog
             :message="uiTransient.errorDialog"
             @close="uiTransient.closeErrorDialog()" />
-        <!-- global busy overlay: blocks ALL interaction (incl. tab switching) while a git op runs -->
         <div
             v-if="uiTransient.busy"
             class="busy-overlay">
@@ -402,14 +390,12 @@
                 </div>
             </TransitionGroup>
         </div>
-        <!-- full-window splash while the saved session restores; fades out when booted -->
         <Transition name="splash">
             <div
                 v-if="splashVisible"
                 class="splash-screen">
                 <div class="splash-card">
                     <div class="splash-logo">
-                        <!-- TODO: swap for a real logo image once an asset exists -->
                         <i-lucide-folder-git2
                             width="34"
                             height="34" />

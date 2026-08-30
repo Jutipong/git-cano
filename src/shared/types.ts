@@ -1,5 +1,3 @@
-// Shared types between main / preload / renderer
-
 export interface CommitNode {
     hash: string
     shortHash: string
@@ -7,17 +5,14 @@ export interface CommitNode {
     author: string
     date: string
     subject: string
-    /** commit body (everything after the title line) — only fetched for the graph log */
     body?: string
-    refs: string[] // e.g. ["HEAD -> main", "origin/main", "tag: v1.0"]
+    refs: string[]
     lane: number
 }
 
 export interface FileEntry {
     path: string
-    /** Index (staged) status: ' ' | A | M | D | R | C | U */
     staged: string
-    /** Working dir status: ' ' | M | D | ? | U */
     unstaged: string
 }
 
@@ -34,13 +29,9 @@ export interface RepoStatus {
 export interface BranchInfo {
     name: string
     current: boolean
-    /** true when this entry is the detached-HEAD pseudo-branch (name = short hash) */
     detached?: boolean
-    /** commit SHA this branch points to */
     commitHash?: string
-    /** commits on this branch not yet pushed to upstream */
     ahead?: number
-    /** commits on upstream not yet pulled */
     behind?: number
 }
 
@@ -90,9 +81,7 @@ export interface MenuItem {
     label: string
     action?: () => void
     danger?: boolean
-    /** accent color for the row: green (apply-like) or orange (pop-like) */
     tone?: 'green' | 'orange'
-    /** icon key rendered before the label — must exist in ContextMenu's icon registry */
     icon?: string
     separatorBefore?: boolean
 }
@@ -135,8 +124,6 @@ export interface BlameLine {
     content: string
 }
 
-/* ---- AI (OpenCode Zen Go) ---- */
-
 export interface AiConfig {
     token: string
     modelId: string
@@ -147,8 +134,6 @@ export interface AiTestResult {
     message: string
 }
 
-/** A Go provider model as shown in the AI dropdown. `name` is the human-readable
- * label (e.g. "DeepSeek V4 Pro"); `id` is what's sent to the API and persisted in config. */
 export interface GoModel {
     id: string
     name: string

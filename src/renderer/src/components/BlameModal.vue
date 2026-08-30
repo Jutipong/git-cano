@@ -24,7 +24,6 @@
         }
     })
 
-    // alternate background per commit block for readability
     const shadeOf = computed(() => {
         const map = new Map<string, number>()
         let blockIndex = -1

@@ -6,7 +6,6 @@
 
     const ui = useUiStore()
 
-    /** columns that are always shown and can't be toggled (they are the history itself) */
     const STATIC_COLUMNS: { key: string; label: string; hint: string }[] = [
         { key: 'graph', label: 'Graph', hint: 'Commit lane lines and nodes' },
         { key: 'message', label: 'Message', hint: 'Commit subject and ref chips' },
@@ -20,7 +19,6 @@
 
     const DEFAULT_DATE_FORMAT = 'dd/MM/yyyy HH:mm'
 
-    /** live preview of the date pattern against right now, so the user sees the result while typing */
     const datePreview = computed(() => {
         const pattern = ui.commitDateFormat.trim() || DEFAULT_DATE_FORMAT
         return formatDatePattern(new Date().toISOString(), pattern)

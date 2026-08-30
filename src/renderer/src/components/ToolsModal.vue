@@ -28,7 +28,6 @@
     const connecting = ref(false)
     const connectResult = ref<{ ok: boolean; message: string } | null>(null)
     const modelOptions = ref<GoModel[]>([])
-    // keep a previously-saved model visible even if it isn't in the fetched list
     const modelSelectOptions = computed(() => {
         const current = aiModel.value.trim()
         if (!current) return modelOptions.value
@@ -43,14 +42,12 @@
             try {
                 worktrees.value = await window.api.worktrees()
             } catch {
-                /* ignore */
             }
         }
         if (tab.value === 'submodules') {
             try {
                 submodules.value = await window.api.submodules()
             } catch {
-                /* ignore */
             }
         }
         if (tab.value === 'bisect' && props.bisectActive) {
@@ -58,13 +55,11 @@
                 const log = await window.api.log(1)
                 currentCommit.value = log[0]?.shortHash ?? null
             } catch {
-                /* ignore */
             }
         }
         if (tab.value === 'ai') await loadAiTab()
     }
 
-    // prefill the AI form once (switching tabs back and forth must not clobber edits)
     let aiLoaded = false
     async function loadAiTab() {
         if (aiLoaded) return
@@ -74,11 +69,9 @@
             aiToken.value = ai.token
             aiModel.value = ai.modelId
         } catch {
-            /* ignore */
         }
     }
 
-    /** Fetch the provider's model catalog and populate the dropdown. */
     async function connectProvider() {
         if (!aiToken.value.trim() || connecting.value) return
         connecting.value = true
@@ -110,8 +103,6 @@
         try {
             const result = await window.api.ai.test(aiToken.value.trim(), aiModel.value.trim())
             aiTestResult.value = result
-            // a passing test means the config is usable — persist it so the AI
-            // generate button unlocks without a separate Save click
             if (result.ok) await ai.save({ token: aiToken.value.trim(), modelId: aiModel.value.trim() })
         } catch (error) {
             aiTestResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }

@@ -6,10 +6,8 @@
     const value = ref('')
     const error = ref('')
 
-    // Git forbids whitespace and these characters in ref names
     const REF_NAME_FORBIDDEN = /[\s~^:?*[\]\\]/
 
-    // live duplicate check (same as TagCreateModal)
     const existing = computed(() => promptStore.current?.existing ?? [])
     const isDuplicate = computed(() => {
         const trimmed = value.value.trim()
@@ -41,7 +39,6 @@
         else if (event.key === 'Enter') submit()
     }
 
-    // open with a fresh (pre-filled) input each time the dialog appears
     watch(
         () => promptStore.current,
         current => {

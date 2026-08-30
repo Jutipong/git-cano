@@ -7,13 +7,10 @@ import App from './App.vue'
 import './styles.css'
 import './modern-ui.css'
 
-//
-/** forward renderer-side errors into the main-process log file (best-effort) */
 function reportError(message: string): void {
     try {
         window.api.clientLog('error', message.slice(0, 2000))
     } catch {
-        /* api unavailable — nothing else to do */
     }
 }
 

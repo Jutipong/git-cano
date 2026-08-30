@@ -2,14 +2,6 @@ import { app } from 'electron'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-/*
- * Dependency-free operation logger.
- *
- * Writes one line per event to `<userData>/logs/open-git.log` and mirrors it
- * to the console. Payloads are always summarized (never dumped raw) so huge
- * responses like repo status cannot flood the file.
- */
-
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
 const LEVELS: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 }
@@ -32,7 +24,6 @@ function logfile(): string {
     return filePath
 }
 
-/** Truncate/abstract any payload into a short single-line description. */
 export function summarize(value: unknown): string {
     if (value === undefined) return 'undefined'
     if (value === null) return 'null'
@@ -51,7 +42,6 @@ export function summarizeArgs(args: unknown[]): string {
     return args.map(arg => summarize(arg)).join(' ') || '(no args)'
 }
 
-/** Mask credentials embedded in remote URLs: https://user:token@host → https://***@host */
 export function maskUrl(value: string): string {
     return value.replace(/(https?):\/\/([^@/\s]+)@/g, '$1://***@')
 }
@@ -62,7 +52,6 @@ function rotateIfNeeded(file: string): void {
             fs.renameSync(file, `${file}.old`)
         }
     } catch {
-        /* rotation is best-effort */
     }
 }
 
@@ -75,7 +64,6 @@ function emit(level: Level, scope: string, message: string): void {
         rotateIfNeeded(file)
         fs.appendFileSync(file, `${line}\n`)
     } catch {
-        /* file logging is best-effort — never break the app over it */
     }
     // eslint-disable-next-line @typescript-eslint/no-console
     const print = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log

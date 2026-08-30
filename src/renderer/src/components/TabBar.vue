@@ -19,8 +19,6 @@
     const draggingPath = ref<string | null>(null)
     const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
 
-    // repo search: click the 🔍 button → an input expands in the pill, matching
-    // open tabs (case-insensitive substring) show in a dropdown below
     const searchOpen = ref(false)
     const searchQuery = ref('')
     const searchInput = ref<HTMLInputElement | null>(null)
@@ -63,8 +61,6 @@
 
     function onDocPointerDown(event: PointerEvent) {
         if (!searchOpen.value) return
-        // clicks inside the actions pill (incl. the toggle button) are handled
-        // by their own handlers — anything outside closes the search
         if ((event.target as HTMLElement | null)?.closest('.tab-actions')) return
         closeSearch()
     }

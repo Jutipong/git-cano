@@ -28,11 +28,7 @@
         (e: 'reset-hard', commit: CommitNode): void
     }>()
 
-    // Signature colour for the first-parent (main) lane so the trunk reads as one line
     const FIRST_LANE_COLOR = '#4C9AFF'
-    // 13 lane colours (vivid GitKraken-style) — alternating warm/cool so adjacent lanes
-    // contrast, and deliberately NO orange (reserved for the tag chips) and no teal
-    // (reserved for the first-parent lane above)
     const COLORS = [
         '#F062A4', '#8BC34A', '#B388FF', '#EF5350',
         '#26C6DA', '#FFD166', '#5C6BC0', '#66BB6A',
@@ -75,10 +71,6 @@
               )
             : props.commits
     )
-    // graph lane width: the graph column is always shown, so the absolutely-
-    // positioned svg (edges + nodes) is always laid out at its full lane width.
-    // min 120px so the header's ⚙ + "GRAPH" label fit inside the column without
-    // spilling into COMMIT MESSAGE (both header cell and row cells use graphW)
     const GRAPH_MIN_W = 120
     const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W))
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
@@ -108,7 +100,6 @@
     function nodeColor(commit: CommitNode) {
         return commit.lane === 0 ? FIRST_LANE_COLOR : COLORS[(commit.lane - 1) % COLORS.length]
     }
-    // a merge edge is any edge that leaves a non-first parent (the trunk keeps solid lines)
     function isMergeEdge(commit: CommitNode, parent: string) {
         return commit.parents.indexOf(parent) > 0
     }
@@ -118,22 +109,15 @@
     function nodeY(index: number) {
         return index * rowH + rowH / 2
     }
-    // rounded-elbow merge: leaves the child vertically, curves in near the parent
     function edgeD(childIndex: number, parentIndex: number): string {
         const cx = nodeX(visibleCommits.value[childIndex])
         const cy = nodeY(childIndex)
         const px = nodeX(visibleCommits.value[parentIndex])
         const py = nodeY(parentIndex)
         const gap = py - cy
-        // symmetric S-curve: spread the horizontal transition over up to ~2.5 rows per
-        // side so long branch lines sweep in smoothly (Git Fork style) instead of hooking
         const ease = Math.min(gap * 0.5, rowH * 2.5)
         return `M ${cx} ${cy} C ${cx} ${cy + ease}, ${px} ${py - ease}, ${px} ${py}`
     }
-    // long branch rejoin (side-branch rail falling back to the trunk many rows below):
-    // run straight along the child's lane, then turn into the parent node with a single
-    // quarter-turn near the bottom — Git Fork style. A plain S-curve over such a huge gap
-    // would render as a shallow diagonal hugging the trunk for dozens of rows.
     function rejoinEdgeD(childIndex: number, parentIndex: number): string {
         const cx = nodeX(visibleCommits.value[childIndex])
         const cy = nodeY(childIndex)
@@ -142,8 +126,6 @@
         const r = Math.min((py - cy) * 0.5, Math.abs(px - cx), rowH * 2.5)
         return `M ${cx} ${cy} L ${cx} ${py - r} Q ${cx} ${py} ${px} ${py}`
     }
-    // short return to the trunk: leave the parent's row horizontally, then make
-    // the same rounded turn as a merge edge before running up into the child node
     function shortReturnEdgeD(childIndex: number, parentIndex: number): string {
         const cx = nodeX(visibleCommits.value[childIndex])
         const cy = nodeY(childIndex)
@@ -153,9 +135,6 @@
         const dir = cx > px ? 1 : -1
         return `M ${cx} ${cy} L ${cx} ${py - r} Q ${cx} ${py} ${cx - dir * r} ${py} L ${px} ${py}`
     }
-    // GitKraken-style merge: leaves the merge commit horizontally along its own row,
-    // turns a rounded 90° corner onto the parent's lane, then drops straight into the
-    // parent node — the parent's lane stays a clean vertical rail
     function mergeEdgeD(childIndex: number, parentIndex: number): string {
         const cx = nodeX(visibleCommits.value[childIndex])
         const cy = nodeY(childIndex)
@@ -171,14 +150,9 @@
         const gap = nodeY(parentIndex) - nodeY(childIndex)
         const childX = nodeX(visibleCommits.value[childIndex])
         const parentX = nodeX(visibleCommits.value[parentIndex])
-        // Short returns leave the trunk row before making the same rounded turn
-        // as the upper branch; the merge edge above remains unchanged.
         if (parentX < childX) return shortReturnEdgeD(childIndex, parentIndex)
-        // past ~5 rows the S-curve flattens into a diagonal — switch to the rail + turn
         return gap > rowH * 5 ? rejoinEdgeD(childIndex, parentIndex) : edgeD(childIndex, parentIndex)
     }
-    // merge edges take the parent lane's colour so the elbow + drop reads as one rail
-    // with the branch line below; trunk edges keep the child's colour
     function edgeColor(commit: CommitNode, parent: string): string {
         const parentIndex = rowIndex.value.get(parent)
         const parentCommit = parentIndex === undefined ? undefined : visibleCommits.value[parentIndex]
@@ -187,12 +161,8 @@
     function formatDate(iso: string): string {
         return formatShortDate(iso)
     }
-    // DATE column honours the user's token pattern; blank input falls back to the default
     const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
 
-    // AUTHOR / DATE / HASH columns hug their content: measure the widest label
-    // among loaded commits and publish the widths as CSS vars so the header
-    // cells and every row stay perfectly aligned.
     const AUTHOR_MIN_W = 88
     const AUTHOR_MAX_W = 220
     const DATE_MIN_W = 76
@@ -210,7 +180,6 @@
         for (const author of new Set(visibleCommits.value.map(commit => commit.author))) {
             widest = Math.max(widest, measureText(author, 13))
         }
-        // + avatar (16px), gap (6px) and a hair of breathing room
         return Math.round(Math.min(AUTHOR_MAX_W, Math.max(AUTHOR_MIN_W, widest + 32)))
     })
     const dateW = computed(() => {
@@ -218,15 +187,12 @@
         for (const date of new Set(visibleCommits.value.map(commit => formatDatePattern(commit.date, commitDatePattern.value)))) {
             widest = Math.max(widest, measureText(date, 11))
         }
-        // cap hard: a formatted date is never wider than ~130px, so a bad
-        // measurement can never leave a big hole at the right edge
         return Math.round(Math.min(130, Math.max(DATE_MIN_W, widest + 8)))
     })
     const hashW = computed(() => {
         const sample = visibleCommits.value[0]?.shortHash ?? 'abcdef12345'
         return Math.round(Math.max(HASH_MIN_W, measureText(sample, 11, MONO_FONT) + 10))
     })
-    // pick a readable text colour on the solid chip fill (non-hex like "var(--orange)" → light)
     function contrastText(hex: string): string {
         if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#f5f7fa'
         const r = parseInt(hex.slice(1, 3), 16)
@@ -236,12 +202,9 @@
         return luminance > 150 ? '#122d2c' : '#f5f7fa'
     }
 
-    /* ---- ref chips: kind detection, stable per-name colours, ordering ---- */
-
     type RefKind = 'head' | 'local' | 'remote' | 'tag'
     const REF_ORDER: Record<RefKind, number> = { head: 0, local: 1, remote: 2, tag: 3 }
 
-    // remote names of the active repo, so "feature/x" locals aren't mistaken for remotes
     const knownRemotes = ref(new Set<string>())
     async function loadRemotes() {
         try {
@@ -267,16 +230,12 @@
     function sortedRefs(commit: CommitNode): string[] {
         return [...commit.refs].sort((a, b) => REF_ORDER[refKind(a)] - REF_ORDER[refKind(b)])
     }
-    // stable colour per ref: hash the branch name (remotes colour after their branch,
-    // so origin/main matches main) — a branch keeps its colour wherever it appears
     function chipColor(ref: string): string {
         const kind = refKind(ref)
         if (kind === 'tag') return 'var(--orange)'
         const name = refLabel(ref)
         return nameColor(kind === 'remote' ? name.slice(name.lastIndexOf('/') + 1) : name)
     }
-
-    /* ---- stable colours / avatar for authors ---- */
 
     function hashString(s: string): number {
         let h = 0
@@ -286,8 +245,6 @@
     function nameColor(name: string): string {
         return COLORS[hashString(name) % COLORS.length]
     }
-
-    /* ---- search highlight inside the subject ---- */
 
     interface SubjectPart {
         text: string
@@ -308,7 +265,6 @@
         return parts
     }
 
-    // scroll the graph to the commit a clicked sidebar branch points to, then select it
     watch(
         [() => repoStore.pendingFocusHash, rowIndex],
         ([hash]) => {
@@ -317,7 +273,6 @@
             const el = scrollEl.value
             if (!el) return
             if (index === undefined) {
-                // tip not in the loaded log window yet — keep the request alive and load more
                 if (props.hasMore) emit('load-more')
                 else repoStore.pendingFocusHash = null
                 return
@@ -329,7 +284,6 @@
         }
     )
 
-    // exiting commit view mode (toolbar ✕ or ESC) also clears the highlighted row
     watch(
         () => props.commitOpen,
         open => {

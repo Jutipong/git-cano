@@ -21,7 +21,6 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
     const root = ref<HTMLElement | null>(null)
 
-    /* registry of icons usable by menu items (referenced by key in MenuItem.icon) */
     const ICONS: Record<string, FunctionalComponent> = {
         'circle-check': CircleCheck,
         'git-branch': GitBranch,
