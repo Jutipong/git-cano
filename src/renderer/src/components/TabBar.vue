@@ -3,21 +3,61 @@
 
     import OpenInButton from './OpenInButton.vue'
 
+    import type { RepoStatus } from '@shared/types'
+    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
+
     interface Tab {
         path: string
         name: string
     }
 
-    const props = defineProps<{ tabs: Tab[]; activeIndex: number }>()
+    const props = defineProps<{
+        tabs: Tab[]
+        activeIndex: number
+        repo: RepoStatus | null
+        refresh: () => Promise<unknown>
+    }>()
     const emit = defineEmits<{
         (e: 'select', index: number): void
         (e: 'close', index: number): void
         (e: 'open-new'): void
         (e: 'reorder', from: number, to: number): void
+        (e: 'create-stash'): void
     }>()
 
     const draggingPath = ref<string | null>(null)
     const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
+
+    const uiTransient = useUiTransientStore()
+    const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
+
+    const syncBusy = ref<string | null>(null)
+
+    function actFetch() {
+        void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
+    }
+
+    function actPull() {
+        void sync('Pull', () => window.api.pull(), 'Pull completed')
+    }
+
+    function actPush() {
+        void sync('Push', () => window.api.push(), 'Push completed')
+    }
+
+    async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
+        if (syncBusy.value) return
+        syncBusy.value = label
+        try {
+            await uiTransient.withBusy(fn, `${label}ing…`)
+            await props.refresh()
+            notify(ok, 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            syncBusy.value = null
+        }
+    }
 
     const searchOpen = ref(false)
     const searchQuery = ref('')
@@ -134,6 +174,60 @@
                     </div>
                 </TransitionGroup>
             </div>
+        </div>
+        <div class="tab-sync-actions">
+            <button
+                class="toolbar-action primary-action"
+                :disabled="!!syncBusy || !repo"
+                title="Push"
+                @click="actPush()">
+                <i-lucide-arrow-up
+                    :class="{ 'bouncing-up': syncBusy === 'Push' }"
+                    width="15"
+                    height="15" />
+                <span>Push</span>
+                <span
+                    v-if="repo?.ahead"
+                    class="sync-count">{{ repo.ahead }}</span>
+            </button>
+            <span class="tab-actions-sep" />
+            <button
+                class="toolbar-action action-pull"
+                :disabled="!!syncBusy || !repo"
+                title="Pull"
+                @click="actPull()">
+                <i-lucide-arrow-down
+                    :class="{ 'bouncing-down': syncBusy === 'Pull' }"
+                    width="15"
+                    height="15" />
+                <span>Pull</span>
+                <span
+                    v-if="repo?.behind"
+                    class="sync-count">{{ repo.behind }}</span>
+            </button>
+            <span class="tab-actions-sep" />
+            <button
+                class="toolbar-action action-fetch"
+                :disabled="!!syncBusy || !repo"
+                title="Fetch"
+                @click="actFetch()">
+                <i-lucide-arrow-down-to-line
+                    :class="{ 'bouncing-down': syncBusy === 'Fetch' }"
+                    width="15"
+                    height="15" />
+                <span>Fetch</span>
+            </button>
+            <span class="tab-actions-sep" />
+            <button
+                class="toolbar-action action-stash"
+                :disabled="!repo"
+                title="Stashes"
+                @click="emit('create-stash')">
+                <i-lucide-archive
+                    width="15"
+                    height="15" />
+                <span>Stashes</span>
+            </button>
         </div>
         <div class="tab-actions">
             <button

@@ -12,6 +12,7 @@
     import Sidebar from './components/Sidebar.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
+    import StashCreateModal from './components/StashCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
 
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -30,6 +31,7 @@
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
+    const stashCreateOpen = ref(false)
 
     const SPLASH_MIN_MS = 1800
     const splashMinElapsed = ref(false)
@@ -215,10 +217,13 @@
                 <TabBar
                     :tabs="tabs"
                     :active-index="activeTab"
+                    :repo="repo"
+                    :refresh="repoStore.refresh"
                     @select="index => repoStore.setActive(index)"
                     @close="repoStore.closeTab($event)"
                     @open-new="openNewRepo()"
-                    @reorder="(from, to) => repoStore.reorderTabs(from, to)" />
+                    @reorder="(from, to) => repoStore.reorderTabs(from, to)"
+                    @create-stash="stashCreateOpen = true" />
                 <div class="app-body">
                     <div class="center-column">
                         <GraphView
@@ -306,6 +311,9 @@
             v-if="tagTarget"
             :commit="tagTarget"
             @close="tagTarget = null" />
+        <StashCreateModal
+            v-if="stashCreateOpen"
+            @close="stashCreateOpen = false" />
         <ToolsModal
             v-if="toolsOpen"
             :bisect-active="repoState.bisectActive"

@@ -240,6 +240,55 @@ body {
     background: color-mix(in srgb, var(--teal) 18%, transparent);
 }
 
+.tab-sync-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    min-height: 34px;
+    padding: 3px 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+.tab-sync-actions .toolbar-action {
+    height: 28px;
+    min-height: 28px;
+    background: transparent;
+    border-color: transparent;
+    font-weight: 600;
+}
+
+.tab-sync-actions .toolbar-action:disabled {
+    cursor: default;
+    opacity: 0.45;
+}
+
+.tab-sync-actions .action-fetch:hover:not(:disabled) {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 15%, transparent);
+    border-color: transparent;
+}
+
+.tab-sync-actions .action-pull:hover:not(:disabled) {
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 15%, transparent);
+    border-color: transparent;
+}
+
+.tab-sync-actions .primary-action:hover:not(:disabled) {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 15%, transparent);
+    border-color: transparent;
+}
+
+.tab-sync-actions .action-stash:hover:not(:disabled) {
+    color: var(--purple);
+    background: color-mix(in srgb, var(--purple) 15%, transparent);
+    border-color: transparent;
+}
+
+
 .tab-search-input:focus {
     border-color: color-mix(in srgb, var(--teal) 45%, transparent);
 }
@@ -317,12 +366,6 @@ body {
 }
 
 .tab-new:hover {
-    color: var(--green);
-    border-color: transparent;
-    background: color-mix(in srgb, var(--green) 15%, transparent);
-}
-
-.stash-add-btn:hover {
     color: var(--green);
     border-color: transparent;
     background: color-mix(in srgb, var(--green) 15%, transparent);
@@ -1018,26 +1061,6 @@ body {
     display: flex;
 }
 
-.stash-create {
-    margin: 4px 6px 10px;
-    padding: 10px;
-    background: var(--surface-2);
-    border: 1px solid var(--line-soft);
-    border-radius: 12px;
-    box-shadow: 0 3px 10px var(--shadow);
-}
-
-.stash-create input.input-error,
-.stash-create input.input-error:focus {
-    border-color: var(--red);
-}
-
-.stash-error {
-    margin-top: 6px;
-    color: var(--red);
-    font-size: 11px;
-}
-
 .stash-copy span {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1386,7 +1409,6 @@ body {
 
 .commit-box textarea,
 .new-branch input,
-.stash-create input,
 .tag-modal-body > input:not([type='checkbox']),
 .clone-box input,
 .tools-body input,

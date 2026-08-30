@@ -2,7 +2,6 @@
     import type { StashEntry } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
 
-    import { useTemplateRef } from 'vue'
     import { formatDateTime } from '../utils/format'
     import { confirmDialog } from '../utils/confirm'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
@@ -19,17 +18,9 @@
             ui.sidebarSections.stashes = value
         },
     })
-    const creating = ref(false)
-    const message = ref('')
     const menu = ref<StashMenuState | null>(null)
-    const messageInput = useTemplateRef<HTMLInputElement>('messageInput')
 
     const normalizeMessage = (value: string) => value.replace(/^On [^:]+: /, '').trim()
-
-    const isDuplicate = computed(() => {
-        const text = normalizeMessage(message.value)
-        return text.length > 0 && stashes.value.some(stash => normalizeMessage(stash.message) === text)
-    })
 
     const stashRows = computed(() =>
         stashes.value.map(stash => {
@@ -43,14 +34,6 @@
         })
     )
 
-    watch(
-        creating,
-        value => {
-            if (value) messageInput.value?.focus()
-        },
-        { flush: 'post' }
-    )
-
     async function load() {
         try {
             stashes.value = await window.api.stashes()
@@ -59,6 +42,7 @@
     }
     onMounted(load)
     watch(() => props.repoPath, load)
+    watch(() => uiTransient.stashListTick, load)
 
     async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
@@ -69,24 +53,6 @@
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
         }
-    }
-
-    function openCreate() {
-        expanded.value = true
-        creating.value = true
-        message.value = ''
-    }
-
-    function closeCreate() {
-        creating.value = false
-        message.value = ''
-    }
-
-    function submitCreate() {
-        if (!message.value.trim() || isDuplicate.value) return
-        const text = message.value.trim()
-        void run(() => window.api.createStash(text), 'Changes stashed', 'Creating stash…')
-        closeCreate()
     }
 
     async function dropStash(stash: StashEntry) {
@@ -125,51 +91,10 @@
                     STASHES <span class="section-count">{{ stashes.length }}</span>
                 </h3>
             </button>
-            <button
-                v-if="!creating"
-                class="icon-btn stash-add-btn"
-                title="Create stash"
-                @click="openCreate()">
-                <i-lucide-plus
-                    width="15"
-                    height="15" />
-            </button>
         </div>
         <template v-if="expanded">
             <div
-                v-if="creating"
-                class="stash-create">
-                <input
-                    ref="messageInput"
-                    v-model="message"
-                    :class="{ 'input-error': isDuplicate }"
-                    placeholder="Stash message"
-                    @keydown.enter="submitCreate()"
-                    @keydown.escape.stop="closeCreate()" />
-                <div
-                    v-if="isDuplicate"
-                    class="stash-error">
-                    Stash name already exists
-                </div>
-                <div class="stash-create-actions">
-                    <button
-                        class="btn small"
-                        @click="closeCreate()">
-                        Cancel
-                    </button>
-                    <button
-                        class="btn primary small"
-                        :disabled="!message.trim() || isDuplicate"
-                        @click="submitCreate()">
-                        <i-lucide-check
-                            width="13"
-                            height="13" />
-                        Save
-                    </button>
-                </div>
-            </div>
-            <div
-                v-if="stashes.length === 0 && !creating"
+                v-if="stashes.length === 0"
                 class="sidebar-empty">
                 No stashes
             </div>

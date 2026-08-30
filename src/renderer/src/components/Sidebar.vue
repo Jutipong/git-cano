@@ -49,12 +49,6 @@
     const hasRemote = ref(false)
     const pendingRemoteTag = ref<string | null>(null)
 
-    const syncBusy = ref<string | null>(null)
-
-    function actFetch() {
-        void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
-    }
-
     function focusBranch(branch: { name: string; commitHash?: string }) {
         const hash =
             branch.commitHash ??
@@ -62,19 +56,6 @@
                 commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`)
             )?.hash
         if (hash) repoStore.pendingFocusHash = hash
-    }
-    function actPull() {
-        void sync('Pull', () => window.api.pull(), 'Pull completed')
-    }
-    function actPush() {
-        void sync('Push', () => window.api.push(), 'Push completed')
-    }
-
-    async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
-        if (syncBusy.value) return
-        syncBusy.value = label
-        await run(fn, ok, `${label}ing…`)
-        syncBusy.value = null
     }
 
     async function loadAll() {
@@ -308,50 +289,6 @@
     <aside
         class="sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
-        <div class="sidebar-repo-card repo-sync-card">
-            <div class="repo-sync-actions">
-                <button
-                    class="toolbar-action action-fetch"
-                    :disabled="!!syncBusy"
-                    title="Fetch"
-                    @click="actFetch()">
-                    <i-lucide-arrow-down-to-line
-                        :class="{ 'bouncing-down': syncBusy === 'Fetch' }"
-                        width="15"
-                        height="15" />
-                    <span>Fetch</span>
-                </button>
-                <button
-                    class="toolbar-action action-pull"
-                    :disabled="!!syncBusy"
-                    title="Pull"
-                    @click="actPull()">
-                    <i-lucide-arrow-down
-                        :class="{ 'bouncing-down': syncBusy === 'Pull' }"
-                        width="15"
-                        height="15" />
-                    <span>Pull</span>
-                    <span
-                        v-if="repo.behind"
-                        class="sync-count">{{ repo.behind }}</span>
-                </button>
-                <button
-                    class="toolbar-action primary-action"
-                    :disabled="!!syncBusy"
-                    title="Push"
-                    @click="actPush()">
-                    <i-lucide-arrow-up
-                        :class="{ 'bouncing-up': syncBusy === 'Push' }"
-                        width="15"
-                        height="15" />
-                    <span>Push</span>
-                    <span
-                        v-if="repo.ahead"
-                        class="sync-count">{{ repo.ahead }}</span>
-                </button>
-            </div>
-        </div>
-
         <div class="sidebar-section">
             <div class="section-header">
                 <button

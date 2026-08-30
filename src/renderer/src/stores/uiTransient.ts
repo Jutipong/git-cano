@@ -42,7 +42,12 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
     const toasts = ref<ToastMessage[]>([])
     const errorDialog = ref<string | null>(null)
     const busy = ref<string | null>(null)
+    const stashListTick = ref(0)
     let busyCount = 0
+
+    function bumpStashList() {
+        stashListTick.value++
+    }
 
     function stopToastTicker() {
         if (toastTicker) clearInterval(toastTicker)
@@ -100,6 +105,8 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         toasts,
         errorDialog,
         busy,
+        stashListTick,
+        bumpStashList,
         notify,
         dismissToast,
         closeErrorDialog,

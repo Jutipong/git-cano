@@ -378,53 +378,6 @@ kbd {
     border: 1px solid var(--line-soft);
     border-radius: 6px;
 }
-.sidebar-repo-card.repo-sync-card {
-    padding: 2px 2px 12px;
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid var(--line-soft);
-    border-radius: 0;
-}
-.repo-sync-actions {
-    display: flex;
-    gap: 6px;
-    width: 100%;
-}
-.repo-sync-actions .toolbar-action {
-    flex: 1;
-    justify-content: center;
-    min-height: 30px;
-    padding: 0 10px;
-    font-size: 12px;
-    font-weight: 600;
-}
-.repo-sync-actions .action-fetch {
-    color: var(--orange);
-    background: color-mix(in srgb, var(--orange) 12%, transparent);
-    border-color: color-mix(in srgb, var(--orange) 35%, transparent);
-}
-.repo-sync-actions .action-fetch:hover {
-    background: color-mix(in srgb, var(--orange) 22%, transparent);
-    border-color: var(--orange);
-}
-.repo-sync-actions .action-pull {
-    color: var(--blue);
-    background: color-mix(in srgb, var(--blue) 12%, transparent);
-    border-color: color-mix(in srgb, var(--blue) 35%, transparent);
-}
-.repo-sync-actions .action-pull:hover {
-    background: color-mix(in srgb, var(--blue) 22%, transparent);
-    border-color: var(--blue);
-}
-.repo-sync-actions .primary-action {
-    color: var(--green);
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-    border-color: color-mix(in srgb, var(--green) 35%, transparent);
-}
-.repo-sync-actions .primary-action:hover {
-    background: color-mix(in srgb, var(--green) 22%, transparent);
-    border-color: var(--green);
-}
 .muted-icon {
     color: var(--text-muted);
 }
@@ -1381,21 +1334,6 @@ kbd {
 .stash-section {
     border-top: 1px solid var(--line-soft);
     padding-top: 8px;
-}
-.stash-create {
-    padding: 2px 12px 9px;
-}
-.stash-create input {
-    width: 100%;
-    padding: 6px 8px;
-    color: var(--text);
-    background: var(--surface-1);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    outline: none;
-}
-.stash-create input:focus {
-    border-color: var(--teal);
 }
 .tag-modal-body {
     padding: 12px 14px;
