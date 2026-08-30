@@ -258,6 +258,36 @@ body {
     background: color-mix(in srgb, var(--teal) 18%, transparent);
 }
 
+.tab-actions.search-open {
+    justify-content: stretch;
+    padding: 0 8px;
+}
+
+.tab-search-field {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+    color: var(--text-muted);
+}
+
+.tab-search-field .tab-search-input {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    height: 32px;
+    padding: 0;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    outline: 0;
+}
+
+.tab-search-field .tab-search-input::placeholder {
+    color: var(--text-muted);
+}
+
 .tab-sync-actions {
     grid-column: 5;
     display: flex;

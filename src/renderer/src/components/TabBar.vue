@@ -145,29 +145,60 @@
     <div
         v-if="tabs.length"
         class="tab-bar">
-        <div class="tab-actions">
-            <WorkspaceButton />
-            <span class="tab-actions-sep" />
-            <OpenInButton :path="activePath" />
-            <span class="tab-actions-sep" />
-            <button
-                class="icon-btn tab-search"
-                :class="{ open: searchOpen }"
-                title="Search open repositories"
-                @click="toggleSearch">
-                <i-lucide-search
-                    width="15"
-                    height="15" />
-            </button>
-            <input
-                v-if="searchOpen"
-                ref="searchInput"
-                v-model="searchQuery"
-                class="tab-search-input"
-                type="text"
-                placeholder="Search open repos…"
-                @keydown="onSearchKeydown" />
-            <template v-if="!searchOpen">
+        <div
+            class="tab-actions"
+            :class="{ 'search-open': searchOpen }">
+            <template v-if="searchOpen">
+                <div class="tab-search-field">
+                    <i-lucide-search
+                        width="15"
+                        height="15" />
+                    <input
+                        ref="searchInput"
+                        v-model="searchQuery"
+                        class="tab-search-input"
+                        type="text"
+                        placeholder="Search open repos…"
+                        @keydown="onSearchKeydown" />
+                    <button
+                        v-if="searchQuery"
+                        type="button"
+                        class="search-clear"
+                        aria-label="Clear repository search"
+                        @click="searchQuery = ''">
+                        ×
+                    </button>
+                </div>
+                <div class="tab-search-pop">
+                    <button
+                        v-for="{ tab, index } in searchResults"
+                        :key="tab.path"
+                        class="tab-search-result"
+                        :class="{ active: index === activeIndex }"
+                        :title="tab.path"
+                        @click="pickResult(index)">
+                        <span class="tab-search-result-name">{{ tab.name }}</span>
+                    </button>
+                    <div
+                        v-if="!searchResults.length"
+                        class="tab-search-empty">
+                        No matching repository
+                    </div>
+                </div>
+            </template>
+            <template v-else>
+                <WorkspaceButton />
+                <span class="tab-actions-sep" />
+                <OpenInButton :path="activePath" />
+                <span class="tab-actions-sep" />
+                <button
+                    class="icon-btn tab-search"
+                    title="Search open repositories"
+                    @click="toggleSearch">
+                    <i-lucide-search
+                        width="15"
+                        height="15" />
+                </button>
                 <span class="tab-actions-sep" />
                 <button
                     class="icon-btn tab-new"
@@ -178,24 +209,6 @@
                         height="15" />
                 </button>
             </template>
-            <div
-                v-if="searchOpen"
-                class="tab-search-pop">
-                <button
-                    v-for="{ tab, index } in searchResults"
-                    :key="tab.path"
-                    class="tab-search-result"
-                    :class="{ active: index === activeIndex }"
-                    :title="tab.path"
-                    @click="pickResult(index)">
-                    <span class="tab-search-result-name">{{ tab.name }}</span>
-                </button>
-                <div
-                    v-if="!searchResults.length"
-                    class="tab-search-empty">
-                    No matching repository
-                </div>
-            </div>
         </div>
         <div class="tab-group">
             <div class="tab-scroll">
