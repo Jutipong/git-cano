@@ -27,7 +27,10 @@
     })
 
     function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
+        if (event.key === 'Escape') {
+            event.stopPropagation()
+            emit('close')
+        }
     }
     onMounted(() => document.addEventListener('keydown', onKey))
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
