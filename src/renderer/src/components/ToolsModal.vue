@@ -68,9 +68,7 @@
     })
     const filteredModelOptions = computed(() => {
         const query = modelQuery.value.trim().toLowerCase()
-        return modelSelectOptions.value
-            .filter(model => `${model.name} ${model.id}`.toLowerCase().includes(query))
-            .slice(0, 10)
+        return modelSelectOptions.value.filter(model => `${model.name} ${model.id}`.toLowerCase().includes(query))
     })
     const modelDropdownStyle = computed(() => {
         const rect = modelInput.value?.getBoundingClientRect()
