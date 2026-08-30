@@ -1,5 +1,7 @@
 export type Theme = 'dark' | 'light' | 'dark-modern'
 
+export type AiCommitMode = 'off' | 'commit' | 'commit-push'
+
 export type CommitColumn = 'author' | 'hash' | 'date'
 
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
@@ -38,7 +40,7 @@ export const useUiStore = defineStore(
         const diffViewMode = ref<'split' | 'inline'>('split')
         if (diffViewMode.value === ('hunk' as 'inline')) diffViewMode.value = 'inline'
         const showEntireFile = ref(false)
-        const autoCommit = ref(false)
+        const aiCommitMode = ref<AiCommitMode>('off')
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
             tags: true,
@@ -79,7 +81,7 @@ export const useUiStore = defineStore(
             fileFilterMode,
             diffViewMode,
             showEntireFile,
-            autoCommit,
+            aiCommitMode,
             sidebarSections,
             commitColumns,
             commitDateFormat,
@@ -99,7 +101,7 @@ export const useUiStore = defineStore(
                 'fileFilterMode',
                 'diffViewMode',
                 'showEntireFile',
-                'autoCommit',
+                'aiCommitMode',
                 'sidebarSections',
                 'commitColumns',
                 'commitDateFormat',

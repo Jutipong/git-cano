@@ -6,6 +6,7 @@
 
     import type { CommitFile, FileEntry } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
+    import type { AiCommitMode } from '../stores/ui'
 
     import { modelName } from '@shared/models'
 
@@ -97,6 +98,43 @@
     const ui = useUiStore()
     const ai = useAiStore()
     const commitModelName = computed(() => modelName(ai.modelId))
+    const AI_MODE_OPTIONS: { value: AiCommitMode; label: string }[] = [
+        { value: 'off', label: 'Generate only' },
+        { value: 'commit', label: 'auto commit' },
+        { value: 'commit-push', label: 'auto commit + push' },
+    ]
+    const aiModeLabel = (mode: AiCommitMode) => AI_MODE_OPTIONS.find(option => option.value === mode)?.label ?? ''
+    const commitModelLabel = computed(() =>
+        ui.aiCommitMode === 'off' ? commitModelName.value : `${commitModelName.value} | ${aiModeLabel(ui.aiCommitMode)}`
+    )
+    const aiMenuOpen = ref(false)
+    const aiMenuRoot = ref<HTMLElement | null>(null)
+    const aiMenuStyle = computed(() => {
+        const rect = aiMenuRoot.value?.getBoundingClientRect()
+        if (!rect) return {}
+        return {
+            right: `${Math.max(8, window.innerWidth - rect.right)}px`,
+            bottom: `${Math.max(8, window.innerHeight - rect.top + 8)}px`,
+        }
+    })
+    function selectAiMode(mode: AiCommitMode) {
+        ui.aiCommitMode = mode
+        aiMenuOpen.value = false
+    }
+    function onAiMenuMouseDown(event: MouseEvent) {
+        if (aiMenuOpen.value && aiMenuRoot.value && !aiMenuRoot.value.contains(event.target as Node)) aiMenuOpen.value = false
+    }
+    function onAiMenuKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Escape') aiMenuOpen.value = false
+    }
+    onMounted(() => {
+        document.addEventListener('mousedown', onAiMenuMouseDown)
+        document.addEventListener('keydown', onAiMenuKeyDown)
+    })
+    onBeforeUnmount(() => {
+        document.removeEventListener('mousedown', onAiMenuMouseDown)
+        document.removeEventListener('keydown', onAiMenuKeyDown)
+    })
     const message = ref('')
     const repoStore = useRepoStore()
     watch(
@@ -203,13 +241,20 @@
         }
     }
 
-    async function doCommit() {
+    async function doCommit(push = false) {
         if (!message.value.trim()) {
             notify('Enter a commit message first', 'warning')
             return
         }
         const text = message.value.trim()
-        const ok = await run(() => window.api.commitWithAmend(text, false), 'Committed successfully', 'Committing…')
+        const ok = await run(
+            async () => {
+                await window.api.commitWithAmend(text, false)
+                if (push) await window.api.push()
+            },
+            push ? 'Committed and pushed successfully' : 'Committed successfully',
+            push ? 'Committing and pushing…' : 'Committing…'
+        )
         if (ok) message.value = ''
     }
 
@@ -221,17 +266,20 @@
 
     async function generateMessage() {
         if (generating.value) return
+        aiMenuOpen.value = false
         generating.value = true
         try {
             const generated = (await uiTransient.withBusy(() => window.api.ai.generateCommitMessage(), 'Generating commit message…')).trim()
             message.value = generated
-            if (ui.autoCommit && generated) {
+            if (generated && ui.aiCommitMode !== 'off') {
+                const mode = ui.aiCommitMode
                 const ok = await run(
                     async () => {
                         await window.api.stageAll()
                         await window.api.commitWithAmend(generated, false)
+                        if (mode === 'commit-push') await window.api.push()
                     },
-                    'Committed successfully'
+                    mode === 'commit-push' ? 'Committed and pushed successfully' : 'Committed successfully'
                 )
                 if (ok) message.value = ''
             }
@@ -904,11 +952,14 @@
                 <span
                     v-if="showAiGroup"
                     class="counter-model"
-                    :title="`Commit-message model: ${commitModelName}`">
+                    :title="`Commit-message model: ${commitModelLabel}`">
                     <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
                         width="14"
                         height="14" />
-                    {{ commitModelName }}
+                    {{ commitModelName }}<template v-if="ui.aiCommitMode !== 'off'"><span class="counter-sep"> | </span><span
+                        class="counter-mode-label"
+                        :class="`cb-ai-mode-${ui.aiCommitMode}`">{{ aiModeLabel(ui.aiCommitMode) }}</span></template
+                    >
                 </span>
                 <span
                     class="muted"
@@ -926,21 +977,22 @@
                 class="commit-actions">
                 <div
                     v-if="showAiGroup"
-                    class="cb-ai-group">
-                    <label
-                        class="cb-auto-commit cb-group-item"
-                        title="When checked, AI generate stages everything and commits automatically">
-                        <input
-                            v-model="ui.autoCommit"
-                            type="checkbox"
-                            :disabled="!canGenerate" />
-                        Auto commit
-                    </label>
-                    <span class="cb-ai-sep" />
+                    ref="aiMenuRoot"
+                    class="cb-ai-group cb-group-item"
+                    :class="[
+                        `cb-ai-mode-${ui.aiCommitMode}`,
+                        { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate },
+                    ]">
                     <button
-                        class="btn small cb-ai-btn cb-group-item"
+                        class="btn small cb-ai-btn"
                         :disabled="!canGenerate"
-                        title="Generate a commit message from the current changes"
+                        :title="
+                            ui.aiCommitMode === 'commit-push'
+                                ? 'Generate a commit message, commit and push'
+                                : ui.aiCommitMode === 'commit'
+                                  ? 'Generate a commit message and commit automatically'
+                                  : 'Generate a commit message from the current changes'
+                        "
                         @click="generateMessage()">
                         <i-lucide-loader-circle
                             v-if="generating"
@@ -952,22 +1004,56 @@
                             width="18"
                             height="18" />
                     </button>
+                    <button
+                        class="cb-ai-caret"
+                        title="Choose auto-commit behavior"
+                        aria-haspopup="listbox"
+                        :aria-expanded="aiMenuOpen"
+                        @click.stop="aiMenuOpen = !aiMenuOpen">
+                        <i-lucide-chevron-down
+                            width="12"
+                            height="12" />
+                    </button>
+                    <div
+                        v-if="aiMenuOpen"
+                        class="cb-ai-menu"
+                        :class="`cb-ai-mode-${ui.aiCommitMode}`"
+                        :style="aiMenuStyle"
+                        role="listbox"
+                        aria-label="AI auto-commit behavior">
+                        <button
+                            v-for="option in AI_MODE_OPTIONS"
+                            :key="option.value"
+                            class="cb-ai-menu-item"
+                            :class="{ active: ui.aiCommitMode === option.value }"
+                            role="option"
+                            :aria-selected="ui.aiCommitMode === option.value"
+                            @click="selectAiMode(option.value)">
+                            <i-lucide-check
+                                v-if="ui.aiCommitMode === option.value"
+                                width="13"
+                                height="13" />
+                            <span v-else class="cb-ai-menu-bullet" />
+                            {{ option.label }}
+                        </button>
+                    </div>
                 </div>
-                <button
-                    class="btn primary commit-btn"
-                    :disabled="pending || !message.trim() || staged.length === 0"
-                    @click="doCommit()">
-                    <i-lucide-loader-circle
-                        v-if="committing"
-                        class="spinning"
-                        width="15"
-                        height="15" />
-                    <i-lucide-check
-                        v-else
-                        width="15"
-                        height="15" />
-                    {{ committing ? 'Committing…' : 'Commit' }}
-                </button>
+                <div class="commit-group">
+                    <button
+                        class="btn primary commit-btn"
+                        :disabled="pending || !message.trim() || staged.length === 0"
+                        title="Commit staged changes"
+                        @click="doCommit(false)">
+                        {{ committing ? 'Committing…' : 'Commit' }}
+                    </button>
+                    <button
+                        class="btn commit-push-btn"
+                        :disabled="pending || !message.trim() || staged.length === 0"
+                        title="Commit staged changes and push to remote"
+                        @click="doCommit(true)">
+                        {{ committing ? 'Committing…' : 'Commit + push' }}
+                    </button>
+                </div>
             </div>
         </div>
     </div>

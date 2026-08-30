@@ -61,7 +61,7 @@ declare global {
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
   // @ts-ignore
-  export type { Theme, CommitColumn, ThemeOption } from './stores/ui'
+  export type { Theme, AiCommitMode, CommitColumn, ThemeOption } from './stores/ui'
   import('./stores/ui')
   // @ts-ignore
   export type { ToastKind, NotifyOptions } from './stores/uiTransient'
