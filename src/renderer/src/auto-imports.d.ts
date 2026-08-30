@@ -15,8 +15,11 @@ declare global {
   const DEFAULT_SHOW_ENTIRE_FILE: typeof import('./stores/ui').DEFAULT_SHOW_ENTIRE_FILE
   const DEFAULT_THEME: typeof import('./stores/ui').DEFAULT_THEME
   const DEFAULT_WORKSPACE: typeof import('./stores/workspace').DEFAULT_WORKSPACE
+  const FONT_SIZE_OPTIONS: typeof import('./stores/ui').FONT_SIZE_OPTIONS
   const MANDATORY_COMMIT_COLUMNS: typeof import('./stores/ui').MANDATORY_COMMIT_COLUMNS
+  const REFRESH_INTERVAL_OPTIONS: typeof import('./stores/ui').REFRESH_INTERVAL_OPTIONS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
+  const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
   const buildTree: typeof import('./utils/fileTree').buildTree
   const computed: typeof import('vue').computed
   const confirmDialog: typeof import('./utils/confirm').confirmDialog

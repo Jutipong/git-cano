@@ -64,11 +64,11 @@
             clearInterval(autoRefreshTimer.value)
             autoRefreshTimer.value = null
         }
-        const seconds = ui.refreshInterval
-        if (!seconds || seconds <= 0) return
+        const minutes = ui.refreshInterval
+        if (!minutes || minutes <= 0) return
         autoRefreshTimer.value = setInterval(() => {
             if (repoStore.repo) void repoStore.refresh()
-        }, seconds * 1000)
+        }, minutes * 60 * 1000)
     }
 
     function debouncedRefresh() {

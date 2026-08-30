@@ -87,7 +87,6 @@ declare module 'vue' {
     TabBar: typeof import('./components/TabBar.vue')['default']
     TagContextMenu: typeof import('./components/TagContextMenu.vue')['default']
     TagCreateModal: typeof import('./components/TagCreateModal.vue')['default']
-    ThemePicker: typeof import('./components/ThemePicker.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']
     Welcome: typeof import('./components/Welcome.vue')['default']
     WorkspaceButton: typeof import('./components/WorkspaceButton.vue')['default']

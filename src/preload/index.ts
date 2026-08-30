@@ -22,7 +22,6 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 }
 
 const api = {
-    appVersion: (): Promise<string> => call('app:getVersion'),
     pickAndOpen: (): Promise<RepoStatus | null> => call('repo:pickAndOpen'),
     init: (): Promise<RepoStatus | null> => call('repo:init'),
     pickDirectory: (): Promise<string | null> => call('repo:pickDir'),

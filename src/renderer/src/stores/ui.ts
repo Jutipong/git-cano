@@ -20,8 +20,17 @@ export const DEFAULT_SHOW_ENTIRE_FILE = false
 export type FileViewMode = 'tree' | 'flat'
 export const DEFAULT_FILE_VIEW_MODE: FileViewMode = 'tree'
 
-/** Auto-refresh interval in seconds; 0 disables auto-refresh. */
-export const DEFAULT_REFRESH_INTERVAL = 60
+/** Auto-refresh interval options, in minutes. */
+export const REFRESH_INTERVAL_OPTIONS = [3, 5, 10, 15, 20, 24, 30]
+export const DEFAULT_REFRESH_INTERVAL = 5
+
+/** App-wide UI font size options (applied via CSS zoom relative to the base size). */
+export const FONT_SIZE_OPTIONS = [12, 13, 14, 15, 16]
+export const DEFAULT_FONT_SIZE = 14
+
+/** Overall UI zoom options, in percent. Composes with font size around the base scale. */
+export const ZOOM_OPTIONS = [80, 90, 100, 110, 125, 150]
+export const DEFAULT_ZOOM = 100
 
 export interface ThemeOption {
     value: Theme
@@ -55,6 +64,17 @@ export const useUiStore = defineStore(
         const showEntireFile = ref(DEFAULT_SHOW_ENTIRE_FILE)
         const aiCommitMode = ref<AiCommitMode>('off')
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
+        watchEffect(() => {
+            if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+        })
+        const fontSize = ref(DEFAULT_FONT_SIZE)
+        watchEffect(() => {
+            if (!FONT_SIZE_OPTIONS.includes(fontSize.value)) fontSize.value = DEFAULT_FONT_SIZE
+        })
+        const zoom = ref(DEFAULT_ZOOM)
+        watchEffect(() => {
+            if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
+        })
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
             tags: true,
@@ -82,16 +102,19 @@ export const useUiStore = defineStore(
 
         function resetGeneral() {
             theme.value = DEFAULT_THEME
-            fileViewMode.value = DEFAULT_FILE_VIEW_MODE
-            diffViewMode.value = DEFAULT_DIFF_VIEW_MODE
-            showEntireFile.value = DEFAULT_SHOW_ENTIRE_FILE
             refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+            fontSize.value = DEFAULT_FONT_SIZE
+            zoom.value = DEFAULT_ZOOM
         }
 
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
         document.documentElement.dataset.theme = theme.value
+        watchEffect(() => {
+            const scale = (zoom.value / DEFAULT_ZOOM) * (fontSize.value / DEFAULT_FONT_SIZE)
+            document.documentElement.style.zoom = String(scale)
+        })
 
         return {
             theme,
@@ -105,6 +128,8 @@ export const useUiStore = defineStore(
             showEntireFile,
             aiCommitMode,
             refreshInterval,
+            fontSize,
+            zoom,
             sidebarSections,
             commitColumns,
             commitDateFormat,
@@ -127,6 +152,8 @@ export const useUiStore = defineStore(
                 'showEntireFile',
                 'aiCommitMode',
                 'refreshInterval',
+                'fontSize',
+                'zoom',
                 'sidebarSections',
                 'commitColumns',
                 'commitDateFormat',

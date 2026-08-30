@@ -4,7 +4,7 @@
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { GoModel } from '@shared/types'
-    import { useUiStore, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, ZOOM_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -12,15 +12,15 @@
 
     const ui = useUiStore()
 
+    const TABS = [
+        { key: 'general', label: 'General' },
+        { key: 'ai', label: 'AI' },
+    ] as const
     const tab = ref<'general' | 'ai'>('general')
-    const appVersion = ref('')
 
-    const REFRESH_OPTIONS = [
-        { value: 0, label: 'Off' },
-        { value: 30, label: '30s' },
-        { value: 60, label: '1 min' },
-        { value: 300, label: '5 min' },
-    ]
+    const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
+    const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
+    const DISPLAY_ZOOM_OPTIONS = ZOOM_OPTIONS.map(value => ({ value, label: `${value}%` }))
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
 
@@ -106,7 +106,7 @@
 
     async function resetGeneral() {
         const ok = await confirmDialog({
-            message: 'Reset Appearance, Diff & Files, and Refresh settings to defaults?',
+            message: 'Reset Appearance and Refresh settings to defaults?',
             confirmLabel: 'Reset',
         })
         if (!ok) return
@@ -114,10 +114,7 @@
         notify('Settings reset to defaults', 'success')
     }
 
-    onMounted(async () => {
-        window.addEventListener('keydown', onKeydown)
-        appVersion.value = await window.api.appVersion().catch(() => '')
-    })
+    onMounted(() => window.addEventListener('keydown', onKeydown))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
     function onKeydown(e: KeyboardEvent) {
@@ -144,12 +141,12 @@
             </div>
             <div class="tools-tabs">
                 <button
-                    v-for="name in ['general', 'ai'] as const"
-                    :key="name"
+                    v-for="tabItem in TABS"
+                    :key="tabItem.key"
                     class="graph-filter"
-                    :class="{ active: tab === name }"
-                    @click="tab = name">
-                    {{ name }}
+                    :class="{ active: tab === tabItem.key }"
+                    @click="tab = tabItem.key">
+                    {{ tabItem.label }}
                 </button>
             </div>
             <div class="tools-body general-body">
@@ -172,38 +169,28 @@
                                 {{ option.label }}
                             </button>
                         </div>
-                    </div>
-
-                    <div class="tools-section">
-                        <strong class="tools-section-title">Diff & Files</strong>
-                        <span class="setting-label">Default diff view</span>
+                        <span class="setting-label">Font size</span>
                         <div class="setting-choice-row">
                             <button
-                                v-for="mode in ['split', 'inline'] as const"
-                                :key="mode"
+                                v-for="option in FONT_OPTIONS"
+                                :key="option.value"
                                 type="button"
                                 class="setting-chip"
-                                :class="{ active: ui.diffViewMode === mode }"
-                                @click="ui.diffViewMode = mode">
-                                {{ mode === 'split' ? 'Split' : 'Inline' }}
+                                :class="{ active: ui.fontSize === option.value }"
+                                @click="ui.fontSize = option.value">
+                                {{ option.label }}
                             </button>
                         </div>
-                        <label class="setting-toggle">
-                            <input
-                                v-model="ui.showEntireFile"
-                                type="checkbox" />
-                            Show entire file in diff
-                        </label>
-                        <span class="setting-label">Files panel layout</span>
+                        <span class="setting-label">Zoom</span>
                         <div class="setting-choice-row">
                             <button
-                                v-for="mode in ['tree', 'flat'] as const"
-                                :key="mode"
+                                v-for="option in DISPLAY_ZOOM_OPTIONS"
+                                :key="option.value"
                                 type="button"
                                 class="setting-chip"
-                                :class="{ active: ui.fileViewMode === mode }"
-                                @click="ui.fileViewMode = mode">
-                                {{ mode === 'tree' ? 'Tree' : 'Flat' }}
+                                :class="{ active: ui.zoom === option.value }"
+                                @click="ui.zoom = option.value">
+                                {{ option.label }}
                             </button>
                         </div>
                     </div>
@@ -224,24 +211,11 @@
                         </div>
                     </div>
 
-                    <div class="tools-section">
-                        <strong class="tools-section-title">About</strong>
-                        <p class="tools-hint">
-                            Open Git {{ appVersion || '…' }} — a lightweight Git GUI.
-                            Commit-message AI is powered by
-                            <a
-                                href="https://opencode.ai"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="ai-link">opencode.ai</a>.
-                        </p>
-                    </div>
-
                     <div class="tools-actions tools-reset-row">
                         <span class="spacer" />
                         <button
                             class="btn small"
-                            title="Restore Appearance, Diff & Files, and Refresh settings to defaults"
+                            title="Restore Appearance and Refresh settings to defaults"
                             @click="resetGeneral()">
                             <i-lucide-rotate-ccw
                                 width="13"

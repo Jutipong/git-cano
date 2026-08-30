@@ -8,7 +8,6 @@
     import RemoteManager from './RemoteManager.vue'
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
-    import ThemePicker from './ThemePicker.vue'
 
     import type { MenuItem, RepoStatus } from '@shared/types'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
@@ -501,7 +500,6 @@
                         width="17"
                         height="17" />
                 </button>
-                <ThemePicker />
             </div>
         </div>
 
