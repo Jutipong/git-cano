@@ -42,6 +42,13 @@ export interface DiffLine {
     text: string
 }
 
+export interface DiffMeta {
+    binary: boolean
+    image: boolean
+}
+
+export type GitignoreRuleKind = 'file' | 'extension' | 'directory'
+
 export interface ApiError {
     message: string
 }

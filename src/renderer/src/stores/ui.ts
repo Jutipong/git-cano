@@ -34,6 +34,7 @@ export const useUiStore = defineStore(
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(140)
         const fileViewMode = ref<'tree' | 'flat'>('tree')
+        const fileFilterMode = ref<'changed' | 'all'>('changed')
         const diffViewMode = ref<'split' | 'inline'>('split')
         if (diffViewMode.value === ('hunk' as 'inline')) diffViewMode.value = 'inline'
         const showEntireFile = ref(false)
@@ -75,6 +76,7 @@ export const useUiStore = defineStore(
             rightPanelWidth,
             summaryHeight,
             fileViewMode,
+            fileFilterMode,
             diffViewMode,
             showEntireFile,
             autoCommit,
@@ -94,6 +96,7 @@ export const useUiStore = defineStore(
                 'rightPanelWidth',
                 'summaryHeight',
                 'fileViewMode',
+                'fileFilterMode',
                 'diffViewMode',
                 'showEntireFile',
                 'autoCommit',

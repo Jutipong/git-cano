@@ -3,7 +3,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import type { FSWatcher } from 'node:fs'
 
-import { simpleGit, type SimpleGit } from 'simple-git'
+import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
 import { log, maskUrl } from './logger'
 
@@ -12,8 +12,10 @@ import type {
     BranchInfo,
     CommitDetails,
     CommitNode,
+    DiffMeta,
     DiffLine,
     FileEntry,
+    GitignoreRuleKind,
     RebaseEntry,
     RebaseOutcome,
     RemoteTestResult,
@@ -27,9 +29,10 @@ const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 
 function createGit(dir: string): SimpleGit {
-    return simpleGit(dir, {
+    const options = {
         debug: (data: string) => log('debug', 'git', maskUrl(data)),
-    })
+    } as unknown as Partial<SimpleGitOptions>
+    return simpleGit(dir, options)
 }
 
 export function getRepo(): { path: string; git: SimpleGit } {
@@ -148,7 +151,7 @@ export async function getStatus(): Promise<RepoStatus> {
     return { path: p, name: path.basename(p), branch, tracking, ahead, behind, files }
 }
 
-export async function getDiffMeta(file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> {
+export async function getDiffMeta(file: string, staged: boolean): Promise<DiffMeta> {
     const { path: p, git: g } = getRepo()
     const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']
     const ext = path.extname(file).toLowerCase()
@@ -173,6 +176,71 @@ function gitBinaryBuffer(cwd: string, args: string[]): Promise<Buffer> {
             else resolve(stdout as Buffer)
         })
     })
+}
+
+function parseNulPaths(buffer: Buffer): string[] {
+    return buffer.toString('utf8').split('\0').filter(Boolean)
+}
+
+export async function listFiles(commitHash?: string): Promise<string[]> {
+    const { path: p } = getRepo()
+    const args = commitHash
+        ? ['ls-tree', '-r', '-z', '--name-only', commitHash]
+        : ['ls-files', '-z', '--cached', '--others', '--exclude-standard']
+    return parseNulPaths(await gitBinaryBuffer(p, args))
+}
+
+function normalizeGitignorePath(repoRoot: string, target: string): string {
+    const trimmed = target.trim()
+    if (!trimmed || /[\0\r\n]/.test(trimmed)) throw new Error('A file or directory path is required')
+    const resolved = path.resolve(repoRoot, trimmed)
+    const relative = path.relative(repoRoot, resolved)
+    if (!relative || relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+        throw new Error('The path must be inside the repository')
+    }
+    return relative.split(path.sep).join('/')
+}
+
+async function addGitignoreRule(target: string, kind: GitignoreRuleKind): Promise<string> {
+    const { git: g } = getRepo()
+    const repoRoot = (await g.revparse(['--show-toplevel'])).trim()
+    let rule: string
+    if (kind === 'extension') {
+        const extension = target.trim().replace(/^\*/, '')
+        if (!/^\.[A-Za-z0-9][A-Za-z0-9._-]*$/.test(extension)) {
+            throw new Error('Enter an extension such as .log')
+        }
+        rule = `*${extension}`
+    } else if (kind === 'file') {
+        rule = `/${normalizeGitignorePath(repoRoot, target)}`
+    } else if (kind === 'directory') {
+        rule = `/${normalizeGitignorePath(repoRoot, target)}/`
+    } else {
+        throw new Error('Invalid gitignore rule type')
+    }
+
+    const ignoreFile = path.join(repoRoot, '.gitignore')
+    let existing = ''
+    try {
+        existing = await fs.promises.readFile(ignoreFile, 'utf8')
+    } catch (err) {
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err
+    }
+    const existingRules = existing.split(/\r?\n/).map(line => line.trim())
+    if (existingRules.includes(rule)) return rule
+
+    const eol = existing.includes('\r\n') ? '\r\n' : '\n'
+    const prefix = existing.length === 0 ? '' : existing.endsWith('\n') ? '' : eol
+    await fs.promises.writeFile(ignoreFile, `${existing}${prefix}${rule}${eol}`, 'utf8')
+    return rule
+}
+
+export function addIgnoreRule(rule: string): Promise<string> {
+    const trimmed = rule.trim()
+    if (!trimmed || /[\0\r\n]/.test(trimmed)) throw new Error('A gitignore rule is required')
+    if (trimmed.startsWith('*.')) return addGitignoreRule(trimmed, 'extension')
+    if (trimmed.endsWith('/')) return addGitignoreRule(trimmed.slice(0, -1), 'directory')
+    return addGitignoreRule(trimmed.replace(/^\//, ''), 'file')
 }
 
 const MIME_BY_EXT: Record<string, string> = {
@@ -702,13 +770,65 @@ export async function renameBranch(oldName: string, newName: string): Promise<vo
 }
 
 export async function getCommitFileDiff(hash: string, file: string, context?: number): Promise<DiffLine[]> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
     let text = ''
     try {
         text = await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
     } catch {
     }
-    return parseDiff(text)
+    if (text.trim() || text.includes('Binary files')) return parseDiff(text)
+
+    let snapshot: Buffer
+    try {
+        snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
+    } catch {
+        return []
+    }
+    if (snapshot.subarray(0, 8000).includes(0)) {
+        return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
+    }
+    const content = snapshot.toString('utf8')
+    const snapshotLines = content.split('\n')
+    if (snapshotLines[snapshotLines.length - 1] === '') snapshotLines.pop()
+    const lines: DiffLine[] = [{ type: 'meta', oldNo: null, newNo: null, text: `snapshot ${file}` }]
+    lines.push({ type: 'hunk', oldNo: null, newNo: null, text: `@@ -1,${snapshotLines.length} +1,${snapshotLines.length} @@` })
+    snapshotLines.forEach((line, index) => {
+        lines.push({ type: 'ctx', oldNo: index + 1, newNo: index + 1, text: ` ${line}` })
+    })
+    return lines
+}
+
+export async function getCommitFileMeta(hash: string, file: string): Promise<DiffMeta> {
+    const { path: p } = getRepo()
+    const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']
+    const image = IMAGE_EXTS.includes(path.extname(file).toLowerCase())
+    try {
+        const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
+        return { binary: snapshot.subarray(0, 8000).includes(0), image }
+    } catch {
+        return { binary: false, image: false }
+    }
+}
+
+export async function getCommitImageVersion(hash: string, file: string): Promise<string | null> {
+    const { path: p } = getRepo()
+    const MIME_BY_EXT: Record<string, string> = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+        '.bmp': 'image/bmp',
+        '.ico': 'image/x-icon',
+        '.svg': 'image/svg+xml',
+    }
+    const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
+    try {
+        const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
+        return snapshot.length ? `data:${mime};base64,${snapshot.toString('base64')}` : null
+    } catch {
+        return null
+    }
 }
 
 export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
@@ -730,7 +850,7 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
 export async function commitMessage(message: string, amend: boolean): Promise<string> {
     const { git: g } = getRepo()
     if (amend && !message.trim()) throw new Error('Enter a message to amend with')
-    const res = amend ? await g.commit(message, [], ['--amend']) : await g.commit(message)
+    const res = amend ? await g.commit(message, undefined, { '--amend': null }) : await g.commit(message)
     return res.commit
 }
 
@@ -747,11 +867,7 @@ export interface TagRef {
 export async function listTags(): Promise<TagRef[]> {
     const { git: g } = getRepo()
     const SEP = '\x1f'
-    const text = await g.raw([
-        'for-each-ref',
-        'refs/tags',
-        `--format=%(refname:short)${SEP}%(*objectname)${SEP}%(objectname)`,
-    ])
+    const text = await g.raw(['for-each-ref', 'refs/tags', `--format=%(refname:short)${SEP}%(*objectname)${SEP}%(objectname)`])
     return text
         .split('\n')
         .filter(Boolean)
@@ -872,8 +988,7 @@ export async function getChangesContext(): Promise<string> {
         const statusText = await g.raw(['status', '--porcelain'])
         allLines = statusText.split('\n').map(line => line.trimEnd()).filter(Boolean)
         stagedFiles = allLines.filter(line => line[0] !== ' ' && line[0] !== '?')
-    } catch {
-    }
+    } catch {}
 
     if (stagedFiles.length > 0) {
         parts.push(`Changed files (staged for commit):\n${stagedFiles.join('\n')}`)
@@ -891,8 +1006,7 @@ export async function getChangesContext(): Promise<string> {
         const unstaged = await g.raw(['diff', '--no-color', '--no-ext-diff'])
         if (staged.trim()) parts.push(staged)
         if (unstaged.trim()) parts.push(unstaged)
-    } catch {
-    }
+    } catch {}
     try {
         const untracked = await g.raw(['ls-files', '--others', '--exclude-standard'])
         const files = untracked.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 10)
@@ -1055,7 +1169,7 @@ export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[],
             switch (entry.command) {
                 case 'reword':
                     // oxlint-disable-next-line no-await-in-loop
-                    await g.commit(entry.message || 'Reworded commit', [], ['--amend'])
+                    await g.commit(entry.message || 'Reworded commit', undefined, { '--amend': null })
                     break
                 case 'squash':
                 case 'fixup': {

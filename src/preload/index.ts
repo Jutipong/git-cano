@@ -1,6 +1,19 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-import type { AiConfig, AiTestResult, BranchInfo, CommitDetails, CommitNode, DiffLine, GoModel, RemoteTestResult, RepoStatus, RebaseEntry, StashEntry } from '@shared/types'
+import type {
+    AiConfig,
+    AiTestResult,
+    BranchInfo,
+    CommitDetails,
+    CommitNode,
+    DiffLine,
+    DiffMeta,
+    GoModel,
+    RemoteTestResult,
+    RepoStatus,
+    RebaseEntry,
+    StashEntry,
+} from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
     const res = await ipcRenderer.invoke(channel, ...args)
@@ -39,6 +52,10 @@ const api = {
     resetTo: (target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> => call('ref:reset', target, mode),
     renameBranch: (oldName: string, newName: string): Promise<void> => call('branch:rename', oldName, newName),
     commitFileDiff: (hash: string, file: string, context?: number): Promise<DiffLine[]> => call('file:commitDiff', hash, file, context),
+    getCommitFileMeta: (hash: string, file: string): Promise<DiffMeta> => call('file:commitMeta', hash, file),
+    getCommitImageVersion: (hash: string, file: string): Promise<string | null> => call('file:commitImage', hash, file),
+    listFiles: (commitHash?: string): Promise<string[]> => call('file:list', commitHash),
+    addIgnoreRule: (rule: string): Promise<string> => call('file:addIgnoreRule', rule),
 
     diff: (file: string, staged: boolean, context?: number): Promise<DiffLine[]> => call('file:diff', file, staged, context),
     diffMeta: (file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> => call('file:diffMeta', file, staged),

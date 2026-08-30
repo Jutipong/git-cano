@@ -43,6 +43,8 @@ import {
     resetTo,
     renameBranch,
     getCommitFileDiff,
+    getCommitFileMeta,
+    getCommitImageVersion,
     getRebasePlan,
     listBranches,
     merge,
@@ -85,6 +87,8 @@ import {
     removeWorktree,
     listSubmodules,
     updateSubmodules,
+    listFiles,
+    addIgnoreRule,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
 import { generateCommitMessage, getConfig, listGoModels, saveConfig, testConnection } from './opencode'
@@ -319,6 +323,22 @@ app.whenReady().then(() => {
     handle('file:commitDiff', (hash: string, file: string, context?: number) => {
         requireRepo()
         return getCommitFileDiff(hash as string, file as string, typeof context === 'number' ? context : undefined)
+    })
+    handle('file:commitMeta', (hash: string, file: string) => {
+        requireRepo()
+        return getCommitFileMeta(hash as string, file as string)
+    })
+    handle('file:commitImage', (hash: string, file: string) => {
+        requireRepo()
+        return getCommitImageVersion(hash as string, file as string)
+    })
+    handle('file:list', (hash?: string) => {
+        requireRepo()
+        return listFiles(typeof hash === 'string' && hash.trim() ? hash : undefined)
+    })
+    handle('file:addIgnoreRule', (rule: string) => {
+        requireRepo()
+        return addIgnoreRule(rule as string)
     })
 
     handle('file:stage', (paths: string[]) => {

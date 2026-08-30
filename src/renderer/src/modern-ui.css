@@ -1082,6 +1082,147 @@ body {
     border-radius: 999px;
 }
 
+.file-view-controls {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    padding: 2px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+.file-mode-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 24px;
+    padding: 0;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.file-mode-btn:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.file-mode-btn.active {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+.file-controls-divider {
+    width: 1px;
+    height: 18px;
+    margin: 0 3px;
+    background: var(--line-soft);
+}
+
+.file-status-spacer {
+    flex: 0 0 14px;
+}
+
+.file-context-menu {
+    position: fixed;
+    z-index: 60;
+    min-width: 210px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.file-context-menu-item {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 7px;
+    min-height: 29px;
+    padding: 6px 9px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 11px;
+    text-align: left;
+}
+
+.file-context-menu-item:hover,
+.file-context-menu-item.has-sub:focus-visible {
+    color: var(--text);
+    background: color-mix(in srgb, var(--teal) 16%, transparent);
+    outline: none;
+}
+
+.file-context-menu-item:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.file-context-menu-icon {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+}
+
+.file-context-menu-chevron {
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.file-context-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--line-soft);
+}
+
+.file-context-menu-wrap {
+    position: relative;
+}
+
+.file-context-menu-sub {
+    position: absolute;
+    top: -5px;
+    left: calc(100% + 5px);
+    z-index: 61;
+    display: none;
+    min-width: 260px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.file-context-menu-wrap:hover .file-context-menu-sub {
+    display: block;
+}
+
+.file-context-menu-wrap:hover > .file-context-menu-item {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.file-context-menu.submenu-left .file-context-menu-sub {
+    right: calc(100% + 5px);
+    left: auto;
+}
+
+.file-context-menu-note {
+    display: block;
+    padding: 5px 9px 4px;
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1.35;
+}
+
 .sync-count {
     display: inline-flex;
     align-items: center;

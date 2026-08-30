@@ -2,6 +2,7 @@
     import { formatDatePattern } from '../utils/format'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { confirmDialog } from '../utils/confirm'
+    import FileContextMenu, { type FileMenuState } from './FileContextMenu.vue'
 
     import type { CommitFile, FileEntry } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
@@ -65,10 +66,23 @@
             : []
     )
     const commitFileList = computed(() => (isWorkdir.value ? [] : (props.files as CommitFile[])))
+    const allPaths = ref<string[]>([])
+    let allFilesRequest = 0
+    const allFiles = computed(() => {
+        const paths = new Set(allPaths.value)
+        if (isWorkdir.value) {
+            const changed = new Map((props.files as FileEntry[]).map(file => [file.path, file]))
+            return [...paths].map(path => changed.get(path) ?? { path, staged: '', unstaged: '' })
+        }
+        const changed = new Map((props.files as CommitFile[]).map(file => [file.path, file]))
+        return [...paths].map(path => changed.get(path) ?? { path, status: '', additions: 0, deletions: 0 })
+    })
     const fileCount = computed(() =>
-        isWorkdir.value
-            ? new Set((props.files as FileEntry[]).map(file => file.path)).size
-            : (props.files as CommitFile[]).length
+        ui.fileFilterMode === 'all'
+            ? allFiles.value.length
+            : isWorkdir.value
+              ? new Set((props.files as FileEntry[]).map(file => file.path)).size
+              : (props.files as CommitFile[]).length
     )
     const commitTotals = computed(() => {
         if (!commitFileList.value.length) return null
@@ -91,7 +105,7 @@
             message.value = ''
         }
     )
-    const menu = ref<{ x: number; y: number; path: string; untracked?: boolean } | null>(null)
+    const menu = ref<FileMenuState | null>(null)
     const generating = ref(false)
 
     const collapsedDirs = reactive(new Set<string>())
@@ -102,12 +116,45 @@
     function toggleViewMode() {
         ui.fileViewMode = ui.fileViewMode === 'tree' ? 'flat' : 'tree'
     }
+    async function loadAllFiles() {
+        const request = ++allFilesRequest
+        const mode = props.mode
+        const commitHash = props.commitHash
+        const repoPath = repoStore.repo?.path
+        if (ui.fileFilterMode !== 'all') {
+            allPaths.value = []
+            return
+        }
+        try {
+            const paths = await window.api.listFiles(mode === 'commit' ? commitHash || undefined : undefined)
+            if (
+                request !== allFilesRequest ||
+                ui.fileFilterMode !== 'all' ||
+                props.mode !== mode ||
+                props.commitHash !== commitHash ||
+                repoStore.repo?.path !== repoPath
+            )
+                return
+            allPaths.value = [...new Set(paths)]
+        } catch (error) {
+            if (request !== allFilesRequest) return
+            allPaths.value = []
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    watch(
+        [() => ui.fileFilterMode, () => props.mode, () => props.commitHash, () => repoStore.repo?.path],
+        () => void loadAllFiles(),
+        { immediate: true }
+    )
 
     async function refreshPanel() {
         if (pending.value) return
         pending.value = true
         try {
             await props.refresh()
+            await loadAllFiles()
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         } finally {
@@ -137,6 +184,7 @@
     const unstagedRows = computed(() => makeRows(unstaged.value, 'unstaged'))
     const untrackedRows = computed(() => makeRows(untracked.value, 'untracked'))
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
+    const allRows = computed(() => makeRows<FileEntry | CommitFile>(allFiles.value, 'all'))
 
     async function run(fn: () => Promise<unknown>, ok: string | null, busyLabel = 'Working…'): Promise<boolean> {
         if (pending.value) return false
@@ -144,6 +192,7 @@
         try {
             await uiTransient.withBusy(fn, busyLabel)
             await props.refresh()
+            await loadAllFiles()
             if (ok) notify(ok, 'success')
             return true
         } catch (error) {
@@ -214,46 +263,20 @@
         window.addEventListener('mouseup', onEnd)
     }
 
-    function pickHistory(path: string) {
-        if (menu.value?.untracked) return
-        emit('show-history', path)
-        menu.value = null
-    }
-    function pickBlame(path: string) {
-        if (menu.value?.untracked) return
-        emit('show-blame', path)
-        menu.value = null
-    }
-
-    const menuEl = ref<HTMLElement | null>(null)
-    function onMenuKeydown(event: KeyboardEvent) {
-        if (event.key === 'Escape') menu.value = null
-    }
-    function onMenuMousedown(event: MouseEvent) {
-        if (menuEl.value && !menuEl.value.contains(event.target as Node)) menu.value = null
-    }
-    watch(menu, open => {
-        if (open) {
-            window.addEventListener('keydown', onMenuKeydown)
-            setTimeout(() => window.addEventListener('mousedown', onMenuMousedown), 0)
-        } else {
-            window.removeEventListener('keydown', onMenuKeydown)
-            window.removeEventListener('mousedown', onMenuMousedown)
+    function openFileMenu(event: MouseEvent, path: string, file?: FileEntry) {
+        if (!isWorkdir.value) return
+        if (file && !hasWorkdirStatus(file)) return
+        menu.value = {
+            x: event.clientX,
+            y: event.clientY,
+            path,
+            untracked: file ? isUntracked(file) : false,
         }
-    })
-    onBeforeUnmount(() => {
-        window.removeEventListener('keydown', onMenuKeydown)
-        window.removeEventListener('mousedown', onMenuMousedown)
-    })
-
-    const menuStyle = computed(() =>
-        menu.value
-            ? {
-                  left: `${Math.min(menu.value.x, window.innerWidth - 200)}px`,
-                  top: `${Math.min(menu.value.y, window.innerHeight - 90)}px`,
-              }
-            : {}
-    )
+    }
+    function openDirectoryMenu(event: MouseEvent, path: string) {
+        if (!isWorkdir.value) return
+        menu.value = { x: event.clientX, y: event.clientY, path, directory: true }
+    }
 
     const STATUS_LABEL: Record<string, string> = {
         M: 'Modified',
@@ -315,6 +338,31 @@
         return `b-${status.toLowerCase()}`
     }
 
+    function hasStatus(status: string) {
+        return status !== '' && status !== ' '
+    }
+    function hasWorkdirStatus(file: FileEntry) {
+        return hasStatus(file.staged) || hasStatus(file.unstaged)
+    }
+    function unifiedWorkdirFile(file: FileEntry | CommitFile) {
+        return file as FileEntry
+    }
+    function unifiedCommitFile(file: FileEntry | CommitFile) {
+        return file as CommitFile
+    }
+    function unifiedStatus(file: FileEntry | CommitFile) {
+        if (!isWorkdir.value) return unifiedCommitFile(file).status
+        const workdirFile = unifiedWorkdirFile(file)
+        if (isUntracked(workdirFile)) return '?'
+        return hasStatus(workdirFile.staged) ? workdirFile.staged : hasStatus(workdirFile.unstaged) ? workdirFile.unstaged : ''
+    }
+    function unifiedStaged(file: FileEntry | CommitFile) {
+        return isWorkdir.value && !isUntracked(unifiedWorkdirFile(file)) && hasStatus(unifiedWorkdirFile(file).staged)
+    }
+    function unifiedUnstaged(file: FileEntry | CommitFile) {
+        return isWorkdir.value && hasStatus(unifiedWorkdirFile(file).unstaged)
+    }
+
     const firstLine = computed(() => message.value.split('\n')[0] ?? '')
     const subjectCountClass = computed(() =>
         firstLine.value.length > 72 ? 'over' : firstLine.value.length > 50 ? 'warn' : ''
@@ -366,24 +414,125 @@
                         width="14"
                         height="14" />
                 </button>
-                <button
-                    class="view-toggle"
-                    :title="ui.fileViewMode === 'tree' ? 'Show as flat list' : 'Show as tree'"
-                    @click="toggleViewMode()">
-                    <i-lucide-list
-                        v-if="ui.fileViewMode === 'tree'"
-                        width="14"
-                        height="14" />
-                    <i-lucide-folder-tree
-                        v-else
-                        width="14"
-                        height="14" />
-                </button>
+                <div class="file-view-controls">
+                    <button
+                        class="file-mode-btn"
+                        :title="ui.fileViewMode === 'tree' ? 'Show as flat list' : 'Show as tree'"
+                        @click="toggleViewMode()">
+                        <i-lucide-list
+                            v-if="ui.fileViewMode === 'tree'"
+                            width="15"
+                            height="15" />
+                        <i-lucide-folder-tree
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                    <span class="file-controls-divider" />
+                    <button
+                        class="file-mode-btn file-scope-btn"
+                        :class="{ active: ui.fileFilterMode === 'all' }"
+                        :title="ui.fileFilterMode === 'all' ? 'Show changed files' : 'View all files'"
+                        :aria-label="ui.fileFilterMode === 'all' ? 'Show changed files' : 'View all files'"
+                        @click="ui.fileFilterMode = ui.fileFilterMode === 'all' ? 'changed' : 'all'">
+                        <i-lucide-list-tree
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
             </div>
         </div>
 
         <div class="file-groups">
-            <template v-if="mode === 'workdir'">
+            <template v-if="ui.fileFilterMode === 'all'">
+            <template
+                v-for="row in allRows"
+                :key="row.key">
+                <div
+                    v-if="row.kind === 'dir'"
+                    class="dir-row"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="toggleDir(row.fullPath)"
+                    @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
+                    <i-lucide-chevron-right
+                        v-if="collapsedDirs.has(row.fullPath)"
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-chevron-down
+                        v-else
+                        class="dir-chevron"
+                        width="13"
+                        height="13" />
+                    <i-lucide-folder
+                        class="dir-icon"
+                        width="14"
+                        height="14" />
+                    <span
+                        class="file-path dir-name"
+                        :title="row.fullPath">{{ row.name }}</span>
+                    <span class="dir-count">{{ row.count }}</span>
+                </div>
+                <div
+                    v-else
+                    class="file-row"
+                    :class="{ selected: selected?.path === row.fullPath }"
+                    :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
+                    @click="emit('select', { path: row.fullPath, staged: unifiedStaged(row.file!) })"
+                    @contextmenu.prevent="openFileMenu($event, row.fullPath, isWorkdir ? unifiedWorkdirFile(row.file!) : undefined)">
+                    <span
+                        v-if="unifiedStatus(row.file!)"
+                        class="badge"
+                        :class="badgeClass(unifiedStatus(row.file!))">{{ unifiedStatus(row.file!) }}</span>
+                    <span
+                        v-else
+                        class="file-status-spacer" />
+                    <span
+                        class="file-path"
+                        :title="row.fullPath">{{ row.name }}</span>
+                    <template v-if="isWorkdir">
+                        <button
+                            v-if="unifiedStaged(row.file!)"
+                            class="icon-btn"
+                            title="Unstage"
+                            @click.stop="unstage(unifiedWorkdirFile(row.file!))">
+                            <i-lucide-minus width="14" height="14" />
+                        </button>
+                        <button
+                            v-if="unifiedUnstaged(row.file!) || isUntracked(unifiedWorkdirFile(row.file!))"
+                            class="icon-btn"
+                            title="Stage"
+                            @click.stop="stage(unifiedWorkdirFile(row.file!))">
+                            <i-lucide-plus width="14" height="14" />
+                        </button>
+                        <button
+                            v-if="unifiedUnstaged(row.file!) || isUntracked(unifiedWorkdirFile(row.file!))"
+                            class="icon-btn danger"
+                            title="Discard changes"
+                            @click.stop="discard(unifiedWorkdirFile(row.file!))">
+                            <i-lucide-rotate-ccw width="13" height="13" />
+                        </button>
+                    </template>
+                    <span
+                        v-else-if="unifiedCommitFile(row.file!).additions || unifiedCommitFile(row.file!).deletions"
+                        class="commit-file-stats">
+                        <span
+                            v-if="unifiedCommitFile(row.file!).additions"
+                            class="stat-add">+{{ unifiedCommitFile(row.file!).additions.toLocaleString() }}</span>
+                        <span
+                            v-if="unifiedCommitFile(row.file!).deletions"
+                            class="stat-del">−{{ unifiedCommitFile(row.file!).deletions.toLocaleString() }}</span>
+                    </span>
+                </div>
+            </template>
+            <div
+                v-if="allRows.length === 0"
+                class="group-empty">
+                No files
+            </div>
+            </template>
+
+            <template v-else-if="mode === 'workdir'">
             <div class="group-header">
                 <h4>
                     Staged files <span>{{ staged.length }}</span>
@@ -404,7 +553,8 @@
                     v-if="row.kind === 'dir'"
                     class="dir-row"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                    @click="toggleDir(row.fullPath)">
+                    @click="toggleDir(row.fullPath)"
+                    @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                     <i-lucide-chevron-right
                         v-if="collapsedDirs.has(row.fullPath)"
                         class="dir-chevron"
@@ -429,7 +579,8 @@
                     class="file-row"
                     :class="{ selected: selected?.path === row.fullPath && selected.staged }"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                    @click="emit('select', { path: row.fullPath, staged: true })">
+                    @click="emit('select', { path: row.fullPath, staged: true })"
+                    @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
                     <span
                         class="badge"
                         :class="badgeClass(row.file!.staged)"
@@ -484,7 +635,8 @@
                     v-if="row.kind === 'dir'"
                     class="dir-row"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                    @click="toggleDir(row.fullPath)">
+                    @click="toggleDir(row.fullPath)"
+                    @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                     <i-lucide-chevron-right
                         v-if="collapsedDirs.has(row.fullPath)"
                         class="dir-chevron"
@@ -510,7 +662,7 @@
                     :class="{ selected: selected?.path === row.fullPath && !selected.staged }"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                     @click="emit('select', { path: row.fullPath, staged: false })"
-                    @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: row.fullPath }">
+                    @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
                     <span
                         class="badge"
                         :class="badgeClass(row.file!.unstaged)"
@@ -566,7 +718,8 @@
                     v-if="row.kind === 'dir'"
                     class="dir-row"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                    @click="toggleDir(row.fullPath)">
+                    @click="toggleDir(row.fullPath)"
+                    @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                     <i-lucide-chevron-right
                         v-if="collapsedDirs.has(row.fullPath)"
                         class="dir-chevron"
@@ -592,7 +745,7 @@
                     :class="{ selected: selected?.path === row.fullPath && !selected.staged }"
                     :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                     @click="emit('select', { path: row.fullPath, staged: false })"
-                    @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, path: row.fullPath, untracked: true }">
+                    @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
                     <span
                         class="badge"
                         :class="badgeClass('?')"
@@ -632,7 +785,8 @@
                         v-if="row.kind === 'dir'"
                         class="dir-row"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                        @click="toggleDir(row.fullPath)">
+                        @click="toggleDir(row.fullPath)"
+                        @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                         <i-lucide-chevron-right
                             v-if="collapsedDirs.has(row.fullPath)"
                             class="dir-chevron"
@@ -690,35 +844,12 @@
                 </div>
             </template>
 
-            <div
-                v-if="menu"
-                ref="menuEl"
-                class="context-menu"
-                :style="menuStyle"
-                @mouseleave="menu = null">
-                <button
-                    class="context-menu-item"
-                    :disabled="menu.untracked"
-                    :title="menu.untracked ? 'Untracked files have no git history yet' : ''"
-                    @click="pickHistory(menu.path)">
-                    <i-lucide-history
-                        width="12"
-                        height="12"
-                        style="margin-right: 6px" />
-                    View history
-                </button>
-                <button
-                    class="context-menu-item"
-                    :disabled="menu.untracked"
-                    :title="menu.untracked ? 'Untracked files have no git history yet' : ''"
-                    @click="pickBlame(menu.path)">
-                    <i-lucide-scan-search
-                        width="12"
-                        height="12"
-                        style="margin-right: 6px" />
-                    Blame
-                </button>
-            </div>
+            <FileContextMenu
+                :menu="menu"
+                :refresh="refreshPanel"
+                @close="menu = null"
+                @show-history="path => emit('show-history', path)"
+                @show-blame="path => emit('show-blame', path)" />
         </div>
 
         <div class="commit-box">

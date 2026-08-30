@@ -45,7 +45,15 @@
         try {
             const context = ui.showEntireFile ? FULL_FILE_CONTEXT : undefined
             if (props.commitHash) {
-                lines.value = await window.api.commitFileDiff(props.commitHash, f.path, context)
+                const [commitDiff, commitMeta] = await Promise.all([
+                    window.api.commitFileDiff(props.commitHash, f.path, context),
+                    window.api.getCommitFileMeta(props.commitHash, f.path),
+                ])
+                lines.value = commitDiff
+                meta.value = commitMeta
+                if (commitMeta.image) {
+                    images.value = { oldUrl: null, newUrl: await window.api.getCommitImageVersion(props.commitHash, f.path) }
+                }
                 return
             }
             const [diff, diffMeta, patch] = await Promise.all([
@@ -598,13 +606,13 @@
                         </figure>
                     </div>
                 </template>
-    
+
                 <div
                     v-else-if="meta?.binary"
                     class="diff-empty">
                     Binary file differs — content not shown
                 </div>
-    
+
                 <template v-else-if="ui.diffViewMode === 'split'">
                     <div
                         ref="leftPaneEl"
@@ -663,7 +671,7 @@
                         </div>
                     </div>
                 </template>
-    
+
                 <template v-else>
                     <div
                         v-for="(line, index) in lines"
