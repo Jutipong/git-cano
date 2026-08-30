@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import BlameModal from './components/BlameModal.vue'
+    import CloneRepoModal from './components/CloneRepoModal.vue'
     import ConflictBanner from './components/ConflictBanner.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
     import DiffView from './components/DiffView.vue'
@@ -7,6 +8,7 @@
     import FileHistoryModal from './components/FileHistoryModal.vue'
     import FilePanel from './components/FilePanel.vue'
     import GraphView from './components/GraphView.vue'
+    import OpenRepoMenu from './components/OpenRepoMenu.vue'
     import PromptDialog from './components/PromptDialog.vue'
     import RebaseEditor from './components/RebaseEditor.vue'
     import Sidebar from './components/Sidebar.vue'
@@ -35,6 +37,7 @@
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
     const stashCreateOpen = ref(false)
+    const cloneOpen = ref(false)
 
     const SPLASH_MIN_MS = 1800
     const splashMinElapsed = ref(false)
@@ -216,9 +219,9 @@
                 :refresh="repoStore.refresh"
                 @select="index => repoStore.setActive(index)"
                 @close="repoStore.closeTab($event)"
-                @open-new="openNewRepo()"
                 @reorder="(from, to) => repoStore.reorderTabs(from, to)"
-                @create-stash="stashCreateOpen = true" />
+                @create-stash="stashCreateOpen = true"
+                @clone="cloneOpen = true" />
             <div class="app-shell">
                 <Sidebar
                     :repo="repo"
@@ -281,14 +284,9 @@
                 height="42" />
             <strong>No repository opened</strong>
             <span>Open a repository to see its graph, branches and changes</span>
-            <button
-                class="btn primary"
-                @click="openNewRepo()">
-                <i-lucide-plus
-                    width="15"
-                    height="15" />
-                Open repository
-            </button>
+            <OpenRepoMenu
+                label="Open repository"
+                @clone="cloneOpen = true" />
         </div>
         <DiffView
             v-if="selectedFile && repo"
@@ -324,6 +322,9 @@
         <StashCreateModal
             v-if="stashCreateOpen"
             @close="stashCreateOpen = false" />
+        <CloneRepoModal
+            v-if="cloneOpen"
+            @close="cloneOpen = false" />
         <ToolsModal
             v-if="toolsOpen"
             :bisect-active="repoState.bisectActive"

@@ -24,7 +24,8 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 const api = {
     pickAndOpen: (): Promise<RepoStatus | null> => call('repo:pickAndOpen'),
     init: (): Promise<RepoStatus | null> => call('repo:init'),
-    clone: (url: string): Promise<RepoStatus | null> => call('repo:clone', url),
+    pickDirectory: (): Promise<string | null> => call('repo:pickDir'),
+    clone: (url: string, dest?: string): Promise<RepoStatus | null> => call('repo:clone', url, dest),
     openPath: (dir: string): Promise<RepoStatus> => call('repo:openPath', dir),
     setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
     listRepos: (): Promise<string[]> => call('repo:list'),

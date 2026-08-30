@@ -683,6 +683,97 @@ body {
     display: inline-grid;
 }
 
+.open-repo-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.tab-actions .open-repo-wrap {
+    flex: 0 0 32px;
+    align-self: center;
+}
+
+.open-repo-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    padding: 4px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.open-repo-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 10px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.open-repo-item:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.clone-modal {
+    width: min(440px, 92vw);
+}
+
+.clone-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clone-dest-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.clone-dest-input {
+    flex: 1;
+    min-width: 0;
+    min-height: 28px;
+    padding: 0 10px;
+    overflow: hidden;
+    color: var(--text);
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+    outline: none;
+    cursor: pointer;
+}
+
+.clone-dest-input:focus,
+.clone-dest-input:hover {
+    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+}
+
+.clone-dest-hint {
+    color: var(--text-muted);
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .app-body {
 
     gap: 0;

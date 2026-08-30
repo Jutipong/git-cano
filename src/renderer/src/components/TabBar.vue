@@ -2,6 +2,7 @@
     import { nextTick } from 'vue'
 
     import OpenInButton from './OpenInButton.vue'
+    import OpenRepoMenu from './OpenRepoMenu.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
 
     import type { RepoStatus } from '@shared/types'
@@ -21,9 +22,9 @@
     const emit = defineEmits<{
         (e: 'select', index: number): void
         (e: 'close', index: number): void
-        (e: 'open-new'): void
         (e: 'reorder', from: number, to: number): void
         (e: 'create-stash'): void
+        (e: 'clone'): void
     }>()
 
     const draggingPath = ref<string | null>(null)
@@ -200,14 +201,7 @@
                         height="15" />
                 </button>
                 <span class="tab-actions-sep" />
-                <button
-                    class="icon-btn tab-new"
-                    title="Open another repository"
-                    @click="emit('open-new')">
-                    <i-lucide-plus
-                        width="15"
-                        height="15" />
-                </button>
+                <OpenRepoMenu @clone="emit('clone')" />
             </template>
         </div>
         <div class="tab-group">

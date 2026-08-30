@@ -950,6 +950,16 @@
                 v-if="mode === 'workdir' && (showAiGroup || message)"
                 class="summary-counter">
                 <span
+                    v-if="message"
+                    :class="['subject-count', subjectCountClass]">
+                    title {{ firstLine.length }} / 72
+                </span>
+                <span
+                    class="muted"
+                    v-if="message && message.split('\n').length > 1">
+                    body · {{ message.split('\n').length - 1 }} lines
+                </span>
+                <span
                     v-if="showAiGroup"
                     class="counter-model"
                     :title="`Commit-message model: ${commitModelLabel}`">
@@ -961,20 +971,26 @@
                         :class="`cb-ai-mode-${ui.aiCommitMode}`">{{ aiModeLabel(ui.aiCommitMode) }}</span></template
                     >
                 </span>
-                <span
-                    class="muted"
-                    v-if="message && message.split('\n').length > 1">
-                    body · {{ message.split('\n').length - 1 }} lines
-                </span>
-                <span
-                    v-if="message"
-                    :class="['subject-count', subjectCountClass]">
-                    title {{ firstLine.length }} / 72
-                </span>
             </div>
             <div
                 v-if="mode === 'workdir'"
                 class="commit-actions">
+                <div class="commit-group">
+                    <button
+                        class="btn primary commit-btn"
+                        :disabled="pending || !message.trim() || staged.length === 0"
+                        title="Commit staged changes"
+                        @click="doCommit(false)">
+                        {{ committing ? 'Committing…' : 'Commit' }}
+                    </button>
+                    <button
+                        class="btn commit-push-btn"
+                        :disabled="pending || !message.trim() || staged.length === 0"
+                        title="Commit staged changes and push to remote"
+                        @click="doCommit(true)">
+                        {{ committing ? 'Committing…' : 'Commit + push' }}
+                    </button>
+                </div>
                 <div
                     v-if="showAiGroup"
                     ref="aiMenuRoot"
@@ -1038,22 +1054,6 @@
                             {{ option.label }}
                         </button>
                     </div>
-                </div>
-                <div class="commit-group">
-                    <button
-                        class="btn primary commit-btn"
-                        :disabled="pending || !message.trim() || staged.length === 0"
-                        title="Commit staged changes"
-                        @click="doCommit(false)">
-                        {{ committing ? 'Committing…' : 'Commit' }}
-                    </button>
-                    <button
-                        class="btn commit-push-btn"
-                        :disabled="pending || !message.trim() || staged.length === 0"
-                        title="Commit staged changes and push to remote"
-                        @click="doCommit(true)">
-                        {{ committing ? 'Committing…' : 'Commit + push' }}
-                    </button>
                 </div>
             </div>
         </div>

@@ -134,7 +134,7 @@
                     <span class="workspace-item-name">{{ name }}</span>
                 </button>
                 <button
-                    v-if="ws.names.length > 1"
+                    v-if="ws.names.length > 1 && name !== ws.active"
                     class="icon-btn danger workspace-item-delete"
                     title="Delete workspace"
                     @click="deleteWorkspace(name)">

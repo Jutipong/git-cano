@@ -936,7 +936,7 @@ kbd {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    margin-right: auto;
+    margin-left: auto;
     color: var(--text-muted);
     font-size: 10px;
 }

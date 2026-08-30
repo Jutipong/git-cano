@@ -218,18 +218,30 @@ app.whenReady().then(() => {
         await simpleGit(res.filePaths[0]).init()
         return openRepo(res.filePaths[0])
     })
-    handle('repo:clone', async (_url: string) => {
-        const url = _url as string
+    handle('repo:pickDir', async () => {
         const res = await dialog.showOpenDialog({
-            title: 'Choose destination folder',
+            title: 'Choose destination folder for clone',
             properties: ['openDirectory', 'createDirectory'],
         })
         if (res.canceled || !res.filePaths[0]) return null
+        return res.filePaths[0]
+    })
+    handle('repo:clone', async (_url: string, _dest?: string) => {
+        const url = _url as string
+        let dest = _dest as string | undefined
+        if (!dest) {
+            const res = await dialog.showOpenDialog({
+                title: 'Choose destination folder',
+                properties: ['openDirectory', 'createDirectory'],
+            })
+            if (res.canceled || !res.filePaths[0]) return null
+            dest = res.filePaths[0]
+        }
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { simpleGit } = await import('simple-git')
-        const dest = path.join(res.filePaths[0], path.basename(url, '.git'))
-        await simpleGit().clone(url, dest)
-        return openRepo(dest)
+        const destPath = path.join(dest, path.basename(url, '.git'))
+        await simpleGit().clone(url, destPath)
+        return openRepo(destPath)
     })
     handle('repo:openPath', (_dir: string) => openRepo(_dir as string))
     handle('repo:setActive', (_dir: string) => setActiveRepo(_dir as string))
