@@ -1,14 +1,18 @@
 <script setup lang="ts">
-    import { useUiStore, COMMIT_COLUMN_DEFAULTS, MANDATORY_COMMIT_COLUMNS, type CommitColumn } from '../stores/ui'
+    import { useUiStore, COMMIT_COLUMN_DEFAULTS, type CommitColumn } from '../stores/ui'
     import { formatDatePattern } from '../utils/format'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
 
     const ui = useUiStore()
 
-    const COLUMNS: { key: CommitColumn; label: string; hint: string }[] = [
+    /** columns that are always shown and can't be toggled (they are the history itself) */
+    const STATIC_COLUMNS: { key: string; label: string; hint: string }[] = [
         { key: 'graph', label: 'Graph', hint: 'Commit lane lines and nodes' },
         { key: 'message', label: 'Message', hint: 'Commit subject and ref chips' },
+    ]
+
+    const COLUMNS: { key: CommitColumn; label: string; hint: string }[] = [
         { key: 'author', label: 'Author', hint: 'Author avatar and name' },
         { key: 'hash', label: 'Hash', hint: 'Short commit hash' },
         { key: 'date', label: 'Date', hint: 'Commit date' },
@@ -27,16 +31,6 @@
     /** keep at least one column on screen so the history never goes blank */
     function isLastVisible(key: CommitColumn) {
         return ui.commitColumns[key] && visibleCount.value === 1
-    }
-
-    /** mandatory columns can never be unchecked (they're part of the history itself) */
-    function isMandatory(key: CommitColumn) {
-        return MANDATORY_COMMIT_COLUMNS.includes(key)
-    }
-
-    /** a column is locked when it's mandatory, or when it's the last one still visible */
-    function isLocked(key: CommitColumn) {
-        return isMandatory(key) || isLastVisible(key)
     }
 
     function onKey(event: KeyboardEvent) {
@@ -64,27 +58,42 @@
                 </button>
             </div>
             <div class="graph-settings-body">
-                <p class="graph-settings-hint">Choose which fields to show in the commit history. Graph and Message are always shown. Applies to every repository.</p>
-                <label
-                    v-for="column in COLUMNS"
+                <p class="graph-settings-hint">Graph and Message are always shown. Choose which other fields to display in the commit history. Applies to every repository.</p>
+                <div
+                    v-for="column in STATIC_COLUMNS"
                     :key="column.key"
-                    class="graph-settings-row"
-                    :class="{ disabled: isLocked(column.key) }">
-                    <input
-                        v-model="ui.commitColumns[column.key]"
-                        type="checkbox"
-                        :disabled="isLocked(column.key)" />
+                    class="graph-settings-row readonly">
+                    <span
+                        class="graph-settings-check"
+                        aria-hidden="true">
+                        <i-lucide-check
+                            width="11"
+                            height="11"
+                            :stroke-width="3" />
+                    </span>
                     <span class="graph-settings-label">
                         <strong>{{ column.label }}</strong>
                         <small>{{ column.hint }}</small>
                     </span>
-                    <span
-                        v-if="isMandatory(column.key)"
-                        class="graph-settings-locked">
+                    <span class="graph-settings-locked">
                         <i-lucide-lock
                             width="10"
                             height="10" />
                         Always on
+                    </span>
+                </div>
+                <label
+                    v-for="column in COLUMNS"
+                    :key="column.key"
+                    class="graph-settings-row"
+                    :class="{ disabled: isLastVisible(column.key) }">
+                    <input
+                        v-model="ui.commitColumns[column.key]"
+                        type="checkbox"
+                        :disabled="isLastVisible(column.key)" />
+                    <span class="graph-settings-label">
+                        <strong>{{ column.label }}</strong>
+                        <small>{{ column.hint }}</small>
                     </span>
                 </label>
                 <div

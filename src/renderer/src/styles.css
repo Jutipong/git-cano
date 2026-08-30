@@ -32,36 +32,38 @@
 }
 
 :root[data-theme='light'] {
-    /* Simple Light Soft (github.com/HondryTravis/simple-dark) — warm paper,
-       beige raised surfaces, deep blue accents. */
-    --canvas: #faf5e8;
-    --surface-0: #f8f1e3;
-    --surface-1: #faf5e8;
-    --surface-2: #f0e8d8;
-    --surface-3: #f3ecde;
-    --surface-hover: #ebe4d5;
-    --surface-selected: #ebe4d5;
-    --line: #ebe4d5;
-    --line-soft: rgba(60, 64, 67, 0.14);
-    --text: #3c4043;
-    --text-secondary: #5f6368;
-    --text-muted: #80868b;
-    --teal: #155dbd;
-    --teal-dark: #005393;
-    --blue: #1967d2;
-    --green: #00753b;
-    --orange: #bc5000;
-    --red: #b71c1c;
-    --purple: #8020d0;
-    --yellow: #9a7d0a;
-    --diff-bg: #faf5e8;
-    --diff-inline-bg: #f0e8d8;
-    --toast-bg: #faf5e8;
-    --toast-border: #ebe4d5;
-    --conflict-bg: #fbf3dc;
+    /* Soft warm light — short step away from Simple Light Soft: slightly dimmer
+       warm paper, warm-gray ink, muted (low-chroma) accents to cut glare &
+       blue-light stress (cf. Solarized & serene-theme: avoid pure white/black,
+       keep body text ~9:1, active colors in the 4.5–7:1 band). */
+    --canvas: #f7f3e8;
+    --surface-0: #f3eee0;
+    --surface-1: #f7f3e8;
+    --surface-2: #efe8d5;
+    --surface-3: #f1ebdb;
+    --surface-hover: #eae3d0;
+    --surface-selected: #e3dcc6;
+    --line: #e6dfcb;
+    --line-soft: rgba(90, 78, 56, 0.14);
+    --text: #453f33;
+    --text-secondary: #6a6350;
+    --text-muted: #8f8570;
+    --teal: #4a6b8a;
+    --teal-dark: #3a5570;
+    --blue: #52708f;
+    --green: #4f6b45;
+    --orange: #8f6434;
+    --red: #9e523c;
+    --purple: #775579;
+    --yellow: #a5863a;
+    --diff-bg: #f7f3e8;
+    --diff-inline-bg: #efe8d5;
+    --toast-bg: #faf6ec;
+    --toast-border: #e6dfcb;
+    --conflict-bg: #f6edd8;
     --conflict-border: #e0cf9a;
-    --conflict-text: #7a5c10;
-    --shadow: rgba(90, 80, 50, 0.18);
+    --conflict-text: #7f6338;
+    --shadow: rgba(90, 80, 50, 0.2);
 }
 
 * {
@@ -1850,31 +1852,31 @@ mark {
     color: inherit;
 }
 :root[data-theme='light'] .tok-comment {
-    color: #a0a1a7;
+    color: #746c58;
 }
 :root[data-theme='light'] .tok-string {
-    color: #a31515;
+    color: #9a4a38;
 }
 :root[data-theme='light'] .tok-number {
-    color: #8020d0;
+    color: #775579;
 }
 :root[data-theme='light'] .tok-keyword {
-    color: #d01884;
+    color: #9b4d72;
 }
 :root[data-theme='light'] .tok-function {
-    color: #00753b;
+    color: #4f6b45;
 }
 :root[data-theme='light'] .tok-param {
-    color: #bc5000;
+    color: #8f6434;
 }
 :root[data-theme='light'] .tok-type {
-    color: #005393;
+    color: #4a6b8a;
 }
 :root[data-theme='light'] .tok-support {
-    color: #006f94;
+    color: #52708f;
 }
 :root[data-theme='light'] mark {
-    background: #e3dccf;
+    background: #efe4cc;
 }
 
 /* Side-by-side diff — two fixed-width columns with synced horizontal scrolling.

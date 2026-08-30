@@ -1,13 +1,10 @@
 export type Theme = 'dark-simple' | 'light'
 
-export type CommitColumn = 'graph' | 'message' | 'author' | 'hash' | 'date'
-
-/** columns that are part of the history itself and can never be turned off */
-export const MANDATORY_COMMIT_COLUMNS: CommitColumn[] = ['graph', 'message']
+export type CommitColumn = 'author' | 'hash' | 'date'
+// 'graph' and 'message' are not part of this state — they're the commit history
+// itself, so they're always shown and can never be hidden.
 
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
-    graph: true,
-    message: true,
     author: true,
     hash: false,
     date: true,
@@ -52,11 +49,11 @@ export const useUiStore = defineStore(
             stashes: true,
         })
         const commitColumns = ref<Record<CommitColumn, boolean>>({ ...COMMIT_COLUMN_DEFAULTS })
-        // graph/message are mandatory and always shown. Force them back on even if a
-        // previously-persisted session stored them off. Runs in a watchEffect because
-        // the persist plugin hydrates localStorage after setup has already executed.
+        // 'graph'/'message' are no longer stored — strip any leftover keys that an
+        // older session may have persisted. Runs in a watchEffect because the persist
+        // plugin hydrates localStorage after setup has already executed.
         watchEffect(() => {
-            for (const key of MANDATORY_COMMIT_COLUMNS) commitColumns.value[key] = true
+            for (const stale of ['graph', 'message'] as const) delete (commitColumns.value as Record<string, boolean>)[stale]
         })
         const commitDateFormat = ref('dd/MM/yyyy HH:mm')
 

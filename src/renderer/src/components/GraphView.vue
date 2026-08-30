@@ -76,13 +76,9 @@
               )
             : props.commits
     )
-    // graph lane width collapses to 0 when the GRAPH column is hidden, so the
-    // absolutely-positioned svg (edges + nodes) disappears with the header column
-    const graphW = computed(() =>
-        ui.commitColumns.graph
-            ? Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, 64)
-            : 0
-    )
+    // graph lane width: the graph column is always shown, so the absolutely-
+    // positioned svg (edges + nodes) is always laid out at its full lane width
+    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, 64))
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
     const totalHeight = computed(() => visibleCommits.value.length * rowH)
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
@@ -389,12 +385,8 @@
             </button>
         </div>
         <div class="graph-header">
-            <span
-                v-if="ui.commitColumns.graph"
-                :style="{ width: `${graphW}px` }">GRAPH</span>
-            <span
-                v-if="ui.commitColumns.message"
-                class="graph-message-header">COMMIT MESSAGE</span>
+            <span :style="{ width: `${graphW}px` }">GRAPH</span>
+            <span class="graph-message-header">COMMIT MESSAGE</span>
             <span
                 v-if="ui.commitColumns.author"
                 class="graph-author-header">AUTHOR</span>
@@ -411,7 +403,6 @@
             @scroll.passive="onScroll">
             <template v-if="totalHeight > 0">
                 <svg
-                    v-if="ui.commitColumns.graph"
                     class="graph-canvas"
                     :width="graphW"
                     :height="totalHeight"
@@ -517,12 +508,9 @@
                     "
                     @dragleave="dropTargetHash = null">
                     <div
-                        v-if="ui.commitColumns.graph"
                         class="graph-cell"
                         :style="{ width: `${graphW}px` }" />
-                    <span
-                        v-if="ui.commitColumns.message"
-                        class="commit-subject">
+                    <span class="commit-subject">
                         <span
                             v-if="commit.refs.length"
                             class="subject-chips">
