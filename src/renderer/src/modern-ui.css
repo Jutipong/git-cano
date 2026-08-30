@@ -893,6 +893,14 @@ body {
     background: color-mix(in srgb, var(--green) 14%, transparent);
 }
 
+.diff-header-actions .diff-close-btn {
+    margin-left: 0;
+}
+
+.diff-header-actions {
+    gap: 6px;
+}
+
 .split-hunk-separator {
     display: flex;
     box-sizing: border-box;
@@ -1188,12 +1196,10 @@ body {
 }
 
 .diff-header-center {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
     display: flex;
-    gap: 10px;
+    gap: 14px;
     align-items: center;
+    margin-left: auto;
 }
 
 .graph-header {

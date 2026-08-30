@@ -496,6 +496,27 @@
                 >loading…</span
             >
             <div class="diff-header-center">
+                <div class="diff-nav">
+                    <button
+                        class="icon-btn"
+                        :disabled="!changeCount"
+                        title="Previous change"
+                        @click="goToChange(-1)">
+                        <i-lucide-arrow-up
+                            width="15"
+                            height="15" />
+                    </button>
+                    <span class="chip diff-nav-counter">{{ changeCount ? currentChange + 1 : 0 }}/{{ changeCount }}</span>
+                    <button
+                        class="icon-btn"
+                        :disabled="!changeCount"
+                        title="Next change"
+                        @click="goToChange(1)">
+                        <i-lucide-arrow-down
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
                 <div class="segmented">
                     <button
                         class="segmented-btn"
@@ -523,53 +544,33 @@
                         @click="ui.showEntireFile = !ui.showEntireFile">
                         <i-lucide-unfold-vertical
                             width="15"
-                            height="15" />
+                        height="15" />
                     </button>
                 </div>
-                <div class="diff-nav">
+                <div class="segmented diff-header-actions">
                     <button
                         class="icon-btn"
-                        :disabled="!changeCount"
-                        title="Previous change"
-                        @click="goToChange(-1)">
-                        <i-lucide-arrow-up
+                        :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+                        @click="isFullscreen = !isFullscreen">
+                        <i-lucide-minimize
+                            v-if="isFullscreen"
+                            width="15"
+                            height="15" />
+                        <i-lucide-maximize
+                            v-else
                             width="15"
                             height="15" />
                     </button>
-                    <span class="chip diff-nav-counter">{{ changeCount ? currentChange + 1 : 0 }}/{{ changeCount }}</span>
                     <button
-                        class="icon-btn"
-                        :disabled="!changeCount"
-                        title="Next change"
-                        @click="goToChange(1)">
-                        <i-lucide-arrow-down
+                        class="icon-btn danger diff-close-btn"
+                        title="Close diff"
+                        @click="emit('close')">
+                        <i-lucide-x
                             width="15"
                             height="15" />
                     </button>
                 </div>
             </div>
-            <span class="spacer" />
-            <button
-                class="icon-btn"
-                :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
-                @click="isFullscreen = !isFullscreen">
-                <i-lucide-minimize
-                    v-if="isFullscreen"
-                    width="15"
-                    height="15" />
-                <i-lucide-maximize
-                    v-else
-                    width="15"
-                    height="15" />
-            </button>
-            <button
-                class="icon-btn danger diff-close-btn"
-                title="Close diff"
-                @click="emit('close')">
-                <i-lucide-x
-                    width="15"
-                    height="15" />
-            </button>
         </div>
 
         <div class="diff-main">
