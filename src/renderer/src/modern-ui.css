@@ -64,38 +64,6 @@
     --shadow: rgba(90, 80, 50, 0.18);
 }
 
-:root[data-theme='dark-simple'] .tok-comment {
-    color: #737373;
-}
-
-:root[data-theme='dark-simple'] .tok-string {
-    color: #c3e88d;
-}
-
-:root[data-theme='dark-simple'] .tok-number {
-    color: #bd93f9;
-}
-
-:root[data-theme='dark-simple'] .tok-keyword {
-    color: #ff69b4;
-}
-
-:root[data-theme='dark-simple'] .tok-function {
-    color: #00e673;
-}
-
-:root[data-theme='dark-simple'] .tok-param {
-    color: #ffb86c;
-}
-
-:root[data-theme='dark-simple'] .tok-type {
-    color: #00bfff;
-}
-
-:root[data-theme='dark-simple'] .tok-support {
-    color: #8be9fd;
-}
-
 :root[data-theme='dark-simple'] mark {
     background: #444444;
 }
@@ -131,38 +99,6 @@
     --conflict-border: #616161;
     --conflict-text: #e2c08d;
     --shadow: rgba(0, 0, 0, 0.5);
-}
-
-:root[data-theme='dark-modern'] .tok-comment {
-    color: #6a9955;
-}
-
-:root[data-theme='dark-modern'] .tok-string {
-    color: #ce9178;
-}
-
-:root[data-theme='dark-modern'] .tok-number {
-    color: #b5cea8;
-}
-
-:root[data-theme='dark-modern'] .tok-keyword {
-    color: #569cd6;
-}
-
-:root[data-theme='dark-modern'] .tok-function {
-    color: #dcdcaa;
-}
-
-:root[data-theme='dark-modern'] .tok-param {
-    color: #9cdcfe;
-}
-
-:root[data-theme='dark-modern'] .tok-type {
-    color: #4ec9b0;
-}
-
-:root[data-theme='dark-modern'] .tok-support {
-    color: #4ec9b0;
 }
 
 :root[data-theme='dark-modern'] mark {

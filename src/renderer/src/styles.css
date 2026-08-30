@@ -1936,61 +1936,37 @@ kbd {
     padding: 14px;
 }
 
-/* Syntax tokens (simple-dark tokenColors) */
+/* Syntax tokens — one fixed palette for every theme (the simple-dark set) */
 .tok-comment {
-    color: var(--text-muted);
+    color: #737373;
     font-style: italic;
 }
 .tok-string {
-    color: #a5c47c;
+    color: #c3e88d;
 }
 .tok-number {
     color: #bd93f9;
 }
 .tok-keyword {
-    color: #5ab2c6;
+    color: #ff69b4;
 }
 .tok-function {
-    color: var(--green);
+    color: #00e673;
 }
 .tok-param {
-    color: var(--orange);
+    color: #ffb86c;
 }
 .tok-type {
-    color: var(--blue);
+    color: #00bfff;
 }
 .tok-support {
-    color: var(--teal);
+    color: #8be9fd;
 }
 mark {
     padding: 0;
     background: rgba(0, 161, 241, 0.28);
     border-radius: 2px;
     color: inherit;
-}
-:root[data-theme='light'] .tok-comment {
-    color: #a0a1a7;
-}
-:root[data-theme='light'] .tok-string {
-    color: #a31515;
-}
-:root[data-theme='light'] .tok-number {
-    color: #8020d0;
-}
-:root[data-theme='light'] .tok-keyword {
-    color: #d01884;
-}
-:root[data-theme='light'] .tok-function {
-    color: #00753b;
-}
-:root[data-theme='light'] .tok-param {
-    color: #bc5000;
-}
-:root[data-theme='light'] .tok-type {
-    color: #005393;
-}
-:root[data-theme='light'] .tok-support {
-    color: #006f94;
 }
 :root[data-theme='light'] mark {
     background: #e3dccf;
