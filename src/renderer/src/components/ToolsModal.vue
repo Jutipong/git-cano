@@ -123,12 +123,15 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
+    <div class="modal-overlay">
         <div class="rebase-modal tools-modal">
             <div class="rebase-modal-header">
-                <strong>Settings</strong>
+                <strong class="tools-modal-title">
+                    <i-lucide-settings2
+                        width="15"
+                        height="15" />
+                    Settings
+                </strong>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
@@ -146,13 +149,26 @@
                     class="graph-filter"
                     :class="{ active: tab === tabItem.key }"
                     @click="tab = tabItem.key">
+                    <i-lucide-sliders-horizontal
+                        v-if="tabItem.key === 'general'"
+                        width="13"
+                        height="13" />
+                    <i-lucide-sparkles
+                        v-else
+                        width="13"
+                        height="13" />
                     {{ tabItem.label }}
                 </button>
             </div>
             <div class="tools-body general-body">
                 <template v-if="tab === 'general'">
                     <div class="tools-section">
-                        <strong class="tools-section-title">Appearance</strong>
+                        <strong class="tools-section-title">
+                            <i-lucide-palette
+                                width="13"
+                                height="13" />
+                            Appearance
+                        </strong>
                         <span class="setting-label">Theme</span>
                         <div class="setting-choice-row">
                             <button
@@ -196,7 +212,12 @@
                     </div>
 
                     <div class="tools-section">
-                        <strong class="tools-section-title">Refresh</strong>
+                        <strong class="tools-section-title">
+                            <i-lucide-refresh-cw
+                                width="13"
+                                height="13" />
+                            Refresh
+                        </strong>
                         <span class="setting-label">Auto-refresh interval</span>
                         <div class="setting-choice-row">
                             <button
@@ -226,60 +247,68 @@
                 </template>
 
                 <template v-else>
-                    <p class="tools-hint">
-                        Generate commit messages from your staged changes with OpenCode Zen Go. Get a token at
-                        <a
-                            href="https://opencode.ai/auth"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="ai-link">opencode.ai/auth</a>.
-                    </p>
-                    <label class="ai-field">
-                        <span>Token</span>
-                        <div class="ai-token-row">
-                            <input
-                                v-model="aiToken"
-                                type="password"
-                                placeholder="opencode token"
-                                autocomplete="off" />
-                            <button
-                                class="btn primary small"
-                                :disabled="!aiToken.trim() || connecting"
-                                @click="connectProvider()">
-                                <i-lucide-loader-circle
-                                    v-if="connecting"
-                                    class="spinning"
-                                    width="13"
-                                    height="13" />
-                                <i-lucide-plug-zap
-                                    v-else
-                                    width="13"
-                                    height="13" />
-                                {{ connecting ? 'Connecting…' : 'Connect' }}
-                            </button>
-                        </div>
-                        <span
-                            v-if="connectResult"
-                            class="ai-test-result"
-                            :class="connectResult.ok ? 'ok' : 'err'">{{ connectResult.message }}</span>
-                    </label>
-                    <label class="ai-field">
-                        <span>Model ID</span>
-                        <div class="ai-field-select">
-                            <select v-model="aiModel">
-                                <option
-                                    v-for="m in modelSelectOptions"
-                                    :key="m.id"
-                                    :value="m.id">
-                                    {{ m.name }}
-                                </option>
-                            </select>
-                            <i-lucide-chevron-down
-                                class="ai-select-caret"
-                                width="14"
-                                height="14" />
-                        </div>
-                    </label>
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-sparkles
+                                width="13"
+                                height="13" />
+                            OpenCode Zen Go
+                        </strong>
+                        <p class="tools-section-hint">
+                            Generate commit messages from your staged changes. Get a token at
+                            <a
+                                href="https://opencode.ai/auth"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="ai-link">opencode.ai/auth</a>.
+                        </p>
+                        <label class="ai-field">
+                            <span>Token</span>
+                            <div class="ai-token-row">
+                                <input
+                                    v-model="aiToken"
+                                    type="password"
+                                    placeholder="opencode token"
+                                    autocomplete="off" />
+                                <button
+                                    class="btn primary small"
+                                    :disabled="!aiToken.trim() || connecting"
+                                    @click="connectProvider()">
+                                    <i-lucide-loader-circle
+                                        v-if="connecting"
+                                        class="spinning"
+                                        width="13"
+                                        height="13" />
+                                    <i-lucide-plug-zap
+                                        v-else
+                                        width="13"
+                                        height="13" />
+                                    {{ connecting ? 'Connecting…' : 'Connect' }}
+                                </button>
+                            </div>
+                            <span
+                                v-if="connectResult"
+                                class="ai-test-result"
+                                :class="connectResult.ok ? 'ok' : 'err'">{{ connectResult.message }}</span>
+                        </label>
+                        <label class="ai-field">
+                            <span>Model ID</span>
+                            <div class="ai-field-select">
+                                <select v-model="aiModel">
+                                    <option
+                                        v-for="m in modelSelectOptions"
+                                        :key="m.id"
+                                        :value="m.id">
+                                        {{ m.name }}
+                                    </option>
+                                </select>
+                                <i-lucide-chevron-down
+                                    class="ai-select-caret"
+                                    width="14"
+                                    height="14" />
+                            </div>
+                        </label>
+                    </div>
                     <div class="tools-actions">
                         <button
                             class="btn success small"

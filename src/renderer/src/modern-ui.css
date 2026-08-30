@@ -3156,3 +3156,159 @@ body {
 .diff-body::-webkit-scrollbar-corner {
     background: transparent;
 }
+
+/* ---------- Settings modal ---------- */
+.tools-modal {
+    width: min(620px, 92vw);
+}
+
+.tools-modal .rebase-modal-header {
+    padding: 14px 18px;
+    border-bottom: none;
+}
+
+.tools-modal-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+}
+
+.tools-modal-title svg {
+    color: var(--teal);
+}
+
+/* Segmented pill tabs */
+.tools-tabs {
+    gap: 4px;
+    margin: 14px 18px 0;
+    padding: 3px;
+    background: var(--surface-0);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+.tools-tabs .graph-filter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-width: 108px;
+    padding: 6px 16px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 550;
+    background: transparent;
+    border: none;
+    border-radius: 999px;
+    transition:
+        color 0.15s ease,
+        background 0.15s ease;
+}
+
+.tools-tabs .graph-filter:hover {
+    color: var(--text);
+    background: transparent;
+}
+
+.tools-tabs .graph-filter.active {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 13%, transparent);
+}
+
+/* Section cards */
+.tools-body {
+    gap: 12px;
+    padding: 14px 18px 16px;
+}
+
+.tools-section {
+    gap: 7px;
+    padding: 13px 15px;
+    background: color-mix(in srgb, var(--surface-2) 55%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+}
+
+.tools-body .tools-section:first-child {
+    padding-top: 13px;
+    border-top: 1px solid var(--line-soft);
+}
+
+.tools-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.tools-section-title svg {
+    color: var(--teal);
+}
+
+.tools-section-hint {
+    margin-top: -2px;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.setting-label {
+    margin-top: 14px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.tools-section .setting-label:first-of-type {
+    margin-top: 3px;
+}
+
+.setting-choice-row {
+    gap: 7px;
+}
+
+.setting-chip {
+    min-height: 30px;
+    padding: 0 14px;
+    background: var(--surface-1);
+}
+
+.setting-chip:hover {
+    background: var(--surface-hover);
+}
+
+.setting-chip.active {
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+}
+
+.tools-reset-row {
+    padding: 0 2px;
+    border-top: none;
+}
+
+/* AI tab */
+.tools-body .ai-field {
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.tools-body .ai-field input,
+.tools-body .ai-field select {
+    padding: 8px 10px;
+    font-weight: 400;
+}
+
+.ai-test-result {
+    font-weight: 400;
+}
+
+.tools-actions {
+    margin-top: 2px;
+}
