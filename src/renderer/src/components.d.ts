@@ -47,6 +47,7 @@ declare module 'vue' {
     ILucideFolderTree: typeof import('~icons/lucide/folder-tree')['default']
     ILucideGitBranch: typeof import('~icons/lucide/git-branch')['default']
     ILucideGlobe2: typeof import('~icons/lucide/globe2')['default']
+    ILucideLayers: typeof import('~icons/lucide/layers')['default']
     ILucideList: typeof import('~icons/lucide/list')['default']
     ILucideListTree: typeof import('~icons/lucide/list-tree')['default']
     ILucideLoader2: typeof import('~icons/lucide/loader2')['default']
@@ -87,5 +88,6 @@ declare module 'vue' {
     ThemePicker: typeof import('./components/ThemePicker.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']
     Welcome: typeof import('./components/Welcome.vue')['default']
+    WorkspaceButton: typeof import('./components/WorkspaceButton.vue')['default']
   }
 }

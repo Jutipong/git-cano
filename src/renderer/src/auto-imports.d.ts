@@ -9,6 +9,7 @@
 export {}
 declare global {
   const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
+  const DEFAULT_WORKSPACE: typeof import('./stores/workspace').DEFAULT_WORKSPACE
   const MANDATORY_COMMIT_COLUMNS: typeof import('./stores/ui').MANDATORY_COMMIT_COLUMNS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const buildTree: typeof import('./utils/fileTree').buildTree
@@ -44,6 +45,7 @@ declare global {
   const useRepoStore: typeof import('./stores/repo').useRepoStore
   const useUiStore: typeof import('./stores/ui').useUiStore
   const useUiTransientStore: typeof import('./stores/uiTransient').useUiTransientStore
+  const useWorkspaceStore: typeof import('./stores/workspace').useWorkspaceStore
   const watch: typeof import('vue').watch
   const watchEffect: typeof import('vue').watchEffect
 }
@@ -64,6 +66,9 @@ declare global {
   // @ts-ignore
   export type { ToastKind, NotifyOptions } from './stores/uiTransient'
   import('./stores/uiTransient')
+  // @ts-ignore
+  export type { WorkspaceSession } from './stores/workspace'
+  import('./stores/workspace')
   // @ts-ignore
   export type { FileNode, TreeRow } from './utils/fileTree'
   import('./utils/fileTree')

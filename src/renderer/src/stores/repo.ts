@@ -69,6 +69,12 @@ export const useRepoStore = defineStore('repo', () => {
     const session = ref<PersistedSession>(loadedSession.session)
     let legacyMigrationPending = loadedSession.fromLegacy
 
+    const ws = useWorkspaceStore()
+    // migrate the legacy single session (localStorage 'repo') into the current workspace once
+    if (!ws.getSession(ws.active) && session.value.paths.length) {
+        ws.setSession(ws.active, { paths: [...session.value.paths], active: session.value.active })
+    }
+
     const rebaseBase = ref<string | null>(null)
     const historyFile = ref<string | null>(null)
     const blameFile = ref<string | null>(null)
@@ -84,8 +90,8 @@ export const useRepoStore = defineStore('repo', () => {
     function syncSession() {
         if (restoringSession) return
         session.value = { paths: tabs.value.map(tab => tab.path), active: activeTab.value }
+        ws.setSession(ws.active, { paths: [...session.value.paths], active: session.value.active })
         try {
-            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({ session: session.value }))
             if (legacyMigrationPending) {
                 localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY)
                 legacyMigrationPending = false
@@ -190,7 +196,7 @@ export const useRepoStore = defineStore('repo', () => {
         restoringSession = true
         let paths: string[] = []
         try {
-            const saved = session.value
+            const saved = ws.getSession(ws.active) ?? session.value
             const savedActivePath = saved.paths[saved.active]
             paths = saved.paths.length ? saved.paths : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
             let openedCount = 0
@@ -217,6 +223,42 @@ export const useRepoStore = defineStore('repo', () => {
 
     function loadMore() {
         logLimit.value += PAGE_SIZE
+    }
+
+    async function switchWorkspace(name: string) {
+        if (useUiTransientStore().busy) return
+        if (name === ws.active || !ws.names.includes(name)) return
+        syncSession()
+        ws.select(name)
+        restoringSession = true
+        try {
+            const currentPaths = tabs.value.map(tab => tab.path)
+            await Promise.all(currentPaths.map(path => window.api.closeRepo(path).catch(() => false)))
+            tabs.value = []
+            activeTab.value = 0
+            commits.value = []
+            selectedFile.value = null
+            selectedCommit.value = null
+            const saved = ws.getSession(name) ?? { paths: [], active: 0 }
+            let openedCount = 0
+            for (const path of saved.paths) {
+                try {
+                    // oxlint-disable-next-line no-await-in-loop
+                    addTab(await window.api.openPath(path))
+                    openedCount++
+                } catch {
+                }
+            }
+            const savedActivePath = saved.paths[saved.active]
+            const restored = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
+            if (openedCount > 0 && restored >= 0) {
+                activeTab.value = restored
+                await selectTab(activeTab.value)
+            }
+        } finally {
+            restoringSession = false
+        }
+        syncSession()
     }
 
     watch(
@@ -280,5 +322,6 @@ export const useRepoStore = defineStore('repo', () => {
         openPath,
         init,
         loadMore,
+        switchWorkspace,
     }
 })

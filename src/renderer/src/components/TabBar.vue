@@ -2,6 +2,7 @@
     import { nextTick } from 'vue'
 
     import OpenInButton from './OpenInButton.vue'
+    import WorkspaceButton from './WorkspaceButton.vue'
 
     import type { RepoStatus } from '@shared/types'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
@@ -144,6 +145,58 @@
     <div
         v-if="tabs.length"
         class="tab-bar">
+        <div class="tab-actions">
+            <WorkspaceButton />
+            <span class="tab-actions-sep" />
+            <OpenInButton :path="activePath" />
+            <span class="tab-actions-sep" />
+            <button
+                class="icon-btn tab-search"
+                :class="{ open: searchOpen }"
+                title="Search open repositories"
+                @click="toggleSearch">
+                <i-lucide-search
+                    width="15"
+                    height="15" />
+            </button>
+            <input
+                v-if="searchOpen"
+                ref="searchInput"
+                v-model="searchQuery"
+                class="tab-search-input"
+                type="text"
+                placeholder="Search open repos…"
+                @keydown="onSearchKeydown" />
+            <template v-if="!searchOpen">
+                <span class="tab-actions-sep" />
+                <button
+                    class="icon-btn tab-new"
+                    title="Open another repository"
+                    @click="emit('open-new')">
+                    <i-lucide-plus
+                        width="15"
+                        height="15" />
+                </button>
+            </template>
+            <div
+                v-if="searchOpen"
+                class="tab-search-pop">
+                <button
+                    v-for="{ tab, index } in searchResults"
+                    :key="tab.path"
+                    class="tab-search-result"
+                    :class="{ active: index === activeIndex }"
+                    :title="tab.path"
+                    @click="pickResult(index)">
+                    <span class="tab-search-result-name">{{ tab.name }}</span>
+                </button>
+                <div
+                    v-if="!searchResults.length"
+                    class="tab-search-empty">
+                    No matching repository
+                </div>
+            </div>
+        </div>
         <div class="tab-group">
             <div class="tab-scroll">
                 <TransitionGroup
@@ -211,8 +264,8 @@
                 :disabled="!!syncBusy || !repo"
                 title="Fetch"
                 @click="actFetch()">
-                <i-lucide-arrow-down-to-line
-                    :class="{ 'bouncing-down': syncBusy === 'Fetch' }"
+                <i-lucide-refresh-cw
+                    :class="{ spinning: syncBusy === 'Fetch' }"
                     width="15"
                     height="15" />
                 <span>Fetch</span>
@@ -228,56 +281,6 @@
                     height="15" />
                 <span>Stashes</span>
             </button>
-        </div>
-        <div class="tab-actions">
-            <button
-                class="icon-btn tab-search"
-                :class="{ open: searchOpen }"
-                title="Search open repositories"
-                @click="toggleSearch">
-                <i-lucide-search
-                    width="15"
-                    height="15" />
-            </button>
-            <input
-                v-if="searchOpen"
-                ref="searchInput"
-                v-model="searchQuery"
-                class="tab-search-input"
-                type="text"
-                placeholder="Search open repos…"
-                @keydown="onSearchKeydown" />
-            <template v-if="!searchOpen">
-                <span class="tab-actions-sep" />
-                <OpenInButton :path="activePath" />
-                <span class="tab-actions-sep" />
-                <button
-                    class="icon-btn tab-new"
-                    title="Open another repository"
-                    @click="emit('open-new')">
-                    <i-lucide-plus
-                        width="15"
-                        height="15" />
-                </button>
-            </template>
-            <div
-                v-if="searchOpen"
-                class="tab-search-pop">
-                <button
-                    v-for="{ tab, index } in searchResults"
-                    :key="tab.path"
-                    class="tab-search-result"
-                    :class="{ active: index === activeIndex }"
-                    :title="tab.path"
-                    @click="pickResult(index)">
-                    <span class="tab-search-result-name">{{ tab.name }}</span>
-                </button>
-                <div
-                    v-if="!searchResults.length"
-                    class="tab-search-empty">
-                    No matching repository
-                </div>
-            </div>
         </div>
     </div>
 </template>
