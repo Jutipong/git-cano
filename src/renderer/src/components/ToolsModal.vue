@@ -70,12 +70,12 @@
         const query = modelQuery.value.trim().toLowerCase()
         return modelSelectOptions.value
             .filter(model => `${model.name} ${model.id}`.toLowerCase().includes(query))
-            .slice(0, 6)
+            .slice(0, 10)
     })
     const modelDropdownStyle = computed(() => {
         const rect = modelInput.value?.getBoundingClientRect()
         if (!rect) return {}
-        const maxHeight = 190
+        const maxHeight = 360
         const openAbove = window.innerHeight - rect.bottom < maxHeight + 12 && rect.top > maxHeight / 2
         const availableHeight = openAbove ? rect.top - 12 : window.innerHeight - rect.bottom - 12
         const height = Math.max(64, Math.min(maxHeight, availableHeight))

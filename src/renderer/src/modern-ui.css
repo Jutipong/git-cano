@@ -3350,7 +3350,7 @@ body {
 .ai-model-options {
     position: fixed;
     z-index: 50;
-    max-height: 190px;
+    max-height: 360px;
     padding: 4px;
     overflow-y: auto;
     background: var(--surface-1);
