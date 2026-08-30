@@ -622,6 +622,9 @@ body {
 }
 
 .sidebar {
+    /* align top with the commit-history area (tab-bar 48px + app-body gap 6px)
+       so the sidebar height matches the graph height */
+    margin-top: 54px;
     background: var(--surface-0);
     border-right-color: var(--line-soft);
 }
