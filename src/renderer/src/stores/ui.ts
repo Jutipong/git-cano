@@ -2,6 +2,9 @@ export type Theme = 'dark-simple' | 'light'
 
 export type CommitColumn = 'graph' | 'message' | 'author' | 'hash' | 'date'
 
+/** columns that are part of the history itself and can never be turned off */
+export const MANDATORY_COMMIT_COLUMNS: CommitColumn[] = ['graph', 'message']
+
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
     graph: true,
     message: true,
@@ -49,6 +52,12 @@ export const useUiStore = defineStore(
             stashes: true,
         })
         const commitColumns = ref<Record<CommitColumn, boolean>>({ ...COMMIT_COLUMN_DEFAULTS })
+        // graph/message are mandatory and always shown. Force them back on even if a
+        // previously-persisted session stored them off. Runs in a watchEffect because
+        // the persist plugin hydrates localStorage after setup has already executed.
+        watchEffect(() => {
+            for (const key of MANDATORY_COMMIT_COLUMNS) commitColumns.value[key] = true
+        })
         const commitDateFormat = ref('dd/MM/yyyy HH:mm')
 
         function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {

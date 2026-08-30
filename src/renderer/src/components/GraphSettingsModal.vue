@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { useUiStore, COMMIT_COLUMN_DEFAULTS, type CommitColumn } from '../stores/ui'
+    import { useUiStore, COMMIT_COLUMN_DEFAULTS, MANDATORY_COMMIT_COLUMNS, type CommitColumn } from '../stores/ui'
     import { formatDatePattern } from '../utils/format'
 
     const emit = defineEmits<{ (e: 'close'): void }>()

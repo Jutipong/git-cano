@@ -32,35 +32,36 @@
 }
 
 :root[data-theme='light'] {
-    /* Keep the same hierarchy in light mode: canvas behind raised surfaces. */
-    --canvas: #e7eaf0;
-    --surface-0: #f1f3f6;
-    --surface-1: #f8f9fb;
-    --surface-2: #e9edf2;
-    --surface-3: #dfe5ec;
-    --surface-hover: #e1e6ed;
-    --surface-selected: #d4e3f3;
-    --line: #c5ced9;
-    --line-soft: rgba(59, 73, 91, 0.16);
-    --text: #26313d;
-    --text-secondary: #4f5d6c;
-    --text-muted: #748293;
-    --teal: #087fc1;
-    --teal-dark: #086aa3;
-    --blue: #1769aa;
-    --green: #167545;
-    --orange: #a76208;
-    --red: #b32635;
-    --purple: #7142b5;
-    --yellow: #866b09;
-    --diff-bg: #f5f7fa;
-    --diff-inline-bg: #e9edf2;
-    --toast-bg: #ffffff;
-    --toast-border: #c5ced9;
-    --conflict-bg: #fff7df;
-    --conflict-border: #e3cd91;
-    --conflict-text: #735b12;
-    --shadow: rgba(30, 45, 65, 0.2);
+    /* Simple Light Soft (github.com/HondryTravis/simple-dark) — warm paper,
+       beige raised surfaces, deep blue accents. */
+    --canvas: #faf5e8;
+    --surface-0: #f8f1e3;
+    --surface-1: #faf5e8;
+    --surface-2: #f0e8d8;
+    --surface-3: #f3ecde;
+    --surface-hover: #ebe4d5;
+    --surface-selected: #ebe4d5;
+    --line: #ebe4d5;
+    --line-soft: rgba(60, 64, 67, 0.14);
+    --text: #3c4043;
+    --text-secondary: #5f6368;
+    --text-muted: #80868b;
+    --teal: #155dbd;
+    --teal-dark: #005393;
+    --blue: #1967d2;
+    --green: #00753b;
+    --orange: #bc5000;
+    --red: #b71c1c;
+    --purple: #8020d0;
+    --yellow: #9a7d0a;
+    --diff-bg: #faf5e8;
+    --diff-inline-bg: #f0e8d8;
+    --toast-bg: #faf5e8;
+    --toast-border: #ebe4d5;
+    --conflict-bg: #fbf3dc;
+    --conflict-border: #e0cf9a;
+    --conflict-text: #7a5c10;
+    --shadow: rgba(90, 80, 50, 0.18);
 }
 
 :root[data-theme='dark-simple'] .tok-comment {
@@ -2441,7 +2442,7 @@ body {
     background: #2c2f32;
 }
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
-    background: #c5ced9;
+    background: #ebe4d5;
 }
 .diff-body::-webkit-scrollbar-track,
 .diff-body::-webkit-scrollbar-corner {

@@ -9,6 +9,7 @@
 export {}
 declare global {
   const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
+  const MANDATORY_COMMIT_COLUMNS: typeof import('./stores/ui').MANDATORY_COMMIT_COLUMNS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const buildTree: typeof import('./utils/fileTree').buildTree
   const computed: typeof import('vue').computed

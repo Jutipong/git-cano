@@ -32,31 +32,32 @@
 }
 
 :root[data-theme='light'] {
-    /* Simple Light Soft */
+    /* Simple Light Soft (github.com/HondryTravis/simple-dark) — warm paper,
+       beige raised surfaces, deep blue accents. */
     --canvas: #faf5e8;
     --surface-0: #f8f1e3;
-    --surface-1: #fbf7ee;
+    --surface-1: #faf5e8;
     --surface-2: #f0e8d8;
     --surface-3: #f3ecde;
     --surface-hover: #ebe4d5;
-    --surface-selected: #e6dcc6;
-    --line: #dcd3bf;
+    --surface-selected: #ebe4d5;
+    --line: #ebe4d5;
     --line-soft: rgba(60, 64, 67, 0.14);
     --text: #3c4043;
     --text-secondary: #5f6368;
     --text-muted: #80868b;
     --teal: #155dbd;
-    --teal-dark: #0f4c99;
+    --teal-dark: #005393;
     --blue: #1967d2;
     --green: #00753b;
-    --orange: #b26a00;
+    --orange: #bc5000;
     --red: #b71c1c;
     --purple: #8020d0;
     --yellow: #9a7d0a;
-    --diff-bg: #f7f1e1;
-    --diff-inline-bg: #f0e9da;
-    --toast-bg: #fffdf6;
-    --toast-border: #dcd3bf;
+    --diff-bg: #faf5e8;
+    --diff-inline-bg: #f0e8d8;
+    --toast-bg: #faf5e8;
+    --toast-border: #ebe4d5;
     --conflict-bg: #fbf3dc;
     --conflict-border: #e0cf9a;
     --conflict-text: #7a5c10;
@@ -1858,10 +1859,22 @@ mark {
     color: #8020d0;
 }
 :root[data-theme='light'] .tok-keyword {
+    color: #d01884;
+}
+:root[data-theme='light'] .tok-function {
+    color: #00753b;
+}
+:root[data-theme='light'] .tok-param {
+    color: #bc5000;
+}
+:root[data-theme='light'] .tok-type {
     color: #005393;
 }
+:root[data-theme='light'] .tok-support {
+    color: #006f94;
+}
 :root[data-theme='light'] mark {
-    background: rgba(21, 93, 189, 0.18);
+    background: #e3dccf;
 }
 
 /* Side-by-side diff — two fixed-width columns with synced horizontal scrolling.
