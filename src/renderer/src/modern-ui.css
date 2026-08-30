@@ -881,6 +881,15 @@ body {
     border-bottom-color: var(--line-soft);
 }
 
+.graph-graph-header {
+    position: relative;
+}
+
+.graph-graph-header .graph-settings-btn {
+    position: absolute;
+    left: 2px;
+}
+
 .graph-header.commit-mode {
     background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
 }
@@ -888,6 +897,15 @@ body {
 .panel-heading-title strong {
     font-size: 12px;
     font-weight: 650;
+}
+
+.panel-heading-title .commit-close-btn {
+    margin-right: 4px;
+    color: var(--red);
+}
+
+.panel-heading-title .commit-close-btn svg {
+    color: var(--red);
 }
 
 .panel-heading.commit-mode {
@@ -2534,6 +2552,7 @@ body {
 .commit-hash {
     width: var(--hash-w, 70px);
     flex: 0 0 var(--hash-w, 70px);
+    text-align: center;
 }
 /* beat `.graph-header > span` (flex: 0 0 auto) so headers track the same vars */
 .graph-header > .graph-author-header {

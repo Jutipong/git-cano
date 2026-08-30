@@ -199,6 +199,11 @@
         if (!ok) return
         void run(`Reset to ${commit.shortHash} (${mode})`, () => window.api.resetTo(commit.hash, mode), `Resetting to ${commit.shortHash}…`)
     }
+
+    function closeCommitView() {
+        selectedFile.value = null
+        selectedCommit.value = null
+    }
 </script>
 
 <template>
@@ -258,7 +263,7 @@
                             @select="selectedFile = $event"
                             @show-history="historyFile = $event"
                             @show-blame="blameFile = $event"
-                            @close-commit="selectedCommit = null" />
+                             @close-commit="closeCommitView" />
                     </div>
                 </div>
             </div>

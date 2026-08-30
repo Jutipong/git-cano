@@ -20,18 +20,11 @@
 
     const DEFAULT_DATE_FORMAT = 'dd/MM/yyyy HH:mm'
 
-    const visibleCount = computed(() => COLUMNS.filter(column => ui.commitColumns[column.key]).length)
-
     /** live preview of the date pattern against right now, so the user sees the result while typing */
     const datePreview = computed(() => {
         const pattern = ui.commitDateFormat.trim() || DEFAULT_DATE_FORMAT
         return formatDatePattern(new Date().toISOString(), pattern)
     })
-
-    /** keep at least one column on screen so the history never goes blank */
-    function isLastVisible(key: CommitColumn) {
-        return ui.commitColumns[key] && visibleCount.value === 1
-    }
 
     function onKey(event: KeyboardEvent) {
         if (event.key === 'Escape') emit('close')
@@ -85,19 +78,16 @@
                 <label
                     v-for="column in COLUMNS"
                     :key="column.key"
-                    class="graph-settings-row"
-                    :class="{ disabled: isLastVisible(column.key) }">
+                    class="graph-settings-row">
                     <input
                         v-model="ui.commitColumns[column.key]"
-                        type="checkbox"
-                        :disabled="isLastVisible(column.key)" />
+                        type="checkbox" />
                     <span class="graph-settings-label">
                         <strong>{{ column.label }}</strong>
                         <small>{{ column.hint }}</small>
                     </span>
                 </label>
                 <div
-                    v-if="ui.commitColumns.date"
                     class="graph-settings-format">
                     <label class="graph-settings-format-label">Date format</label>
                     <input
