@@ -2596,7 +2596,7 @@ body {
     width: max-content;
     max-width: min(400px, calc(100vw - 32px));
     min-height: 46px;
-    padding: 11px 20px 11px 14px;
+    padding: 11px 12px 11px 14px;
     overflow: hidden;
     color: var(--text);
     background: color-mix(in srgb, var(--toast-accent, var(--teal)) 10%, var(--surface-2));
@@ -2657,7 +2657,7 @@ body {
     position: relative;
     display: inline-grid;
     flex: 0 0 24px;
-    margin-left: 12px;
+    margin-left: 4px;
     place-items: center;
     width: 24px;
     height: 24px;
