@@ -196,10 +196,14 @@ body {
     grid-column: 3;
     min-height: 34px;
     width: 100%;
-    padding: 0 6px;
+    padding: 2px 4px;
     background: color-mix(in srgb, var(--surface-2) 45%, transparent);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
+}
+
+.tab-track {
+    gap: 2px;
 }
 
 .tab-actions {
@@ -207,12 +211,12 @@ body {
     position: relative;
     justify-self: start;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     width: 100%;
     min-width: 0;
     min-height: 34px;
     gap: 2px;
-    padding: 0 4px;
+    padding: 2px 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
@@ -263,6 +267,31 @@ body {
     padding: 0 8px;
 }
 
+.tab-actions:not(.search-open) > .tab-actions-sep {
+    display: none;
+}
+
+.tab-actions:not(.search-open) > .workspace-wrap {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.tab-actions:not(.search-open) .workspace-btn {
+    width: 100%;
+    justify-content: center;
+    min-width: 0;
+}
+
+.tab-actions:not(.search-open) .open-in-btn {
+    flex: 0 0 auto;
+}
+
+.tab-actions:not(.search-open) .tab-search,
+.tab-actions:not(.search-open) .tab-new {
+    flex: 0 0 32px;
+}
+
 .tab-search-field {
     display: flex;
     flex: 1;
@@ -296,10 +325,14 @@ body {
     min-height: 34px;
     width: 100%;
     min-width: 360px;
-    padding: 0 4px;
+    padding: 2px 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
+}
+
+.tab-sync-actions > .tab-actions-sep {
+    display: none;
 }
 
 .tab-sync-actions .toolbar-action {
