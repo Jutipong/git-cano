@@ -1,4 +1,4 @@
-export type Theme = 'dark-simple' | 'light' | 'dark-modern'
+export type Theme = 'dark' | 'light' | 'dark-modern'
 
 export type CommitColumn = 'author' | 'hash' | 'date'
 // 'graph' and 'message' are not part of this state — they're the commit history
@@ -18,7 +18,7 @@ export interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
-    { value: 'dark-simple', label: 'Simple Dark', description: 'HondryTravis Simple Dark palette', icon: 'moon' },
+    { value: 'dark', label: 'Dark', description: 'HondryTravis Simple Dark palette', icon: 'moon' },
     { value: 'dark-modern', label: 'Dark Modern', description: 'VS Code Dark Modern palette', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
 ]
@@ -26,14 +26,14 @@ const themeOptions: ThemeOption[] = [
 export const useUiStore = defineStore(
     'ui',
     () => {
-        const theme = ref<Theme>('dark-simple')
-        // 'dark'/'dracula' themes were removed — normalize any persisted value.
-        // Runs in a watchEffect because the persist plugin hydrates localStorage
-        // after this setup function has already executed.
+        const theme = ref<Theme>('dark')
+        // 'dracula' was removed and legacy 'dark-simple' was renamed to 'dark' —
+        // normalize any persisted value. Runs in a watchEffect because the persist
+        // plugin hydrates localStorage after this setup function has already executed.
         watchEffect(() => {
             const savedTheme = theme.value as string
-            if (savedTheme !== 'dark-simple' && savedTheme !== 'light' && savedTheme !== 'dark-modern')
-                theme.value = 'dark-simple'
+            if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern')
+                theme.value = 'dark'
         })
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)

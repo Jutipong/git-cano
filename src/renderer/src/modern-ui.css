@@ -1,5 +1,5 @@
 :root,
-:root[data-theme='dark-simple'] {
+:root[data-theme='dark'] {
     /* Simple Dark palette from github.com/HondryTravis/simple-dark — default theme. */
     --canvas: #202124;
     --surface-0: #1f2020;
@@ -64,7 +64,7 @@
     --shadow: rgba(90, 80, 50, 0.18);
 }
 
-:root[data-theme='dark-simple'] mark {
+:root[data-theme='dark'] mark {
     background: #444444;
 }
 
@@ -2582,7 +2582,7 @@ body {
     background: #2b333e;
     border-radius: 999px;
 }
-:root[data-theme='dark-simple'] .diff-body::-webkit-scrollbar-thumb {
+:root[data-theme='dark'] .diff-body::-webkit-scrollbar-thumb {
     background: #2c2f32;
 }
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
