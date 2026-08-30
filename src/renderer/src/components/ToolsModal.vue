@@ -1,25 +1,29 @@
 <script setup lang="ts">
+    import Moon from '~icons/lucide/moon'
+    import Sun from '~icons/lucide/sun'
+
     import type { ToastKind } from '../stores/uiTransient'
     import type { GoModel } from '@shared/types'
+    import { useUiStore, type ThemeOption } from '../stores/ui'
+    import { confirmDialog } from '../utils/confirm'
 
-    interface WorktreeInfo {
-        path: string
-        head: string
-        branch: string | null
-    }
-
-    const props = defineProps<{ bisectActive: boolean; refresh: () => Promise<unknown> }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
-    const tab = ref<'bisect' | 'worktrees' | 'submodules' | 'ai'>('bisect')
-    const badRef = ref('')
-    const goodRef = ref('')
-    const currentCommit = ref<string | null>(null)
-    const worktrees = ref<WorktreeInfo[]>([])
-    const newWtPath = ref('')
-    const newWtBranch = ref('')
-    const submodules = ref<string[]>([])
+    const ui = useUiStore()
+
+    const tab = ref<'general' | 'ai'>('general')
+    const appVersion = ref('')
+
+    const REFRESH_OPTIONS = [
+        { value: 0, label: 'Off' },
+        { value: 30, label: '30s' },
+        { value: 60, label: '1 min' },
+        { value: 300, label: '5 min' },
+    ]
+
+    const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
+
     const ai = useAiStore()
     const aiToken = ref('')
     const aiModel = ref('')
@@ -35,31 +39,6 @@
         return known ? modelOptions.value : [{ id: current, name: current }, ...modelOptions.value]
     })
 
-    watch(tab, loadTabData)
-
-    async function loadTabData() {
-        if (tab.value === 'worktrees') {
-            try {
-                worktrees.value = await window.api.worktrees()
-            } catch {
-            }
-        }
-        if (tab.value === 'submodules') {
-            try {
-                submodules.value = await window.api.submodules()
-            } catch {
-            }
-        }
-        if (tab.value === 'bisect' && props.bisectActive) {
-            try {
-                const log = await window.api.log(1)
-                currentCommit.value = log[0]?.shortHash ?? null
-            } catch {
-            }
-        }
-        if (tab.value === 'ai') await loadAiTab()
-    }
-
     let aiLoaded = false
     async function loadAiTab() {
         if (aiLoaded) return
@@ -71,6 +50,10 @@
         } catch {
         }
     }
+
+    watch(tab, async current => {
+        if (current === 'ai') await loadAiTab()
+    })
 
     async function connectProvider() {
         if (!aiToken.value.trim() || connecting.value) return
@@ -121,63 +104,38 @@
         }
     }
 
-    onMounted(loadTabData)
-    onMounted(() => window.addEventListener('keydown', onKeydown))
+    async function resetGeneral() {
+        const ok = await confirmDialog({
+            message: 'Reset Appearance, Diff & Files, and Refresh settings to defaults?',
+            confirmLabel: 'Reset',
+        })
+        if (!ok) return
+        ui.resetGeneral()
+        notify('Settings reset to defaults', 'success')
+    }
+
+    onMounted(async () => {
+        window.addEventListener('keydown', onKeydown)
+        appVersion.value = await window.api.appVersion().catch(() => '')
+    })
     onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
     function onKeydown(e: KeyboardEvent) {
         if (e.key === 'Escape') emit('close')
     }
-
-    async function run(fn: () => Promise<unknown>, ok: string) {
-        try {
-            await useUiTransientStore().withBusy(fn, 'Working…')
-            await props.refresh()
-            notify(ok, 'success')
-        } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
-        }
-    }
-
-    function startBisect() {
-        if (!badRef.value.trim()) return
-        void run(async () => {
-            await window.api.bisectStart(badRef.value.trim(), goodRef.value.trim() || undefined)
-            await props.refresh()
-        }, 'Bisect started')
-    }
-
-    function mark(kind: 'good' | 'bad' | 'skip') {
-        const labels = { good: 'Marked good', bad: 'Marked bad', skip: 'Skipped' }
-        void run(() => window.api.bisectMark(kind), labels[kind])
-    }
-    function finishBisect() {
-        void run(() => window.api.bisectReset(), 'Bisect finished')
-    }
-    function updateSubmodules() {
-        void run(() => window.api.updateSubmodules(), 'Submodules updated')
-    }
-
-    function addWorktree() {
-        if (!newWtPath.value.trim()) return
-        void run(() => window.api.addWorktree(newWtPath.value.trim(), newWtBranch.value.trim() || undefined), 'Worktree added')
-        newWtPath.value = ''
-        newWtBranch.value = ''
-    }
-
-    function removeWorktree(dir: string) {
-        if (window.confirm(`Remove worktree "${dir}"?`)) void run(() => window.api.removeWorktree(dir), 'Worktree removed')
-    }
 </script>
 
 <template>
-    <div class="modal-overlay">
+    <div
+        class="modal-overlay"
+        @mousedown.self="emit('close')">
         <div class="rebase-modal tools-modal">
             <div class="rebase-modal-header">
-                <strong>Advanced tools</strong>
+                <strong>Settings</strong>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
+                    title="Close"
                     @click="emit('close')">
                     <i-lucide-x
                         width="16"
@@ -186,7 +144,7 @@
             </div>
             <div class="tools-tabs">
                 <button
-                    v-for="name in ['bisect', 'worktrees', 'submodules', 'ai'] as const"
+                    v-for="name in ['general', 'ai'] as const"
                     :key="name"
                     class="graph-filter"
                     :class="{ active: tab === name }"
@@ -194,119 +152,106 @@
                     {{ name }}
                 </button>
             </div>
-
-            <div class="tools-body">
-                <template v-if="tab === 'bisect'">
-                    <template v-if="bisectActive">
-                        <p class="tools-hint">Bisect in progress. Current commit:</p>
-                        <code class="rebase-base">{{ currentCommit ?? '…' }}</code>
-                        <div class="tools-actions">
+            <div class="tools-body general-body">
+                <template v-if="tab === 'general'">
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Appearance</strong>
+                        <span class="setting-label">Theme</span>
+                        <div class="setting-choice-row">
                             <button
-                                class="btn small"
-                                @click="mark('good')">
-                                Good
-                            </button>
-                            <button
-                                class="btn danger small"
-                                @click="mark('bad')">
-                                Bad
-                            </button>
-                            <button
-                                class="btn small"
-                                @click="mark('skip')">
-                                Skip
-                            </button>
-                            <span class="spacer" />
-                            <button
-                                class="btn primary small"
-                                @click="finishBisect()">
-                                Finish bisect
+                                v-for="option in ui.themeOptions"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.theme === option.value }"
+                                @click="ui.setTheme(option.value)">
+                                <component
+                                    :is="themeIcon(option)"
+                                    width="13"
+                                    height="13" />
+                                {{ option.label }}
                             </button>
                         </div>
-                    </template>
-                    <template v-else>
-                        <p class="tools-hint">Find the commit that introduced a bug by marking a known-bad and known-good ref.</p>
-                        <input
-                            v-model="badRef"
-                            placeholder="Bad ref (e.g. HEAD or main)" />
-                        <input
-                            v-model="goodRef"
-                            placeholder="Good ref (optional)" />
-                        <div class="tools-actions">
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Diff & Files</strong>
+                        <span class="setting-label">Default diff view</span>
+                        <div class="setting-choice-row">
                             <button
-                                class="btn primary small"
-                                :disabled="!badRef.trim()"
-                                @click="startBisect()">
-                                Start bisect
+                                v-for="mode in ['split', 'inline'] as const"
+                                :key="mode"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.diffViewMode === mode }"
+                                @click="ui.diffViewMode = mode">
+                                {{ mode === 'split' ? 'Split' : 'Inline' }}
                             </button>
                         </div>
-                    </template>
-                </template>
+                        <label class="setting-toggle">
+                            <input
+                                v-model="ui.showEntireFile"
+                                type="checkbox" />
+                            Show entire file in diff
+                        </label>
+                        <span class="setting-label">Files panel layout</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="mode in ['tree', 'flat'] as const"
+                                :key="mode"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.fileViewMode === mode }"
+                                @click="ui.fileViewMode = mode">
+                                {{ mode === 'tree' ? 'Tree' : 'Flat' }}
+                            </button>
+                        </div>
+                    </div>
 
-                <template v-if="tab === 'worktrees'">
-                    <div
-                        v-for="wt in worktrees"
-                        :key="wt.path"
-                        class="remote-row">
-                        <i-lucide-folder-plus
-                            width="13"
-                            height="13" />
-                        <code>{{ wt.path }}</code>
-                        <span class="muted">{{ wt.branch ? `⎇ ${wt.branch}` : wt.head.slice(0, 7) }}</span>
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Refresh</strong>
+                        <span class="setting-label">Auto-refresh interval</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in REFRESH_OPTIONS"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.refreshInterval === option.value }"
+                                @click="ui.refreshInterval = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">About</strong>
+                        <p class="tools-hint">
+                            Open Git {{ appVersion || '…' }} — a lightweight Git GUI.
+                            Commit-message AI is powered by
+                            <a
+                                href="https://opencode.ai"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="ai-link">opencode.ai</a>.
+                        </p>
+                    </div>
+
+                    <div class="tools-actions tools-reset-row">
                         <span class="spacer" />
                         <button
-                            v-if="wt.branch !== null"
-                            class="icon-btn danger"
-                            title="Remove worktree"
-                            @click="removeWorktree(wt.path)">
-                            <i-lucide-trash2
+                            class="btn small"
+                            title="Restore Appearance, Diff & Files, and Refresh settings to defaults"
+                            @click="resetGeneral()">
+                            <i-lucide-rotate-ccw
                                 width="13"
                                 height="13" />
+                            Reset to defaults
                         </button>
                     </div>
-                    <form
-                        class="remote-add"
-                        @submit.prevent="addWorktree()">
-                        <input
-                            v-model="newWtPath"
-                            placeholder="/path/to/worktree" />
-                        <input
-                            v-model="newWtBranch"
-                            placeholder="new branch name (optional)" />
-                        <button
-                            type="submit"
-                            class="btn primary small">
-                            Add
-                        </button>
-                    </form>
                 </template>
 
-                <template v-if="tab === 'submodules'">
-                    <template v-if="submodules.length > 0">
-                        <div
-                            v-for="name in submodules"
-                            :key="name"
-                            class="remote-row">
-                            <i-lucide-check
-                                width="13"
-                                height="13" /><span>{{ name }}</span>
-                        </div>
-                        <div class="tools-actions">
-                            <button
-                                class="btn primary small"
-                                @click="updateSubmodules()">
-                                Update all (--init --recursive)
-                            </button>
-                        </div>
-                    </template>
-                    <p
-                        v-else
-                        class="tools-hint">
-                        This repository has no submodules (.gitmodules not found)
-                    </p>
-                </template>
-
-                <template v-if="tab === 'ai'">
+                <template v-else>
                     <p class="tools-hint">
                         Generate commit messages from your staged changes with OpenCode Zen Go. Get a token at
                         <a

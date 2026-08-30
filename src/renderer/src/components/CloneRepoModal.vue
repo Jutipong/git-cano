@@ -92,23 +92,18 @@
                     spellcheck="false"
                     @input="error = ''"
                     @keydown.enter="submit()" />
-                <div class="clone-dest-row">
-                    <input
-                        class="clone-dest-input"
-                        :value="dest"
-                        readonly
-                        placeholder="Destination folder"
-                        @click="pickDest()" />
-                    <button
-                        class="btn small clone-dest-browse"
-                        :disabled="pickingDest"
-                        @click="pickDest()">
-                        <i-lucide-folder-plus
-                            width="13"
-                            height="13" />
-                        {{ dest ? 'Change…' : 'Choose folder…' }}
-                    </button>
-                </div>
+                <span class="clone-dest-label">Destination folder</span>
+                <button
+                    type="button"
+                    class="clone-dest-field"
+                    :class="{ 'has-value': !!dest }"
+                    :disabled="pickingDest"
+                    @click="pickDest()">
+                    <i-lucide-folder-plus
+                        width="14"
+                        height="14" />
+                    <span class="clone-dest-text">{{ dest || (pickingDest ? 'Choosing folder…' : 'Choose destination folder') }}</span>
+                </button>
                 <div
                     v-if="dest && url.trim()"
                     class="clone-dest-hint">

@@ -738,32 +738,49 @@ body {
     gap: 8px;
 }
 
-.clone-dest-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.clone-dest-label {
+    color: var(--text-muted);
+    font-size: 11px;
 }
 
-.clone-dest-input {
-    flex: 1;
-    min-width: 0;
-    min-height: 28px;
-    padding: 0 10px;
+.clone-dest-field {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 32px;
+    padding: 0 12px;
     overflow: hidden;
-    color: var(--text);
+    color: var(--text-muted);
     font-size: 12px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    text-align: left;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
-    outline: none;
     cursor: pointer;
+    transition:
+        color 0.15s ease,
+        background 0.15s ease,
+        border-color 0.15s ease;
+}
+.clone-dest-field:hover {
+    color: var(--text);
+    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+}
+.clone-dest-field:disabled {
+    cursor: wait;
+    opacity: 0.6;
+}
+.clone-dest-field.has-value {
+    color: var(--text);
 }
 
-.clone-dest-input:focus,
-.clone-dest-input:hover {
-    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+.clone-dest-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .clone-dest-hint {

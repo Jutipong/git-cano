@@ -56,8 +56,20 @@
         document.querySelector<HTMLInputElement>('.commit-search input')?.focus()
     }
 
-    const refreshInterval = ref<ReturnType<typeof setInterval> | null>(null)
+    const autoRefreshTimer = ref<ReturnType<typeof setInterval> | null>(null)
     let refreshTimer: ReturnType<typeof setTimeout> | null = null
+
+    function startAutoRefresh() {
+        if (autoRefreshTimer.value) {
+            clearInterval(autoRefreshTimer.value)
+            autoRefreshTimer.value = null
+        }
+        const seconds = ui.refreshInterval
+        if (!seconds || seconds <= 0) return
+        autoRefreshTimer.value = setInterval(() => {
+            if (repoStore.repo) void repoStore.refresh()
+        }, seconds * 1000)
+    }
 
     function debouncedRefresh() {
         if (!repoStore.repo) return
@@ -79,12 +91,8 @@
         window.addEventListener('focus', debouncedRefresh)
         onUnmounted(() => window.removeEventListener('focus', debouncedRefresh))
 
-        refreshInterval.value = setInterval(
-            () => {
-                if (repoStore.repo) void repoStore.refresh()
-            },
-            60 * 1000
-        )
+        startAutoRefresh()
+        watch(() => ui.refreshInterval, startAutoRefresh)
 
         const onKeyDown = (event: KeyboardEvent) => {
             if (uiTransient.busy) return
@@ -110,7 +118,7 @@
         }
 
         onBeforeUnmount(() => {
-            if (refreshInterval.value) clearInterval(refreshInterval.value)
+            if (autoRefreshTimer.value) clearInterval(autoRefreshTimer.value)
             window.removeEventListener('keydown', onKeyDown)
         })
         window.addEventListener('keydown', onKeyDown)
@@ -327,8 +335,6 @@
             @close="cloneOpen = false" />
         <ToolsModal
             v-if="toolsOpen"
-            :bisect-active="repoState.bisectActive"
-            :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
         <ErrorDialog
             :message="uiTransient.errorDialog"

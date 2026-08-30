@@ -10,6 +10,19 @@ export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
     date: true,
 }
 
+export const DEFAULT_THEME: Theme = 'dark'
+
+export type DiffViewMode = 'split' | 'inline'
+export const DEFAULT_DIFF_VIEW_MODE: DiffViewMode = 'split'
+
+export const DEFAULT_SHOW_ENTIRE_FILE = false
+
+export type FileViewMode = 'tree' | 'flat'
+export const DEFAULT_FILE_VIEW_MODE: FileViewMode = 'tree'
+
+/** Auto-refresh interval in seconds; 0 disables auto-refresh. */
+export const DEFAULT_REFRESH_INTERVAL = 60
+
 export interface ThemeOption {
     value: Theme
     label: string
@@ -26,21 +39,22 @@ const themeOptions: ThemeOption[] = [
 export const useUiStore = defineStore(
     'ui',
     () => {
-        const theme = ref<Theme>('dark')
+        const theme = ref<Theme>(DEFAULT_THEME)
         watchEffect(() => {
             const savedTheme = theme.value as string
             if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern')
-                theme.value = 'dark'
+                theme.value = DEFAULT_THEME
         })
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
         const summaryHeight = ref(140)
-        const fileViewMode = ref<'tree' | 'flat'>('tree')
+        const fileViewMode = ref<FileViewMode>(DEFAULT_FILE_VIEW_MODE)
         const fileFilterMode = ref<'changed' | 'all'>('changed')
-        const diffViewMode = ref<'split' | 'inline'>('split')
-        if (diffViewMode.value === ('hunk' as 'inline')) diffViewMode.value = 'inline'
-        const showEntireFile = ref(false)
+        const diffViewMode = ref<DiffViewMode>(DEFAULT_DIFF_VIEW_MODE)
+        if (diffViewMode.value === ('hunk' as DiffViewMode)) diffViewMode.value = DEFAULT_DIFF_VIEW_MODE
+        const showEntireFile = ref(DEFAULT_SHOW_ENTIRE_FILE)
         const aiCommitMode = ref<AiCommitMode>('off')
+        const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
             tags: true,
@@ -66,6 +80,14 @@ export const useUiStore = defineStore(
             theme.value = value
         }
 
+        function resetGeneral() {
+            theme.value = DEFAULT_THEME
+            fileViewMode.value = DEFAULT_FILE_VIEW_MODE
+            diffViewMode.value = DEFAULT_DIFF_VIEW_MODE
+            showEntireFile.value = DEFAULT_SHOW_ENTIRE_FILE
+            refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+        }
+
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
@@ -82,11 +104,13 @@ export const useUiStore = defineStore(
             diffViewMode,
             showEntireFile,
             aiCommitMode,
+            refreshInterval,
             sidebarSections,
             commitColumns,
             commitDateFormat,
             toggleSection,
             resetCommitColumns,
+            resetGeneral,
             setTheme,
         }
     },
@@ -102,6 +126,7 @@ export const useUiStore = defineStore(
                 'diffViewMode',
                 'showEntireFile',
                 'aiCommitMode',
+                'refreshInterval',
                 'sidebarSections',
                 'commitColumns',
                 'commitDateFormat',

@@ -914,6 +914,11 @@
                         height="12" />
                     Message
                 </span>
+                <span
+                    v-if="message"
+                    :class="['subject-count', subjectCountClass]">
+                    Title {{ firstLine.length }} / 72
+                </span>
             </div>
             <div
                 v-if="mode === 'commit' && (commitAuthor || commitDate)"
@@ -949,11 +954,6 @@
             <div
                 v-if="mode === 'workdir' && (showAiGroup || message)"
                 class="summary-counter">
-                <span
-                    v-if="message"
-                    :class="['subject-count', subjectCountClass]">
-                    title {{ firstLine.length }} / 72
-                </span>
                 <span
                     class="muted"
                     v-if="message && message.split('\n').length > 1">

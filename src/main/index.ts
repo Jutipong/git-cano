@@ -202,6 +202,7 @@ ipcMain.on('app:log', (_e, level: string, message: unknown) => {
 
 app.whenReady().then(() => {
     log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.OPEN_GIT_LOG_LEVEL ?? 'auto'})`)
+    handle('app:getVersion', () => app.getVersion())
     handle('repo:pickAndOpen', async () => {
         const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
         if (res.canceled || !res.filePaths[0]) return null

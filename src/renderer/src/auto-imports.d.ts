@@ -9,6 +9,11 @@
 export {}
 declare global {
   const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
+  const DEFAULT_DIFF_VIEW_MODE: typeof import('./stores/ui').DEFAULT_DIFF_VIEW_MODE
+  const DEFAULT_FILE_VIEW_MODE: typeof import('./stores/ui').DEFAULT_FILE_VIEW_MODE
+  const DEFAULT_REFRESH_INTERVAL: typeof import('./stores/ui').DEFAULT_REFRESH_INTERVAL
+  const DEFAULT_SHOW_ENTIRE_FILE: typeof import('./stores/ui').DEFAULT_SHOW_ENTIRE_FILE
+  const DEFAULT_THEME: typeof import('./stores/ui').DEFAULT_THEME
   const DEFAULT_WORKSPACE: typeof import('./stores/workspace').DEFAULT_WORKSPACE
   const MANDATORY_COMMIT_COLUMNS: typeof import('./stores/ui').MANDATORY_COMMIT_COLUMNS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
@@ -61,7 +66,7 @@ declare global {
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
   // @ts-ignore
-  export type { Theme, AiCommitMode, CommitColumn, ThemeOption } from './stores/ui'
+  export type { Theme, AiCommitMode, CommitColumn, DiffViewMode, FileViewMode, ThemeOption } from './stores/ui'
   import('./stores/ui')
   // @ts-ignore
   export type { ToastKind, NotifyOptions } from './stores/uiTransient'
