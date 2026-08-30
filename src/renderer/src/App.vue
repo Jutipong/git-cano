@@ -390,8 +390,8 @@
                         @click="uiTransient.dismissToast(t.id)">
                         <svg
                             class="toast-ring"
-                            width="22"
-                            height="22"
+                            width="24"
+                            height="24"
                             viewBox="0 0 22 22"
                             aria-hidden="true">
                             <circle
@@ -409,8 +409,8 @@
                         </svg>
                         <i-lucide-x
                             class="toast-close-icon"
-                            width="11"
-                            height="11" />
+                            width="12"
+                            height="12" />
                     </button>
                 </div>
             </TransitionGroup>

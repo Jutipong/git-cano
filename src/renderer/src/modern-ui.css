@@ -2592,19 +2592,19 @@ body {
     position: static;
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
     width: max-content;
-    max-width: min(360px, calc(100vw - 32px));
-    min-height: 40px;
-    padding: 9px 16px 9px 12px;
+    max-width: min(400px, calc(100vw - 32px));
+    min-height: 46px;
+    padding: 11px 20px 11px 14px;
     overflow: hidden;
     color: var(--text);
     background: color-mix(in srgb, var(--toast-accent, var(--teal)) 10%, var(--surface-2));
     border: 1px solid color-mix(in srgb, var(--toast-accent, var(--teal)) 40%, transparent);
 
-    border-radius: 20px;
+    border-radius: 22px;
     box-shadow: 0 12px 40px var(--shadow);
-    font-size: 12.5px;
+    font-size: 13.5px;
     font-weight: 550;
     transform: none;
     white-space: normal;
@@ -2635,10 +2635,10 @@ body {
 
 .toast-icon {
     display: inline-grid;
-    flex: 0 0 20px;
+    flex: 0 0 24px;
     place-items: center;
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     color: var(--toast-accent);
     background: color-mix(in srgb, var(--toast-accent) 14%, transparent);
     border: 1px solid color-mix(in srgb, var(--toast-accent) 45%, transparent);
@@ -2656,10 +2656,11 @@ body {
 .toast-close {
     position: relative;
     display: inline-grid;
-    flex: 0 0 22px;
+    flex: 0 0 24px;
+    margin-left: 12px;
     place-items: center;
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
