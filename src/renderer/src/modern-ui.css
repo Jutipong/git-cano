@@ -1853,6 +1853,38 @@ body {
     opacity: 0.7;
 }
 
+.summary-counter {
+    justify-content: flex-start;
+}
+
+.counter-model {
+    margin-left: 0;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+.counter-model-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+}
+
+.counter-model-name {
+    min-width: 180px;
+    flex: 1 1 auto;
+    overflow-wrap: anywhere;
+}
+
+.counter-mode-detail {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
 .counter-mode-label {
     color: var(--orange);
     font-weight: 600;
@@ -3309,6 +3341,54 @@ body {
 
 .tools-body .ai-token-row .btn {
     min-width: 104px;
+}
+
+.ai-model-picker {
+    position: relative;
+}
+
+.ai-model-options {
+    position: fixed;
+    z-index: 50;
+    max-height: 190px;
+    padding: 4px;
+    overflow-y: auto;
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    box-shadow: 0 10px 24px rgb(0 0 0 / 22%);
+}
+
+.ai-model-option {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 2px;
+    padding: 7px 9px;
+    color: var(--text);
+    text-align: left;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.ai-model-option:hover {
+    background: var(--surface-hover);
+}
+
+.ai-model-option small {
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-model-empty {
+    display: block;
+    padding: 8px 9px;
+    color: var(--text-muted);
+    font-size: 11px;
 }
 
 .ai-test-result {

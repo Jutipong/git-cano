@@ -34,6 +34,9 @@
         'opencode-go': { token: '', modelId: '', models: [] },
         openrouter: { token: '', modelId: '', models: [] },
     })
+    const modelQuery = ref('')
+    const modelDropdownOpen = ref(false)
+    const modelInput = ref<HTMLInputElement | null>(null)
     const aiToken = computed({
         get: () => providerDrafts[selectedProvider.value].token,
         set: value => {
@@ -42,6 +45,7 @@
             draft.token = value
             draft.modelId = ''
             draft.models = []
+            modelQuery.value = ''
             modelOptions.value = []
             connectResult.value = null
             aiTestResult.value = null
@@ -62,6 +66,48 @@
         const known = modelOptions.value.some(m => m.id === current)
         return known ? modelOptions.value : [{ id: current, name: current }, ...modelOptions.value]
     })
+    const filteredModelOptions = computed(() => {
+        const query = modelQuery.value.trim().toLowerCase()
+        return modelSelectOptions.value
+            .filter(model => `${model.name} ${model.id}`.toLowerCase().includes(query))
+            .slice(0, 6)
+    })
+    const modelDropdownStyle = computed(() => {
+        const rect = modelInput.value?.getBoundingClientRect()
+        if (!rect) return {}
+        const maxHeight = 190
+        const openAbove = window.innerHeight - rect.bottom < maxHeight + 12 && rect.top > maxHeight / 2
+        const availableHeight = openAbove ? rect.top - 12 : window.innerHeight - rect.bottom - 12
+        const height = Math.max(64, Math.min(maxHeight, availableHeight))
+        return {
+            left: `${rect.left}px`,
+            width: `${rect.width}px`,
+            maxHeight: `${height}px`,
+            ...(openAbove
+                ? { bottom: `${window.innerHeight - rect.top + 4}px` }
+                : { top: `${rect.bottom + 4}px` }),
+        }
+    })
+
+    function onModelInput(event: Event) {
+        const input = event.target
+        if (!(input instanceof HTMLInputElement)) return
+        modelQuery.value = input.value
+        if (input.value !== aiModel.value) aiModel.value = ''
+        modelDropdownOpen.value = true
+    }
+
+    function selectModel(model: GoModel) {
+        aiModel.value = model.id
+        modelQuery.value = model.id
+        modelDropdownOpen.value = false
+    }
+
+    function closeModelDropdown() {
+        window.setTimeout(() => {
+            modelDropdownOpen.value = false
+        }, 120)
+    }
 
     let aiLoaded = false
     async function loadAiTab() {
@@ -73,6 +119,7 @@
             Object.assign(providerDrafts['opencode-go'], ai.config.opencodeGo)
             Object.assign(providerDrafts.openrouter, ai.config.openrouter)
             modelOptions.value = [...providerDrafts[selectedProvider.value].models]
+            modelQuery.value = aiModel.value
         } catch {
         }
     }
@@ -83,6 +130,8 @@
 
     watch(selectedProvider, () => {
         modelOptions.value = [...providerDrafts[selectedProvider.value].models]
+        modelQuery.value = aiModel.value
+        modelDropdownOpen.value = false
         connectResult.value = null
         aiTestResult.value = null
     })
@@ -367,15 +416,34 @@
                         </label>
                         <label class="ai-field">
                             <span>Model ID</span>
-                            <div class="ai-field-select">
-                                <select v-model="aiModel">
-                                    <option
-                                        v-for="m in modelSelectOptions"
+                            <div class="ai-model-picker">
+                                <input
+                                    ref="modelInput"
+                                    :value="modelQuery"
+                                    type="text"
+                                    placeholder="Search models"
+                                    autocomplete="off"
+                                    @input="onModelInput"
+                                    @focus="modelDropdownOpen = true"
+                                    @blur="closeModelDropdown"
+                                    @keydown.escape="modelDropdownOpen = false" />
+                                <div
+                                    v-if="modelDropdownOpen"
+                                    class="ai-model-options"
+                                    :style="modelDropdownStyle">
+                                    <button
+                                        v-for="m in filteredModelOptions"
                                         :key="m.id"
-                                        :value="m.id">
-                                        {{ m.name }}
-                                    </option>
-                                </select>
+                                        type="button"
+                                        class="ai-model-option"
+                                        @mousedown.prevent="selectModel(m)">
+                                        <span>{{ m.name }}</span>
+                                        <small>{{ m.id }}</small>
+                                    </button>
+                                    <span
+                                        v-if="filteredModelOptions.length === 0"
+                                        class="ai-model-empty">No models found</span>
+                                </div>
                                 <i-lucide-chevron-down
                                     class="ai-select-caret"
                                     width="14"
@@ -427,15 +495,34 @@
                         </label>
                         <label class="ai-field">
                             <span>Model</span>
-                            <div class="ai-field-select">
-                                <select v-model="aiModel">
-                                    <option
-                                        v-for="m in modelSelectOptions"
+                            <div class="ai-model-picker">
+                                <input
+                                    ref="modelInput"
+                                    :value="modelQuery"
+                                    type="text"
+                                    placeholder="Search models"
+                                    autocomplete="off"
+                                    @input="onModelInput"
+                                    @focus="modelDropdownOpen = true"
+                                    @blur="closeModelDropdown"
+                                    @keydown.escape="modelDropdownOpen = false" />
+                                <div
+                                    v-if="modelDropdownOpen"
+                                    class="ai-model-options"
+                                    :style="modelDropdownStyle">
+                                    <button
+                                        v-for="m in filteredModelOptions"
                                         :key="m.id"
-                                        :value="m.id">
-                                        {{ m.name }}
-                                    </option>
-                                </select>
+                                        type="button"
+                                        class="ai-model-option"
+                                        @mousedown.prevent="selectModel(m)">
+                                        <span>{{ m.name }}</span>
+                                        <small>{{ m.id }}</small>
+                                    </button>
+                                    <span
+                                        v-if="filteredModelOptions.length === 0"
+                                        class="ai-model-empty">No models found</span>
+                                </div>
                                 <i-lucide-chevron-down
                                     class="ai-select-caret"
                                     width="14"

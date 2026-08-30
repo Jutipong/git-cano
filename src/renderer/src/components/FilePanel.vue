@@ -97,7 +97,12 @@
     })
     const ui = useUiStore()
     const ai = useAiStore()
-    const commitModelName = computed(() => modelName(ai.modelId))
+    const commitModelName = computed(() => {
+        const models = ai.provider === 'openrouter' ? ai.config.openrouter.models : ai.config.opencodeGo.models
+        const selectedModel = models.find(model => model.id === ai.modelId)
+        const providerName = ai.provider === 'openrouter' ? 'OpenRouter' : 'OpenCode Go'
+        return `${providerName}: ${selectedModel?.name ?? modelName(ai.modelId)}`
+    })
     const AI_MODE_OPTIONS: { value: AiCommitMode; label: string }[] = [
         { value: 'off', label: 'Generate only' },
         { value: 'commit', label: 'auto commit' },
@@ -105,7 +110,7 @@
     ]
     const aiModeLabel = (mode: AiCommitMode) => AI_MODE_OPTIONS.find(option => option.value === mode)?.label ?? ''
     const commitModelLabel = computed(() =>
-        ui.aiCommitMode === 'off' ? commitModelName.value : `${commitModelName.value} | ${aiModeLabel(ui.aiCommitMode)}`
+        ui.aiCommitMode === 'off' ? commitModelName.value : `${commitModelName.value} ${aiModeLabel(ui.aiCommitMode)}`
     )
     const aiMenuOpen = ref(false)
     const aiMenuRoot = ref<HTMLElement | null>(null)
@@ -952,24 +957,28 @@
                 @keydown.enter.meta.prevent="doCommit()"
                 @keydown.enter.ctrl.prevent="doCommit()" />
             <div
-                v-if="mode === 'workdir' && (showAiGroup || message)"
+                v-if="mode === 'workdir' && showAiGroup"
                 class="summary-counter">
-                <span
-                    class="muted"
-                    v-if="message && message.split('\n').length > 1">
-                    body · {{ message.split('\n').length - 1 }} lines
-                </span>
                 <span
                     v-if="showAiGroup"
                     class="counter-model"
                     :title="`Commit-message model: ${commitModelLabel}`">
-                    <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
-                        width="14"
-                        height="14" />
-                    {{ commitModelName }}<template v-if="ui.aiCommitMode !== 'off'"><span class="counter-sep"> | </span><span
-                        class="counter-mode-label"
-                        :class="`cb-ai-mode-${ui.aiCommitMode}`">{{ aiModeLabel(ui.aiCommitMode) }}</span></template
-                    >
+                    <span class="counter-model-main">
+                        <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
+                            width="14"
+                            height="14" />
+                        <span class="counter-model-name">{{ commitModelName }}</span>
+                    </span>
+                    <span
+                        v-if="ui.aiCommitMode !== 'off'"
+                        class="counter-mode-detail">
+                        <i-fluent-emoji-flat-robot
+                            width="14"
+                            height="14" />
+                        <span
+                            class="counter-mode-label"
+                            :class="`cb-ai-mode-${ui.aiCommitMode}`">{{ aiModeLabel(ui.aiCommitMode) }}</span>
+                    </span>
                 </span>
             </div>
             <div
