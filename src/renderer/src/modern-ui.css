@@ -227,7 +227,7 @@ body {
 }
 
 .commit-search {
-    height: 29px;
+    height: 27px;
 }
 
 .toolbar-icon-button,
@@ -872,7 +872,7 @@ body {
     align-items: center;
 }
 
-.graph-toolbar {
+.graph-header {
     height: 38px;
     flex-basis: 38px;
     padding-right: 12px;
@@ -881,26 +881,17 @@ body {
     border-bottom-color: var(--line-soft);
 }
 
-.graph-title strong,
+.graph-header.commit-mode {
+    background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
+}
+
 .panel-heading-title strong {
     font-size: 12px;
     font-weight: 650;
 }
 
-.graph-toolbar.commit-mode {
-    background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
-}
-
 .panel-heading.commit-mode {
     background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
-}
-
-.graph-header {
-    height: 26px;
-    flex-basis: 26px;
-    padding-right: 12px;
-    padding-left: 12px;
-    background: color-mix(in srgb, var(--surface-0) 65%, transparent);
 }
 
 .graph-row {
@@ -2326,7 +2317,7 @@ body {
     opacity: 0;
 }
 
-/* ---- commit history settings (gear in the graph toolbar) ---- */
+/* ---- commit history settings (gear in the graph header) ---- */
 
 .graph-settings-btn {
     color: var(--text-secondary);

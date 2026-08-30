@@ -30,6 +30,7 @@
         return props.tabs
             .map((tab, index) => ({ tab, index }))
             .filter(({ tab }) => tab.name.toLowerCase().includes(query))
+            .slice(0, 6)
     })
 
     function toggleSearch() {

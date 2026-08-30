@@ -276,10 +276,9 @@ kbd {
     display: flex;
     align-items: center;
     gap: 6px;
-    width: clamp(130px, 18vw, 180px);
-    height: 30px;
-    margin-left: 14px;
-    padding: 0 10px;
+    width: clamp(190px, 24vw, 280px);
+    height: 27px;
+    padding: 0 12px;
     color: var(--text-muted);
     background: var(--surface-1);
     border: 1px solid var(--line);
@@ -296,7 +295,7 @@ kbd {
     background: transparent;
     border: 0;
     outline: 0;
-    font-size: 11px;
+    font-size: 12px;
 }
 .commit-search input::placeholder {
     color: var(--text-muted);
@@ -614,16 +613,6 @@ kbd {
     min-height: 0;
     background: var(--canvas);
 }
-.graph-toolbar {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 38px;
-    flex: 0 0 38px;
-    padding: 0 15px;
-    border-bottom: 1px solid var(--line-soft);
-}
 .commit-close-btn,
 .diff-close-btn {
     border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
@@ -638,23 +627,6 @@ kbd {
 .commit-close-btn:hover,
 .diff-close-btn:hover {
     background: color-mix(in srgb, var(--red) 18%, transparent);
-}
-.graph-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.graph-title svg {
-    color: var(--teal);
-}
-.graph-title span {
-    margin-left: 4px;
-    color: var(--text-muted);
-    font-size: 11px;
-}
-.graph-toolbar-actions {
-    display: flex;
-    gap: 3px;
 }
 .graph-filter {
     padding: 5px 9px;
@@ -675,8 +647,8 @@ kbd {
     display: flex;
     align-items: center;
     gap: 12px;
-    height: 26px;
-    flex: 0 0 26px;
+    height: 38px;
+    flex: 0 0 38px;
     padding: 0 14px;
     color: var(--text-secondary);
     background: color-mix(in srgb, var(--surface-0) 55%, transparent);
@@ -689,8 +661,25 @@ kbd {
     flex: 0 0 auto;
 }
 .graph-message-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     flex: 1 !important;
     min-width: 0;
+}
+.commit-count {
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    white-space: nowrap;
+}
+.graph-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+.graph-header-actions .commit-close-btn {
+    margin-left: 0;
 }
 .graph-author-header {
     width: 120px;

@@ -339,54 +339,30 @@
         class="graph-view"
         :style="{ '--author-w': `${authorW}px`, '--date-w': `${dateW}px`, '--hash-w': `${hashW}px` }">
         <div
-            class="graph-toolbar"
+            class="graph-header"
             :class="{ 'commit-mode': props.commitOpen }">
-            <div class="graph-title">
-                <i-lucide-git-commit-horizontal
-                    width="17"
-                    height="17" />
-                <strong>Commit history</strong>
-                <span>{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
-            </div>
-            <label
-                class="commit-search"
-                title="Search commits">
-                <i-lucide-search
-                    width="15"
-                    height="15" />
-                <input
-                    v-model="uiTransient.searchQuery"
-                    placeholder="Search commits" />
-                <button
-                    v-if="uiTransient.searchQuery"
-                    type="button"
-                    class="search-clear"
-                    @click="uiTransient.searchQuery = ''">
-                    ×
-                </button>
-            </label>
-            <div class="spacer" />
-            <button
-                class="icon-btn graph-settings-btn"
-                title="Commit history settings"
-                @click="showSettings = true">
-                <i-lucide-settings
-                    width="14"
-                    height="14" />
-            </button>
-            <button
-                v-if="props.commitOpen"
-                class="icon-btn danger commit-close-btn"
-                title="Close commit details (show working directory)"
-                @click="emit('close-commit')">
-                <i-lucide-x
-                    width="14"
-                    height="14" />
-            </button>
-        </div>
-        <div class="graph-header">
             <span :style="{ width: `${graphW}px` }">GRAPH</span>
-            <span class="graph-message-header">COMMIT MESSAGE</span>
+            <span class="graph-message-header">
+                COMMIT MESSAGE
+                <span class="commit-count">{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
+                <label
+                    class="commit-search"
+                    title="Search commits">
+                    <i-lucide-search
+                        width="13"
+                        height="13" />
+                    <input
+                        v-model="uiTransient.searchQuery"
+                        placeholder="Search commits" />
+                    <button
+                        v-if="uiTransient.searchQuery"
+                        type="button"
+                        class="search-clear"
+                        @click="uiTransient.searchQuery = ''">
+                        ×
+                    </button>
+                </label>
+            </span>
             <span
                 v-if="ui.commitColumns.author"
                 class="graph-author-header">AUTHOR</span>
@@ -396,6 +372,25 @@
             <span
                 v-if="ui.commitColumns.date"
                 class="graph-date-header">DATE</span>
+            <span class="graph-header-actions">
+                <button
+                    class="icon-btn graph-settings-btn"
+                    title="Commit history settings"
+                    @click="showSettings = true">
+                    <i-lucide-settings
+                        width="14"
+                        height="14" />
+                </button>
+                <button
+                    v-if="props.commitOpen"
+                    class="icon-btn danger commit-close-btn"
+                    title="Close commit details (show working directory)"
+                    @click="emit('close-commit')">
+                    <i-lucide-x
+                        width="14"
+                        height="14" />
+                </button>
+            </span>
         </div>
         <div
             ref="scrollEl"
