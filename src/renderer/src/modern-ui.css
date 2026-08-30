@@ -2244,6 +2244,26 @@ body {
     opacity: 0.55;
 }
 
+.graph-settings-row.disabled:hover {
+    background: none;
+}
+
+.graph-settings-locked {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-hover);
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
 .graph-settings-row input[type='checkbox'] {
     flex: 0 0 auto;
     accent-color: var(--teal);

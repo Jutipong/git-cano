@@ -29,6 +29,16 @@
         return ui.commitColumns[key] && visibleCount.value === 1
     }
 
+    /** mandatory columns can never be unchecked (they're part of the history itself) */
+    function isMandatory(key: CommitColumn) {
+        return MANDATORY_COMMIT_COLUMNS.includes(key)
+    }
+
+    /** a column is locked when it's mandatory, or when it's the last one still visible */
+    function isLocked(key: CommitColumn) {
+        return isMandatory(key) || isLastVisible(key)
+    }
+
     function onKey(event: KeyboardEvent) {
         if (event.key === 'Escape') emit('close')
     }
@@ -54,19 +64,27 @@
                 </button>
             </div>
             <div class="graph-settings-body">
-                <p class="graph-settings-hint">Choose which fields to show in the commit history. Applies to every repository.</p>
+                <p class="graph-settings-hint">Choose which fields to show in the commit history. Graph and Message are always shown. Applies to every repository.</p>
                 <label
                     v-for="column in COLUMNS"
                     :key="column.key"
                     class="graph-settings-row"
-                    :class="{ disabled: isLastVisible(column.key) }">
+                    :class="{ disabled: isLocked(column.key) }">
                     <input
                         v-model="ui.commitColumns[column.key]"
                         type="checkbox"
-                        :disabled="isLastVisible(column.key)" />
+                        :disabled="isLocked(column.key)" />
                     <span class="graph-settings-label">
                         <strong>{{ column.label }}</strong>
                         <small>{{ column.hint }}</small>
+                    </span>
+                    <span
+                        v-if="isMandatory(column.key)"
+                        class="graph-settings-locked">
+                        <i-lucide-lock
+                            width="10"
+                            height="10" />
+                        Always on
                     </span>
                 </label>
                 <div
