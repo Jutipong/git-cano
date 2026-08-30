@@ -1,13 +1,13 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
+    import { confirmDialog } from '../utils/confirm'
     import { useRepoStore } from '../stores/repo'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import { useWorkspaceStore } from '../stores/workspace'
 
     const repoStore = useRepoStore()
     const ws = useWorkspaceStore()
-    const uiTransient = useUiTransientStore()
 
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
@@ -15,6 +15,11 @@
     const adding = ref(false)
     const newName = ref('')
     const nameInput = ref<HTMLInputElement | null>(null)
+
+    const isDuplicate = computed(() => {
+        const trimmed = newName.value.trim()
+        return trimmed.length > 0 && ws.names.some(name => name.toLowerCase() === trimmed.toLowerCase())
+    })
 
     function resetAdd() {
         adding.value = false
@@ -33,14 +38,39 @@
 
     async function confirmAdd() {
         const name = newName.value.trim()
-        if (!name) return
+        if (!name || isDuplicate.value) return
         const stored = ws.add(name)
         if (!stored) {
-            notify(`Workspace "${name.trim()}" already exists`, 'error')
+            notify(`Workspace "${name}" already exists`, 'error')
             return
         }
         resetAdd()
         await switchTo(stored)
+    }
+
+    async function deleteWorkspace(name: string) {
+        const ok = await confirmDialog({
+            message: `Delete workspace: ${name}`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        const wasActive = name === ws.active
+        if (wasActive) {
+            const fallback = ws.names.find(candidate => candidate !== name)
+            if (fallback) {
+                try {
+                    // switchWorkspace has its own busy guard and needs busy clear internally,
+                    // so it must NOT be wrapped in withBusy (which would no-op the switch).
+                    await repoStore.switchWorkspace(fallback)
+                } catch (error) {
+                    notify(String(error).replace(/^Error:\s*/, ''), 'error')
+                    return
+                }
+            }
+        }
+        if (!ws.remove(name)) return
+        notify(`Workspace ${name} deleted`, 'success')
     }
 
     async function switchTo(name: string) {
@@ -48,7 +78,9 @@
         resetAdd()
         if (name === ws.active) return
         try {
-            await uiTransient.withBusy(() => repoStore.switchWorkspace(name), `Switching to ${name}…`)
+            // switchWorkspace has its own busy guard and needs busy clear internally,
+            // so it must NOT be wrapped in withBusy (which would no-op the switch).
+            await repoStore.switchWorkspace(name)
             notify(`Switched to workspace ${name}`, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
@@ -83,22 +115,34 @@
         <div
             v-if="open"
             class="workspace-pop">
-            <button
+            <div
                 v-for="name in ws.names"
                 :key="name"
-                class="workspace-item"
-                :class="{ active: name === ws.active }"
-                :title="name"
-                @click="switchTo(name)">
-                <i-lucide-check
-                    v-if="name === ws.active"
-                    width="13"
-                    height="13" />
-                <span
-                    v-else
-                    class="workspace-item-spacer" />
-                <span class="workspace-item-name">{{ name }}</span>
-            </button>
+                class="workspace-row">
+                <button
+                    class="workspace-item"
+                    :class="{ active: name === ws.active }"
+                    :title="name"
+                    @click="switchTo(name)">
+                    <i-lucide-check
+                        v-if="name === ws.active"
+                        width="13"
+                        height="13" />
+                    <span
+                        v-else
+                        class="workspace-item-spacer" />
+                    <span class="workspace-item-name">{{ name }}</span>
+                </button>
+                <button
+                    v-if="ws.names.length > 1"
+                    class="icon-btn danger workspace-item-delete"
+                    title="Delete workspace"
+                    @click="deleteWorkspace(name)">
+                    <i-lucide-trash2
+                        width="12"
+                        height="12" />
+                </button>
+            </div>
             <div class="workspace-sep" />
             <div
                 v-if="adding"
@@ -111,16 +155,28 @@
                     placeholder="Workspace name"
                     @keydown.enter.prevent="confirmAdd()"
                     @keydown.esc.stop="resetAdd()" />
+                <div
+                    v-if="isDuplicate"
+                    class="workspace-add-error">
+                    Workspace name already exists
+                </div>
                 <div class="workspace-add-actions">
-                    <button
-                        class="btn primary small"
-                        @click="confirmAdd()">
-                        Add
-                    </button>
                     <button
                         class="btn small"
                         @click="resetAdd()">
+                        <i-lucide-x
+                            width="13"
+                            height="13" />
                         Cancel
+                    </button>
+                    <button
+                        class="btn primary small"
+                        :disabled="!newName.trim() || isDuplicate"
+                        @click="confirmAdd()">
+                        <i-lucide-plus
+                            width="13"
+                            height="13" />
+                        Add
                     </button>
                 </div>
             </div>

@@ -202,7 +202,7 @@ body {
     position: relative;
     min-height: 34px;
     gap: 2px;
-    padding: 3px 4px;
+    padding: 0 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
@@ -225,13 +225,13 @@ body {
 .tab-actions .tab-new,
 .tab-actions .tab-search {
     align-self: center;
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
 }
 
 .tab-actions .open-in-btn {
     margin-left: 0;
-    height: 28px;
+    height: 32px;
 }
 
 .tab-actions .tab-new:hover {
@@ -433,7 +433,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    height: 28px;
+    height: 32px;
     margin-left: 0;
     padding: 0 10px;
     color: var(--text);
@@ -557,7 +557,55 @@ body {
 .workspace-add-actions {
     display: flex;
     justify-content: flex-end;
-    gap: 6px;
+    align-items: center;
+    gap: 8px;
+}
+
+.workspace-add-actions .btn {
+    min-width: 80px;
+    padding: 0 12px;
+    font-weight: 600;
+}
+
+.workspace-add-error {
+    color: var(--red);
+    font-size: 12px;
+}
+
+.workspace-row {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-radius: 8px;
+}
+
+.workspace-row:hover {
+    background: var(--surface-hover);
+}
+
+.workspace-row .workspace-item {
+    flex: 1;
+    min-width: 0;
+}
+
+.workspace-row:hover .workspace-item {
+    background: transparent;
+}
+
+.workspace-row:hover .workspace-item.active {
+    background: color-mix(in srgb, var(--teal) 10%, transparent);
+}
+
+.workspace-item-delete {
+    display: none;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    margin-right: 4px;
+}
+
+.workspace-row:hover .workspace-item-delete {
+    display: inline-grid;
 }
 
 .app-body {

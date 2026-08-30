@@ -31,6 +31,24 @@ export const useWorkspaceStore = defineStore(
             if (names.value.includes(name)) active.value = name
         }
 
+        /**
+         * Removes a workspace together with its session. Always keeps at least one
+         * workspace; if the active one is removed, falls back to the first remaining.
+         * Returns whether the workspace was removed.
+         */
+        function remove(name: string): boolean {
+            if (!names.value.includes(name)) return false
+            if (names.value.length <= 1) return false
+            names.value = names.value.filter(candidate => candidate !== name)
+            if (name in sessions.value) {
+                const nextSessions = { ...sessions.value }
+                delete nextSessions[name]
+                sessions.value = nextSessions
+            }
+            if (active.value === name) active.value = names.value[0] ?? DEFAULT_WORKSPACE
+            return true
+        }
+
         function setSession(name: string, session: WorkspaceSession) {
             sessions.value = { ...sessions.value, [name]: session }
         }
@@ -39,7 +57,7 @@ export const useWorkspaceStore = defineStore(
             return sessions.value[name] ?? null
         }
 
-        return { names, active, sessions, add, select, setSession, getSession }
+        return { names, active, sessions, add, remove, select, setSession, getSession }
     },
     {
         persist: {
