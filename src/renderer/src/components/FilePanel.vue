@@ -1006,6 +1006,7 @@
                     </button>
                     <button
                         class="cb-ai-caret"
+                        :disabled="!canGenerate"
                         title="Choose auto-commit behavior"
                         aria-haspopup="listbox"
                         :aria-expanded="aiMenuOpen"
