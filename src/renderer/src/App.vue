@@ -201,64 +201,66 @@
 <template>
     <div class="app">
         <template v-if="repo">
-            <Sidebar
+            <TabBar
+                :tabs="tabs"
+                :active-index="activeTab"
                 :repo="repo"
                 :refresh="repoStore.refresh"
-                @interactive-rebase="rebaseBase = $event" />
-            <div
-                class="panel-splitter"
-                @mousedown="event => beginResize('left', event)" />
-            <div class="app-main">
-                <ConflictBanner
-                    v-if="repoState.merging || repoState.rebasing || conflicts.length"
-                    :conflicts="conflicts"
-                    :state="repoState"
-                    :refresh="repoStore.refresh" />
-                <TabBar
-                    :tabs="tabs"
-                    :active-index="activeTab"
+                @select="index => repoStore.setActive(index)"
+                @close="repoStore.closeTab($event)"
+                @open-new="openNewRepo()"
+                @reorder="(from, to) => repoStore.reorderTabs(from, to)"
+                @create-stash="stashCreateOpen = true" />
+            <div class="app-shell">
+                <Sidebar
                     :repo="repo"
                     :refresh="repoStore.refresh"
-                    @select="index => repoStore.setActive(index)"
-                    @close="repoStore.closeTab($event)"
-                    @open-new="openNewRepo()"
-                    @reorder="(from, to) => repoStore.reorderTabs(from, to)"
-                    @create-stash="stashCreateOpen = true" />
-                <div class="app-body">
-                    <div class="center-column">
-                        <GraphView
-                            :commits="commits"
-                            :has-more="hasMore"
-                            :commit-open="!!selectedCommit"
-                            @select-commit="selectedCommit = $event"
-                            @load-more="repoStore.loadMore()"
-                            @checkout="checkoutCommit"
-                            @create-branch="createBranchAt"
-                            @create-tag="tagTarget = $event"
-                            @cherry-pick="cherryPickCommit"
-                            @revert="revertCommit"
-                            @reset-soft="commit => resetTo(commit, 'soft')"
-                            @reset-hard="commit => resetTo(commit, 'hard')" />
-                    </div>
-                    <div
-                        class="panel-splitter"
-                        @mousedown="event => beginResize('right', event)" />
-                    <div
-                        class="right-pane"
-                        :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
-                        <FilePanel
-                            :files="selectedCommit ? repoStore.commitFiles : repo.files"
-                            :mode="selectedCommit ? 'commit' : 'workdir'"
-                            :commit-hash="selectedCommit?.hash"
-                            :selected="selectedFile"
-                            :commit-message="repoStore.commitMessage"
-                            :commit-author="repoStore.commitAuthor"
-                            :commit-date="repoStore.commitDate"
-                            :refresh="repoStore.refresh"
-                            @select="selectedFile = $event"
-                            @show-history="historyFile = $event"
-                            @show-blame="blameFile = $event"
-                             @close-commit="closeCommitView" />
+                    @interactive-rebase="rebaseBase = $event" />
+                <div
+                    class="panel-splitter"
+                    @mousedown="event => beginResize('left', event)" />
+                <div class="app-main">
+                    <ConflictBanner
+                        v-if="repoState.merging || repoState.rebasing || conflicts.length"
+                        :conflicts="conflicts"
+                        :state="repoState"
+                        :refresh="repoStore.refresh" />
+                    <div class="app-body">
+                        <div class="center-column">
+                            <GraphView
+                                :commits="commits"
+                                :has-more="hasMore"
+                                :commit-open="!!selectedCommit"
+                                @select-commit="selectedCommit = $event"
+                                @load-more="repoStore.loadMore()"
+                                @checkout="checkoutCommit"
+                                @create-branch="createBranchAt"
+                                @create-tag="tagTarget = $event"
+                                @cherry-pick="cherryPickCommit"
+                                @revert="revertCommit"
+                                @reset-soft="commit => resetTo(commit, 'soft')"
+                                @reset-hard="commit => resetTo(commit, 'hard')" />
+                        </div>
+                        <div
+                            class="panel-splitter"
+                            @mousedown="event => beginResize('right', event)" />
+                        <div
+                            class="right-pane"
+                            :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
+                            <FilePanel
+                                :files="selectedCommit ? repoStore.commitFiles : repo.files"
+                                :mode="selectedCommit ? 'commit' : 'workdir'"
+                                :commit-hash="selectedCommit?.hash"
+                                :selected="selectedFile"
+                                :commit-message="repoStore.commitMessage"
+                                :commit-author="repoStore.commitAuthor"
+                                :commit-date="repoStore.commitDate"
+                                :refresh="repoStore.refresh"
+                                @select="selectedFile = $event"
+                                @show-history="historyFile = $event"
+                                @show-blame="blameFile = $event"
+                                @close-commit="closeCommitView" />
+                        </div>
                     </div>
                 </div>
             </div>

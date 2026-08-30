@@ -110,10 +110,17 @@ body {
 .app {
     position: relative;
     min-width: 980px;
-    flex-direction: row;
     gap: 0;
     padding: 6px;
     background: radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--teal) 8%, transparent), transparent 42%), var(--canvas);
+}
+
+/* row under the full-width tab bar: sidebar | splitter | app-main */
+.app-shell {
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
 }
 
 .app-main {
@@ -622,9 +629,11 @@ body {
 }
 
 .sidebar {
-    /* align top with the commit-history area (tab-bar 48px + app-body gap 6px)
+    /* align top with the commit-history area (.app-body has margin-top: 6px)
        so the sidebar height matches the graph height */
-    margin-top: 54px;
+    margin-top: 6px;
+    /* breathing room above the first section (sync card used to provide it) */
+    padding-top: 14px;
     background: var(--surface-0);
     border-right-color: var(--line-soft);
 }
