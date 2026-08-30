@@ -273,8 +273,8 @@
             <span class="tab-actions-sep" />
             <button
                 class="toolbar-action action-stash"
-                :disabled="!repo"
-                title="Stashes"
+                :disabled="!repo || !repo.files.length"
+                :title="repo?.files.length ? 'Stashes' : 'No changes to stash'"
                 @click="emit('create-stash')">
                 <i-lucide-archive
                     width="15"
