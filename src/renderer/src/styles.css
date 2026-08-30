@@ -1,5 +1,5 @@
 :root,
-:root[data-theme='dark'] {
+:root[data-theme='dark-simple'] {
     /* Simple Dark Soft (github.com/HondryTravis/simple-dark) */
     --canvas: #202124;
     --surface-0: #1f2020;

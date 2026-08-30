@@ -1,34 +1,34 @@
 :root,
-:root[data-theme='dark'] {
-    /* Modern UI palette: quiet canvas, floating surfaces, and a single blue accent. */
-    --canvas: #0e1116;
-    --surface-0: #14181e;
-    --surface-1: #191e25;
-    --surface-2: #222831;
-    --surface-3: #2b333e;
-    --surface-hover: #2a323d;
-    --surface-selected: #343d49;
-    --line: #3a444f;
-    --line-soft: rgba(174, 187, 203, 0.14);
-    --text: #d7dde5;
-    --text-secondary: #aeb8c6;
-    --text-muted: #788596;
-    --teal: #4cc2ff;
-    --teal-dark: #238dcc;
-    --blue: #75bfff;
-    --green: #73d49a;
-    --orange: #e8ad68;
-    --red: #f07d86;
-    --purple: #c09bff;
-    --yellow: #e4c86a;
-    --diff-bg: #11151b;
-    --diff-inline-bg: #1b2129;
-    --toast-bg: #252c35;
-    --toast-border: #46515f;
-    --conflict-bg: #29251d;
-    --conflict-border: #5f5136;
-    --conflict-text: #e1c988;
-    --shadow: rgba(0, 0, 0, 0.48);
+:root[data-theme='dark-simple'] {
+    /* Simple Dark palette from github.com/HondryTravis/simple-dark — default theme. */
+    --canvas: #202124;
+    --surface-0: #1f2020;
+    --surface-1: #202124;
+    --surface-2: #292a2d;
+    --surface-3: #2c2f32;
+    --surface-hover: #3d4043;
+    --surface-selected: #35363a;
+    --line: #3c4043;
+    --line-soft: rgba(60, 64, 67, 0.72);
+    --text: #bdbdbd;
+    --text-secondary: #bdbdbd;
+    --text-muted: #737373;
+    --teal: #00bfff;
+    --teal-dark: #00a1f1;
+    --blue: #8be9fd;
+    --green: #00e673;
+    --orange: #ffb86c;
+    --red: #ff6347;
+    --purple: #bd93f9;
+    --yellow: #eefa7a;
+    --diff-bg: #202124;
+    --diff-inline-bg: #444444;
+    --toast-bg: #2c2f32;
+    --toast-border: #3c4043;
+    --conflict-bg: #2c2f32;
+    --conflict-border: #5a5340;
+    --conflict-text: #eefa7a;
+    --shadow: rgba(0, 0, 0, 0.4);
 }
 
 :root[data-theme='light'] {
@@ -61,38 +61,6 @@
     --conflict-border: #e3cd91;
     --conflict-text: #735b12;
     --shadow: rgba(30, 45, 65, 0.2);
-}
-
-:root[data-theme='dark-simple'] {
-    /* Simple Dark palette from github.com/HondryTravis/simple-dark. */
-    --canvas: #202124;
-    --surface-0: #1f2020;
-    --surface-1: #202124;
-    --surface-2: #292a2d;
-    --surface-3: #2c2f32;
-    --surface-hover: #3d4043;
-    --surface-selected: #35363a;
-    --line: #3c4043;
-    --line-soft: rgba(60, 64, 67, 0.72);
-    --text: #bdbdbd;
-    --text-secondary: #bdbdbd;
-    --text-muted: #737373;
-    --teal: #00bfff;
-    --teal-dark: #00a1f1;
-    --blue: #8be9fd;
-    --green: #00e673;
-    --orange: #ffb86c;
-    --red: #ff6347;
-    --purple: #bd93f9;
-    --yellow: #eefa7a;
-    --diff-bg: #202124;
-    --diff-inline-bg: #444444;
-    --toast-bg: #2c2f32;
-    --toast-border: #3c4043;
-    --conflict-bg: #2c2f32;
-    --conflict-border: #5a5340;
-    --conflict-text: #eefa7a;
-    --shadow: rgba(0, 0, 0, 0.4);
 }
 
 :root[data-theme='dark-simple'] .tok-comment {
@@ -129,74 +97,6 @@
 
 :root[data-theme='dark-simple'] mark {
     background: #444444;
-}
-
-:root[data-theme='dracula'] {
-    /* Dracula palette from draculatheme.com/gitkraken. */
-    --canvas: #282a36;
-    --surface-0: #282a36;
-    --surface-1: #282a36;
-    --surface-2: #44475a;
-    --surface-3: #343746;
-    --surface-hover: #343746;
-    --surface-selected: #44475a;
-    --line: #44475a;
-    --line-soft: rgba(98, 114, 164, 0.45);
-    --text: #f8f8f2;
-    --text-secondary: #a7aabc;
-    --text-muted: #6272a4;
-    --teal: #8be9fd;
-    --teal-dark: #bd93f9;
-    --blue: #bd93f9;
-    --green: #50fa7b;
-    --orange: #ffb86c;
-    --red: #ff5555;
-    --purple: #ff79c6;
-    --yellow: #f1fa8c;
-    --diff-bg: #282a36;
-    --diff-inline-bg: #44475a;
-    --toast-bg: #44475a;
-    --toast-border: #44475a;
-    --conflict-bg: #424450;
-    --conflict-border: #ffb86c;
-    --conflict-text: #f1fa8c;
-    --shadow: rgba(26, 26, 26, 0.8);
-}
-
-:root[data-theme='dracula'] .tok-comment {
-    color: #6272a4;
-}
-
-:root[data-theme='dracula'] .tok-string {
-    color: #f1fa8c;
-}
-
-:root[data-theme='dracula'] .tok-number {
-    color: #bd93f9;
-}
-
-:root[data-theme='dracula'] .tok-keyword {
-    color: #ff79c6;
-}
-
-:root[data-theme='dracula'] .tok-function {
-    color: #50fa7b;
-}
-
-:root[data-theme='dracula'] .tok-param {
-    color: #ffb86c;
-}
-
-:root[data-theme='dracula'] .tok-type {
-    color: #8be9fd;
-}
-
-:root[data-theme='dracula'] .tok-support {
-    color: #8be9fd;
-}
-
-:root[data-theme='dracula'] mark {
-    background: #44475a;
 }
 
 /* Modern VS Code-like workbench: panels are raised cards separated by the canvas. */
@@ -2539,9 +2439,6 @@ body {
 }
 :root[data-theme='dark-simple'] .diff-body::-webkit-scrollbar-thumb {
     background: #2c2f32;
-}
-:root[data-theme='dracula'] .diff-body::-webkit-scrollbar-thumb {
-    background: #44475a;
 }
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
     background: #c5ced9;
