@@ -157,17 +157,19 @@
                 type="text"
                 placeholder="Search open repos…"
                 @keydown="onSearchKeydown" />
-            <span class="tab-actions-sep" />
-            <OpenInButton :path="activePath" />
-            <span class="tab-actions-sep" />
-            <button
-                class="icon-btn tab-new"
-                title="Open another repository"
-                @click="emit('open-new')">
-                <i-lucide-plus
-                    width="15"
-                    height="15" />
-            </button>
+            <template v-if="!searchOpen">
+                <span class="tab-actions-sep" />
+                <OpenInButton :path="activePath" />
+                <span class="tab-actions-sep" />
+                <button
+                    class="icon-btn tab-new"
+                    title="Open another repository"
+                    @click="emit('open-new')">
+                    <i-lucide-plus
+                        width="15"
+                        height="15" />
+                </button>
+            </template>
             <div
                 v-if="searchOpen"
                 class="tab-search-pop">

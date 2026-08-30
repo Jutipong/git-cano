@@ -374,6 +374,7 @@
                 class="graph-date-header">DATE</span>
             <span class="graph-header-actions">
                 <button
+                    v-if="!props.commitOpen"
                     class="icon-btn graph-settings-btn"
                     title="Commit history settings"
                     @click="showSettings = true">

@@ -276,7 +276,7 @@ kbd {
     display: flex;
     align-items: center;
     gap: 6px;
-    width: clamp(190px, 24vw, 280px);
+    width: 200px;
     height: 27px;
     padding: 0 12px;
     color: var(--text-muted);
@@ -674,9 +674,14 @@ kbd {
     white-space: nowrap;
 }
 .graph-header-actions {
+    /* fixed box (settings + close) so header columns stay aligned with the
+       rows below regardless of commit mode — rows reserve the same 52px;
+       buttons hug the right edge so a single visible button sits flush */
     display: flex;
     align-items: center;
+    justify-content: flex-end;
     gap: 2px;
+    flex: 0 0 52px;
 }
 .graph-header-actions .commit-close-btn {
     margin-left: 0;
@@ -708,7 +713,9 @@ kbd {
     gap: 12px;
     min-width: 590px;
     height: 28px;
-    padding-right: 14px;
+    /* matches the header's trailing chrome (12px pad + 12px gap + 52px actions)
+       so AUTHOR/HASH/DATE line up with the header columns */
+    padding-right: 76px;
     border-bottom: 1px solid rgba(155, 169, 191, 0.06);
     cursor: pointer;
 }
@@ -1863,7 +1870,7 @@ kbd {
 /* repo search: input that expands inside the actions pill + results dropdown */
 .tab-search-input {
     flex: 0 1 auto;
-    width: 150px;
+    width: 200px;
     height: 26px;
     padding: 0 10px;
     font: inherit;
