@@ -501,10 +501,10 @@
                             height="15" />
                     </button>
                     <span
-                        v-if="(!isWorkdir || ui.fileFilterMode === 'all') && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                        v-if="!isWorkdir && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
                         class="file-controls-divider" />
                     <CollapseAllButton
-                        v-if="(!isWorkdir || ui.fileFilterMode === 'all') && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                        v-if="!isWorkdir && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
                         :all-collapsed="allDirsCollapsed"
                         @toggle="toggleAllDirs()" />
                 </div>
@@ -513,6 +513,17 @@
 
         <div class="file-groups">
             <template v-if="ui.fileFilterMode === 'all'">
+                <div class="group-header">
+                    <h4
+                        :class="{ 'can-toggle': canToggleAll }"
+                        @click="canToggleAll && toggleAllDirs()">
+                        <CollapseAllButton
+                            v-if="canToggleAll"
+                            :all-collapsed="allDirsCollapsed"
+                            @toggle="toggleAllDirs()" />
+                        All files <span>{{ allFiles.length }}</span>
+                    </h4>
+                </div>
                 <template
                     v-for="row in allRows"
                     :key="row.key">
