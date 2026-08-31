@@ -171,7 +171,16 @@ const CODE_CLI_PATHS = [
     '/opt/homebrew/bin/code',
 ]
 
+const CODE_EXE_PATHS = [
+    process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Microsoft VS Code', 'Code.exe') : '',
+    'C:\\Program Files\\Microsoft VS Code\\Code.exe',
+    'C:\\Program Files (x86)\\Microsoft VS Code\\Code.exe',
+].filter(Boolean)
+
 function openTerminal(dir: string): Promise<void> {
+    if (process.platform === 'win32') {
+        return runCmd('wt', ['-d', dir], dir).catch(() => runCmd('cmd.exe', [], dir))
+    }
     if (process.platform !== 'darwin') {
         return Promise.reject(new Error(`Opening a terminal is not supported on ${process.platform} yet`))
     }
@@ -183,6 +192,14 @@ function openVSCode(dir: string): Promise<void> {
         if (fs.existsSync(candidate)) {
             return runCmd(candidate, [dir], dir)
         }
+    }
+    if (process.platform === 'win32') {
+        for (const candidate of CODE_EXE_PATHS) {
+            if (fs.existsSync(candidate)) {
+                return runCmd(candidate, [dir], dir)
+            }
+        }
+        return Promise.reject(new Error('VS Code not found — install it or add the "code" command to PATH'))
     }
     if (process.platform === 'darwin') {
         return runCmd('open', ['-a', 'Visual Studio Code', dir], dir)
