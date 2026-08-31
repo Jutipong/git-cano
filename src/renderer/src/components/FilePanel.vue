@@ -15,7 +15,7 @@
         files: FileEntry[] | CommitFile[]
         selected: { path: string; staged: boolean } | null
         refresh: () => Promise<unknown>
-        mode?: 'workdir' | 'commit'
+        mode?: 'workdir' | 'commit' | 'stash'
         commitHash?: string
         commitMessage?: string
         commitAuthor?: string
@@ -51,6 +51,7 @@
     }
 
     const isWorkdir = computed(() => props.mode === 'workdir')
+    const isDetails = computed(() => props.mode !== 'workdir')
     const isUntracked = (file: FileEntry) => file.unstaged === '?'
     const staged = computed(() =>
         isWorkdir.value ? (props.files as FileEntry[]).filter(file => file.staged !== ' ' && file.staged !== '' && !isUntracked(file)) : []
@@ -164,7 +165,7 @@
             return
         }
         try {
-            const paths = await window.api.listFiles(mode === 'commit' ? commitHash || undefined : undefined)
+            const paths = await window.api.listFiles(mode !== 'workdir' ? commitHash || undefined : undefined)
             if (
                 request !== allFilesRequest ||
                 ui.fileFilterMode !== 'all' ||
@@ -409,24 +410,24 @@
     <div class="file-panel">
         <div
             class="panel-heading"
-            :class="{ 'commit-mode': mode === 'commit' }">
+            :class="{ 'commit-mode': isDetails }">
             <div class="panel-heading-title">
                 <button
-                    v-if="mode === 'commit'"
+                    v-if="isDetails"
                     class="icon-btn danger commit-close-btn"
-                    title="Close commit details (show working directory)"
+                    title="Close details (show working directory)"
                     @click="emit('close-commit')">
                     <CloseXIcon />
                 </button>
                 <i-lucide-file-diff
                     v-else
                     width="16"
-                    height="16" /><strong>{{ mode === 'commit' ? 'Commit Changes' : 'Changes' }}</strong>
+                    height="16" /><strong>{{ isDetails ? (mode === 'stash' ? 'Stash Changes' : 'Commit Changes') : 'Changes' }}</strong>
                 <span class="panel-file-num">{{ fileCount }}</span>
             </div>
             <div class="panel-heading-side">
                 <span
-                    v-if="mode === 'commit' && commitTotals && (commitTotals.additions || commitTotals.deletions)"
+                    v-if="isDetails && commitTotals && (commitTotals.additions || commitTotals.deletions)"
                     class="commit-file-stats">
                     <span
                         v-if="commitTotals.additions"
@@ -851,7 +852,7 @@
                 </span>
             </div>
             <div
-                v-if="mode === 'commit' && (commitAuthor || commitDate)"
+                v-if="isDetails && (commitAuthor || commitDate)"
                 class="readonly-meta-row">
                 <span class="readonly-meta readonly-meta-start">
                     {{ [commitAuthor, commitDateText].filter(Boolean).join(' · ') }}
@@ -869,7 +870,7 @@
                 </button>
             </div>
             <textarea
-                v-if="mode === 'commit'"
+                v-if="isDetails"
                 :value="commitMessage"
                 :style="{ height: `${ui.summaryHeight}px` }"
                 placeholder="No commit message"

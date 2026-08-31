@@ -12,6 +12,7 @@
 
     const stashes = ref<StashEntry[]>([])
     const ui = useUiStore()
+    const repoStore = useRepoStore()
     const expanded = computed({
         get: () => ui.sidebarSections.stashes,
         set: value => {
@@ -43,14 +44,26 @@
     watch(() => props.repoPath, load)
     watch(() => uiTransient.stashListTick, load)
 
+    function toggleStash(stash: StashEntry) {
+        if (repoStore.selectedStash?.hash === stash.hash) {
+            repoStore.selectedStash = null
+            return
+        }
+        repoStore.selectedCommit = null
+        repoStore.selectedFile = null
+        repoStore.selectedStash = stash
+    }
+
     async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
             await uiTransient.withBusy(fn, busyLabel)
             await load()
             await props.refresh()
             notify(ok, 'success')
+            return true
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
+            return false
         }
     }
 
@@ -61,14 +74,20 @@
             danger: true,
         })
         if (!ok) return
-        void run(() => window.api.dropStash(stash.index), 'Stash deleted', 'Dropping stash…')
+        if (await run(() => window.api.dropStash(stash.index), 'Stash deleted', 'Dropping stash…')) {
+            repoStore.selectedStash = null
+        }
     }
 
     function onApply(stash: StashEntry) {
-        void run(() => window.api.applyStash(stash.index, false), 'Stash applied', 'Applying stash…')
+        void run(() => window.api.applyStash(stash.index, false), 'Stash applied', 'Applying stash…').then(success => {
+            if (success) repoStore.selectedStash = null
+        })
     }
     function onPop(stash: StashEntry) {
-        void run(() => window.api.applyStash(stash.index, true), 'Stash popped', 'Popping stash…')
+        void run(() => window.api.applyStash(stash.index, true), 'Stash popped', 'Popping stash…').then(success => {
+            if (success) repoStore.selectedStash = null
+        })
     }
 </script>
 
@@ -101,6 +120,8 @@
                 v-for="row in stashRows"
                 :key="`${row.stash.hash}-${row.stash.index}`"
                 class="stash-row"
+                :class="{ selected: repoStore.selectedStash?.hash === row.stash.hash }"
+                @click="toggleStash(row.stash)"
                 @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, stash: row.stash }">
                 <i-lucide-archive
                     width="13"

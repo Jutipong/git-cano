@@ -25,6 +25,10 @@ import {
     createStash,
     applyStash,
     dropStash,
+    getStashFiles,
+    getStashFileDiff,
+    getStashFileMeta,
+    getStashImageVersion,
     revertCommit,
     checkoutCommit,
     getRepoState,
@@ -584,6 +588,22 @@ app.whenReady().then(() => {
     handle('stash:drop', (index: number) => {
         requireRepo()
         return dropStash(index as number)
+    })
+    handle('stash:files', (hash: string) => {
+        requireRepo()
+        return getStashFiles(hash as string)
+    })
+    handle('stash:fileDiff', (hash: string, file: string, context?: number) => {
+        requireRepo()
+        return getStashFileDiff(hash as string, file as string, typeof context === 'number' ? context : undefined)
+    })
+    handle('stash:fileMeta', (hash: string, file: string) => {
+        requireRepo()
+        return getStashFileMeta(hash as string, file as string)
+    })
+    handle('stash:imageVersion', (hash: string, file: string) => {
+        requireRepo()
+        return getStashImageVersion(hash as string, file as string)
     })
 
     handle('recent:list', () => {

@@ -10,6 +10,7 @@ import type {
     BlameLine,
     BranchInfo,
     CommitDetails,
+    CommitFile,
     CommitNode,
     DiffMeta,
     DiffLine,
@@ -545,6 +546,104 @@ export async function applyStash(index: number, pop: boolean): Promise<void> {
 export async function dropStash(index: number): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['stash', 'drop', `stash@{${index}}`])
+}
+
+function parseNumstatMap(text: string): Map<string, { additions: number; deletions: number }> {
+    const map = new Map<string, { additions: number; deletions: number }>()
+    for (const line of text.split('\n')) {
+        if (!line.trim()) continue
+        const [add, del, ...pathParts] = line.split('\t')
+        map.set(pathParts.join('\t'), {
+            additions: add === '-' ? 0 : Number.parseInt(add, 10) || 0,
+            deletions: del === '-' ? 0 : Number.parseInt(del, 10) || 0,
+        })
+    }
+    return map
+}
+
+function parseNameStatus(text: string, stats: Map<string, { additions: number; deletions: number }>): CommitFile[] {
+    return text
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map(line => {
+            const [status, ...pathParts] = line.split('\t')
+            const path = pathParts.join('\t')
+            return { path, status, ...(stats.get(path) ?? { additions: 0, deletions: 0 }) }
+        })
+}
+
+// A stash is a merge commit: diff-tree/show against it directly don't work.
+// Always diff against its first parent (the branch tip at stash time).
+export async function getStashFiles(hash: string): Promise<CommitFile[]> {
+    const { git: g } = getRepo()
+    const [nameStatus, numstat, parents] = await Promise.all([
+        g.raw(['diff', `${hash}^`, hash, '--no-color', '--name-status', '-r']),
+        g.raw(['diff', `${hash}^`, hash, '--no-color', '--numstat', '-r']),
+        g.raw(['show', '-s', '--format=%P', hash]),
+    ])
+    const files = parseNameStatus(nameStatus, parseNumstatMap(numstat))
+    // 3rd parent of `stash push --include-untracked` holds the untracked files
+    if (parents.trim().split(' ').filter(Boolean).length >= 3) {
+        const [untrackedStatus, untrackedNumstat] = await Promise.all([
+            g.raw(['diff-tree', '--root', '--no-commit-id', '--name-status', '-r', `${hash}^3`]),
+            g.raw(['diff-tree', '--root', '--no-commit-id', '--numstat', '-r', `${hash}^3`]),
+        ])
+        files.push(...parseNameStatus(untrackedStatus, parseNumstatMap(untrackedNumstat)))
+    }
+    return files
+}
+
+function stashBlobAddedLines(file: string, snapshot: Buffer): DiffLine[] {
+    const lineTexts = snapshot.toString('utf8').split('\n')
+    if (lineTexts.length && lineTexts[lineTexts.length - 1] === '') lineTexts.pop()
+    const lines: DiffLine[] = [{ type: 'meta', oldNo: null, newNo: null, text: `diff --git a/${file} b/${file}` }]
+    lines.push({ type: 'hunk', oldNo: null, newNo: null, text: `@@ -0,0 +1,${lineTexts.length} @@` })
+    lineTexts.forEach((text, i) => lines.push({ type: 'add', oldNo: null, newNo: i + 1, text: `+${text}` }))
+    return lines
+}
+
+export async function getStashFileDiff(hash: string, file: string, context?: number): Promise<DiffLine[]> {
+    const { path: p, git: g } = getRepo()
+    let text = ''
+    try {
+        text = await g.raw(['diff', `${hash}^`, hash, `--unified=${context ?? 3}`, '--no-color', '--', file])
+    } catch {}
+    if (text.trim() || text.includes('Binary files')) return parseDiff(text)
+
+    // empty tracked diff + untracked file kept in the stash's 3rd parent
+    let snapshot: Buffer
+    try {
+        snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}^3:${file}`])
+    } catch {
+        return []
+    }
+    if (snapshot.subarray(0, 8000).includes(0)) {
+        return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
+    }
+    return stashBlobAddedLines(file, snapshot)
+}
+
+export async function getStashFileMeta(hash: string, file: string): Promise<DiffMeta> {
+    const { path: p } = getRepo()
+    const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.ico', '.svg']
+    const image = IMAGE_EXTS.includes(path.extname(file).toLowerCase())
+    // tracked blob lives in the stash tree; untracked one in the 3rd parent
+    const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
+        .catch(() => gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}^3:${file}`]))
+        .catch(() => null)
+    if (!snapshot) return { binary: false, image: false }
+    return { binary: snapshot.subarray(0, 8000).includes(0), image }
+}
+
+export async function getStashImageVersion(hash: string, file: string): Promise<string | null> {
+    const { path: p } = getRepo()
+    const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
+    const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
+        .catch(() => gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}^3:${file}`]))
+        .catch(() => null)
+    if (!snapshot?.length) return null
+    return `data:${mime};base64,${snapshot.toString('base64')}`
 }
 
 export async function revertCommit(hash: string): Promise<void> {

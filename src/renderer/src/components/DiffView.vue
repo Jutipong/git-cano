@@ -11,6 +11,7 @@
         file: { path: string; staged: boolean } | null
         refresh?: () => Promise<unknown>
         commitHash?: string
+        stashHash?: string
     }
     const props = defineProps<Props>()
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -45,6 +46,18 @@
         loading.value = true
         try {
             const context = ui.showEntireFile ? FULL_FILE_CONTEXT : undefined
+            if (props.stashHash) {
+                const [stashDiff, stashMeta] = await Promise.all([
+                    window.api.stashFileDiff(props.stashHash, f.path, context),
+                    window.api.stashFileMeta(props.stashHash, f.path),
+                ])
+                lines.value = stashDiff
+                meta.value = stashMeta
+                if (stashMeta.image) {
+                    images.value = { oldUrl: null, newUrl: await window.api.stashImageVersion(props.stashHash, f.path) }
+                }
+                return
+            }
             if (props.commitHash) {
                 const [commitDiff, commitMeta] = await Promise.all([
                     window.api.commitFileDiff(props.commitHash, f.path, context),
@@ -80,7 +93,7 @@
         }
     }
 
-    watch(() => [props.file, props.commitHash], loadDiff, { immediate: true })
+    watch(() => [props.file, props.commitHash, props.stashHash], loadDiff, { immediate: true })
     watch(() => ui.showEntireFile, loadDiff)
     watch(
         () => ui.diffViewMode,
@@ -90,6 +103,7 @@
     )
 
     const sourceLabel = computed(() => {
+        if (props.stashHash) return `${props.stashHash.slice(0, 7)} · stash`
         if (props.commitHash) return `${props.commitHash.slice(0, 7)} · commit`
         return props.file?.staged ? 'staged' : 'working directory'
     })
@@ -681,7 +695,7 @@
                         <!-- eslint-disable-next-line vue/no-v-html -->
                         <pre v-html="htmlMap.get(line) ?? ''" />
                         <button
-                            v-if="!commitHash && line.type === 'hunk' && refresh && !meta?.binary"
+                            v-if="!commitHash && !stashHash && line.type === 'hunk' && refresh && !meta?.binary"
                             class="detail-action hunk-action"
                             :title="file.staged ? 'Unstage this hunk' : 'Stage just this hunk'"
                             @click="actOnHunk(hunkHeaderIndexes.indexOf(index))">

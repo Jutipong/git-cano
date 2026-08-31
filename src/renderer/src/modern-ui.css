@@ -1464,6 +1464,10 @@ body {
     border-radius: 999px;
 }
 
+.stash-row.selected {
+    background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
+}
+
 .stash-row > svg {
     color: var(--text-muted);
     flex-shrink: 0;

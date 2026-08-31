@@ -1,4 +1,4 @@
-import type { CommitFile, CommitNode, RepoState, RepoStatus } from '@shared/types'
+import type { CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
 
 const PAGE_SIZE = 500
 
@@ -58,11 +58,13 @@ export const useRepoStore = defineStore('repo', () => {
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
+    const selectedStash = ref<StashEntry | null>(null)
     const booted = ref(false)
     const commitFiles = ref<CommitFile[]>([])
     const commitMessage = ref('')
     const commitAuthor = ref('')
     const commitDate = ref('')
+    const stashFiles = ref<CommitFile[]>([])
     const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
     const loadedSession = loadSavedSession()
     const session = ref<PersistedSession>(loadedSession.session)
@@ -141,6 +143,7 @@ export const useRepoStore = defineStore('repo', () => {
         activeTab.value = index
         selectedFile.value = null
         selectedCommit.value = null
+        selectedStash.value = null
         syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
         await refresh()
@@ -157,6 +160,7 @@ export const useRepoStore = defineStore('repo', () => {
         if (!stillOpen) {
             commits.value = []
             selectedCommit.value = null
+            selectedStash.value = null
         }
         syncSession()
         if (wasActive && remaining.length > 0) {
@@ -236,6 +240,7 @@ export const useRepoStore = defineStore('repo', () => {
             commits.value = []
             selectedFile.value = null
             selectedCommit.value = null
+            selectedStash.value = null
             const saved = ws.getSession(name) ?? { paths: [], active: 0 }
             let openedCount = 0
             for (const path of saved.paths) {
@@ -278,6 +283,26 @@ export const useRepoStore = defineStore('repo', () => {
         { immediate: true }
     )
 
+    watch(
+        () => selectedCommit.value?.hash,
+        hash => {
+            if (hash && selectedStash.value) selectedStash.value = null
+        }
+    )
+
+    watch(
+        () => selectedStash.value?.hash,
+        async hash => {
+            stashFiles.value = []
+            if (!hash) return
+            try {
+                const files = await window.api.stashFiles(hash)
+                if (selectedStash.value?.hash === hash) stashFiles.value = files
+            } catch {}
+        },
+        { immediate: true }
+    )
+
     watch(logLimit, () => void refresh())
     watch([activeTab], () => {
         if (!repo.value) return
@@ -295,11 +320,13 @@ export const useRepoStore = defineStore('repo', () => {
         hasMore,
         selectedFile,
         selectedCommit,
+        selectedStash,
         pendingFocusHash,
         commitFiles,
         commitMessage,
         commitAuthor,
         commitDate,
+        stashFiles,
         repoState,
         rebaseBase,
         historyFile,

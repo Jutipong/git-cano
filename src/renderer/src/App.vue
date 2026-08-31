@@ -32,6 +32,7 @@
         hasMore,
         selectedFile,
         selectedCommit,
+        selectedStash,
         repoState,
         rebaseBase,
         historyFile,
@@ -114,6 +115,7 @@
                 if (historyFile.value || blameFile.value) return
                 if (selectedFile.value) selectedFile.value = null
                 else if (selectedCommit.value) selectedCommit.value = null
+                else if (selectedStash.value) selectedStash.value = null
                 return
             }
             if (!(event.metaKey || event.ctrlKey)) return
@@ -229,6 +231,7 @@
     function closeCommitView() {
         selectedFile.value = null
         selectedCommit.value = null
+        selectedStash.value = null
     }
 </script>
 
@@ -287,13 +290,13 @@
                             class="right-pane"
                             :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
                             <FilePanel
-                                :files="selectedCommit ? repoStore.commitFiles : repo.files"
-                                :mode="selectedCommit ? 'commit' : 'workdir'"
-                                :commit-hash="selectedCommit?.hash"
+                                :files="selectedStash ? repoStore.stashFiles : selectedCommit ? repoStore.commitFiles : repo.files"
+                                :mode="selectedStash ? 'stash' : selectedCommit ? 'commit' : 'workdir'"
+                                :commit-hash="selectedStash?.hash ?? selectedCommit?.hash"
                                 :selected="selectedFile"
-                                :commit-message="repoStore.commitMessage"
-                                :commit-author="repoStore.commitAuthor"
-                                :commit-date="repoStore.commitDate"
+                                :commit-message="selectedStash ? selectedStash.message : repoStore.commitMessage"
+                                :commit-author="selectedStash ? '' : repoStore.commitAuthor"
+                                :commit-date="selectedStash ? selectedStash.date : repoStore.commitDate"
                                 :refresh="repoStore.refresh"
                                 @select="selectedFile = $event"
                                 @show-history="historyFile = $event"
@@ -321,7 +324,8 @@
             class="diff-overlay"
             :style="{ right: `${ui.rightPanelWidth + 14}px` }"
             :file="selectedFile"
-            :commit-hash="selectedCommit?.hash ?? undefined"
+            :commit-hash="selectedStash ? undefined : (selectedCommit?.hash ?? undefined)"
+            :stash-hash="selectedStash?.hash ?? undefined"
             :refresh="repoStore.refresh"
             @close="selectedFile = null" />
         <RebaseEditor

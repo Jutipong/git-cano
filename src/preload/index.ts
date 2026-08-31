@@ -6,6 +6,7 @@ import type {
     AiTestResult,
     BranchInfo,
     CommitDetails,
+    CommitFile,
     CommitNode,
     DiffLine,
     DiffMeta,
@@ -93,6 +94,10 @@ const api = {
     createStash: (message: string): Promise<void> => call('stash:create', message),
     applyStash: (index: number, pop: boolean): Promise<void> => call('stash:apply', index, pop),
     dropStash: (index: number): Promise<void> => call('stash:drop', index),
+    stashFiles: (hash: string): Promise<CommitFile[]> => call('stash:files', hash),
+    stashFileDiff: (hash: string, file: string, context?: number): Promise<DiffLine[]> => call('stash:fileDiff', hash, file, context),
+    stashFileMeta: (hash: string, file: string): Promise<DiffMeta> => call('stash:fileMeta', hash, file),
+    stashImageVersion: (hash: string, file: string): Promise<string | null> => call('stash:imageVersion', hash, file),
 
     tags: (): Promise<{ name: string; hash: string }[]> => call('tag:list'),
     createTag: (name: string, hash?: string | null, message?: string): Promise<void> => call('tag:create', name, hash ?? null, message),
