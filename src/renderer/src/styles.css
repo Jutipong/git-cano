@@ -103,8 +103,8 @@
     --surface-3: #171722;
     --surface-hover: #1b1b28;
     --surface-selected: #202034;
-    --line: #1e1e2c;
-    --line-soft: rgba(189, 147, 249, 0.12);
+    --line: #2a2a3c;
+    --line-soft: rgba(189, 147, 249, 0.2);
     --text: #d6d6e0;
     --text-secondary: #9d9dae;
     --text-muted: #85859a;
@@ -119,7 +119,7 @@
     --diff-bg: #0e0e15;
     --diff-inline-bg: #202034;
     --toast-bg: #0e0e15;
-    --toast-border: #1e1e2c;
+    --toast-border: #2a2a3c;
     --conflict-bg: #202034;
     --conflict-border: #bd93f9;
     --conflict-text: #f1fa8c;
