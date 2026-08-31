@@ -7,8 +7,16 @@
     const props = defineProps<Props>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})
+    const ui = useUiStore()
 
     const isFullscreen = ref(false)
+
+    /** Ctrl+wheel changes the code font size (plain wheel scrolls as usual). */
+    function onCodeWheel(event: WheelEvent) {
+        if (!event.ctrlKey) return
+        event.preventDefault()
+        ui.zoomCodeFontSize(event.deltaY < 0 ? 1 : -1)
+    }
 
     interface HistoryCommit {
         hash: string
@@ -98,7 +106,11 @@
                     No commits touch this file
                 </div>
             </div>
-            <div class="history-diff">
+            <div
+                class="history-diff"
+                :style="{ fontSize: ui.codeFontSize + 'px' }"
+                title="Ctrl + scroll to change font size"
+                @wheel="onCodeWheel">
                 <pre
                     v-for="(line, index) in diffLines"
                     :key="index"

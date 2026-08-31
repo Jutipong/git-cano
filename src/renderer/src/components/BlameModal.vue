@@ -1,6 +1,8 @@
 <script setup lang="ts">
     import CloseXIcon from './CloseXIcon.vue'
 
+    import { formatDateTime } from '../utils/format'
+
     interface BlameLine {
         hash: string
         author: string
@@ -12,8 +14,16 @@
     const props = defineProps<{ file: string }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})
+    const ui = useUiStore()
 
     const isFullscreen = ref(false)
+
+    /** Ctrl+wheel changes the code font size (plain wheel scrolls as usual). */
+    function onCodeWheel(event: WheelEvent) {
+        if (!event.ctrlKey) return
+        event.preventDefault()
+        ui.zoomCodeFontSize(event.deltaY < 0 ? 1 : -1)
+    }
 
     const lines = ref<BlameLine[]>([])
     const loading = ref(true)
@@ -46,12 +56,7 @@
         return map
     })
 
-    function formatDate(value: string): string {
-        const date = new Date(value)
-        return Number.isNaN(date.getTime())
-            ? value
-            : date.toLocaleDateString(undefined, { year: '2-digit', month: 'short', day: 'numeric' })
-    }
+
 </script>
 
 <template>
@@ -90,7 +95,11 @@
                 </div>
             </div>
         </div>
-        <div class="blame-body">
+        <div
+            class="blame-body"
+            :style="{ fontSize: ui.codeFontSize + 'px' }"
+            title="Ctrl + scroll to change font size"
+            @wheel="onCodeWheel">
             <div
                 v-for="line in lines"
                 :key="line.lineNumber"
@@ -98,7 +107,7 @@
                 :class="`shade-${shadeOf.get(line.hash) ?? 0}`">
                 <code class="blame-hash">{{ line.hash.slice(0, 7) }}</code>
                 <span class="blame-author">{{ line.author }}</span>
-                <span class="blame-date">{{ formatDate(line.date) }}</span>
+                <span class="blame-date">{{ formatDateTime(line.date) }}</span>
                 <span class="blame-ln">{{ line.lineNumber }}</span>
                 <pre>{{ line.content }}</pre>
             </div>

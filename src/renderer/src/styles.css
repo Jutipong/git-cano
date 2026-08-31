@@ -2404,7 +2404,7 @@ mark {
 .history-diff pre {
     margin: 0;
     padding: 0 10px;
-    line-height: 18px;
+    line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-all;
 }
@@ -2441,15 +2441,16 @@ mark {
     color: var(--teal);
 }
 .blame-author {
-    flex: 0 0 100px;
+    flex: 0 0 150px;
     overflow: hidden;
     color: var(--purple);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .blame-date {
-    flex: 0 0 80px;
+    flex: 0 0 140px;
     color: var(--text-muted);
+    white-space: nowrap;
 }
 .blame-ln {
     flex: 0 0 34px;

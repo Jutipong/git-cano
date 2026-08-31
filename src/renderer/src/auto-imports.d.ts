@@ -8,7 +8,10 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const CODE_FONT_SIZE_MAX: typeof import('./stores/ui').CODE_FONT_SIZE_MAX
+  const CODE_FONT_SIZE_MIN: typeof import('./stores/ui').CODE_FONT_SIZE_MIN
   const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
+  const DEFAULT_CODE_FONT_SIZE: typeof import('./stores/ui').DEFAULT_CODE_FONT_SIZE
   const DEFAULT_DIFF_VIEW_MODE: typeof import('./stores/ui').DEFAULT_DIFF_VIEW_MODE
   const DEFAULT_FILE_VIEW_MODE: typeof import('./stores/ui').DEFAULT_FILE_VIEW_MODE
   const DEFAULT_FORMAT_BEFORE_GENERATE: typeof import('./stores/ui').DEFAULT_FORMAT_BEFORE_GENERATE

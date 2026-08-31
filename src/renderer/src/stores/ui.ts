@@ -35,6 +35,13 @@ export const DEFAULT_FONT_SIZE = 14
 export const ZOOM_OPTIONS = [80, 90, 100, 110, 125, 150]
 export const DEFAULT_ZOOM = 100
 
+/** Code viewer font size (Blame / File History diff) — adjustable with Ctrl+wheel. */
+export const CODE_FONT_SIZE_MIN = 9
+export const CODE_FONT_SIZE_MAX = 20
+export const DEFAULT_CODE_FONT_SIZE = 14
+/** First shipped default — migrated to DEFAULT_CODE_FONT_SIZE on load. */
+const LEGACY_CODE_FONT_SIZE = 11
+
 export interface ThemeOption {
     value: Theme
     label: string
@@ -78,6 +85,19 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
         })
+        const codeFontSize = ref(DEFAULT_CODE_FONT_SIZE)
+        // migrate the first shipped default so existing persisted stores pick up the new default
+        if (codeFontSize.value === LEGACY_CODE_FONT_SIZE) codeFontSize.value = DEFAULT_CODE_FONT_SIZE
+        watchEffect(() => {
+            if (codeFontSize.value < CODE_FONT_SIZE_MIN || codeFontSize.value > CODE_FONT_SIZE_MAX) {
+                codeFontSize.value = DEFAULT_CODE_FONT_SIZE
+            }
+        })
+
+        /** Ctrl+wheel zoom for code viewers — delta from the wheel event (+1 / -1). */
+        function zoomCodeFontSize(delta: number) {
+            codeFontSize.value = Math.min(CODE_FONT_SIZE_MAX, Math.max(CODE_FONT_SIZE_MIN, codeFontSize.value + delta))
+        }
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
             tags: true,
@@ -134,6 +154,8 @@ export const useUiStore = defineStore(
             refreshInterval,
             fontSize,
             zoom,
+            codeFontSize,
+            zoomCodeFontSize,
             sidebarSections,
             commitColumns,
             commitDateFormat,
@@ -159,6 +181,7 @@ export const useUiStore = defineStore(
                 'refreshInterval',
                 'fontSize',
                 'zoom',
+                'codeFontSize',
                 'sidebarSections',
                 'commitColumns',
                 'commitDateFormat',
