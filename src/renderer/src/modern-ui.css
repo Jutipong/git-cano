@@ -4313,3 +4313,16 @@ body {
     display: flex;
     gap: 8px;
 }
+
+/* Resolved quick-action on conflicted file rows — orange, matching "Mark all resolved" */
+
+.conflict-row-actions .detail-action.accent {
+    color: var(--orange);
+    border-color: color-mix(in srgb, var(--orange) 45%, transparent);
+}
+
+.conflict-row-actions .detail-action.accent:hover {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 14%, transparent);
+    border-color: var(--orange);
+}

@@ -147,25 +147,7 @@
     const isRebasing = computed(() => repoState.value.rebasing)
     const inConflictFlow = computed(() => isMerging.value || isRebasing.value)
     const conflictedFiles = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isConflicted) : []))
-    const oursLabel = computed(() => repoStore.oursLabel)
-    const theirsLabel = computed(() => repoStore.theirsLabel)
-    const oursTooltip = computed(() =>
-        isMerging.value
-            ? `Keep the ${oursLabel.value} version of this file — discards ${theirsLabel.value}'s changes`
-            : 'Keep our side of the conflict'
-    )
-    const theirsTooltip = computed(() =>
-        isMerging.value
-            ? `Keep the ${theirsLabel.value} version of this file — discards ${oursLabel.value}'s changes`
-            : 'Keep their side of the conflict'
-    )
 
-    function takeOurs(file: FileEntry) {
-        void run(() => window.api.conflictTakeSide(file.path, 'ours'), `${file.path}: kept ours`)
-    }
-    function takeTheirs(file: FileEntry) {
-        void run(() => window.api.conflictTakeSide(file.path, 'theirs'), `${file.path}: kept theirs`)
-    }
     function markResolved(file: FileEntry) {
         void run(() => window.api.markResolved([file.path]), `${file.path}: resolved`)
     }
@@ -621,20 +603,8 @@
                                 v-if="isConflicted(unifiedWorkdirFile(row.file!))"
                                 class="conflict-row-actions">
                                 <button
-                                    class="detail-action"
-                                    :title="oursTooltip"
-                                    @click.stop="takeOurs(unifiedWorkdirFile(row.file!))">
-                                    Keep {{ oursLabel }}
-                                </button>
-                                <button
-                                    class="detail-action"
-                                    :title="theirsTooltip"
-                                    @click.stop="takeTheirs(unifiedWorkdirFile(row.file!))">
-                                    Keep {{ theirsLabel }}
-                                </button>
-                                <button
                                     class="detail-action accent"
-                                    title="I edited the file manually — mark as resolved"
+                                    title="I resolved this file outside the app — stage it as resolved"
                                     @click.stop="markResolved(unifiedWorkdirFile(row.file!))">
                                     <i-lucide-check
                                         width="12"
@@ -703,8 +673,8 @@
                         </h4>
                         <div class="group-header-actions">
                             <button
-                                class="link-btn good"
-                                title="Keep our side for every remaining conflicted file"
+                                class="link-btn warn"
+                                title="Mark every remaining conflicted file as resolved (for files fixed outside the app)"
                                 @click="markAllResolved()">
                                 Mark all resolved
                             </button>
@@ -715,6 +685,7 @@
                         :key="file.path"
                         class="file-row"
                         :class="{ selected: selected?.path === file.path }"
+                        :title="`${file.path} — click to resolve conflicts`"
                         @click="emit('select', { path: file.path, staged: true })"
                         @contextmenu.prevent="openFileMenu($event, file.path, file)">
                         <span class="badge b-u">U</span>
@@ -725,20 +696,8 @@
                         >
                         <div class="conflict-row-actions">
                             <button
-                                class="detail-action"
-                                :title="oursTooltip"
-                                @click.stop="takeOurs(file)">
-                                Keep {{ oursLabel }}
-                            </button>
-                            <button
-                                class="detail-action"
-                                :title="theirsTooltip"
-                                @click.stop="takeTheirs(file)">
-                                Keep {{ theirsLabel }}
-                            </button>
-                            <button
                                 class="detail-action accent"
-                                title="I edited the file manually — mark as resolved"
+                                title="I resolved this file outside the app — stage it as resolved"
                                 @click.stop="markResolved(file)">
                                 <i-lucide-check
                                     width="12"
