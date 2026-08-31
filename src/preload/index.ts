@@ -4,16 +4,20 @@ import type {
     AiConfig,
     AiProvider,
     AiTestResult,
+    AuthConfig,
     BranchInfo,
     CommitDetails,
     CommitFile,
     CommitNode,
     DiffLine,
     DiffMeta,
+    GithubUser,
     GoModel,
     RemoteTestResult,
     RepoStatus,
     RebaseEntry,
+    SshKeyInfo,
+    SshTestResult,
     StashEntry,
 } from '@shared/types'
 
@@ -153,6 +157,19 @@ const api = {
         test: (provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> => call('ai:test', provider, token, modelId),
         generateCommitMessage: (formatFirst: boolean): Promise<string> => call('ai:generateCommitMessage', formatFirst),
         listModels: (provider: AiProvider, token: string): Promise<GoModel[]> => call('ai:listModels', provider, token),
+    },
+
+    auth: {
+        getConfig: (): Promise<AuthConfig> => call('auth:getConfig'),
+        saveConfig: (cfg: AuthConfig): Promise<AuthConfig> => call('auth:saveConfig', cfg),
+        sshList: (): Promise<SshKeyInfo[]> => call('auth:ssh:list'),
+        sshGenerate: (name: string, comment: string, passphrase: string): Promise<SshKeyInfo> =>
+            call('auth:ssh:generate', name, comment, passphrase),
+        sshTest: (keyPath: string): Promise<SshTestResult> => call('auth:ssh:test', keyPath),
+        openSshDir: (): Promise<string> => call('auth:ssh:openDir'),
+        githubStatus: (): Promise<GithubUser | null> => call('auth:github:status'),
+        githubVerify: (token: string): Promise<GithubUser> => call('auth:github:verify', token),
+        openGithubTokenPage: (): Promise<void> => call('auth:github:openTokenPage'),
     },
 }
 

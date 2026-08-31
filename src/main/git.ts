@@ -4,6 +4,7 @@ import * as path from 'node:path'
 
 import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
+import { authGitEnv } from './auth'
 import { log, maskUrl } from './logger'
 
 import type {
@@ -48,6 +49,7 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
     if (!(await g.checkIsRepo())) {
         throw new Error(`"${dir}" is not a git repository`)
     }
+    g.env({ ...process.env, ...authGitEnv() })
     const reopened = repoInstances.has(dir)
     repoInstances.set(dir, g)
     activeRepoPath = dir
@@ -58,6 +60,7 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
 
 export function setActiveRepo(dir: string): void {
     if (!repoInstances.has(dir)) throw new Error(`Repository "${dir}" is not open`)
+    repoInstances.get(dir)?.env({ ...process.env, ...authGitEnv() })
     activeRepoPath = dir
     log('info', 'repo', `active -> ${dir}`)
 }

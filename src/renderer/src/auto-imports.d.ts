@@ -47,6 +47,7 @@ declare global {
   const storeToRefs: typeof import('pinia').storeToRefs
   const toRefs: typeof import('vue').toRefs
   const useAiStore: typeof import('./stores/ai').useAiStore
+  const useAuthStore: typeof import('./stores/auth').useAuthStore
   const useConfirmStore: typeof import('./stores/confirm').useConfirmStore
   const usePromptStore: typeof import('./stores/prompt').usePromptStore
   const useRepoStore: typeof import('./stores/repo').useRepoStore

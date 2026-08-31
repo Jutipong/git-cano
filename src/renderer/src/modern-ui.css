@@ -3404,6 +3404,48 @@ body {
     background: color-mix(in srgb, var(--green) 14%, transparent);
 }
 
+/* Authentication tab */
+.auth-key-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+.auth-key-row.active {
+    border-color: color-mix(in srgb, var(--green) 45%, transparent);
+}
+
+.auth-key-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.auth-key-meta strong {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.auth-key-meta strong svg {
+    color: var(--green);
+}
+
+.auth-key-meta small {
+    color: var(--text-muted);
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .tools-reset-row {
     padding: 0 2px;
     border-top: none;

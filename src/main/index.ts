@@ -95,6 +95,17 @@ import {
     addIgnoreRule,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
+import {
+    generateSshKey,
+    getAuthConfig,
+    githubStatus,
+    listSshKeys,
+    openGithubTokenPage,
+    openSshDir,
+    saveAuthConfig,
+    testSshKey,
+    verifyGithubToken,
+} from './auth'
 import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
 let win: BrowserWindow | null = null
@@ -647,6 +658,18 @@ app.whenReady().then(() => {
     handleSensitive('ai:listModels', (provider: string, token: string) =>
         listModels(provider as 'opencode-go' | 'openrouter', token as string)
     )
+
+    handleSensitive('auth:getConfig', () => getAuthConfig())
+    handleSensitive('auth:saveConfig', (_cfg: unknown) => saveAuthConfig(_cfg as never))
+    handleSensitive('auth:ssh:list', () => listSshKeys())
+    handleSensitive('auth:ssh:generate', (name: string, comment: string, passphrase?: string) =>
+        generateSshKey(String(name), String(comment ?? ''), typeof passphrase === 'string' ? passphrase : undefined)
+    )
+    handleSensitive('auth:ssh:test', (keyPath: string) => testSshKey(String(keyPath)))
+    handle('auth:ssh:openDir', () => openSshDir())
+    handleSensitive('auth:github:status', () => githubStatus())
+    handleSensitive('auth:github:verify', (token: string) => verifyGithubToken(String(token)))
+    handleSensitive('auth:github:openTokenPage', () => openGithubTokenPage())
 
     createWindow()
 

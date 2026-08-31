@@ -159,3 +159,27 @@ export interface RemoteTestResult {
     ok: boolean
     message: string
 }
+
+export interface AuthConfig {
+    githubToken: string
+    sshKeyPath: string
+}
+
+export interface SshKeyInfo {
+    name: string
+    publicKeyPath: string
+    privateKeyPath: string
+    publicKey: string
+    fingerprint: string
+    active: boolean
+}
+
+export interface SshTestResult {
+    ok: boolean
+    message: string
+}
+
+export interface GithubUser {
+    login: string
+    name: string
+}

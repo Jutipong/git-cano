@@ -7,7 +7,7 @@
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
-    import type { AiConfig, AiProvider, AiProviderConfig, GoModel } from '@shared/types'
+    import type { AiConfig, AiProvider, AiProviderConfig, GithubUser, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -18,8 +18,9 @@
         { key: 'general', label: 'General' },
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
+        { key: 'auth', label: 'Authentication' },
     ] as const
-    const tab = ref<'general' | 'hook' | 'ai'>('general')
+    const tab = ref<'general' | 'hook' | 'ai' | 'auth'>('general')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
@@ -122,10 +123,6 @@
         } catch {}
     }
 
-    watch(tab, async current => {
-        if (current === 'ai') await loadAiTab()
-    })
-
     watch(selectedProvider, () => {
         modelOptions.value = [...providerDrafts[selectedProvider.value].models]
         modelQuery.value = aiModel.value
@@ -212,6 +209,130 @@
         notify('Settings reset to defaults', 'success')
     }
 
+    const auth = useAuthStore()
+    const authSub = ref<'ssh' | 'github'>('ssh')
+    const sshTesting = ref(false)
+    const sshTestResult = ref<SshTestResult | null>(null)
+    const generating = ref(false)
+    const genName = ref('id_ed25519')
+    const genComment = ref('')
+    const genPassphrase = ref('')
+    const githubBusy = ref(false)
+    const githubTokenDraft = ref('')
+    const githubUser = ref<GithubUser | null>(null)
+
+    async function setActiveKey(keyPath: string) {
+        try {
+            await auth.save({ ...auth.config, sshKeyPath: keyPath })
+            await auth.refreshKeys()
+            notify(keyPath ? 'SSH key selected' : 'SSH key cleared — using system default', 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    async function copyPublicKey(key: SshKeyInfo) {
+        try {
+            await navigator.clipboard.writeText(key.publicKey)
+            notify('Public key copied to clipboard', 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    async function testKey(key: SshKeyInfo) {
+        if (sshTesting.value) return
+        sshTesting.value = true
+        sshTestResult.value = null
+        try {
+            sshTestResult.value = await window.api.auth.sshTest(key.privateKeyPath)
+        } catch (error) {
+            sshTestResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
+        } finally {
+            sshTesting.value = false
+        }
+    }
+
+    async function generateKey() {
+        if (generating.value) return
+        generating.value = true
+        try {
+            const key = await window.api.auth.sshGenerate(genName.value, genComment.value, genPassphrase.value)
+            await auth.refreshKeys()
+            notify(`SSH key "${key.name}" created`, 'success')
+            genPassphrase.value = ''
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            generating.value = false
+        }
+    }
+
+    async function openSshDir() {
+        try {
+            await window.api.auth.openSshDir()
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    async function saveGithubToken() {
+        const token = githubTokenDraft.value.trim()
+        if (!token || githubBusy.value) return
+        githubBusy.value = true
+        try {
+            const user = await window.api.auth.githubVerify(token)
+            await auth.save({ ...auth.config, githubToken: token })
+            githubUser.value = user
+            githubTokenDraft.value = ''
+            notify(`Signed in as ${user.login}`, 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            githubBusy.value = false
+        }
+    }
+
+    async function signOutGithub() {
+        try {
+            await auth.save({ ...auth.config, githubToken: '' })
+            githubUser.value = null
+            notify('GitHub token removed', 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    async function openTokenPage() {
+        try {
+            await window.api.auth.openGithubTokenPage()
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    async function refreshGithubStatus() {
+        try {
+            githubUser.value = await window.api.auth.githubStatus()
+        } catch {
+            githubUser.value = null
+        }
+    }
+
+    let authLoaded = false
+    async function loadAuthTab() {
+        if (authLoaded) return
+        authLoaded = true
+        await auth.load()
+        await auth.refreshKeys()
+        await refreshGithubStatus()
+    }
+
+    watch(tab, async current => {
+        if (current === 'ai') await loadAiTab()
+        if (current === 'auth') await loadAuthTab()
+    })
+
     onMounted(() => window.addEventListener('keydown', onKeydown))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
@@ -251,6 +372,10 @@
                         height="13" />
                     <i-lucide-zap
                         v-else-if="tabItem.key === 'hook'"
+                        width="13"
+                        height="13" />
+                    <i-lucide-key-round
+                        v-else-if="tabItem.key === 'auth'"
                         width="13"
                         height="13" />
                     <i-lucide-sparkles
@@ -368,6 +493,245 @@
                             <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
                         </p>
                     </div>
+                </template>
+
+                <template v-else-if="tab === 'auth'">
+                    <div class="tools-section">
+                        <div class="setting-choice-row">
+                            <button
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: authSub === 'ssh' }"
+                                @click="authSub = 'ssh'">
+                                SSH
+                            </button>
+                            <button
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: authSub === 'github' }"
+                                @click="authSub = 'github'">
+                                GitHub
+                            </button>
+                        </div>
+                    </div>
+
+                    <template v-if="authSub === 'ssh'">
+                        <div class="tools-section">
+                            <strong class="tools-section-title">
+                                <i-lucide-key-round
+                                    width="13"
+                                    height="13" />
+                                Active SSH key
+                            </strong>
+                            <label class="ai-field">
+                                <span>Key used for SSH remotes (applies to all repositories)</span>
+                                <div class="ai-field-select">
+                                    <select
+                                        :value="auth.config.sshKeyPath"
+                                        @change="setActiveKey(($event.target as HTMLSelectElement).value)">
+                                        <option value="">None — use system default</option>
+                                        <option
+                                            v-for="key in auth.keys"
+                                            :key="key.privateKeyPath"
+                                            :value="key.privateKeyPath">
+                                            {{ key.name }}
+                                        </option>
+                                    </select>
+                                    <i-lucide-chevron-down
+                                        class="ai-select-caret"
+                                        width="14"
+                                        height="14" />
+                                </div>
+                            </label>
+                        </div>
+
+                        <div class="tools-section">
+                            <strong class="tools-section-title">Keys in ~/.ssh</strong>
+                            <p
+                                v-if="auth.keys.length === 0"
+                                class="tools-section-hint">
+                                No SSH keys found — generate one below.
+                            </p>
+                            <div
+                                v-for="key in auth.keys"
+                                :key="key.privateKeyPath"
+                                class="auth-key-row"
+                                :class="{ active: key.active }">
+                                <div class="auth-key-meta">
+                                    <strong>
+                                        {{ key.name }}
+                                        <i-lucide-check
+                                            v-if="key.active"
+                                            width="12"
+                                            height="12" />
+                                    </strong>
+                                    <small>{{ key.fingerprint || key.publicKeyPath }}</small>
+                                </div>
+                                <span class="spacer" />
+                                <button
+                                    class="btn small"
+                                    title="Copy public key to clipboard"
+                                    @click="copyPublicKey(key)">
+                                    <i-lucide-copy
+                                        width="13"
+                                        height="13" />
+                                    Copy
+                                </button>
+                                <button
+                                    class="btn small"
+                                    :disabled="sshTesting"
+                                    title="Test against git@github.com"
+                                    @click="testKey(key)">
+                                    <i-lucide-flask-conical
+                                        v-if="!sshTesting"
+                                        width="13"
+                                        height="13" />
+                                    <i-lucide-loader-circle
+                                        v-else
+                                        class="spinning"
+                                        width="13"
+                                        height="13" />
+                                    Test
+                                </button>
+                            </div>
+                            <span
+                                v-if="sshTestResult"
+                                class="ai-test-result"
+                                :class="sshTestResult.ok ? 'ok' : 'err'"
+                                >{{ sshTestResult.message }}</span
+                            >
+                        </div>
+
+                        <div class="tools-section">
+                            <strong class="tools-section-title">Generate new key</strong>
+                            <label class="ai-field">
+                                <span>File name</span>
+                                <div class="ai-token-row">
+                                    <input
+                                        v-model="genName"
+                                        type="text"
+                                        placeholder="id_ed25519"
+                                        autocomplete="off" />
+                                </div>
+                            </label>
+                            <label class="ai-field">
+                                <span>Comment (email)</span>
+                                <div class="ai-token-row">
+                                    <input
+                                        v-model="genComment"
+                                        type="text"
+                                        placeholder="you@example.com"
+                                        autocomplete="off" />
+                                </div>
+                            </label>
+                            <label class="ai-field">
+                                <span>Passphrase (optional, not stored)</span>
+                                <div class="ai-token-row">
+                                    <input
+                                        v-model="genPassphrase"
+                                        type="password"
+                                        placeholder="leave empty for no passphrase"
+                                        autocomplete="new-password" />
+                                    <button
+                                        class="btn success small"
+                                        :disabled="generating"
+                                        @click="generateKey()">
+                                        <i-lucide-loader-circle
+                                            v-if="generating"
+                                            class="spinning"
+                                            width="13"
+                                            height="13" />
+                                        <i-lucide-plus
+                                            v-else
+                                            width="13"
+                                            height="13" />
+                                        Generate
+                                    </button>
+                                </div>
+                            </label>
+                            <div class="tools-actions">
+                                <button
+                                    class="btn small"
+                                    @click="openSshDir()">
+                                    <i-lucide-folder-open
+                                        width="13"
+                                        height="13" />
+                                    Open ~/.ssh
+                                </button>
+                            </div>
+                            <p class="tools-section-hint">
+                                Copy the public key to GitHub → Settings → SSH keys, then press Test to verify the connection.
+                            </p>
+                        </div>
+                    </template>
+
+                    <template v-else>
+                        <div class="tools-section">
+                            <strong class="tools-section-title">
+                                <i-lucide-user-round
+                                    width="13"
+                                    height="13" />
+                                GitHub account
+                            </strong>
+                            <p class="tools-section-hint">
+                                <template v-if="githubUser">
+                                    Signed in as <strong>{{ githubUser.name || githubUser.login }}</strong> ({{ githubUser.login }})
+                                </template>
+                                <template v-else>Not signed in.</template>
+                            </p>
+                            <p class="tools-section-hint">
+                                The token is used for HTTPS pushes/pulls to github.com and is stored locally in the app data folder.
+                            </p>
+                        </div>
+
+                        <div class="tools-section">
+                            <label class="ai-field">
+                                <span>Personal access token (scopes: repo)</span>
+                                <div class="ai-token-row">
+                                    <input
+                                        v-model="githubTokenDraft"
+                                        type="password"
+                                        placeholder="ghp_…"
+                                        autocomplete="off" />
+                                    <button
+                                        class="btn success small"
+                                        :disabled="!githubTokenDraft.trim() || githubBusy"
+                                        @click="saveGithubToken()">
+                                        <i-lucide-loader-circle
+                                            v-if="githubBusy"
+                                            class="spinning"
+                                            width="13"
+                                            height="13" />
+                                        <i-lucide-check
+                                            v-else
+                                            width="13"
+                                            height="13" />
+                                        Verify &amp; save
+                                    </button>
+                                </div>
+                            </label>
+                            <div class="tools-actions">
+                                <button
+                                    class="btn small"
+                                    title="Opens your default browser to create a token"
+                                    @click="openTokenPage()">
+                                    <i-lucide-external-link
+                                        width="13"
+                                        height="13" />
+                                    Create token in browser
+                                </button>
+                                <button
+                                    v-if="githubUser"
+                                    class="btn danger small"
+                                    @click="signOutGithub()">
+                                    <i-lucide-trash-2
+                                        width="13"
+                                        height="13" />
+                                    Sign out
+                                </button>
+                            </div>
+                        </div>
+                    </template>
                 </template>
 
                 <template v-else>
