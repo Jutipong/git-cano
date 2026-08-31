@@ -75,13 +75,6 @@
         const changed = new Map((props.files as CommitFile[]).map(file => [file.path, file]))
         return [...paths].map(path => changed.get(path) ?? { path, status: '', additions: 0, deletions: 0 })
     })
-    const fileCount = computed(() =>
-        ui.fileFilterMode === 'all'
-            ? allFiles.value.length
-            : isWorkdir.value
-              ? new Set((props.files as FileEntry[]).map(file => file.path)).size
-              : (props.files as CommitFile[]).length
-    )
     const commitTotals = computed(() => {
         if (!commitFileList.value.length) return null
         return commitFileList.value.reduce(
@@ -447,7 +440,6 @@
                     v-else
                     width="16"
                     height="16" /><strong>{{ isDetails ? (mode === 'stash' ? 'Stash Changes' : 'Commit Changes') : 'Changes' }}</strong>
-                <span class="panel-file-num">{{ fileCount }}</span>
             </div>
             <div class="panel-heading-side">
                 <span
@@ -500,13 +492,6 @@
                             width="15"
                             height="15" />
                     </button>
-                    <span
-                        v-if="!isWorkdir && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
-                        class="file-controls-divider" />
-                    <CollapseAllButton
-                        v-if="!isWorkdir && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
-                        :all-collapsed="allDirsCollapsed"
-                        @toggle="toggleAllDirs()" />
                 </div>
             </div>
         </div>
@@ -806,6 +791,17 @@
             </template>
 
             <template v-else>
+                <div class="group-header">
+                    <h4
+                        :class="{ 'can-toggle': canToggleAll }"
+                        @click="canToggleAll && toggleAllDirs()">
+                        <CollapseAllButton
+                            v-if="canToggleAll"
+                            :all-collapsed="allDirsCollapsed"
+                            @toggle="toggleAllDirs()" />
+                        Changed files <span>{{ commitFileList.length }}</span>
+                    </h4>
+                </div>
                 <template
                     v-for="row in commitRows"
                     :key="row.key">
