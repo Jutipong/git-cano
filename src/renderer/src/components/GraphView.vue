@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { formatDatePattern, formatShortDate } from '../utils/format'
@@ -14,6 +15,7 @@
     }
 
     const props = defineProps<Props>()
+    const auth = useAuthStore()
     const emit = defineEmits<{
         (e: 'select-commit', commit: CommitNode): void
         (e: 'load-more'): void
@@ -534,8 +536,13 @@
                         <span
                             class="author-avatar"
                             :style="{ '--avatar-color': nameColor(commit.author) }"
-                            >{{ commit.author.slice(0, 1).toUpperCase() }}</span
-                        >
+                            ><img
+                                v-if="auth.isGithubUser(commit.author) && auth.githubUser?.avatarUrl"
+                                class="author-avatar-img"
+                                :src="auth.githubUser.avatarUrl"
+                                :alt="commit.author" />
+                            <template v-else>{{ commit.author.slice(0, 1).toUpperCase() }}</template>
+                        </span>
                         <span class="author-name">{{ commit.author }}</span>
                     </span>
                     <span

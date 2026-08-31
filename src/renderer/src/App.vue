@@ -18,6 +18,7 @@
     import ToolsModal from './components/ToolsModal.vue'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
+    import { useAuthStore } from './stores/auth'
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -25,6 +26,7 @@
     const repoStore = useRepoStore()
     const ui = useUiStore()
     const uiTransient = useUiTransientStore()
+    const auth = useAuthStore()
     const {
         tabs,
         activeTab,
@@ -98,6 +100,7 @@
     onMounted(() => {
         void repoStore.init()
         void useAiStore().load()
+        void auth.load()
         setTimeout(() => (splashMinElapsed.value = true), SPLASH_MIN_MS)
 
         const unwatch = window.api.onRepoChanged(debouncedRefresh)

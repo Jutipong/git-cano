@@ -7,7 +7,7 @@
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
-    import type { AiConfig, AiProvider, AiProviderConfig, GithubUser, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
+    import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -242,7 +242,6 @@
     const genPassphrase = ref('')
     const githubBusy = ref(false)
     const githubTokenDraft = ref('')
-    const githubUser = ref<GithubUser | null>(null)
 
     async function setActiveKey(keyPath: string) {
         try {
@@ -338,7 +337,6 @@
         try {
             const user = await window.api.auth.githubVerify(token)
             await auth.save({ ...auth.config, githubToken: token })
-            githubUser.value = user
             githubTokenDraft.value = ''
             notify(`Signed in as ${user.login}`, 'success')
         } catch (error) {
@@ -351,7 +349,6 @@
     async function signOutGithub() {
         try {
             await auth.save({ ...auth.config, githubToken: '' })
-            githubUser.value = null
             notify('GitHub token removed', 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
@@ -367,11 +364,7 @@
     }
 
     async function refreshGithubStatus() {
-        try {
-            githubUser.value = await window.api.auth.githubStatus()
-        } catch {
-            githubUser.value = null
-        }
+        await auth.refreshGithubUser()
     }
 
     let authLoaded = false
@@ -740,33 +733,33 @@
                                 GitHub account
                             </strong>
                             <div
-                                v-if="githubUser"
+                                v-if="auth.githubUser"
                                 class="github-account">
                                 <img
-                                    v-if="githubUser.avatarUrl"
+                                    v-if="auth.githubUser.avatarUrl"
                                     class="github-avatar"
-                                    :src="githubUser.avatarUrl"
-                                    :alt="githubUser.login" />
+                                    :src="auth.githubUser.avatarUrl"
+                                    :alt="auth.githubUser.login" />
                                 <div class="github-account-meta">
                                     <strong>
-                                        {{ githubUser.login }}
+                                        {{ auth.githubUser.login }}
                                         <span
-                                            v-if="githubUser.name"
-                                            class="github-account-name">{{ githubUser.name }}</span>
+                                            v-if="auth.githubUser.name"
+                                            class="github-account-name">{{ auth.githubUser.name }}</span>
                                     </strong>
                                     <small
-                                        v-if="githubUser.bio"
-                                        class="github-account-bio">{{ githubUser.bio }}</small>
+                                        v-if="auth.githubUser.bio"
+                                        class="github-account-bio">{{ auth.githubUser.bio }}</small>
                                     <small class="github-account-stats">
                                         <i-lucide-folder-git-2
                                             width="12"
                                             height="12" />
-                                        {{ githubUser.publicRepos }} repos
+                                        {{ auth.githubUser.publicRepos }} repos
                                         <span class="dot-sep">·</span>
                                         <i-lucide-users
                                             width="12"
                                             height="12" />
-                                        {{ githubUser.followers }} followers
+                                        {{ auth.githubUser.followers }} followers
                                     </small>
                                 </div>
                             </div>
@@ -817,7 +810,7 @@
                                     Create token in browser
                                 </button>
                                 <button
-                                    v-if="githubUser"
+                                    v-if="auth.githubUser"
                                     class="btn danger small"
                                     @click="signOutGithub()">
                                     <i-lucide-trash-2
