@@ -1055,6 +1055,35 @@ body {
     border-right-color: var(--line-soft);
 }
 
+/* --- Sidebar proportions: sections size to content; expanded lists take the rest --- */
+.sidebar > .sidebar-section {
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
+}
+/* expanded list sections absorb the leftover space instead of leaving a void */
+.sidebar > .sidebar-section.grow {
+    flex: 1 1 auto;
+}
+
+/* collapse/expand all sidebar sections — right edge of the top section header */
+.section-header > .collapse-all-btn {
+    margin-right: 0;
+}
+.sidebar > .sidebar-section::-webkit-scrollbar {
+    width: 6px;
+}
+.sidebar > .sidebar-section::-webkit-scrollbar-thumb {
+    background: var(--surface-3);
+    border-radius: 999px;
+}
+.sidebar > .sidebar-section::-webkit-scrollbar-track {
+    background: transparent;
+}
+
 .center-column {
     background: var(--surface-1);
 }

@@ -3,6 +3,7 @@
     import { useUiStore } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
+    import CollapseAllButton from './CollapseAllButton.vue'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -33,6 +34,16 @@
             ui.sidebarSections.tags = value
         },
     })
+    const allSectionsCollapsed = computed(
+        () => !ui.sidebarSections.local && !ui.sidebarSections.remote && !ui.sidebarSections.tags && !ui.sidebarSections.stashes
+    )
+    function toggleAllSections() {
+        const target = allSectionsCollapsed.value
+        ui.sidebarSections.local = target
+        ui.sidebarSections.remote = target
+        ui.sidebarSections.tags = target
+        ui.sidebarSections.stashes = target
+    }
     const remoteExpanded = computed({
         get: () => ui.sidebarSections.remote,
         set: value => {
@@ -291,7 +302,9 @@
     <aside
         class="sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
-        <div class="sidebar-section">
+        <div
+            class="sidebar-section"
+            :class="{ grow: localExpanded }">
             <div class="section-header">
                 <button
                     class="section-toggle"
@@ -308,6 +321,9 @@
                         LOCAL BRANCHES <span class="section-count">{{ local.length }}</span>
                     </h3>
                 </button>
+                <CollapseAllButton
+                    :all-collapsed="allSectionsCollapsed"
+                    @toggle="toggleAllSections()" />
             </div>
 
             <template v-if="localExpanded">

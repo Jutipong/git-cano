@@ -92,7 +92,9 @@
 </script>
 
 <template>
-    <div class="sidebar-section stash-section">
+    <div
+        class="sidebar-section stash-section"
+        :class="{ grow: expanded }">
         <div class="section-header">
             <button
                 class="section-toggle"
