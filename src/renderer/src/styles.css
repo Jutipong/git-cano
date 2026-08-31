@@ -561,8 +561,28 @@ kbd {
 }
 .commit-close-btn,
 .diff-close-btn {
-    border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+    position: relative;
     background: color-mix(in srgb, var(--red) 8%, transparent);
+}
+.close-x-svg {
+    position: absolute;
+    display: block;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+.close-x-ring {
+    fill: none;
+    stroke: color-mix(in srgb, currentColor 40%, transparent);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+.close-x-mark {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
 }
 .commit-close-btn {
     margin-left: 10px;

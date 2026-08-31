@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
+    import CloseXIcon from './CloseXIcon.vue'
     import OpenInButton from './OpenInButton.vue'
     import OpenRepoMenu from './OpenRepoMenu.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
@@ -227,9 +228,7 @@
                             class="icon-btn danger commit-close-btn tab-close"
                             :title="`Close ${tab.name}`"
                             @click.stop="emit('close', index)">
-                            <i-lucide-x
-                                width="12"
-                                height="12" />
+                            <CloseXIcon />
                         </button>
                     </div>
                 </TransitionGroup>

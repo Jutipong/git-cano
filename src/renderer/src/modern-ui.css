@@ -442,13 +442,11 @@ body {
 
 .repo-tab .tab-close {
     color: var(--text);
-    border-color: color-mix(in srgb, var(--text) 40%, transparent);
     background: color-mix(in srgb, var(--text) 8%, transparent);
 }
 
 .repo-tab .tab-close:hover {
     color: var(--red);
-    border-color: color-mix(in srgb, var(--red) 40%, transparent);
     background: color-mix(in srgb, var(--red) 18%, transparent);
 }
 
@@ -1516,6 +1514,25 @@ body {
     background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
 }
 
+/* git status badges — VS Code-style colored letters */
+.badge {
+    background: transparent;
+    font-size: 11px;
+}
+.badge.b-m {
+    color: #e2c08d;
+    background: transparent;
+}
+.badge.b-a {
+    color: #73c991;
+    background: transparent;
+}
+.badge.b-d,
+.badge.b-u {
+    color: #f14c4c;
+    background: transparent;
+}
+
 .view-toggle {
     border-radius: 999px;
 }
@@ -2397,21 +2414,36 @@ body {
     min-width: 0;
     align-items: center;
     gap: 2px;
-    padding: 3px;
+    min-height: 34px;
+    padding: 2px 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
 }
 
+.commit-group > .tab-actions-sep {
+    display: block;
+}
+
 .commit-group .commit-btn {
     flex: 1;
+    min-width: 0;
     min-height: 30px;
     padding: 0 14px;
     border: 0;
+    background: transparent;
+    color: var(--green);
+    font-weight: 600;
+}
+
+.commit-group .commit-btn:hover {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 15%, transparent);
 }
 
 .commit-group .commit-btn:disabled {
-    opacity: 0.4;
+    cursor: default;
+    opacity: 0.45;
 }
 
 .commit-group .commit-push-btn {
@@ -2421,24 +2453,24 @@ body {
     justify-content: center;
     min-height: 30px;
     padding: 0 12px;
-    color: #fff;
-    background: var(--red);
+    color: var(--red);
+    background: transparent;
     border: 0;
     border-radius: 999px;
-    font-size: 12.5px;
-    font-weight: 650;
+    font-weight: 600;
     white-space: nowrap;
     cursor: pointer;
     transition: 120ms ease;
 }
 
-.commit-group .commit-push-btn:hover:not(:disabled) {
-    filter: brightness(0.93);
+.commit-group .commit-push-btn:hover {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 15%, transparent);
 }
 
 .commit-group .commit-push-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
+    cursor: default;
+    opacity: 0.45;
 }
 
 .tag-modal {
@@ -2739,9 +2771,12 @@ body {
     background: var(--surface-hover);
 }
 
-.toast-close-icon {
-    position: relative;
-    z-index: 1;
+.toast-close-x {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1;
+    stroke-linecap: round;
+    vector-effect: non-scaling-stroke;
 }
 
 .toast-ring {

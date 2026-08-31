@@ -2,6 +2,7 @@
     import { nextTick } from 'vue'
 
     import { intraLineRange, isWhitespaceOnlyChange, detectMovedLines, highlightDiffLines } from '../utils/highlight'
+    import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { DiffLine } from '@shared/types'
@@ -562,9 +563,7 @@
                         class="icon-btn danger diff-close-btn"
                         title="Close diff"
                         @click="emit('close')">
-                        <i-lucide-x
-                            width="15"
-                            height="15" />
+                        <CloseXIcon />
                     </button>
                 </div>
             </div>

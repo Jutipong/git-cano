@@ -1,6 +1,8 @@
 <script setup lang="ts">
     import { useTemplateRef } from 'vue'
 
+    import CloseXIcon from './CloseXIcon.vue'
+
     const props = defineProps<{ message: string | null }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const closeBtn = useTemplateRef<HTMLButtonElement>('closeBtn')
@@ -38,9 +40,7 @@
                     class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
-                    <i-lucide-x
-                        width="15"
-                        height="15" />
+                    <CloseXIcon />
                 </button>
             </div>
             <div class="error-dialog-body">

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import CloseXIcon from './CloseXIcon.vue'
+
     import type { ToastKind } from '../stores/uiTransient'
 
     const props = defineProps<{ refresh: () => Promise<unknown> }>()
@@ -85,9 +87,7 @@
                     class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
+                    <CloseXIcon />
                 </button>
             </div>
 

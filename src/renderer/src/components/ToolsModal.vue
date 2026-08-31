@@ -4,6 +4,7 @@
 
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, ZOOM_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
+    import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { AiConfig, AiProvider, AiProviderConfig, GoModel } from '@shared/types'
@@ -234,9 +235,7 @@
                     class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
+                    <CloseXIcon />
                 </button>
             </div>
             <div class="tools-tabs">

@@ -13,6 +13,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     BlameModal: typeof import('./components/BlameModal.vue')['default']
     CloneRepoModal: typeof import('./components/CloneRepoModal.vue')['default']
+    CloseXIcon: typeof import('./components/CloseXIcon.vue')['default']
     CommitContextMenu: typeof import('./components/CommitContextMenu.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
     ConflictBanner: typeof import('./components/ConflictBanner.vue')['default']

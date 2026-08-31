@@ -12,12 +12,10 @@ declare global {
   const DEFAULT_DIFF_VIEW_MODE: typeof import('./stores/ui').DEFAULT_DIFF_VIEW_MODE
   const DEFAULT_FILE_VIEW_MODE: typeof import('./stores/ui').DEFAULT_FILE_VIEW_MODE
   const DEFAULT_FORMAT_BEFORE_GENERATE: typeof import('./stores/ui').DEFAULT_FORMAT_BEFORE_GENERATE
-  const DEFAULT_REFRESH_INTERVAL: typeof import('./stores/ui').DEFAULT_REFRESH_INTERVAL
   const DEFAULT_SHOW_ENTIRE_FILE: typeof import('./stores/ui').DEFAULT_SHOW_ENTIRE_FILE
   const DEFAULT_THEME: typeof import('./stores/ui').DEFAULT_THEME
   const DEFAULT_WORKSPACE: typeof import('./stores/workspace').DEFAULT_WORKSPACE
   const FONT_SIZE_OPTIONS: typeof import('./stores/ui').FONT_SIZE_OPTIONS
-  const MANDATORY_COMMIT_COLUMNS: typeof import('./stores/ui').MANDATORY_COMMIT_COLUMNS
   const REFRESH_INTERVAL_OPTIONS: typeof import('./stores/ui').REFRESH_INTERVAL_OPTIONS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS

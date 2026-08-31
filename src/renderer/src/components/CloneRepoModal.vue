@@ -1,6 +1,8 @@
 <script setup lang="ts">
     import { nextTick, useTemplateRef } from 'vue'
 
+    import CloseXIcon from './CloseXIcon.vue'
+
     import type { ToastKind } from '../stores/uiTransient'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -78,9 +80,7 @@
                     class="icon-btn danger commit-close-btn"
                     title="Close"
                     @click="emit('close')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
+                    <CloseXIcon />
                 </button>
             </div>
             <div class="tag-modal-body clone-modal-body">
