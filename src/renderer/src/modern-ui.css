@@ -3152,8 +3152,8 @@ body {
 }
 
 .commit-author {
-    justify-content: center;
-    text-align: center;
+    justify-content: flex-start;
+    text-align: left;
 }
 
 .graph-date-header,
