@@ -5,6 +5,7 @@
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
     import CloseXIcon from './CloseXIcon.vue'
+    import CollapseAllButton from './CollapseAllButton.vue'
     import FileContextMenu, { type FileMenuState } from './FileContextMenu.vue'
 
     import type { AiCommitMode } from '../stores/ui'
@@ -151,6 +152,29 @@
     function toggleDir(path: string) {
         if (collapsedDirs.has(path)) collapsedDirs.delete(path)
         else collapsedDirs.add(path)
+    }
+    /** Every folder that exists in the current file set (including nested ones hidden inside collapsed folders). */
+    const allDirPaths = computed(() => {
+        const files =
+            ui.fileFilterMode === 'all'
+                ? allFiles.value
+                : isWorkdir.value
+                  ? [...staged.value, ...unstaged.value, ...untracked.value]
+                  : commitFileList.value
+        const dirs = new Set<string>()
+        for (const file of files) {
+            const parts = file.path.split('/')
+            for (let i = 1; i < parts.length; i++) dirs.add(parts.slice(0, i).join('/'))
+        }
+        return [...dirs]
+    })
+    /** Derived from collapsedDirs so manually collapsed folders stay in sync. */
+    const allDirsCollapsed = computed(
+        () => allDirPaths.value.length > 0 && allDirPaths.value.every(path => collapsedDirs.has(path))
+    )
+    function toggleAllDirs() {
+        if (allDirsCollapsed.value) collapsedDirs.clear()
+        else for (const path of allDirPaths.value) collapsedDirs.add(path)
     }
     function toggleViewMode() {
         ui.fileViewMode = ui.fileViewMode === 'tree' ? 'flat' : 'tree'
@@ -476,6 +500,13 @@
                             width="15"
                             height="15" />
                     </button>
+                    <span
+                        v-if="(!isWorkdir || ui.fileFilterMode === 'all') && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                        class="file-controls-divider" />
+                    <CollapseAllButton
+                        v-if="(!isWorkdir || ui.fileFilterMode === 'all') && ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                        :all-collapsed="allDirsCollapsed"
+                        @toggle="toggleAllDirs()" />
                 </div>
             </div>
         </div>
@@ -589,6 +620,10 @@
                 <template v-if="staged.length > 0">
                     <div class="group-header">
                         <h4>
+                            <CollapseAllButton
+                                v-if="ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                                :all-collapsed="allDirsCollapsed"
+                                @toggle="toggleAllDirs()" />
                             Staged files <span>{{ staged.length }}</span>
                         </h4>
                         <div class="group-header-actions">
@@ -660,6 +695,10 @@
 
                 <div class="group-header">
                     <h4>
+                        <CollapseAllButton
+                            v-if="ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                            :all-collapsed="allDirsCollapsed"
+                            @toggle="toggleAllDirs()" />
                         Unstaged <span>{{ unstaged.length + untracked.length }}</span>
                     </h4>
                     <div class="group-header-actions">

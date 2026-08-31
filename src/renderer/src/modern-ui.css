@@ -1613,6 +1613,47 @@ body {
     background: color-mix(in srgb, var(--green) 18%, transparent);
 }
 
+.file-mode-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.file-mode-btn:disabled:hover {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.collapse-all-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    margin-right: 4px;
+    padding: 0;
+    color: var(--text-secondary);
+    background: none;
+    border: 0;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.collapse-all-btn:hover {
+    color: var(--text);
+}
+
+/* ยุบครบทุกโฟลเดอร์แล้ว — เชฟรอนกลับทิศชี้ลง + เขียวเพื่อบอกว่ากดเพื่อขยายกลับได้ */
+.collapse-all-btn.all-collapsed {
+    color: var(--green);
+}
+
+.collapse-all-btn.all-collapsed svg {
+    transform: rotate(180deg);
+}
+
+.collapse-all-btn.all-collapsed:hover {
+    color: color-mix(in srgb, var(--green) 70%, var(--text));
+}
+
 .file-controls-divider {
     width: 1px;
     height: 18px;

@@ -65,7 +65,7 @@ export default defineConfig({
                 dirs: ['src/components'],
                 dts: 'src/components.d.ts',
                 resolvers: [
-                    IconsResolver({ prefix: 'i', enabledCollections: ['lucide', 'fluent-emoji-flat', 'streamline-flex-color', 'mage'] }),
+                    IconsResolver({ prefix: 'i', enabledCollections: ['lucide', 'fluent-emoji-flat', 'streamline-flex-color', 'mage', 'clarity'] }),
                 ],
             }),
         ],

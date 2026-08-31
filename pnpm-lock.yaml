@@ -21,6 +21,9 @@ importers:
         specifier: ^3.5.42
         version: 3.5.42(typescript@6.0.3)
     devDependencies:
+      '@iconify-json/clarity':
+        specifier: ^1.2.4
+        version: 1.2.4
       '@iconify-json/fluent-emoji-flat':
         specifier: ^1.2.6
         version: 1.2.6
@@ -513,6 +516,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@iconify-json/clarity@1.2.4':
+    resolution: {integrity: sha512-9hQ405dgvK2b2BWQdAIb/+ayH02k5VE4lKw2456wpjtq+57shHXE4Kk8bFa7RwchQHFuTtJBItVhlU4kjejxDw==}
 
   '@iconify-json/fluent-emoji-flat@1.2.6':
     resolution: {integrity: sha512-RY47RgPb47fYUiyrA64sIOL0+UU02s29sXpNBbIQRBUlPlfNFTKUmZDERGuxDs/7yNGWqQYvuaSYM1M4fRXlUw==}
@@ -2979,6 +2985,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@iconify-json/clarity@1.2.4':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/fluent-emoji-flat@1.2.6':
     dependencies:
