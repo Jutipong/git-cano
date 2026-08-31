@@ -270,10 +270,20 @@
         return auth.isGithubUser(commit.author, commit.authorEmail) && !!auth.githubUser?.avatarUrl
     }
 
+    function avatarKey(commit: CommitNode): string {
+        return commit.authorEmail || commit.author
+    }
+
+    function avatarInitial(commit: CommitNode): string {
+        return avatarKey(commit).trim().slice(0, 1).toUpperCase()
+    }
+
     function avatarStyle(commit: CommitNode) {
+        const color = nameColor(avatarKey(commit))
         return {
             left: `${nodeX(commit)}px`,
-            '--avatar-color': nameColor(commit.author),
+            '--avatar-color': color,
+            '--avatar-fg': contrastText(color),
             '--node-color': nodeColor(commit),
         }
     }
@@ -511,7 +521,7 @@
                         :style="{ width: `${graphW}px` }">
                         <span
                             class="node-avatar"
-                            :class="{ selected: selectedHash === commit.hash, photo: hasAvatar(commit) }"
+                            :class="{ selected: selectedHash === commit.hash, photo: hasAvatar(commit), icon: !hasAvatar(commit) }"
                             :style="avatarStyle(commit)"
                             @mouseenter="event => showAvatarTip(commit, event)"
                             @mouseleave="hideAvatarTip"
@@ -519,8 +529,9 @@
                                 v-if="hasAvatar(commit)"
                                 class="author-avatar-img"
                                 :src="auth.githubUser?.avatarUrl"
-                                :alt="commit.author"
-                        /></span>
+                                :alt="commit.author" />
+                            <template v-else>{{ avatarInitial(commit) }}</template></span
+                        >
                     </div>
                     <span class="commit-subject">
                         <span

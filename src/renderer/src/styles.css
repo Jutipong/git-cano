@@ -768,8 +768,10 @@ kbd {
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: 0 0 auto;
-    /* other authors: plain solid dot in the author's color (GitKraken style) */
     width: 14px;
     height: 14px;
     overflow: hidden;
@@ -786,6 +788,15 @@ kbd {
 .node-avatar.photo {
     width: 20px;
     height: 20px;
+}
+/* no photo: author-colored circle with the email's first letter */
+.node-avatar.icon {
+    width: 20px;
+    height: 20px;
+    color: var(--avatar-fg, #f5f7fa);
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
 }
 .author-name {
     overflow: hidden;
