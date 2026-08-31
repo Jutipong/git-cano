@@ -4,6 +4,10 @@ export interface ConfirmOptions {
     confirmLabel?: string
     danger?: boolean
     confirmIcon?: 'reset' | 'delete'
+    /** Visual "from → to" diagram (e.g. merge/reset direction) rendered above the message. */
+    flow?: { from: string; to: string; label?: string }
+    /** Pre-computed check result shown as a status row (✓ ok / ⚠ warn / dim unknown). */
+    status?: { kind: 'ok' | 'warn' | 'unknown'; text: string }
 }
 
 export interface ConfirmRequest extends ConfirmOptions {

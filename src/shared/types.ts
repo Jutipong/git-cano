@@ -85,6 +85,18 @@ export interface RepoState {
     bisectActive: boolean
 }
 
+/** Result of a dry-run merge check (`git merge-tree --write-tree`). */
+export interface MergeCheck {
+    /** False when the installed git is too old for merge-tree --write-tree */
+    supported: boolean
+    /** Target can be fast-forwarded to source — no conflicts possible */
+    fastForward: boolean
+    /** Files that would conflict */
+    conflicts: string[]
+}
+
+export type MergeMode = 'default' | 'ff-only' | 'no-ff'
+
 export interface MenuItem {
     label: string
     action?: () => void

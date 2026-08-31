@@ -267,24 +267,50 @@
     function openRemoteBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
         menu.value = { x: event.clientX, y: event.clientY, items: buildRemoteBranchMenu(branch) }
     }
-    function handleDrop(targetBranch: string, event: DragEvent) {
+    async function handleDrop(targetBranch: string, event: DragEvent) {
         event.preventDefault()
         dropTarget.value = null
         const payload = event.dataTransfer?.getData('text/plain')
         if (!payload) return
         const [kind, value] = payload.split(':')
         if (kind === 'commit') {
-            const hard = window.confirm(
-                `Reset "${targetBranch}" to commit ${value.slice(0, 7)}?\n\nOK = Hard reset (discard changes)\nCancel = Soft reset (keep changes staged)`
-            )
-            void run(() => window.api.resetTo(value, hard ? 'hard' : 'soft'), `Reset ${targetBranch}`)
+            const ok = await confirmDialog({
+                title: 'Reset branch',
+                message: 'All uncommitted changes will be lost.\n(Use the commit context menu for a soft reset.)',
+                flow: { from: value.slice(0, 7), to: targetBranch, label: 'reset to' },
+                confirmLabel: 'Hard reset',
+                danger: true,
+                confirmIcon: 'reset',
+            })
+            if (!ok) return
+            void run(() => window.api.resetTo(value, 'hard'), `Reset ${targetBranch}`)
         } else if (kind === 'branch' && value !== targetBranch) {
-            if (window.confirm(`Merge "${value}" into "${targetBranch}"?\n(This will checkout "${targetBranch}" first)`)) {
-                void run(async () => {
-                    await window.api.checkout(targetBranch)
-                    await window.api.mergeBranch(value)
-                }, `Merged ${value} into ${targetBranch}`)
+            let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
+            let willConflict = false
+            try {
+                const check = await window.api.mergeCheckConflicts(value, targetBranch)
+                willConflict = check.conflicts.length > 0
+                status = !check.supported
+                    ? { kind: 'unknown', text: 'Conflict check unavailable (git too old)' }
+                    : willConflict
+                      ? { kind: 'warn', text: `Merge will cause conflicts — ${check.conflicts.length} file(s)` }
+                      : check.fastForward
+                        ? { kind: 'ok', text: 'Fast-forward — no conflicts possible' }
+                        : { kind: 'ok', text: 'Merge can be done without conflicts' }
+            } catch {
+                status = { kind: 'unknown', text: 'Conflict check unavailable' }
             }
+            const ok = await confirmDialog({
+                title: 'Merge branch',
+                message: willConflict
+                    ? `Will checkout "${targetBranch}" to resolve conflicts.`
+                    : 'Merges without switching your current branch.',
+                flow: { from: value, to: targetBranch },
+                status,
+                confirmLabel: 'Merge',
+            })
+            if (!ok) return
+            void run(() => window.api.mergeInto(value, targetBranch), `Merged ${value} into ${targetBranch}`)
         }
     }
     function onDragOver(branchName: string, event: DragEvent) {

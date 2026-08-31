@@ -55,6 +55,7 @@ declare module 'vue' {
     ILucideFoldVertical: typeof import('~icons/lucide/fold-vertical')['default']
     ILucideGitBranch: typeof import('~icons/lucide/git-branch')['default']
     ILucideGlobe2: typeof import('~icons/lucide/globe2')['default']
+    ILucideInfo: typeof import('~icons/lucide/info')['default']
     ILucideKeyRound: typeof import('~icons/lucide/key-round')['default']
     ILucideLayers: typeof import('~icons/lucide/layers')['default']
     ILucideList: typeof import('~icons/lucide/list')['default']

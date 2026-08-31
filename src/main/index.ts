@@ -65,7 +65,8 @@ import {
     getCommitImageVersion,
     getRebasePlan,
     listBranches,
-    merge,
+    mergeInto,
+    checkMergeConflicts,
     onRepoChanged,
     openRepo,
     pull,
@@ -441,9 +442,13 @@ app.whenReady().then(() => {
         requireRepo()
         return deleteRemoteBranch(ref as string)
     })
-    handle('branch:merge', (name: string) => {
+    handle('branch:mergeCheck', (source: string, target: string) => {
         requireRepo()
-        return merge(name as string)
+        return checkMergeConflicts(source as string, target as string)
+    })
+    handle('branch:mergeInto', (source: string, target: string, mode: MergeMode = 'default') => {
+        requireRepo()
+        return mergeInto(source as string, target as string, mode as MergeMode)
     })
     handle('branch:push', (name: string, force: boolean) => {
         requireRepo()

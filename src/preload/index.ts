@@ -14,6 +14,7 @@ import type {
     DiffMeta,
     GithubUser,
     GoModel,
+    MergeCheck,
     RemoteTestResult,
     RepoStatus,
     RebaseEntry,
@@ -86,7 +87,8 @@ const api = {
     checkout: (ref: string): Promise<void> => call('branch:checkout', ref),
     deleteBranch: (name: string): Promise<void> => call('branch:delete', name),
     deleteRemoteBranch: (ref: string): Promise<string> => call('branch:remoteDelete', ref),
-    mergeBranch: (name: string): Promise<string> => call('branch:merge', name),
+    mergeCheckConflicts: (source: string, target: string): Promise<MergeCheck> => call('branch:mergeCheck', source, target),
+    mergeInto: (source: string, target: string): Promise<string> => call('branch:mergeInto', source, target),
     pushBranch: (name: string, force = false): Promise<string> => call('branch:push', name, force),
     pullBranch: (name: string): Promise<string> => call('branch:pull', name),
 

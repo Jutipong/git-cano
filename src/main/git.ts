@@ -1,5 +1,6 @@
 import { execFile, spawn } from 'node:child_process'
 import * as fs from 'node:fs'
+import * as os from 'node:os'
 import * as path from 'node:path'
 
 import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
@@ -17,6 +18,8 @@ import type {
     DiffLine,
     FileEntry,
     GitignoreRuleKind,
+    MergeCheck,
+    MergeMode,
     RebaseEntry,
     RebaseOutcome,
     RemoteTestResult,
@@ -786,6 +789,118 @@ export async function merge(name: string): Promise<string> {
     const { git: g } = getRepo()
     const res = await g.merge([name, '--no-edit'])
     return res.result || 'Merged'
+}
+
+/** True when merging `source` into `target` can fast-forward. */
+async function isFastForward(g: SimpleGit, source: string, target: string): Promise<boolean> {
+    const targetHead = (await g.raw(['rev-parse', '--verify', target])).trim()
+    const base = (await g.raw(['merge-base', target, source])).trim()
+    return base === targetHead
+}
+
+/**
+ * Dry-run merge check via `git merge-tree --write-tree` — computes the merge result without touching any worktree. Requires git >= 2.38,
+ * otherwise `supported: false`.
+ *
+ * Note: simple-git's `raw()` only rejects on stderr; `merge-tree` reports conflicts on stdout with exit code 1, so conflicts must be
+ * detected by parsing the successful output, not via try/catch.
+ */
+export async function checkMergeConflicts(source: string, target: string): Promise<MergeCheck> {
+    const { git: g } = getRepo()
+    if (await isFastForward(g, source, target)) {
+        return { supported: true, fastForward: true, conflicts: [] }
+    }
+    let stdout = ''
+    try {
+        stdout = await g.raw(['merge-tree', '--write-tree', '--name-only', target, source])
+    } catch (error) {
+        const err = error as { git?: { stdout?: string }; message?: string }
+        stdout = err.git?.stdout ?? ''
+        if (!stdout) {
+            const text = err.message ?? ''
+            if (!/unknown option|unrecognized|usage: git merge-tree/i.test(text)) {
+                log('warn', 'git', `merge-tree check failed: ${text.split('\n')[0]}`)
+            }
+            return { supported: false, fastForward: false, conflicts: [] }
+        }
+    }
+    return parseMergeTreeOutput(stdout)
+}
+
+function parseMergeTreeOutput(stdout: string): MergeCheck {
+    // Success: a single tree OID line. Conflict (exit 1): tree OID, then with
+    // --name-only one conflicted file per line until a blank line, then
+    // informational messages ("CONFLICT (content): Merge conflict in …").
+    const lines = stdout.split('\n').map(line => line.trim())
+    const conflicts: string[] = []
+    for (const line of lines.slice(1)) {
+        if (!line) break
+        conflicts.push(line)
+    }
+    if (!conflicts.length && lines.some(line => /^CONFLICT\b/.test(line))) {
+        // No --name-only names parsed — fall back to the message lines.
+        for (const line of lines) {
+            const match = line.match(/^CONFLICT.*Merge conflict in (.+)$/)
+            if (match) conflicts.push(match[1].trim())
+        }
+    }
+    return { supported: true, fastForward: false, conflicts }
+}
+
+/**
+ * Merge `source` into `target` without switching the user's current branch: fast-forwards the ref directly when possible, otherwise
+ * performs the merge inside a temporary worktree. Only when that merge conflicts does it fall back to checking out `target` in the main
+ * repo so the conflict banner can drive resolution.
+ */
+export async function mergeInto(source: string, target: string, mode: MergeMode = 'default'): Promise<string> {
+    const { git: g } = getRepo()
+    const status = await g.status()
+    if (status.current === target) {
+        const args: string[] = [source]
+        if (mode === 'no-ff') args.push('--no-ff')
+        else if (mode === 'ff-only') args.push('--ff-only')
+        args.push('--no-edit')
+        const res = await g.merge(args)
+        return res.result || 'Merged'
+    }
+
+    const ff = await isFastForward(g, source, target)
+    if (mode === 'ff-only') {
+        if (!ff) throw new Error(`"${target}" cannot be fast-forwarded to "${source}"`)
+        // Updates the branch ref without any checkout (refuses non-ff).
+        await g.raw(['fetch', '.', `refs/heads/${source}:refs/heads/${target}`])
+        return `Fast-forwarded ${target} to ${source}`
+    }
+    if (mode === 'default' && ff) {
+        await g.raw(['fetch', '.', `refs/heads/${source}:refs/heads/${target}`])
+        return `Fast-forwarded ${target} to ${source}`
+    }
+
+    const tmp = path.join(os.tmpdir(), `open-git-merge-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    let worktreeFailed: unknown = null
+    try {
+        await g.raw(['worktree', 'add', tmp, target])
+        await createGit(tmp).merge(mode === 'no-ff' ? [source, '--no-ff', '--no-edit'] : [source, '--no-edit'])
+        return 'Merged'
+    } catch (error) {
+        worktreeFailed = error
+        await createGit(tmp)
+            .raw(['merge', '--abort'])
+            .catch(() => {})
+    } finally {
+        await g.raw(['worktree', 'remove', '--force', tmp]).catch(() => {
+            try {
+                fs.rmSync(tmp, { recursive: true, force: true })
+            } catch {}
+        })
+    }
+    if (worktreeFailed) {
+        // Conflicted (or unsupported) merge — resolve in the main repo so the
+        // conflict banner sees the state.
+        await g.checkout(target)
+        return merge(source)
+    }
+    return 'Merged'
 }
 
 export async function fetchAll(): Promise<string> {
