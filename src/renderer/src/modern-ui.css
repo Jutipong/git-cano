@@ -1073,6 +1073,7 @@ body {
 
 .sidebar-section h3,
 .group-header h4 {
+    align-items: center;
     font-size: 10px;
     letter-spacing: 0.75px;
 }
