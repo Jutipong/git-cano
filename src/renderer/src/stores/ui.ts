@@ -68,6 +68,8 @@ export const useUiStore = defineStore(
         const sidebarWidth = ref(280)
         const rightPanelWidth = ref(360)
         const summaryHeight = ref(140)
+        /** Height (%) of the OUTPUT pane in ConflictView. */
+        const conflictOutputHeight = ref(38)
         const fileViewMode = ref<FileViewMode>(DEFAULT_FILE_VIEW_MODE)
         const fileFilterMode = ref<'changed' | 'all'>('changed')
         const diffViewMode = ref<DiffViewMode>(DEFAULT_DIFF_VIEW_MODE)
@@ -153,6 +155,7 @@ export const useUiStore = defineStore(
             sidebarWidth,
             rightPanelWidth,
             summaryHeight,
+            conflictOutputHeight,
             fileViewMode,
             fileFilterMode,
             diffViewMode,
@@ -181,6 +184,7 @@ export const useUiStore = defineStore(
                 'sidebarWidth',
                 'rightPanelWidth',
                 'summaryHeight',
+                'conflictOutputHeight',
                 'fileViewMode',
                 'fileFilterMode',
                 'diffViewMode',

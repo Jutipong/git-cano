@@ -48,6 +48,14 @@ export interface DiffMeta {
     image: boolean
 }
 
+/** The three unmerged stages of a conflicted file (`:1:` base, `:2:` ours, `:3:` theirs). */
+export interface ConflictVersions {
+    ours: string | null
+    base: string | null
+    theirs: string | null
+    binary: boolean
+}
+
 export type GitignoreRuleKind = 'file' | 'extension' | 'directory'
 
 export interface ApiError {

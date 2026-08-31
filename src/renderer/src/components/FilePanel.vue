@@ -147,10 +147,8 @@
     const isRebasing = computed(() => repoState.value.rebasing)
     const inConflictFlow = computed(() => isMerging.value || isRebasing.value)
     const conflictedFiles = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isConflicted) : []))
-    const currentBranch = computed(() => repoStore.repo?.branch ?? '')
-    const mergeSource = computed(() => repoState.value.mergeSource ?? null)
-    const oursLabel = computed(() => (isMerging.value ? currentBranch.value || 'ours' : 'ours'))
-    const theirsLabel = computed(() => (isMerging.value ? mergeSource.value || 'theirs' : 'theirs'))
+    const oursLabel = computed(() => repoStore.oursLabel)
+    const theirsLabel = computed(() => repoStore.theirsLabel)
     const oursTooltip = computed(() =>
         isMerging.value
             ? `Keep the ${oursLabel.value} version of this file — discards ${theirsLabel.value}'s changes`

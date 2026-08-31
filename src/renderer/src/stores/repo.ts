@@ -57,6 +57,8 @@ export const useRepoStore = defineStore('repo', () => {
     const logLimit = ref(PAGE_SIZE)
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
+    /** Conflicted file opened in ConflictView — mutually exclusive with selectedFile. */
+    const selectedConflict = ref<{ path: string } | null>(null)
     const selectedCommit = ref<CommitNode | null>(null)
     const selectedStash = ref<StashEntry | null>(null)
     const booted = ref(false)
@@ -87,6 +89,15 @@ export const useRepoStore = defineStore('repo', () => {
 
     const repo = computed<RepoStatus | null>(() => tabs.value[activeTab.value]?.status ?? null)
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
+
+    /** Labels for the two sides of a merge conflict (shared by FilePanel and ConflictView). */
+    const oursLabel = computed(() => (repoState.value.merging ? repo.value?.branch || 'ours' : 'ours'))
+    const theirsLabel = computed(() => (repoState.value.merging ? repoState.value.mergeSource || 'theirs' : 'theirs'))
+
+    // ConflictView closes itself once its file no longer reports unmerged (resolved elsewhere or saved)
+    watch(conflicts, list => {
+        if (selectedConflict.value && !list.includes(selectedConflict.value.path)) selectedConflict.value = null
+    })
 
     let restoringSession = false
 
@@ -144,6 +155,7 @@ export const useRepoStore = defineStore('repo', () => {
         if (!tab) return
         activeTab.value = index
         selectedFile.value = null
+        selectedConflict.value = null
         selectedCommit.value = null
         selectedStash.value = null
         syncSession()
@@ -241,6 +253,7 @@ export const useRepoStore = defineStore('repo', () => {
             activeTab.value = 0
             commits.value = []
             selectedFile.value = null
+            selectedConflict.value = null
             selectedCommit.value = null
             selectedStash.value = null
             const saved = ws.getSession(name) ?? { paths: [], active: 0 }
@@ -321,6 +334,7 @@ export const useRepoStore = defineStore('repo', () => {
         logLimit,
         hasMore,
         selectedFile,
+        selectedConflict,
         selectedCommit,
         selectedStash,
         pendingFocusHash,
@@ -337,6 +351,8 @@ export const useRepoStore = defineStore('repo', () => {
         toolsTab,
         repo,
         conflicts,
+        oursLabel,
+        theirsLabel,
         booted,
         addTab,
         refresh,

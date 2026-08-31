@@ -30,6 +30,9 @@
     --conflict-bg: #2c2a24;
     --conflict-border: #5a5340;
     --conflict-text: #d9c98a;
+    --conflict-ours-bg: #232d22;
+    --conflict-theirs-bg: #2f281d;
+    --conflict-base-bg: #26262a;
     --shadow: rgba(0, 0, 0, 0.4);
 }
 
@@ -61,6 +64,9 @@
     --conflict-bg: #fbf3dc;
     --conflict-border: #e0cf9a;
     --conflict-text: #7a5c10;
+    --conflict-ours-bg: #e6f1e2;
+    --conflict-theirs-bg: #f9ecdb;
+    --conflict-base-bg: #f0eee6;
     --shadow: rgba(90, 80, 50, 0.18);
 }
 
@@ -92,6 +98,9 @@
     --conflict-bg: #1a1a26;
     --conflict-border: #616161;
     --conflict-text: #e2c08d;
+    --conflict-ours-bg: #14251b;
+    --conflict-theirs-bg: #251b12;
+    --conflict-base-bg: #15151c;
     --shadow: rgba(0, 0, 0, 0.8);
 }
 
@@ -123,6 +132,9 @@
     --conflict-bg: #202034;
     --conflict-border: #bd93f9;
     --conflict-text: #f1fa8c;
+    --conflict-ours-bg: #14251d;
+    --conflict-theirs-bg: #25190f;
+    --conflict-base-bg: #161622;
     --shadow: rgba(0, 0, 0, 0.7);
 }
 

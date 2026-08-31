@@ -2,6 +2,7 @@
     import BlameModal from './components/BlameModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
+    import ConflictView from './components/ConflictView.vue'
     import DiffView from './components/DiffView.vue'
     import ErrorDialog from './components/ErrorDialog.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
@@ -33,6 +34,7 @@
         commits,
         hasMore,
         selectedFile,
+        selectedConflict,
         selectedCommit,
         selectedStash,
         rebaseBase,
@@ -45,6 +47,17 @@
 
     const RIGHT_PANEL_MIN_WIDTH = 360
     if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
+
+    /** Conflicted rows open ConflictView; everything else opens DiffView (mutually exclusive). */
+    function selectFilePanel(sel: { path: string; staged: boolean } | null) {
+        if (sel && repoStore.conflicts.includes(sel.path)) {
+            selectedFile.value = null
+            selectedConflict.value = { path: sel.path }
+        } else {
+            selectedConflict.value = null
+            selectedFile.value = sel
+        }
+    }
 
     const SIDEBAR_MIN_WIDTH = 280
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
@@ -135,7 +148,8 @@
             if (uiTransient.busy) return
             if (event.key === 'Escape') {
                 if (historyFile.value || blameFile.value) return
-                if (selectedFile.value) selectedFile.value = null
+                if (selectedConflict.value) selectedConflict.value = null
+                else if (selectedFile.value) selectedFile.value = null
                 else if (selectedCommit.value) selectedCommit.value = null
                 else if (selectedStash.value) selectedStash.value = null
                 return
@@ -325,12 +339,12 @@
                                 :files="selectedStash ? repoStore.stashFiles : selectedCommit ? repoStore.commitFiles : repo.files"
                                 :mode="selectedStash ? 'stash' : selectedCommit ? 'commit' : 'workdir'"
                                 :commit-hash="selectedStash?.hash ?? selectedCommit?.hash"
-                                :selected="selectedFile"
+                                :selected="selectedFile ?? (selectedConflict ? { path: selectedConflict.path, staged: true } : null)"
                                 :commit-message="selectedStash ? selectedStash.message : repoStore.commitMessage"
                                 :commit-author="selectedStash ? '' : repoStore.commitAuthor"
                                 :commit-date="selectedStash ? selectedStash.date : repoStore.commitDate"
                                 :refresh="repoStore.refresh"
-                                @select="selectedFile = $event"
+                                @select="selectFilePanel"
                                 @show-history="historyFile = $event"
                                 @show-blame="blameFile = $event"
                                 @close-commit="closeCommitView" />
@@ -351,6 +365,13 @@
                 label="Open repository"
                 @clone="cloneOpen = true" />
         </div>
+        <ConflictView
+            v-if="selectedConflict && repo"
+            class="diff-overlay"
+            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :file="selectedConflict"
+            :refresh="repoStore.refresh"
+            @close="selectedConflict = null" />
         <DiffView
             v-if="selectedFile && repo"
             class="diff-overlay"

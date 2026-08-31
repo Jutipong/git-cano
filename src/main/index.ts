@@ -52,6 +52,9 @@ import {
     getImageVersion,
     checkoutSide,
     markResolved,
+    readConflictFile,
+    conflictVersions,
+    saveResolvedFile,
     continueMerge,
     abortMerge,
     rebaseOnto,
@@ -358,6 +361,18 @@ app.whenReady().then(() => {
     handle('conflict:resolved', (files: string[]) => {
         requireRepo()
         return markResolved(files as string[])
+    })
+    handle('conflict:read', (file: string) => {
+        requireRepo()
+        return readConflictFile(file as string)
+    })
+    handle('conflict:versions', (file: string) => {
+        requireRepo()
+        return conflictVersions(file as string)
+    })
+    handle('conflict:save', (file: string, content: string) => {
+        requireRepo()
+        return saveResolvedFile(file as string, content as string)
     })
     handle('merge:continue', () => {
         requireRepo()

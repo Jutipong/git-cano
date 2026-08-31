@@ -28,6 +28,7 @@ import type {
     StashEntry,
     WorktreeInfo,
     AiContextScope,
+    ConflictVersions,
 } from '@shared/types'
 import type { FSWatcher } from 'node:fs'
 
@@ -1001,6 +1002,44 @@ export function getRepoState(): RepoState {
 export async function checkoutSide(file: string, side: 'ours' | 'theirs'): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['checkout', side === 'ours' ? '--ours' : '--theirs', '--', file])
+    await g.add(file)
+}
+
+/** Working-tree content of an unmerged file (contains conflict markers) — null when the file doesn't exist. */
+export async function readConflictFile(file: string): Promise<string | null> {
+    const { path: p } = getRepo()
+    try {
+        return await fs.promises.readFile(path.join(p, file), 'utf8')
+    } catch {
+        return null
+    }
+}
+
+/**
+ * The three unmerged stages of a conflicted file: `:1:` = base, `:2:` = ours, `:3:` = theirs. A missing stage (delete/modify conflicts)
+ * returns null for that side; binary files return all-null content with `binary: true`.
+ */
+export async function conflictVersions(file: string): Promise<ConflictVersions> {
+    const { path: p, git: g } = getRepo()
+    if (isBinaryFile(p, file)) return { ours: null, base: null, theirs: null, binary: true }
+    const readStage = async (n: number): Promise<string | null> => {
+        try {
+            return await g.raw(['show', `:${n}:${file}`])
+        } catch {
+            return null
+        }
+    }
+    const [ours, base, theirs] = await Promise.all([readStage(2), readStage(1), readStage(3)])
+    return { ours, base, theirs, binary: false }
+}
+
+/** Write the resolved content back to the working tree and stage the file (= resolved). */
+export async function saveResolvedFile(file: string, content: string): Promise<void> {
+    if (content.includes('<<<<<<<') || content.includes('>>>>>>>')) {
+        throw new Error('File still contains conflict markers')
+    }
+    const { path: p, git: g } = getRepo()
+    await fs.promises.writeFile(path.join(p, file), content, 'utf8')
     await g.add(file)
 }
 
