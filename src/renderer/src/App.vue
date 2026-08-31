@@ -275,7 +275,7 @@
                             <GraphView
                                 :commits="commits"
                                 :has-more="hasMore"
-                                :commit-open="!!selectedCommit"
+                                :commit-open="!!selectedCommit || !!selectedStash"
                                 @select-commit="selectedCommit = $event"
                                 @load-more="repoStore.loadMore()"
                                 @checkout="checkoutCommit"
