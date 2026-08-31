@@ -654,9 +654,9 @@ app.whenReady().then(() => {
     handleSensitive('ai:test', (provider: string, token: string, modelId: string) =>
         testConnection(provider as 'opencode-go' | 'openrouter', token as string, modelId as string)
     )
-    handleSensitive('ai:generateCommitMessage', (shouldFormat: boolean) => {
+    handleSensitive('ai:generateCommitMessage', (shouldFormat: boolean, scope: string) => {
         requireRepo()
-        return generateCommitMessage(Boolean(shouldFormat))
+        return generateCommitMessage(Boolean(shouldFormat), scope === 'all' ? 'all' : 'staged')
     })
     handleSensitive('ai:listModels', (provider: string, token: string) =>
         listModels(provider as 'opencode-go' | 'openrouter', token as string)

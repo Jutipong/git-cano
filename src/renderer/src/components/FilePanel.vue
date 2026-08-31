@@ -116,6 +116,11 @@
         ui.aiCommitMode = mode
         aiMenuOpen.value = false
     }
+    function openAiSettings() {
+        aiMenuOpen.value = false
+        repoStore.toolsTab = 'ai'
+        repoStore.toolsOpen = true
+    }
     function onAiMenuMouseDown(event: MouseEvent) {
         if (aiMenuOpen.value && aiMenuRoot.value && !aiMenuRoot.value.contains(event.target as Node)) aiMenuOpen.value = false
     }
@@ -284,7 +289,10 @@
         generating.value = true
         try {
             const generated = (
-                await uiTransient.withBusy(() => window.api.ai.generateCommitMessage(ui.formatBeforeGenerate), 'Generating commit message…')
+                await uiTransient.withBusy(
+                    () => window.api.ai.generateCommitMessage(ui.formatBeforeGenerate, ui.aiCommitMode === 'off' ? 'staged' : 'all'),
+                    'Generating commit message…'
+                )
             ).trim()
             message.value = generated
             if (generated && ui.aiCommitMode !== 'off') {
@@ -1025,7 +1033,6 @@
                     </button>
                     <button
                         class="cb-ai-caret"
-                        :disabled="!canGenerate"
                         title="Choose auto-commit behavior"
                         aria-haspopup="listbox"
                         :aria-expanded="aiMenuOpen"
@@ -1057,6 +1064,14 @@
                                 v-else
                                 class="cb-ai-menu-bullet" />
                             {{ option.label }}
+                        </button>
+                        <span class="cb-ai-menu-sep" />
+                        <button
+                            class="cb-ai-menu-item cb-ai-menu-settings"
+                            title="Open AI settings"
+                            @click.stop="openAiSettings()">
+                            <span class="cb-ai-menu-bullet" />
+                            Settings
                         </button>
                     </div>
                 </div>

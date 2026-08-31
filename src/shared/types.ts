@@ -134,6 +134,9 @@ export interface BlameLine {
 
 export type AiProvider = 'opencode-go' | 'openrouter'
 
+/** Which working-tree changes to include as AI context: staged only, or everything. */
+export type AiContextScope = 'staged' | 'all'
+
 export interface AiProviderConfig {
     token: string
     modelId: string

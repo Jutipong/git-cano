@@ -24,6 +24,7 @@ add a new IPC handler in `main/index.ts`, expose it in `preload/index.ts`, and t
 Key files:
 
 - `src/main/git.ts` — all git operations (one exported function per operation)
+- `src/main/opencode.ts` — AI commit-message generation (see "AI commit messages" below)
 - `src/preload/index.ts` — the `window.api` surface (keep names verb-first)
 - `src/renderer/src/stores/repo.ts` — repo tabs, selected commit/file, commit files
 - `src/renderer/src/stores/ui.ts` — persisted UI state (theme, panel widths/heights)
@@ -58,6 +59,31 @@ Key files:
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
   The circle and the ✕ are drawn by the `CloseXIcon.vue` component (single SVG, always
   concentric) — don't swap it back for a plain `<i-lucide-x>` icon.
+
+## AI commit messages
+
+All AI logic lives in `src/main/opencode.ts` (renderer never calls model APIs directly;
+it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts`, typed via
+`shared/types.ts`).
+
+- `callModel()` is the single HTTP entry point. It talks to three API "families"
+  (`responses` for `gpt-*`/`grok-*`/`muse-*`, `messages` for `minimax-*`/`qwen-*`,
+  `chat` for everything else incl. all of OpenRouter) selected by `familyOf()`.
+- **Reasoning effort**: requests send `effort: 'minimal'` (OpenRouter uses
+  `reasoning.effort`, OpenCode Go chat uses `reasoning_effort`, `messages` family
+  omits thinking entirely). If the endpoint rejects it with a 400 mentioning
+  effort/reasoning, `callModel()` retries `low`, then with no reasoning param.
+  Do not raise this for commit messages — the point is speed and not burning the
+  small output budget on thinking (`finish_reason=length`).
+- **Context scope** (`AiContextScope` in `shared/types.ts`): `generateCommitMessage()`
+  forwards it to `getChangesContext()` in `git.ts`.
+    - `'staged'` → staged file list + `git diff --cached` only
+    - `'all'` → staged + unstaged diff + untracked file previews
+    - Rule: `FilePanel.vue` picks `'staged'` when `ui.aiCommitMode === 'off'`
+      (Generate only) and `'all'` for auto commit / auto commit + push, because those
+      modes run `stageAll()` before committing — the message must match what gets committed.
+    - Default at every layer is `'staged'`; never change that silently.
+- `COMMIT_SYSTEM_PROMPT` enforces one-line Conventional Commits output; keep it terse.
 
 ## Feedback: toasts & error dialog
 

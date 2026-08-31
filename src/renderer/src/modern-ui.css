@@ -1975,6 +1975,19 @@ body {
     border-radius: 999px;
 }
 
+.cb-ai-menu-sep {
+    display: block;
+    height: 1px;
+    margin: 5px 6px;
+    background: var(--line-soft);
+}
+
+.cb-ai-menu-settings .cb-ai-menu-bullet {
+    border-color: #ec4899;
+    background: #ec4899;
+    box-shadow: 0 0 4px color-mix(in srgb, #ec4899 60%, transparent);
+}
+
 .counter-sep {
     color: var(--text-muted);
     opacity: 0.7;

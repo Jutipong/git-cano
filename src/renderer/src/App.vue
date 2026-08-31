@@ -366,6 +366,7 @@
             @close="cloneOpen = false" />
         <ToolsModal
             v-if="toolsOpen"
+            :initial-tab="repoStore.toolsTab"
             @close="toolsOpen = false" />
         <ErrorDialog
             :message="uiTransient.errorDialog"

@@ -24,6 +24,7 @@ import type {
     RepoStatus,
     StashEntry,
     WorktreeInfo,
+    AiContextScope,
 } from '@shared/types'
 import type { FSWatcher } from 'node:fs'
 
@@ -1138,7 +1139,7 @@ export async function getRawPatch(file: string, staged: boolean): Promise<string
     }
 }
 
-export async function getChangesContext(): Promise<string> {
+export async function getChangesContext(scope: AiContextScope = 'staged'): Promise<string> {
     const { path: p, git: g } = getRepo()
     const parts: string[] = []
 
@@ -1153,7 +1154,7 @@ export async function getChangesContext(): Promise<string> {
         stagedFiles = allLines.filter(line => line[0] !== ' ' && line[0] !== '?')
     } catch {}
 
-    if (stagedFiles.length > 0) {
+    if (scope === 'staged' && stagedFiles.length > 0) {
         parts.push(`Changed files (staged for commit):\n${stagedFiles.join('\n')}`)
         try {
             const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])

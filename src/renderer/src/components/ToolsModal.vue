@@ -10,6 +10,7 @@
     import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
+    const props = defineProps<{ initialTab?: 'general' | 'auth' | 'hook' | 'ai' }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const ui = useUiStore()
@@ -20,7 +21,7 @@
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
     ] as const
-    const tab = ref<'general' | 'hook' | 'ai' | 'auth'>('general')
+    const tab = ref(props.initialTab ?? 'general')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
@@ -374,10 +375,15 @@
         await refreshGithubStatus()
     }
 
-    watch(tab, async current => {
-        if (current === 'ai') await loadAiTab()
-        if (current === 'auth') await loadAuthTab()
-    })
+    watch(
+        tab,
+        async current => {
+            if (current === 'ai') await loadAiTab()
+            if (current === 'auth') await loadAuthTab()
+        },
+        // initial tab may already be 'ai'/'auth' (e.g. opened straight from the AI commit dropdown) — load it on mount too
+        { immediate: true }
+    )
 
     onMounted(() => window.addEventListener('keydown', onKeydown))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))

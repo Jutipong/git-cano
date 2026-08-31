@@ -1,6 +1,7 @@
 # 🔀 Open Git
 
-A lightweight open-source Git GUI — **basic features only** (no AI, no PR integration).
+A lightweight open-source Git GUI — **basic features first**, with optional AI-generated
+commit messages (no PR integration).
 
 Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses plain HTML/CSS — no UI framework).
 
@@ -26,6 +27,20 @@ Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses
   changed files with per-file `+/−` stats and the total in the header
 - 📋 Hash chip copies the full commit hash to the clipboard
 - 📄 Readonly message view showing title + body with an author · date chip
+
+### AI commit messages (optional)
+
+- 🤖 One-click AI commit-message generation from the Changes panel — configure a
+  provider (OpenCode Go or OpenRouter), token, and model in Settings → AI
+- 🎯 Three modes next to the generate button: **Generate only**, **auto commit**,
+  and **auto commit + push** (auto modes stage everything, then commit)
+- 🎚️ Context matches what will be committed: Generate only summarizes the
+  **staged** diff; auto-commit modes summarize **all** working-directory changes
+  (staged + unstaged + untracked)
+- ⚡ Requests run with reasoning-effort `minimal` (falls back to `low` → no
+  reasoning param for models that don't support it) so thinking models answer fast
+  instead of running out of output tokens
+- ↺ Optional auto-format before generating (formatter toggle in Settings → AI)
 
 ### Diff viewing
 
@@ -87,7 +102,8 @@ npx electron .                         # run the built app
 src/
 ├── main/           # Electron main process
 │   ├── index.ts    # Window + IPC handlers
-│   └── git.ts      # All git logic (simple-git)
+│   ├── git.ts      # All git logic (simple-git)
+│   └── opencode.ts # AI commit-message generation (OpenCode Go / OpenRouter APIs)
 ├── preload/        # contextBridge API (window.api)
 ├── shared/         # Shared types
 └── renderer/

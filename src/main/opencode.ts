@@ -7,7 +7,7 @@ import { app } from 'electron'
 import { formatRepoIfConfigured, getChangesContext } from './git'
 import { log } from './logger'
 
-import type { AiConfig, AiProvider, AiProviderConfig, AiTestResult, GoModel } from '@shared/types'
+import type { AiConfig, AiContextScope, AiProvider, AiProviderConfig, AiTestResult, GoModel } from '@shared/types'
 
 const BASE_URL = 'https://opencode.ai/zen/go/v1'
 const GO_MODELS_URL = `${BASE_URL}/models`
@@ -270,7 +270,7 @@ function stripFences(text: string): string {
         .trim()
 }
 
-export async function generateCommitMessage(formatFirst = false): Promise<string> {
+export async function generateCommitMessage(formatFirst = false, scope: AiContextScope = 'staged'): Promise<string> {
     if (formatFirst) await formatRepoIfConfigured()
     const cfg = getConfig()
     const active = cfg.provider === 'openrouter' ? cfg.openrouter : cfg.opencodeGo
@@ -278,7 +278,7 @@ export async function generateCommitMessage(formatFirst = false): Promise<string
         throw new Error(
             `No AI configured — set your ${cfg.provider === 'openrouter' ? 'OpenRouter API key' : 'OpenCode token'} and model-id in Settings first`
         )
-    const changes = await getChangesContext()
+    const changes = await getChangesContext(scope)
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
     const content = await callModel(cfg.provider, active.token, active.modelId, COMMIT_SYSTEM_PROMPT, prompt, {
