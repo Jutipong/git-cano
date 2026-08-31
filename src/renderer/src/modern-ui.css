@@ -1534,6 +1534,12 @@ body {
     word-break: break-word;
 }
 
+/* not enough room below the row — flip the popover above it */
+.commit-msg-popover.above {
+    top: auto;
+    bottom: calc(100% + 4px);
+}
+
 .stash-row {
     margin: 1px 6px;
     padding-left: 9px;

@@ -58,8 +58,26 @@
     const scrollEl = ref<HTMLElement | null>(null)
     const expandedHash = ref<string | null>(null)
 
-    function toggleMessage(hash: string) {
-        expandedHash.value = expandedHash.value === hash ? null : hash
+    const expandedAbove = ref(false)
+    const expandedMaxH = ref(240)
+
+    function toggleMessage(hash: string, event: MouseEvent) {
+        if (expandedHash.value === hash) {
+            expandedHash.value = null
+            return
+        }
+        // open toward whichever side has more room so the popover never falls off the graph
+        const container = scrollEl.value
+        const row = (event.currentTarget as HTMLElement | null)?.closest('.graph-row')
+        if (container && row) {
+            const rect = container.getBoundingClientRect()
+            const rowRect = row.getBoundingClientRect()
+            const spaceBelow = rect.bottom - rowRect.bottom
+            const spaceAbove = rowRect.top - rect.top
+            expandedAbove.value = spaceBelow < spaceAbove
+            expandedMaxH.value = Math.round(Math.max(96, Math.min(240, Math.max(spaceBelow, spaceAbove) - 44)))
+        }
+        expandedHash.value = hash
     }
 
     function fullMessage(commit: CommitNode): string {
@@ -71,7 +89,7 @@
     }
     onMounted(() => window.addEventListener('keydown', onKeydown))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
-    onBeforeUnmount(() => window.clearTimeout(avatarTipTimer))
+    onBeforeUnmount(() => window.clearTimeout(tipTimer))
 
     const normalizedQuery = computed(() => uiTransient.searchQuery.trim().toLowerCase())
     const visibleCommits = computed(() =>
@@ -90,7 +108,7 @@
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
 
     function onScroll() {
-        hideAvatarTip()
+        hideTip()
         const el = scrollEl.value
         if (!el) return
         const start = Math.max(0, Math.floor(el.scrollTop / rowH) - 15)
@@ -288,20 +306,31 @@
         }
     }
 
-    const avatarTip = ref<{ commit: CommitNode; x: number; y: number } | null>(null)
-    let avatarTipTimer: number | undefined
+    const tip = ref<{ commit?: CommitNode; text?: string; x: number; y: number } | null>(null)
+    let tipTimer: number | undefined
 
-    function showAvatarTip(commit: CommitNode, event: MouseEvent) {
+    function scheduleTip(content: { commit?: CommitNode; text?: string }, event: MouseEvent) {
         const { clientX, clientY } = event
-        window.clearTimeout(avatarTipTimer)
-        avatarTipTimer = window.setTimeout(() => {
-            avatarTip.value = { commit, x: clientX, y: clientY }
+        window.clearTimeout(tipTimer)
+        tipTimer = window.setTimeout(() => {
+            // keep the card inside the viewport — never let it fall off an edge
+            const x = Math.max(8, Math.min(clientX + 14, window.innerWidth - 308))
+            const y = Math.max(8, Math.min(clientY + 14, window.innerHeight - 92))
+            tip.value = { ...content, x, y }
         }, 500)
     }
 
-    function hideAvatarTip() {
-        window.clearTimeout(avatarTipTimer)
-        avatarTip.value = null
+    function hideTip() {
+        window.clearTimeout(tipTimer)
+        tip.value = null
+    }
+
+    function showAvatarTip(commit: CommitNode, event: MouseEvent) {
+        scheduleTip({ commit }, event)
+    }
+
+    function showRowTip(commit: CommitNode, event: MouseEvent) {
+        scheduleTip({ text: `${commit.shortHash} — ${commit.subject}` }, event)
     }
 
     interface SubjectPart {
@@ -502,9 +531,10 @@
                         '--graph-w': `${graphW}px`,
                         '--row-color': nodeColor(commit),
                     }"
-                    :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
                     @click="select(commit)"
+                    @mouseenter="event => showRowTip(commit, event)"
+                    @mouseleave="hideTip"
                     @contextmenu.prevent.stop="openMenu(commit, $event)"
                     @dragstart="$event.dataTransfer?.setData('text/plain', `commit:${commit.hash}`)"
                     @dragover="
@@ -524,7 +554,7 @@
                             :class="{ selected: selectedHash === commit.hash, photo: hasAvatar(commit), icon: !hasAvatar(commit) }"
                             :style="avatarStyle(commit)"
                             @mouseenter="event => showAvatarTip(commit, event)"
-                            @mouseleave="hideAvatarTip"
+                            @mouseleave="hideTip"
                             ><img
                                 v-if="hasAvatar(commit)"
                                 class="author-avatar-img"
@@ -577,7 +607,7 @@
                                 v-if="commit.body"
                                 class="msg-toggle"
                                 :title="expandedHash === commit.hash ? 'Collapse message' : 'Show full message'"
-                                @click.stop="toggleMessage(commit.hash)">
+                                @click.stop="toggleMessage(commit.hash, $event)">
                                 <i-lucide-chevron-down
                                     v-if="expandedHash === commit.hash"
                                     width="13"
@@ -607,9 +637,13 @@
                     <div
                         v-if="expandedHash === commit.hash"
                         class="commit-msg-popover"
+                        :class="{ above: expandedAbove }"
                         @click.stop>
                         <div class="cmp-meta">{{ [commit.author, formatDate(commit.date), commit.shortHash].join(' · ') }}</div>
-                        <pre class="cmp-message">{{ fullMessage(commit) }}</pre>
+                        <pre
+                            class="cmp-message"
+                            :style="{ maxHeight: `${expandedMaxH}px` }"
+                            >{{ fullMessage(commit) }}</pre>
                     </div>
                 </div>
                 <div
@@ -632,16 +666,19 @@
             </div>
         </div>
         <div
-            v-if="avatarTip"
+            v-if="tip"
             class="avatar-tip"
-            :style="{ left: `${avatarTip.x + 14}px`, top: `${avatarTip.y + 14}px` }">
-            <strong>{{ avatarTip.commit.author }}</strong>
-            <span
-                v-if="avatarTip.commit.authorEmail"
-                class="avatar-tip-email"
-                >{{ avatarTip.commit.authorEmail }}</span
-            >
-            <span class="avatar-tip-date">{{ formatDatePattern(avatarTip.commit.date, commitDatePattern) }}</span>
+            :style="{ left: `${tip.x}px`, top: `${tip.y}px` }">
+            <template v-if="tip.commit">
+                <strong>{{ tip.commit.author }}</strong>
+                <span
+                    v-if="tip.commit.authorEmail"
+                    class="avatar-tip-email"
+                    >{{ tip.commit.authorEmail }}</span
+                >
+                <span class="avatar-tip-date">{{ formatDatePattern(tip.commit.date, commitDatePattern) }}</span>
+            </template>
+            <template v-else>{{ tip.text }}</template>
         </div>
         <CommitContextMenu
             :menu="menu"
