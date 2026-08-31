@@ -180,7 +180,21 @@
 
     const resultContent = computed(() => resultLines.value.map(line => line.text).join('\n'))
 
-    const outputHtml = computed(() => resultLines.value.map(line => highlightLine(line.text, props.file?.path ?? '')))
+    // highlightLine is pure per (path, text) — caching keeps checkbox toggles cheap: only
+    // genuinely new output lines get highlighted, the rest reuse the cached HTML string
+    const outputHtmlCache = new Map<string, string>()
+    const outputHtml = computed(() => {
+        const path = props.file?.path ?? ''
+        return resultLines.value.map(line => {
+            const key = `${path}\u0000${line.text}`
+            let html = outputHtmlCache.get(key)
+            if (html === undefined) {
+                html = highlightLine(line.text, path)
+                outputHtmlCache.set(key, html)
+            }
+            return html
+        })
+    })
 
     function togglePick(side: 'ours' | 'theirs', blockIndex: number) {
         const block = blocks.value[blockIndex]
@@ -254,12 +268,33 @@
         theirs: highlightDiffLines(paneLines.value.theirs, props.file?.path ?? '', (line, highlight) => highlight(line.text.slice(1))),
     }))
 
+    /**
+     * Per-line block metadata precomputed from block geometry (matchIdx + lengths). Deliberately never reads pickOurs/pickTheirs, so
+     * toggling a checkbox does NOT re-run this — per-line template work stays O(1) instead of O(blocks).
+     */
+    const paneMeta = computed<Record<Side, { block: number[]; start: boolean[] }>>(() => {
+        const build = (side: Side, lines: DiffLine[]) => {
+            const block = Array.from<number>({ length: lines.length }).fill(-1)
+            const start = Array.from<boolean>({ length: lines.length }).fill(false)
+            for (let bi = 0; bi < blocks.value.length; bi++) {
+                const b = blocks.value[bi]
+                const from = b.matchIdx[side]
+                if (from < 0) continue
+                for (let i = from; i < from + b[side].length && i < block.length; i++) block[i] = bi
+                if (from < start.length) start[from] = true
+            }
+            return { block, start }
+        }
+        return { ours: build('ours', paneLines.value.ours), theirs: build('theirs', paneLines.value.theirs) }
+    })
+
     const panes = computed(() => [
         {
             side: 'ours' as Side,
             title: 'OURS',
             label: repoStore.oursLabel,
             lines: paneLines.value.ours,
+            meta: paneMeta.value.ours,
             exists: versions.value !== null && versions.value.ours !== null,
         },
         {
@@ -267,27 +302,10 @@
             title: 'THEIRS',
             label: repoStore.theirsLabel,
             lines: paneLines.value.theirs,
+            meta: paneMeta.value.theirs,
             exists: versions.value !== null && versions.value.theirs !== null,
         },
     ])
-
-    /** Block index whose region starts exactly at this pane line, or -1. */
-    function blockStartAt(side: Side, index: number): number {
-        for (let bi = 0; bi < blocks.value.length; bi++) {
-            if (blocks.value[bi].matchIdx[side] === index && blocks.value[bi][side].length) return bi
-        }
-        return -1
-    }
-
-    /** Block index covering this pane line, or -1. */
-    function blockAt(side: Side, index: number): number {
-        for (let bi = 0; bi < blocks.value.length; bi++) {
-            const block = blocks.value[bi]
-            const start = block.matchIdx[side]
-            if (start >= 0 && index >= start && index < start + block[side].length) return bi
-        }
-        return -1
-    }
 
     const paneEls: Record<Side, HTMLElement | null> = { ours: null, theirs: null }
     const outputEl = ref<HTMLElement | null>(null)
@@ -513,19 +531,19 @@
                                 :key="idx"
                                 class="diff-line ctx conflict-line"
                                 :class="{
-                                    hl: blockAt(pane.side, idx) >= 0,
-                                    current: blockAt(pane.side, idx) === currentBlock,
+                                    hl: pane.meta.block[idx] >= 0,
+                                    current: pane.meta.block[idx] >= 0 && pane.meta.block[idx] === currentBlock,
                                 }"
-                                @click="blockAt(pane.side, idx) >= 0 && setCurrent(blockAt(pane.side, idx))">
+                                @click="pane.meta.block[idx] >= 0 && setCurrent(pane.meta.block[idx])">
                                 <span class="ck">
                                     <button
-                                        v-if="blockStartAt(pane.side, idx) >= 0"
+                                        v-if="pane.meta.start[idx]"
                                         class="conflict-check"
-                                        :class="{ picked: isPicked(pane.side, blockStartAt(pane.side, idx)) }"
+                                        :class="{ picked: isPicked(pane.side, pane.meta.block[idx]) }"
                                         :title="`Include the ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} side of this conflict in the output`"
-                                        @click.stop="togglePick(pane.side, blockStartAt(pane.side, idx))">
+                                        @click.stop="togglePick(pane.side, pane.meta.block[idx])">
                                         <i-lucide-check
-                                            v-if="isPicked(pane.side, blockStartAt(pane.side, idx))"
+                                            v-if="isPicked(pane.side, pane.meta.block[idx])"
                                             width="10"
                                             height="10" />
                                     </button>
