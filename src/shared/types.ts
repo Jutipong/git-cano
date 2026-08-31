@@ -83,6 +83,8 @@ export interface RepoState {
     merging: boolean
     rebasing: boolean
     bisectActive: boolean
+    /** While merging: the branch (or short hash) being merged in — the "theirs" side. */
+    mergeSource?: string | null
 }
 
 /** Result of a dry-run merge check (`git merge-tree --write-tree`). */

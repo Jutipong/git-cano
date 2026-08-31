@@ -2,7 +2,6 @@
     import BlameModal from './components/BlameModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
-    import ConflictBanner from './components/ConflictBanner.vue'
     import DiffView from './components/DiffView.vue'
     import ErrorDialog from './components/ErrorDialog.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
@@ -35,7 +34,6 @@
         selectedFile,
         selectedCommit,
         selectedStash,
-        repoState,
         rebaseBase,
         historyFile,
         blameFile,
@@ -43,7 +41,6 @@
         booted,
     } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
-    const conflicts = computed(() => repoStore.conflicts)
 
     const RIGHT_PANEL_MIN_WIDTH = 360
     if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
@@ -265,11 +262,6 @@
                     class="panel-splitter"
                     @mousedown="event => beginResize('left', event)" />
                 <div class="app-main">
-                    <ConflictBanner
-                        v-if="repoState.merging || repoState.rebasing || conflicts.length"
-                        :conflicts="conflicts"
-                        :state="repoState"
-                        :refresh="repoStore.refresh" />
                     <div class="app-body">
                         <div class="center-column">
                             <GraphView

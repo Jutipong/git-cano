@@ -2906,6 +2906,66 @@ body {
     opacity: 0.75;
 }
 
+/* ---- Conflict resolution (in Changes panel) ---- */
+
+.conflict-row-actions {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 5px;
+}
+
+.file-row .detail-action {
+    padding: 3px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+}
+
+.merge-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+}
+
+.merge-actions-buttons .btn {
+    height: 32px;
+    padding: 0 16px;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.conflict-continue {
+    color: #fff;
+    background: color-mix(in srgb, var(--green) 82%, #000);
+    border-color: transparent;
+}
+
+.conflict-continue:hover:not(:disabled) {
+    background: var(--green);
+    border-color: transparent;
+}
+
+.conflict-continue:disabled {
+    cursor: not-allowed;
+    color: var(--text-secondary);
+    background: var(--surface-2);
+    border-color: var(--line);
+}
+
+.conflict-abort {
+    color: var(--red);
+    background: transparent;
+    border-color: color-mix(in srgb, var(--red) 40%, transparent);
+}
+
+.conflict-abort:hover {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+    border-color: var(--red);
+}
+
 .confirm-dialog-actions {
     display: flex;
     justify-content: flex-end;

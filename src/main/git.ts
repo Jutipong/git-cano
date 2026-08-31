@@ -973,13 +973,29 @@ export async function hasRemote(): Promise<boolean> {
     return remotes.length > 0
 }
 
+/** Branch (or short hash) being merged in — parsed from MERGE_MSG/MERGE_HEAD. */
+function mergeSourceName(gitDir: string): string | null {
+    const msgPath = path.join(gitDir, 'MERGE_MSG')
+    if (fs.existsSync(msgPath)) {
+        const firstLine = fs.readFileSync(msgPath, 'utf8').split('\n')[0] ?? ''
+        const match = firstLine.match(/^Merge (?:remote-tracking )?(?:branch|tag|commit) '([^']+)'/)
+        if (match) return match[1]
+    }
+    const headPath = path.join(gitDir, 'MERGE_HEAD')
+    if (fs.existsSync(headPath)) {
+        const hash = fs.readFileSync(headPath, 'utf8').trim().slice(0, 7)
+        if (hash) return hash
+    }
+    return null
+}
+
 export function getRepoState(): RepoState {
     const { path: p } = getRepo()
     const gitDir = fs.existsSync(path.join(p, '.git')) ? path.join(p, '.git') : p
     const merging = fs.existsSync(path.join(gitDir, 'MERGE_HEAD'))
     const rebasing = fs.existsSync(path.join(gitDir, 'rebase-merge')) || fs.existsSync(path.join(gitDir, 'rebase-apply'))
     const bisectActive = fs.existsSync(path.join(gitDir, 'BISECT_START')) || fs.existsSync(path.join(gitDir, 'BISECT_LOG'))
-    return { merging, rebasing, bisectActive }
+    return { merging, rebasing, bisectActive, mergeSource: merging ? mergeSourceName(gitDir) : null }
 }
 
 export async function checkoutSide(file: string, side: 'ours' | 'theirs'): Promise<void> {

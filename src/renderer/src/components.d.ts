@@ -17,7 +17,6 @@ declare module 'vue' {
     CollapseAllButton: typeof import('./components/CollapseAllButton.vue')['default']
     CommitContextMenu: typeof import('./components/CommitContextMenu.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
-    ConflictBanner: typeof import('./components/ConflictBanner.vue')['default']
     ContextMenu: typeof import('./components/ContextMenu.vue')['default']
     DiffView: typeof import('./components/DiffView.vue')['default']
     ErrorDialog: typeof import('./components/ErrorDialog.vue')['default']

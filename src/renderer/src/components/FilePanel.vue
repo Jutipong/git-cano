@@ -54,8 +54,13 @@
     const isWorkdir = computed(() => props.mode === 'workdir')
     const isDetails = computed(() => props.mode !== 'workdir')
     const isUntracked = (file: FileEntry) => file.unstaged === '?'
+    const isConflicted = (file: FileEntry) => file.staged === 'U' || file.unstaged === 'U'
     const staged = computed(() =>
-        isWorkdir.value ? (props.files as FileEntry[]).filter(file => file.staged !== ' ' && file.staged !== '' && !isUntracked(file)) : []
+        isWorkdir.value
+            ? (props.files as FileEntry[]).filter(
+                  file => file.staged !== ' ' && file.staged !== '' && !isConflicted(file) && !isUntracked(file)
+              )
+            : []
     )
     const untracked = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isUntracked) : []))
     const unstaged = computed(() =>
@@ -137,6 +142,51 @@
     })
     const message = ref('')
     const repoStore = useRepoStore()
+    const repoState = computed(() => repoStore.repoState)
+    const isMerging = computed(() => repoState.value.merging)
+    const isRebasing = computed(() => repoState.value.rebasing)
+    const inConflictFlow = computed(() => isMerging.value || isRebasing.value)
+    const conflictedFiles = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isConflicted) : []))
+    const currentBranch = computed(() => repoStore.repo?.branch ?? '')
+    const mergeSource = computed(() => repoState.value.mergeSource ?? null)
+    const oursLabel = computed(() => (isMerging.value ? currentBranch.value || 'ours' : 'ours'))
+    const theirsLabel = computed(() => (isMerging.value ? mergeSource.value || 'theirs' : 'theirs'))
+    const oursTooltip = computed(() =>
+        isMerging.value
+            ? `Keep the ${oursLabel.value} version of this file — discards ${theirsLabel.value}'s changes`
+            : 'Keep our side of the conflict'
+    )
+    const theirsTooltip = computed(() =>
+        isMerging.value
+            ? `Keep the ${theirsLabel.value} version of this file — discards ${oursLabel.value}'s changes`
+            : 'Keep their side of the conflict'
+    )
+
+    function takeOurs(file: FileEntry) {
+        void run(() => window.api.conflictTakeSide(file.path, 'ours'), `${file.path}: kept ours`)
+    }
+    function takeTheirs(file: FileEntry) {
+        void run(() => window.api.conflictTakeSide(file.path, 'theirs'), `${file.path}: kept theirs`)
+    }
+    function markResolved(file: FileEntry) {
+        void run(() => window.api.markResolved([file.path]), `${file.path}: resolved`)
+    }
+    function markAllResolved() {
+        const count = conflictedFiles.value.length
+        void run(() => window.api.markResolved(conflictedFiles.value.map(file => file.path)), `Marked ${count} files resolved`)
+    }
+    function continueMerge() {
+        void run(() => window.api.continueMerge(), 'Merge completed', 'Completing merge…')
+    }
+    function abortMerge() {
+        void run(() => window.api.abortMerge(), 'Merge aborted', 'Aborting merge…')
+    }
+    function continueRebase() {
+        void run(() => window.api.rebaseContinue(), 'Rebase continued', 'Continuing rebase…')
+    }
+    function abortRebase() {
+        void run(() => window.api.rebaseAbort(), 'Rebase aborted', 'Aborting rebase…')
+    }
     watch(
         () => repoStore.repo?.path,
         () => {
@@ -569,33 +619,60 @@
                             >{{ row.name }}</span
                         >
                         <template v-if="isWorkdir">
-                            <button
-                                v-if="unifiedStaged(row.file!)"
-                                class="icon-btn"
-                                title="Unstage"
-                                @click.stop="unstage(unifiedWorkdirFile(row.file!))">
-                                <i-lucide-minus
-                                    width="14"
-                                    height="14" />
-                            </button>
-                            <button
-                                v-if="unifiedUnstaged(row.file!) || isUntracked(unifiedWorkdirFile(row.file!))"
-                                class="icon-btn"
-                                title="Stage"
-                                @click.stop="stage(unifiedWorkdirFile(row.file!))">
-                                <i-lucide-plus
-                                    width="14"
-                                    height="14" />
-                            </button>
-                            <button
-                                v-if="unifiedUnstaged(row.file!) || isUntracked(unifiedWorkdirFile(row.file!))"
-                                class="icon-btn danger"
-                                title="Discard changes"
-                                @click.stop="discard(unifiedWorkdirFile(row.file!))">
-                                <i-lucide-rotate-ccw
-                                    width="13"
-                                    height="13" />
-                            </button>
+                            <div
+                                v-if="isConflicted(unifiedWorkdirFile(row.file!))"
+                                class="conflict-row-actions">
+                                <button
+                                    class="detail-action"
+                                    :title="oursTooltip"
+                                    @click.stop="takeOurs(unifiedWorkdirFile(row.file!))">
+                                    Keep {{ oursLabel }}
+                                </button>
+                                <button
+                                    class="detail-action"
+                                    :title="theirsTooltip"
+                                    @click.stop="takeTheirs(unifiedWorkdirFile(row.file!))">
+                                    Keep {{ theirsLabel }}
+                                </button>
+                                <button
+                                    class="detail-action accent"
+                                    title="I edited the file manually — mark as resolved"
+                                    @click.stop="markResolved(unifiedWorkdirFile(row.file!))">
+                                    <i-lucide-check
+                                        width="12"
+                                        height="12" />
+                                    Resolved
+                                </button>
+                            </div>
+                            <template v-else>
+                                <button
+                                    v-if="unifiedStaged(row.file!)"
+                                    class="icon-btn"
+                                    title="Unstage"
+                                    @click.stop="unstage(unifiedWorkdirFile(row.file!))">
+                                    <i-lucide-minus
+                                        width="14"
+                                        height="14" />
+                                </button>
+                                <button
+                                    v-if="unifiedUnstaged(row.file!) || isUntracked(unifiedWorkdirFile(row.file!))"
+                                    class="icon-btn"
+                                    title="Stage"
+                                    @click.stop="stage(unifiedWorkdirFile(row.file!))">
+                                    <i-lucide-plus
+                                        width="14"
+                                        height="14" />
+                                </button>
+                                <button
+                                    v-if="unifiedUnstaged(row.file!) || isUntracked(unifiedWorkdirFile(row.file!))"
+                                    class="icon-btn danger"
+                                    title="Discard changes"
+                                    @click.stop="discard(unifiedWorkdirFile(row.file!))">
+                                    <i-lucide-rotate-ccw
+                                        width="13"
+                                        height="13" />
+                                </button>
+                            </template>
                         </template>
                         <span
                             v-else-if="unifiedCommitFile(row.file!).additions || unifiedCommitFile(row.file!).deletions"
@@ -621,6 +698,59 @@
             </template>
 
             <template v-else-if="mode === 'workdir'">
+                <template v-if="conflictedFiles.length > 0">
+                    <div class="group-header">
+                        <h4>
+                            Conflicted files <span>{{ conflictedFiles.length }}</span>
+                        </h4>
+                        <div class="group-header-actions">
+                            <button
+                                class="link-btn good"
+                                title="Keep our side for every remaining conflicted file"
+                                @click="markAllResolved()">
+                                Mark all resolved
+                            </button>
+                        </div>
+                    </div>
+                    <div
+                        v-for="file in conflictedFiles"
+                        :key="file.path"
+                        class="file-row"
+                        :class="{ selected: selected?.path === file.path }"
+                        @click="emit('select', { path: file.path, staged: true })"
+                        @contextmenu.prevent="openFileMenu($event, file.path, file)">
+                        <span class="badge b-u">U</span>
+                        <span
+                            class="file-path"
+                            :title="`${file.path} — Conflict`"
+                            >{{ file.path }}</span
+                        >
+                        <div class="conflict-row-actions">
+                            <button
+                                class="detail-action"
+                                :title="oursTooltip"
+                                @click.stop="takeOurs(file)">
+                                Keep {{ oursLabel }}
+                            </button>
+                            <button
+                                class="detail-action"
+                                :title="theirsTooltip"
+                                @click.stop="takeTheirs(file)">
+                                Keep {{ theirsLabel }}
+                            </button>
+                            <button
+                                class="detail-action accent"
+                                title="I edited the file manually — mark as resolved"
+                                @click.stop="markResolved(file)">
+                                <i-lucide-check
+                                    width="12"
+                                    height="12" />
+                                Resolved
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
                 <template v-if="staged.length > 0">
                     <div class="group-header">
                         <h4
@@ -630,7 +760,7 @@
                                 v-if="canToggleAll"
                                 :all-collapsed="allDirsCollapsed"
                                 @toggle="toggleAllDirs()" />
-                            Staged files <span>{{ staged.length }}</span>
+                            {{ isMerging ? 'Resolved files' : 'Staged files' }} <span>{{ staged.length }}</span>
                         </h4>
                         <div class="group-header-actions">
                             <button
@@ -891,191 +1021,222 @@
 
         <div class="commit-box">
             <div
-                class="cb-resize-handle"
-                title="Drag to resize"
-                @mousedown="startResizeBox" />
-            <div
-                v-if="mode === 'workdir'"
-                class="cb-toolbar">
-                <span class="commit-box-label">
-                    <i-mage-message-dots
-                        width="12"
-                        height="12" />
-                    Message
-                </span>
-                <span
-                    v-if="message"
-                    :class="['subject-count', subjectCountClass]">
-                    Title {{ firstLine.length }} / 72
-                </span>
-            </div>
-            <div
-                v-if="isDetails && (commitAuthor || commitDate)"
-                class="readonly-meta-row">
-                <span class="readonly-meta readonly-meta-start">
-                    {{ [commitAuthor, commitDateText].filter(Boolean).join(' · ') }}
-                </span>
+                v-if="isWorkdir && inConflictFlow"
+                class="merge-actions">
                 <button
-                    v-if="commitHash"
-                    class="readonly-meta readonly-meta-end"
-                    type="button"
-                    title="Copy commit hash"
-                    @click="copyHash">
-                    <i-lucide-copy
-                        width="10"
-                        height="10" />
-                    {{ commitHash.slice(0, 7) }}
+                    class="btn conflict-continue"
+                    :disabled="conflictedFiles.length > 0 || pending"
+                    :title="conflictedFiles.length ? 'Resolve all conflicts first' : ''"
+                    @click="isRebasing ? continueRebase() : continueMerge()">
+                    <i-lucide-loader-circle
+                        v-if="pending"
+                        class="spinning"
+                        width="14"
+                        height="14" />
+                    <i-lucide-check
+                        v-else
+                        width="14"
+                        height="14" />
+                    {{ pending ? (isRebasing ? 'Continuing…' : 'Merging…') : isRebasing ? 'Continue rebase' : 'Continue merge' }}
+                </button>
+                <button
+                    class="btn conflict-abort"
+                    :disabled="pending"
+                    @click="isRebasing ? abortRebase() : abortMerge()">
+                    <i-lucide-x
+                        width="14"
+                        height="14" />
+                    {{ isRebasing ? 'Abort rebase' : 'Abort merge' }}
                 </button>
             </div>
-            <textarea
-                v-if="isDetails"
-                :value="commitMessage"
-                :style="{ height: `${ui.summaryHeight}px` }"
-                placeholder="No commit message"
-                readonly />
-            <textarea
-                v-else
-                v-model="message"
-                :style="{ height: `${ui.summaryHeight}px` }"
-                placeholder="Summary of changes"
-                @keydown.enter.meta.prevent="doCommit()"
-                @keydown.enter.ctrl.prevent="doCommit()" />
-            <div
-                v-if="mode === 'workdir' && showAiGroup"
-                class="summary-counter">
-                <span
-                    v-if="showAiGroup"
-                    class="counter-model"
-                    :title="`Commit-message model: ${commitModelLabel}`">
-                    <span class="counter-model-main">
-                        <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
-                            width="14"
-                            height="14" />
-                        <span class="counter-model-name">{{ commitModelName }}</span>
-                    </span>
-                    <span
-                        v-if="ui.aiCommitMode !== 'off'"
-                        class="counter-mode-detail">
-                        <i-fluent-emoji-flat-robot
-                            width="14"
-                            height="14" />
-                        <span
-                            class="counter-mode-label"
-                            :class="`cb-ai-mode-${ui.aiCommitMode}`"
-                            >{{ aiModeLabel(ui.aiCommitMode) }}</span
-                        >
-                    </span>
-                </span>
-            </div>
-            <div
-                v-if="mode === 'workdir'"
-                class="commit-actions">
-                <div class="commit-group">
-                    <button
-                        class="btn primary commit-btn"
-                        :disabled="pending || !message.trim() || staged.length === 0"
-                        title="Commit staged changes"
-                        @click="doCommit(false)">
-                        <i-lucide-loader-circle
-                            v-if="committing"
-                            class="spinning"
-                            width="14"
-                            height="14" />
-                        <i-lucide-check
-                            v-else
-                            width="14"
-                            height="14" />
-                        {{ committing ? 'Committing…' : 'Commit' }}
-                    </button>
-                    <span class="tab-actions-sep" />
-                    <button
-                        class="btn commit-push-btn"
-                        :disabled="pending || !message.trim() || staged.length === 0"
-                        title="Commit staged changes and push to remote"
-                        @click="doCommit(true)">
-                        <i-lucide-loader-circle
-                            v-if="committing"
-                            class="spinning"
-                            width="14"
-                            height="14" />
-                        <i-lucide-arrow-up
-                            v-else
-                            width="14"
-                            height="14" />
-                        {{ committing ? 'Committing…' : 'Commit + push' }}
-                    </button>
-                </div>
+            <template v-else>
                 <div
-                    v-if="showAiGroup"
-                    ref="aiMenuRoot"
-                    class="cb-ai-group cb-group-item"
-                    :class="[`cb-ai-mode-${ui.aiCommitMode}`, { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate }]">
-                    <button
-                        class="btn small cb-ai-btn"
-                        :disabled="!canGenerate"
-                        :title="
-                            ui.aiCommitMode === 'commit-push'
-                                ? 'Generate a commit message, commit and push'
-                                : ui.aiCommitMode === 'commit'
-                                  ? 'Generate a commit message and commit automatically'
-                                  : 'Generate a commit message from the current changes'
-                        "
-                        @click="generateMessage()">
-                        <i-lucide-loader-circle
-                            v-if="generating"
-                            class="spinning"
-                            width="16"
-                            height="16" />
-                        <i-fluent-emoji-flat-robot
-                            v-else
-                            width="18"
-                            height="18" />
-                    </button>
-                    <button
-                        class="cb-ai-caret"
-                        title="Choose auto-commit behavior"
-                        aria-haspopup="listbox"
-                        :aria-expanded="aiMenuOpen"
-                        @click.stop="aiMenuOpen = !aiMenuOpen">
-                        <i-lucide-chevron-down
+                    class="cb-resize-handle"
+                    title="Drag to resize"
+                    @mousedown="startResizeBox" />
+                <div
+                    v-if="mode === 'workdir'"
+                    class="cb-toolbar">
+                    <span class="commit-box-label">
+                        <i-mage-message-dots
                             width="12"
                             height="12" />
+                        Message
+                    </span>
+                    <span
+                        v-if="message"
+                        :class="['subject-count', subjectCountClass]">
+                        Title {{ firstLine.length }} / 72
+                    </span>
+                </div>
+                <div
+                    v-if="isDetails && (commitAuthor || commitDate)"
+                    class="readonly-meta-row">
+                    <span class="readonly-meta readonly-meta-start">
+                        {{ [commitAuthor, commitDateText].filter(Boolean).join(' · ') }}
+                    </span>
+                    <button
+                        v-if="commitHash"
+                        class="readonly-meta readonly-meta-end"
+                        type="button"
+                        title="Copy commit hash"
+                        @click="copyHash">
+                        <i-lucide-copy
+                            width="10"
+                            height="10" />
+                        {{ commitHash.slice(0, 7) }}
                     </button>
-                    <div
-                        v-if="aiMenuOpen"
-                        class="cb-ai-menu"
-                        :class="`cb-ai-mode-${ui.aiCommitMode}`"
-                        :style="aiMenuStyle"
-                        role="listbox"
-                        aria-label="AI auto-commit behavior">
-                        <button
-                            v-for="option in AI_MODE_OPTIONS"
-                            :key="option.value"
-                            class="cb-ai-menu-item"
-                            :class="{ active: ui.aiCommitMode === option.value }"
-                            role="option"
-                            :aria-selected="ui.aiCommitMode === option.value"
-                            @click="selectAiMode(option.value)">
-                            <i-lucide-check
-                                v-if="ui.aiCommitMode === option.value"
-                                width="13"
-                                height="13" />
+                </div>
+                <textarea
+                    v-if="isDetails"
+                    :value="commitMessage"
+                    :style="{ height: `${ui.summaryHeight}px` }"
+                    placeholder="No commit message"
+                    readonly />
+                <textarea
+                    v-else
+                    v-model="message"
+                    :style="{ height: `${ui.summaryHeight}px` }"
+                    placeholder="Summary of changes"
+                    @keydown.enter.meta.prevent="doCommit()"
+                    @keydown.enter.ctrl.prevent="doCommit()" />
+                <div
+                    v-if="mode === 'workdir' && showAiGroup"
+                    class="summary-counter">
+                    <span
+                        v-if="showAiGroup"
+                        class="counter-model"
+                        :title="`Commit-message model: ${commitModelLabel}`">
+                        <span class="counter-model-main">
+                            <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
+                                width="14"
+                                height="14" />
+                            <span class="counter-model-name">{{ commitModelName }}</span>
+                        </span>
+                        <span
+                            v-if="ui.aiCommitMode !== 'off'"
+                            class="counter-mode-detail">
+                            <i-fluent-emoji-flat-robot
+                                width="14"
+                                height="14" />
                             <span
-                                v-else
-                                class="cb-ai-menu-bullet" />
-                            {{ option.label }}
-                        </button>
-                        <span class="cb-ai-menu-sep" />
+                                class="counter-mode-label"
+                                :class="`cb-ai-mode-${ui.aiCommitMode}`"
+                                >{{ aiModeLabel(ui.aiCommitMode) }}</span
+                            >
+                        </span>
+                    </span>
+                </div>
+                <div
+                    v-if="mode === 'workdir'"
+                    class="commit-actions">
+                    <div class="commit-group">
                         <button
-                            class="cb-ai-menu-item cb-ai-menu-settings"
-                            title="Open AI settings"
-                            @click.stop="openAiSettings()">
-                            <span class="cb-ai-menu-bullet" />
-                            Settings
+                            class="btn primary commit-btn"
+                            :disabled="pending || !message.trim() || staged.length === 0"
+                            title="Commit staged changes"
+                            @click="doCommit(false)">
+                            <i-lucide-loader-circle
+                                v-if="committing"
+                                class="spinning"
+                                width="14"
+                                height="14" />
+                            <i-lucide-check
+                                v-else
+                                width="14"
+                                height="14" />
+                            {{ committing ? 'Committing…' : 'Commit' }}
+                        </button>
+                        <span class="tab-actions-sep" />
+                        <button
+                            class="btn commit-push-btn"
+                            :disabled="pending || !message.trim() || staged.length === 0"
+                            title="Commit staged changes and push to remote"
+                            @click="doCommit(true)">
+                            <i-lucide-loader-circle
+                                v-if="committing"
+                                class="spinning"
+                                width="14"
+                                height="14" />
+                            <i-lucide-arrow-up
+                                v-else
+                                width="14"
+                                height="14" />
+                            {{ committing ? 'Committing…' : 'Commit + push' }}
                         </button>
                     </div>
+                    <div
+                        v-if="showAiGroup"
+                        ref="aiMenuRoot"
+                        class="cb-ai-group cb-group-item"
+                        :class="[`cb-ai-mode-${ui.aiCommitMode}`, { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate }]">
+                        <button
+                            class="btn small cb-ai-btn"
+                            :disabled="!canGenerate"
+                            :title="
+                                ui.aiCommitMode === 'commit-push'
+                                    ? 'Generate a commit message, commit and push'
+                                    : ui.aiCommitMode === 'commit'
+                                      ? 'Generate a commit message and commit automatically'
+                                      : 'Generate a commit message from the current changes'
+                            "
+                            @click="generateMessage()">
+                            <i-lucide-loader-circle
+                                v-if="generating"
+                                class="spinning"
+                                width="16"
+                                height="16" />
+                            <i-fluent-emoji-flat-robot
+                                v-else
+                                width="18"
+                                height="18" />
+                        </button>
+                        <button
+                            class="cb-ai-caret"
+                            title="Choose auto-commit behavior"
+                            aria-haspopup="listbox"
+                            :aria-expanded="aiMenuOpen"
+                            @click.stop="aiMenuOpen = !aiMenuOpen">
+                            <i-lucide-chevron-down
+                                width="12"
+                                height="12" />
+                        </button>
+                        <div
+                            v-if="aiMenuOpen"
+                            class="cb-ai-menu"
+                            :class="`cb-ai-mode-${ui.aiCommitMode}`"
+                            :style="aiMenuStyle"
+                            role="listbox"
+                            aria-label="AI auto-commit behavior">
+                            <button
+                                v-for="option in AI_MODE_OPTIONS"
+                                :key="option.value"
+                                class="cb-ai-menu-item"
+                                :class="{ active: ui.aiCommitMode === option.value }"
+                                role="option"
+                                :aria-selected="ui.aiCommitMode === option.value"
+                                @click="selectAiMode(option.value)">
+                                <i-lucide-check
+                                    v-if="ui.aiCommitMode === option.value"
+                                    width="13"
+                                    height="13" />
+                                <span
+                                    v-else
+                                    class="cb-ai-menu-bullet" />
+                                {{ option.label }}
+                            </button>
+                            <span class="cb-ai-menu-sep" />
+                            <button
+                                class="cb-ai-menu-item cb-ai-menu-settings"
+                                title="Open AI settings"
+                                @click.stop="openAiSettings()">
+                                <span class="cb-ai-menu-bullet" />
+                                Settings
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            </template>
         </div>
     </div>
 </template>
