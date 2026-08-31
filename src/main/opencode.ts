@@ -84,16 +84,40 @@ function endpointOf(family: Family): string {
     return `${BASE_URL}/chat/completions`
 }
 
-function buildBody(family: Family, modelId: string, systemPrompt: string, userPrompt: string, maxTokens: number): Record<string, unknown> {
+// Reasoning-effort cap: keeps thinking models from burning the output budget on
+// reasoning (finish_reason=length) for short answers like commit messages.
+// 'minimal' is the fastest; fall back to 'low' then to no reasoning param at all
+// for models/endpoints that reject 'minimal'.
+type EffortLevel = 'minimal' | 'low' | 'none'
+
+const EFFORT_FALLBACK: EffortLevel[] = ['minimal', 'low', 'none']
+
+function buildBody(
+    family: Family,
+    provider: AiProvider,
+    modelId: string,
+    systemPrompt: string,
+    userPrompt: string,
+    maxTokens: number,
+    effort: EffortLevel
+): Record<string, unknown> {
     if (family === 'responses') {
         const body: Record<string, unknown> = { model: modelId, input: userPrompt, max_output_tokens: maxTokens }
+        if (effort !== 'none') body.reasoning = { effort }
         if (systemPrompt) body.instructions = systemPrompt
         return body
     }
     const messages: { role: string; content: string }[] = []
     if (systemPrompt) messages.push({ role: 'system', content: systemPrompt })
     messages.push({ role: 'user', content: userPrompt })
-    return { model: modelId, max_tokens: maxTokens, messages }
+    const body: Record<string, unknown> = { model: modelId, max_tokens: maxTokens, messages }
+    // 'messages' family (Anthropic-style) has no effort knob — thinking is opt-in
+    // via a `thinking` field we deliberately omit.
+    if (family === 'chat' && effort !== 'none') {
+        if (provider === 'openrouter') body.reasoning = { effort }
+        else body.reasoning_effort = effort
+    }
+    return body
 }
 
 function extractErrorDetail(text: string, status: number): string {
@@ -147,50 +171,61 @@ async function callModel(
 ): Promise<string> {
     const { maxTokens = 1024, timeoutMs = 60_000, allowEmpty = false } = opts
     const family = provider === 'openrouter' ? 'chat' : familyOf(modelId)
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeoutMs)
-    let res: Response
-    try {
-        const baseUrl = provider === 'openrouter' ? OPENROUTER_BASE_URL : BASE_URL
-        const endpoint = provider === 'openrouter' ? `${baseUrl}/chat/completions` : endpointOf(family)
-        res = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json',
-                authorization: `Bearer ${token}`,
-                ...(family === 'messages' ? { 'x-api-key': token } : {}),
-                ...(provider === 'openrouter' ? { 'HTTP-Referer': 'https://github.com/jutipong/open-git', 'X-Title': 'Open Git' } : {}),
-            },
-            body: JSON.stringify(buildBody(family, modelId, systemPrompt, userPrompt, maxTokens)),
-            signal: controller.signal,
-        })
-    } catch (err) {
-        throw new Error(
-            err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err)
-        )
-    } finally {
-        clearTimeout(timer)
-    }
+    const baseUrl = provider === 'openrouter' ? OPENROUTER_BASE_URL : BASE_URL
+    const endpoint = provider === 'openrouter' ? `${baseUrl}/chat/completions` : endpointOf(family)
 
-    const text = await res.text().catch(() => '')
-    if (!res.ok) throw new Error(extractErrorDetail(text, res.status))
-    let json: unknown
-    try {
-        json = JSON.parse(text)
-    } catch {
-        throw new Error('Invalid response from the model API')
-    }
-    const content = extractContent(family, json).trim()
-    if (!content && !allowEmpty) {
-        const finish = (json as { choices?: { finish_reason?: string }[] }).choices?.[0]?.finish_reason
-        if (finish === 'length') {
+    for (let i = 0; i < EFFORT_FALLBACK.length; i++) {
+        const effort = EFFORT_FALLBACK[i]
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), timeoutMs)
+        let res: Response
+        try {
+            // Sequential by design: each retry depends on the previous failure.
+            // oxlint-disable-next-line no-await-in-loop
+            res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    authorization: `Bearer ${token}`,
+                    ...(family === 'messages' ? { 'x-api-key': token } : {}),
+                    ...(provider === 'openrouter' ? { 'HTTP-Referer': 'https://github.com/jutipong/open-git', 'X-Title': 'Open Git' } : {}),
+                },
+                body: JSON.stringify(buildBody(family, provider, modelId, systemPrompt, userPrompt, maxTokens, effort)),
+                signal: controller.signal,
+            })
+        } catch (err) {
             throw new Error(
-                'Model ran out of output tokens before replying (finish_reason=length) — increase the token budget or try a non-thinking model'
+                err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err)
             )
+        } finally {
+            clearTimeout(timer)
         }
-        throw new Error(`Model returned an empty response (${text.slice(0, 200)})`)
+
+        const text =
+            // oxlint-disable-next-line no-await-in-loop
+            await res.text().catch(() => '')
+        // Endpoint/model rejected the effort param (e.g. unknown 'minimal') — retry lower.
+        if (!res.ok && res.status === 400 && /effort|reasoning/i.test(text) && i < EFFORT_FALLBACK.length - 1) continue
+        if (!res.ok) throw new Error(extractErrorDetail(text, res.status))
+        let json: unknown
+        try {
+            json = JSON.parse(text)
+        } catch {
+            throw new Error('Invalid response from the model API')
+        }
+        const content = extractContent(family, json).trim()
+        if (!content && !allowEmpty) {
+            const finish = (json as { choices?: { finish_reason?: string }[] }).choices?.[0]?.finish_reason
+            if (finish === 'length') {
+                throw new Error(
+                    'Model ran out of output tokens before replying (finish_reason=length) — increase the token budget or try a non-thinking model'
+                )
+            }
+            throw new Error(`Model returned an empty response (${text.slice(0, 200)})`)
+        }
+        return content
     }
-    return content
+    throw new Error('Model request failed after exhausting reasoning-effort fallbacks')
 }
 
 export async function testConnection(provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> {
@@ -208,7 +243,7 @@ export async function testConnection(provider: AiProvider, token: string, modelI
     }
 }
 
-const COMMIT_SYSTEM_PROMPT = `You are a git commit message generator. Output ONE Conventional Commits message for the given diff.
+const COMMIT_SYSTEM_PROMPT = `You are a git commit message generator. Output ONE Conventional Commits message for the given diff. Answer with the commit message ONLY — no preamble, no explanation.
 
 Format: <type>(<optional scope>): <description>
 
@@ -216,7 +251,7 @@ Type priority: fix > feat > test > style > docs > build > ops > chore > perf > r
 
 Style rules:
 - Default: ONE line only. Add a short body ONLY if the diff clearly contains 2+ unrelated concerns (max 3 bullet lines, no paragraphs).
-- Subject: imperative mood, lowercase start, no trailing period, ≤72 chars (ideal 50).
+- Subject: imperative mood, lowercase start, no trailing period, ≤72 chars (ideal 50). Keep it terse.
 - Plain, simple wording a teammate skims in 2 seconds. No jargon, no file lists, no issue IDs, no wordiness.
 - Breaking change → "!" before the colon (e.g. "feat!: ...").
 - Describe only what the diff actually shows; never invent changes.
@@ -246,7 +281,10 @@ export async function generateCommitMessage(formatFirst = false): Promise<string
     const changes = await getChangesContext()
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
-    const content = await callModel(cfg.provider, active.token, active.modelId, COMMIT_SYSTEM_PROMPT, prompt, { maxTokens: 200 })
+    const content = await callModel(cfg.provider, active.token, active.modelId, COMMIT_SYSTEM_PROMPT, prompt, {
+        maxTokens: 200,
+        timeoutMs: 30_000,
+    })
     return stripFences(content).slice(0, 2500)
 }
 

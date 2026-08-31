@@ -2513,11 +2513,22 @@ body {
     flex: 1;
     min-width: 0;
     min-height: 30px;
-    padding: 0 14px;
+    padding: 0 12px;
     border: 0;
     background: transparent;
     color: var(--green);
     font-weight: 600;
+}
+
+/* ไอคอนในปุ่ม commit — ห้ามบีบเมื่อปุ่มแคบ */
+.commit-group .commit-btn svg,
+.commit-group .commit-push-btn svg {
+    flex: none;
+}
+
+.commit-group .commit-btn .spinning,
+.commit-group .commit-push-btn .spinning {
+    margin-right: -2px;
 }
 
 .commit-group .commit-btn:hover {
@@ -2535,6 +2546,7 @@ body {
     flex: 0 0 auto;
     align-items: center;
     justify-content: center;
+    gap: 6px;
     min-height: 30px;
     padding: 0 12px;
     color: var(--red);

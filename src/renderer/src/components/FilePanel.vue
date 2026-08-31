@@ -968,6 +968,15 @@
                         :disabled="pending || !message.trim() || staged.length === 0"
                         title="Commit staged changes"
                         @click="doCommit(false)">
+                        <i-lucide-loader-circle
+                            v-if="committing"
+                            class="spinning"
+                            width="14"
+                            height="14" />
+                        <i-lucide-check
+                            v-else
+                            width="14"
+                            height="14" />
                         {{ committing ? 'Committing…' : 'Commit' }}
                     </button>
                     <span class="tab-actions-sep" />
@@ -976,6 +985,15 @@
                         :disabled="pending || !message.trim() || staged.length === 0"
                         title="Commit staged changes and push to remote"
                         @click="doCommit(true)">
+                        <i-lucide-loader-circle
+                            v-if="committing"
+                            class="spinning"
+                            width="14"
+                            height="14" />
+                        <i-lucide-arrow-up
+                            v-else
+                            width="14"
+                            height="14" />
                         {{ committing ? 'Committing…' : 'Commit + push' }}
                     </button>
                 </div>
