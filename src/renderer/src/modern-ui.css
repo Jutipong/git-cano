@@ -143,18 +143,22 @@ body {
     border-radius: 12px;
     text-align: center;
 }
+
 .app-empty svg {
     color: var(--teal);
     opacity: 0.7;
 }
+
 .app-empty strong {
     color: var(--text);
     font-size: 15px;
 }
+
 .app-empty span {
     color: var(--text-muted);
     font-size: 12px;
 }
+
 .app-empty .btn {
     margin-top: 8px;
 }
@@ -267,11 +271,11 @@ body {
     padding: 0 8px;
 }
 
-.tab-actions:not(.search-open) > .tab-actions-sep {
+.tab-actions:not(.search-open)>.tab-actions-sep {
     display: none;
 }
 
-.tab-actions:not(.search-open) > .workspace-wrap {
+.tab-actions:not(.search-open)>.workspace-wrap {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
@@ -331,7 +335,7 @@ body {
     border-radius: 999px;
 }
 
-.tab-sync-actions > .tab-actions-sep {
+.tab-sync-actions>.tab-actions-sep {
     display: block;
 }
 
@@ -763,14 +767,17 @@ body {
         background 0.15s ease,
         border-color 0.15s ease;
 }
+
 .clone-dest-field:hover {
     color: var(--text);
     border-color: color-mix(in srgb, var(--teal) 45%, transparent);
 }
+
 .clone-dest-field:disabled {
     cursor: wait;
     opacity: 0.6;
 }
+
 .clone-dest-field.has-value {
     color: var(--text);
 }
@@ -907,11 +914,9 @@ body {
     height: 20px;
     align-items: center;
     min-width: max-content;
-    background: repeating-linear-gradient(
-        -45deg,
-        transparent 0 4px,
-        color-mix(in srgb, var(--text-muted) 14%, transparent) 4px 7px
-    );
+    background: repeating-linear-gradient(-45deg,
+            transparent 0 4px,
+            color-mix(in srgb, var(--text-muted) 14%, transparent) 4px 7px);
     border-top: 1px solid var(--line-soft);
     border-bottom: 1px solid var(--line-soft);
 }
@@ -929,6 +934,7 @@ body {
 .diff-line.ws-only {
     opacity: 0.45;
 }
+
 .diff-line.ws-only::after {
     content: 'ws';
     flex: 0 0 auto;
@@ -948,6 +954,7 @@ body {
 .diff-line.moved {
     background: color-mix(in srgb, var(--purple) 14%, transparent);
 }
+
 .diff-line.moved pre {
     color: var(--purple);
 }
@@ -957,6 +964,7 @@ body {
     background: color-mix(in srgb, var(--green) 9%, var(--diff-bg));
     border-right-color: color-mix(in srgb, var(--green) 25%, var(--line-soft));
 }
+
 .diff-line.del .ln {
     color: color-mix(in srgb, var(--red) 60%, var(--text-muted));
     background: color-mix(in srgb, var(--red) 9%, var(--diff-bg));
@@ -967,17 +975,16 @@ body {
     background: color-mix(in srgb, var(--green) 30%, transparent);
     border-radius: 3px;
 }
+
 .diff-line.del mark {
     background: color-mix(in srgb, var(--red) 30%, transparent);
     border-radius: 3px;
 }
 
 .diff-line.half.blank {
-    background: repeating-linear-gradient(
-        -45deg,
-        transparent 0 5px,
-        color-mix(in srgb, var(--text-muted) 10%, transparent) 5px 8px
-    );
+    background: repeating-linear-gradient(-45deg,
+            transparent 0 5px,
+            color-mix(in srgb, var(--text-muted) 10%, transparent) 5px 8px);
 }
 
 .split-pane.right {
@@ -1303,14 +1310,17 @@ body {
     stroke-opacity: 0.14;
     stroke-linecap: round;
 }
+
 .edge-core {
     stroke-width: 2.5;
     stroke-opacity: 0.85;
     stroke-linecap: round;
 }
+
 .edge-glow.merge {
     stroke-opacity: 0.1;
 }
+
 .edge-core.merge {
     stroke-opacity: 0.9;
 }
@@ -1320,11 +1330,13 @@ body {
     stroke-opacity: 0;
     transition: stroke-opacity 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
 }
+
 .commit-ring.selected,
 .commit-ring.drop-target {
     stroke-opacity: 0.85;
     stroke-width: 2;
 }
+
 .commit-ring.selected {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
     filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent));
@@ -1333,21 +1345,26 @@ body {
     stroke-dasharray: 6 6.57;
     animation: node-dot-spin 2.2s linear infinite;
 }
+
 @keyframes node-dot-spin {
     to {
         stroke-dashoffset: -75.4;
     }
 }
+
 .commit-ring.drop-target {
     stroke: var(--teal);
 }
+
 .node-dot {
     transition: r 0.15s ease;
     filter: drop-shadow(0 0 2px color-mix(in srgb, var(--node-color, var(--teal)) 55%, transparent));
 }
+
 .node-dot.selected {
     filter: drop-shadow(0 0 4px color-mix(in srgb, var(--node-color, var(--teal)) 85%, transparent));
 }
+
 .merge-ring {
     stroke: color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
 }
@@ -1356,21 +1373,25 @@ body {
     gap: 4px;
     padding: 2px 7px;
 }
-.ref-chip > svg {
+
+.ref-chip>svg {
     flex: 0 0 auto;
     opacity: 0.85;
 }
+
 .ref-chip.local,
 .ref-chip.head {
     color: var(--chip-fg, #122d2c);
     background: var(--chip-color, var(--teal));
     border-color: var(--chip-color, var(--teal));
 }
+
 .ref-chip.remote {
     color: var(--chip-color, var(--teal));
     background: color-mix(in srgb, var(--chip-color, var(--teal)) 8%, transparent);
     border-color: color-mix(in srgb, var(--chip-color, var(--teal)) 38%, transparent);
 }
+
 .ref-chip.tag {
     color: var(--orange);
     background: color-mix(in srgb, var(--orange) 12%, transparent);
@@ -1449,7 +1470,7 @@ body {
     border-radius: 999px;
 }
 
-.stash-row > svg {
+.stash-row>svg {
     color: var(--text-muted);
     flex-shrink: 0;
 }
@@ -1483,11 +1504,13 @@ body {
 }
 
 @keyframes commit-ring-pulse {
+
     0%,
     100% {
         opacity: 0.55;
         transform: scale(0.9);
     }
+
     50% {
         opacity: 0.95;
         transform: scale(1.08);
@@ -1625,7 +1648,7 @@ body {
     display: block;
 }
 
-.file-context-menu-wrap:hover > .file-context-menu-item {
+.file-context-menu-wrap:hover>.file-context-menu-item {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -1906,7 +1929,7 @@ body {
 
 .commit-box textarea,
 .new-branch input,
-.tag-modal-body > input:not([type='checkbox']),
+.tag-modal-body>input:not([type='checkbox']),
 .clone-box input,
 .tools-body input,
 .tools-body select,
@@ -1934,9 +1957,11 @@ body {
     border-color: var(--green);
     font-weight: 650;
 }
+
 .btn.success:hover {
     filter: brightness(0.93);
 }
+
 .confirm-dialog-body input.prompt-input {
     width: 100%;
     margin-top: 8px;
@@ -1978,9 +2003,11 @@ body {
     border-radius: 12px;
     background: var(--surface-2);
     border: 1px solid transparent;
-    box-shadow: 0 18px 50px var(--shadow);
-    font-size: 12px;
-    color: var(--text-secondary);
+    /* box-shadow:
+        0 2px 6px var(--shadow),
+        0 12px 24px var(--shadow); */
+    font-size: 14px;
+    /* color: var(--text-secondary); */
 }
 
 @property --busy-spin {
@@ -1995,13 +2022,11 @@ body {
     inset: -1px;
     border-radius: inherit;
     padding: 1px;
-    background: conic-gradient(
-        from var(--busy-spin),
-        transparent 0%,
-        transparent 55%,
-        color-mix(in srgb, var(--teal) 90%, transparent) 75%,
-        transparent 95%
-    );
+    background: conic-gradient(from var(--busy-spin),
+            transparent 0%,
+            transparent 55%,
+            color-mix(in srgb, var(--teal) 90%, transparent) 75%,
+            transparent 95%);
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
@@ -2230,7 +2255,7 @@ body {
     display: block;
 }
 
-.commit-menu-wrap:hover > .commit-menu-item {
+.commit-menu-wrap:hover>.commit-menu-item {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -2846,6 +2871,7 @@ body {
 }
 
 @keyframes splash-breathe {
+
     0%,
     100% {
         transform: translateY(0);
@@ -2853,6 +2879,7 @@ body {
             0 16px 44px var(--shadow),
             inset 0 0 24px color-mix(in srgb, var(--teal) 12%, transparent);
     }
+
     50% {
         transform: translateY(-5px);
         box-shadow:
@@ -2865,9 +2892,11 @@ body {
     0% {
         transform: translateX(-100%);
     }
+
     50% {
         transform: translateX(0);
     }
+
     100% {
         transform: translateX(100%);
     }
@@ -3084,10 +3113,12 @@ body {
     width: var(--author-w, 140px);
     flex: 0 1 var(--author-w, 140px);
 }
+
 .commit-author {
     justify-content: center;
     text-align: center;
 }
+
 .graph-date-header,
 .commit-date {
     width: var(--date-w, 110px);
@@ -3095,10 +3126,12 @@ body {
     text-align: center;
     white-space: nowrap;
 }
+
 .graph-author-header,
 .graph-date-header {
     text-align: center;
 }
+
 .graph-hash-header,
 .commit-hash {
     width: var(--hash-w, 70px);
@@ -3106,13 +3139,15 @@ body {
     text-align: center;
 }
 
-.graph-header > .graph-author-header {
+.graph-header>.graph-author-header {
     flex: 0 1 var(--author-w, 140px);
 }
-.graph-header > .graph-date-header {
+
+.graph-header>.graph-date-header {
     flex: 0 0 var(--date-w, 110px);
 }
-.graph-header > .graph-hash-header {
+
+.graph-header>.graph-hash-header {
     flex: 0 0 var(--hash-w, 70px);
 }
 
@@ -3171,6 +3206,7 @@ body {
     flex: 0 0 44px;
     padding-right: 16px;
 }
+
 .diff-body:not(.split) .diff-line .ln:nth-of-type(2) {
     left: 44px;
 }
@@ -3179,19 +3215,24 @@ body {
     width: 0;
     height: 10px;
 }
+
 .diff-body::-webkit-scrollbar-thumb {
     background: #2b333e;
     border-radius: 999px;
 }
+
 :root[data-theme='dark'] .diff-body::-webkit-scrollbar-thumb {
     background: #2c2f32;
 }
+
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
     background: #ebe4d5;
 }
+
 :root[data-theme='dark-modern'] .diff-body::-webkit-scrollbar-thumb {
     background: #313131;
 }
+
 .diff-body::-webkit-scrollbar-track,
 .diff-body::-webkit-scrollbar-corner {
     background: transparent;
