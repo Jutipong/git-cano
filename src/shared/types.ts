@@ -3,6 +3,7 @@ export interface CommitNode {
     shortHash: string
     parents: string[]
     author: string
+    authorEmail?: string
     date: string
     subject: string
     body?: string
@@ -182,6 +183,7 @@ export interface SshTestResult {
 export interface GithubUser {
     login: string
     name: string
+    email: string
     avatarUrl: string
     htmlUrl: string
     bio: string

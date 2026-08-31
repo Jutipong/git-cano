@@ -537,7 +537,7 @@
                             class="author-avatar"
                             :style="{ '--avatar-color': nameColor(commit.author) }"
                             ><img
-                                v-if="auth.isGithubUser(commit.author) && auth.githubUser?.avatarUrl"
+                                v-if="auth.isGithubUser(commit.author, commit.authorEmail) && auth.githubUser?.avatarUrl"
                                 class="author-avatar-img"
                                 :src="auth.githubUser.avatarUrl"
                                 :alt="commit.author" />

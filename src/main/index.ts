@@ -109,6 +109,7 @@ import {
     testSshKey,
     verifyGithubToken,
     deleteSshKey,
+    refreshGithubProfile,
 } from './auth'
 import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
@@ -671,6 +672,7 @@ app.whenReady().then(() => {
     handleSensitive('auth:ssh:delete', (keyPath: string) => deleteSshKey(String(keyPath)))
     handle('auth:ssh:openDir', () => openSshDir())
     handleSensitive('auth:github:status', () => githubStatus())
+    handleSensitive('auth:github:refresh', () => refreshGithubProfile())
     handleSensitive('auth:github:verify', (token: string) => verifyGithubToken(String(token)))
     handleSensitive('auth:github:openTokenPage', () => openGithubTokenPage())
 

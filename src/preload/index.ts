@@ -169,6 +169,7 @@ const api = {
         sshDelete: (keyPath: string): Promise<SshKeyInfo[]> => call('auth:ssh:delete', keyPath),
         openSshDir: (): Promise<string> => call('auth:ssh:openDir'),
         githubStatus: (): Promise<GithubUser | null> => call('auth:github:status'),
+        githubRefresh: (): Promise<GithubUser | null> => call('auth:github:refresh'),
         githubVerify: (token: string): Promise<GithubUser> => call('auth:github:verify', token),
         openGithubTokenPage: (): Promise<void> => call('auth:github:openTokenPage'),
     },

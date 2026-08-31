@@ -39,6 +39,7 @@ export function saveAuthConfig(cfg: AuthConfig): AuthConfig {
     try {
         fs.chmodSync(file, 0o600)
     } catch {}
+    if (!clean.githubToken) clearGithubProfile()
     log('info', 'auth', `config saved (sshKeyPath=${clean.sshKeyPath ? 'set' : 'none'}, token=${clean.githubToken ? 'set' : 'none'})`)
     return clean
 }
@@ -180,18 +181,94 @@ export async function verifyGithubToken(token: string): Promise<GithubUser> {
     }
     const json = (await res.json().catch(() => null)) as Record<string, unknown> | null
     if (!json || typeof json.login !== 'string') throw new Error('Unexpected response from GitHub')
-    return {
+    const user: GithubUser = {
         login: json.login,
         name: typeof json.name === 'string' ? json.name : '',
+        email: typeof json.email === 'string' ? json.email : '',
         avatarUrl: typeof json.avatar_url === 'string' ? json.avatar_url : '',
         htmlUrl: typeof json.html_url === 'string' ? json.html_url : '',
         bio: typeof json.bio === 'string' ? json.bio : '',
         publicRepos: typeof json.public_repos === 'number' ? json.public_repos : 0,
         followers: typeof json.followers === 'number' ? json.followers : 0,
     }
+    persistGithubProfile(user)
+    return user
 }
 
-export async function githubStatus(): Promise<GithubUser | null> {
+/** Cached GitHub profile: persisted in userData, avatar image downloaded alongside. */
+function githubProfilePath(): string {
+    return path.join(app.getPath('userData'), 'github-profile.json')
+}
+
+function githubAvatarPath(): string {
+    return path.join(app.getPath('userData'), 'github-avatar.bin')
+}
+
+function sniffImageMime(buf: Buffer): string {
+    if (buf[0] === 0xff && buf[1] === 0xd8) return 'image/jpeg'
+    if (buf[0] === 0x89 && buf[1] === 0x50) return 'image/png'
+    if (buf.subarray(0, 4).toString('ascii') === 'RIFF' && buf.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp'
+    return 'image/png'
+}
+
+/** Local avatar as a data URL (CSP-friendly) — empty string when not downloaded yet. */
+function avatarDataUrl(): string {
+    try {
+        const buf = fs.readFileSync(githubAvatarPath())
+        return `data:${sniffImageMime(buf)};base64,${buf.toString('base64')}`
+    } catch {
+        return ''
+    }
+}
+
+function persistGithubProfile(user: GithubUser): void {
+    try {
+        fs.writeFileSync(githubProfilePath(), JSON.stringify(user, null, 2))
+    } catch {}
+    void downloadAvatar(user)
+}
+
+async function downloadAvatar(user: GithubUser): Promise<void> {
+    if (!user.avatarUrl) return
+    try {
+        const res = await fetch(user.avatarUrl, { headers: { 'user-agent': 'open-git' } })
+        if (!res.ok) return
+        const buf = Buffer.from(await res.arrayBuffer())
+        if (buf.length > 0 && buf.length <= 10 * 1024 * 1024) fs.writeFileSync(githubAvatarPath(), buf)
+    } catch {}
+}
+
+function readCachedGithubProfile(): GithubUser | null {
+    try {
+        const raw = JSON.parse(fs.readFileSync(githubProfilePath(), 'utf8')) as Record<string, unknown>
+        if (typeof raw.login !== 'string') return null
+        const localAvatar = avatarDataUrl()
+        return {
+            login: raw.login,
+            name: typeof raw.name === 'string' ? raw.name : '',
+            email: typeof raw.email === 'string' ? raw.email : '',
+            // Prefer the persisted avatar so it also works offline
+            avatarUrl: localAvatar || (typeof raw.avatarUrl === 'string' ? raw.avatarUrl : ''),
+            htmlUrl: typeof raw.htmlUrl === 'string' ? raw.htmlUrl : '',
+            bio: typeof raw.bio === 'string' ? raw.bio : '',
+            publicRepos: typeof raw.publicRepos === 'number' ? raw.publicRepos : 0,
+            followers: typeof raw.followers === 'number' ? raw.followers : 0,
+        }
+    } catch {
+        return null
+    }
+}
+
+function clearGithubProfile(): void {
+    for (const file of [githubProfilePath(), githubAvatarPath()]) {
+        try {
+            fs.rmSync(file, { force: true })
+        } catch {}
+    }
+}
+
+/** Fresh profile from the GitHub API (persists cache); null when offline/token invalid. */
+export async function refreshGithubProfile(): Promise<GithubUser | null> {
     const token = getAuthConfig().githubToken.trim()
     if (!token) return null
     try {
@@ -199,6 +276,13 @@ export async function githubStatus(): Promise<GithubUser | null> {
     } catch {
         return null
     }
+}
+
+/** Cached profile for the stored token — no network, works offline. */
+export function githubStatus(): Promise<GithubUser | null> {
+    const token = getAuthConfig().githubToken.trim()
+    if (!token) return Promise.resolve(null)
+    return Promise.resolve(readCachedGithubProfile())
 }
 
 export function openSshDir(): Promise<string> {

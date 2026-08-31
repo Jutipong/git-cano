@@ -335,7 +335,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     const { git: g } = getRepo()
     const SEP = '\x1f'
     const REC = '\x1e'
-    const fmt = ['%H', '%P', '%h', '%an', '%ad', '%d', '%s', '%b'].join(SEP)
+    const fmt = ['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join(SEP)
 
     const text = await g.raw([
         'log',
@@ -352,7 +352,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     for (const line of text.split(REC)) {
         const t = line.replace(/^\n/, '')
         if (!t.trim()) continue
-        const [hash, parents, shortHash, author, date, refsRaw, subject, bodyRaw] = t.split(SEP)
+        const [hash, parents, shortHash, author, authorEmail, date, refsRaw, subject, bodyRaw] = t.split(SEP)
         const refs = refsRaw
             ? refsRaw
                   .trim()
@@ -368,6 +368,7 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
             shortHash,
             parents: parents ? parents.split(' ').filter(Boolean) : [],
             author,
+            authorEmail: authorEmail || undefined,
             date,
             subject,
             body: bodyRaw ? bodyRaw.trim() || undefined : undefined,
