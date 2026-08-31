@@ -182,4 +182,9 @@ export interface SshTestResult {
 export interface GithubUser {
     login: string
     name: string
+    avatarUrl: string
+    htmlUrl: string
+    bio: string
+    publicRepos: number
+    followers: number
 }

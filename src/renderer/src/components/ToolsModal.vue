@@ -16,9 +16,9 @@
 
     const TABS = [
         { key: 'general', label: 'General' },
+        { key: 'auth', label: 'Authentication' },
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
-        { key: 'auth', label: 'Authentication' },
     ] as const
     const tab = ref<'general' | 'hook' | 'ai' | 'auth'>('general')
 
@@ -211,10 +211,33 @@
 
     const auth = useAuthStore()
     const authSub = ref<'ssh' | 'github'>('ssh')
+    const activeKey = computed<SshKeyInfo | null>(
+        () => auth.keys.find(key => key.privateKeyPath === auth.config.sshKeyPath) ?? null
+    )
+    const keyOpen = ref(false)
+
+    function toggleKeyPop() {
+        keyOpen.value = !keyOpen.value
+    }
+
+    async function selectKey(keyPath: string) {
+        keyOpen.value = false
+        if (keyPath === auth.config.sshKeyPath) return
+        await setActiveKey(keyPath)
+    }
+
+    function onDocPointerDown(event: PointerEvent) {
+        if (!keyOpen.value) return
+        if ((event.target as HTMLElement | null)?.closest('.ssh-key-wrap')) return
+        keyOpen.value = false
+    }
+
+    onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
+    onUnmounted(() => document.removeEventListener('pointerdown', onDocPointerDown))
     const sshTesting = ref(false)
     const sshTestResult = ref<SshTestResult | null>(null)
     const generating = ref(false)
-    const genName = ref('id_ed25519')
+    const genName = ref('')
     const genComment = ref('')
     const genPassphrase = ref('')
     const githubBusy = ref(false)
@@ -225,7 +248,6 @@
         try {
             await auth.save({ ...auth.config, sshKeyPath: keyPath })
             await auth.refreshKeys()
-            notify(keyPath ? 'SSH key selected' : 'SSH key cleared — using system default', 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
@@ -253,13 +275,46 @@
         }
     }
 
+    async function deleteKey(key: SshKeyInfo) {
+        const ok = await confirmDialog({
+            message: `Permanently delete "${key.name}" (private + public key) from ~/.ssh? This cannot be undone.`,
+            confirmLabel: 'Delete',
+            danger: true,
+        })
+        if (!ok) return
+        try {
+            auth.keys = await window.api.auth.sshDelete(key.privateKeyPath)
+            notify(`SSH key "${key.name}" deleted`, 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    /** Key name without a trailing ".pub" — the input may include the extension (placeholder shows "filename.pub"). */
+    const genKeyName = computed(() => genName.value.trim().replace(/\.pub$/i, ''))
+
+    /** Same rules as `generateSshKey` in the main process — validated live so the Generate button can be disabled. */
+    const genNameError = computed<string | null>(() => {
+        if (!genName.value.trim()) return null
+        const name = genKeyName.value
+        if (!name || !/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name)) {
+            return 'Use only letters, numbers, "-", ".", "_" — must start with a letter or number'
+        }
+        if (auth.keys.some(key => key.name === `${name}.pub`)) {
+            return `Key "${name}.pub" already exists in ~/.ssh`
+        }
+        return null
+    })
+
     async function generateKey() {
-        if (generating.value) return
+        if (generating.value || genNameError.value || !genKeyName.value) return
         generating.value = true
         try {
-            const key = await window.api.auth.sshGenerate(genName.value, genComment.value, genPassphrase.value)
+            const key = await window.api.auth.sshGenerate(genKeyName.value, genComment.value, genPassphrase.value)
             await auth.refreshKeys()
             notify(`SSH key "${key.name}" created`, 'success')
+            genName.value = ''
+            genComment.value = ''
             genPassphrase.value = ''
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
@@ -471,30 +526,6 @@
                     </div>
                 </template>
 
-                <template v-else-if="tab === 'hook'">
-                    <div class="tools-section">
-                        <strong class="tools-section-title">Commit message</strong>
-                        <span class="setting-label">Format before generating</span>
-                        <div class="setting-choice-row">
-                            <button
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.formatBeforeGenerate }"
-                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
-                                <i-lucide-check
-                                    v-if="ui.formatBeforeGenerate"
-                                    width="13"
-                                    height="13" />
-                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
-                            </button>
-                        </div>
-                        <p class="tools-section-hint">
-                            When enabled, the repository's format command runs first if it has an
-                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
-                        </p>
-                    </div>
-                </template>
-
                 <template v-else-if="tab === 'auth'">
                     <div class="tools-section">
                         <div class="setting-choice-row">
@@ -525,81 +556,111 @@
                             </strong>
                             <label class="ai-field">
                                 <span>Key used for SSH remotes (applies to all repositories)</span>
-                                <div class="ai-field-select">
-                                    <select
-                                        :value="auth.config.sshKeyPath"
-                                        @change="setActiveKey(($event.target as HTMLSelectElement).value)">
-                                        <option value="">None — use system default</option>
-                                        <option
-                                            v-for="key in auth.keys"
-                                            :key="key.privateKeyPath"
-                                            :value="key.privateKeyPath">
-                                            {{ key.name }}
-                                        </option>
-                                    </select>
-                                    <i-lucide-chevron-down
-                                        class="ai-select-caret"
-                                        width="14"
-                                        height="14" />
-                                </div>
-                            </label>
-                        </div>
-
-                        <div class="tools-section">
-                            <strong class="tools-section-title">Keys in ~/.ssh</strong>
-                            <p
-                                v-if="auth.keys.length === 0"
-                                class="tools-section-hint">
-                                No SSH keys found — generate one below.
-                            </p>
-                            <div
-                                v-for="key in auth.keys"
-                                :key="key.privateKeyPath"
-                                class="auth-key-row"
-                                :class="{ active: key.active }">
-                                <div class="auth-key-meta">
-                                    <strong>
-                                        {{ key.name }}
-                                        <i-lucide-check
-                                            v-if="key.active"
+                                <div class="ssh-key-wrap">
+                                    <button
+                                        type="button"
+                                        class="workspace-btn"
+                                        title="Choose SSH key"
+                                        @click="toggleKeyPop()">
+                                        <i-lucide-key-round
+                                            width="13"
+                                            height="13" />
+                                        <span class="workspace-btn-name">
+                                            {{ activeKey?.name ?? 'None — use system default' }}
+                                        </span>
+                                        <i-lucide-chevron-down
                                             width="12"
                                             height="12" />
-                                    </strong>
-                                    <small>{{ key.fingerprint || key.publicKeyPath }}</small>
+                                    </button>
+                                    <div
+                                        v-if="keyOpen"
+                                        class="workspace-pop">
+                                        <button
+                                            type="button"
+                                            class="workspace-item"
+                                            :class="{ active: !activeKey }"
+                                            @click="selectKey('')">
+                                            <i-lucide-check
+                                                v-if="!activeKey"
+                                                width="13"
+                                                height="13" />
+                                            <span
+                                                v-else
+                                                class="workspace-item-spacer" />
+                                            <span class="workspace-item-name">None — use system default</span>
+                                        </button>
+                                        <div
+                                            v-for="key in auth.keys"
+                                            :key="key.privateKeyPath"
+                                            class="workspace-row">
+                                            <button
+                                                type="button"
+                                                class="workspace-item"
+                                                :class="{ active: key.active }"
+                                                :title="key.fingerprint || key.publicKeyPath"
+                                                @click="selectKey(key.privateKeyPath)">
+                                                <i-lucide-check
+                                                    v-if="key.active"
+                                                    width="13"
+                                                    height="13" />
+                                                <span
+                                                    v-else
+                                                    class="workspace-item-spacer" />
+                                                <span class="workspace-item-name">{{ key.name }}</span>
+                                            </button>
+                                            <button
+                                                v-if="!key.active"
+                                                class="icon-btn danger workspace-item-delete"
+                                                title="Delete key pair from ~/.ssh"
+                                                @click="deleteKey(key)">
+                                                <i-lucide-trash-2
+                                                    width="12"
+                                                    height="12" />
+                                            </button>
+                                        </div>
+                                        <p
+                                            v-if="auth.keys.length === 0"
+                                            class="tools-section-hint">
+                                            No SSH keys found — generate one below.
+                                        </p>
+                                    </div>
                                 </div>
-                                <span class="spacer" />
-                                <button
-                                    class="btn small"
-                                    title="Copy public key to clipboard"
-                                    @click="copyPublicKey(key)">
-                                    <i-lucide-copy
-                                        width="13"
-                                        height="13" />
-                                    Copy
-                                </button>
-                                <button
-                                    class="btn small"
-                                    :disabled="sshTesting"
-                                    title="Test against git@github.com"
-                                    @click="testKey(key)">
-                                    <i-lucide-flask-conical
-                                        v-if="!sshTesting"
-                                        width="13"
-                                        height="13" />
-                                    <i-lucide-loader-circle
-                                        v-else
-                                        class="spinning"
-                                        width="13"
-                                        height="13" />
-                                    Test
-                                </button>
-                            </div>
-                            <span
-                                v-if="sshTestResult"
-                                class="ai-test-result"
-                                :class="sshTestResult.ok ? 'ok' : 'err'"
-                                >{{ sshTestResult.message }}</span
-                            >
+                            </label>
+                            <template v-if="activeKey">
+                                <div class="tools-actions ssh-key-actions">
+                                    <button
+                                        class="btn small"
+                                        :disabled="sshTesting"
+                                        :title="`Test ${activeKey.name} against git@github.com`"
+                                        @click="testKey(activeKey)">
+                                        <i-lucide-flask-conical
+                                            v-if="!sshTesting"
+                                            width="13"
+                                            height="13" />
+                                        <i-lucide-loader-circle
+                                            v-else
+                                            class="spinning"
+                                            width="13"
+                                            height="13" />
+                                        Test
+                                    </button>
+                                    <button
+                                        class="btn small"
+                                        :title="`Copy ${activeKey.name} public key to clipboard`"
+                                        @click="copyPublicKey(activeKey)">
+                                        <i-lucide-copy
+                                            width="13"
+                                            height="13" />
+                                        Copy
+                                    </button>
+                                </div>
+                                <span
+                                    v-if="sshTestResult"
+                                    class="ai-test-result"
+                                    :class="sshTestResult.ok ? 'ok' : 'err'"
+                                    >{{ sshTestResult.message }}</span
+                                >
+                            </template>
                         </div>
 
                         <div class="tools-section">
@@ -610,8 +671,13 @@
                                     <input
                                         v-model="genName"
                                         type="text"
-                                        placeholder="id_ed25519"
+                                        placeholder="filename.pub"
                                         autocomplete="off" />
+                                </div>
+                                <div
+                                    v-if="genNameError"
+                                    class="auth-gen-error">
+                                    {{ genNameError }}
                                 </div>
                             </label>
                             <label class="ai-field">
@@ -634,7 +700,7 @@
                                         autocomplete="new-password" />
                                     <button
                                         class="btn success small"
-                                        :disabled="generating"
+                                        :disabled="generating || !genName.trim() || genNameError !== null"
                                         @click="generateKey()">
                                         <i-lucide-loader-circle
                                             v-if="generating"
@@ -673,11 +739,41 @@
                                     height="13" />
                                 GitHub account
                             </strong>
-                            <p class="tools-section-hint">
-                                <template v-if="githubUser">
-                                    Signed in as <strong>{{ githubUser.name || githubUser.login }}</strong> ({{ githubUser.login }})
-                                </template>
-                                <template v-else>Not signed in.</template>
+                            <div
+                                v-if="githubUser"
+                                class="github-account">
+                                <img
+                                    v-if="githubUser.avatarUrl"
+                                    class="github-avatar"
+                                    :src="githubUser.avatarUrl"
+                                    :alt="githubUser.login" />
+                                <div class="github-account-meta">
+                                    <strong>
+                                        {{ githubUser.login }}
+                                        <span
+                                            v-if="githubUser.name"
+                                            class="github-account-name">{{ githubUser.name }}</span>
+                                    </strong>
+                                    <small
+                                        v-if="githubUser.bio"
+                                        class="github-account-bio">{{ githubUser.bio }}</small>
+                                    <small class="github-account-stats">
+                                        <i-lucide-folder-git-2
+                                            width="12"
+                                            height="12" />
+                                        {{ githubUser.publicRepos }} repos
+                                        <span class="dot-sep">·</span>
+                                        <i-lucide-users
+                                            width="12"
+                                            height="12" />
+                                        {{ githubUser.followers }} followers
+                                    </small>
+                                </div>
+                            </div>
+                            <p
+                                v-else
+                                class="tools-section-hint">
+                                Not signed in.
                             </p>
                             <p class="tools-section-hint">
                                 The token is used for HTTPS pushes/pulls to github.com and is stored locally in the app data folder.
@@ -732,6 +828,30 @@
                             </div>
                         </div>
                     </template>
+                </template>
+
+                <template v-else-if="tab === 'hook'">
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Commit message</strong>
+                        <span class="setting-label">Format before generating</span>
+                        <div class="setting-choice-row">
+                            <button
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.formatBeforeGenerate }"
+                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
+                                <i-lucide-check
+                                    v-if="ui.formatBeforeGenerate"
+                                    width="13"
+                                    height="13" />
+                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">
+                            When enabled, the repository's format command runs first if it has an
+                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
+                        </p>
+                    </div>
                 </template>
 
                 <template v-else>

@@ -166,6 +166,7 @@ const api = {
         sshGenerate: (name: string, comment: string, passphrase: string): Promise<SshKeyInfo> =>
             call('auth:ssh:generate', name, comment, passphrase),
         sshTest: (keyPath: string): Promise<SshTestResult> => call('auth:ssh:test', keyPath),
+        sshDelete: (keyPath: string): Promise<SshKeyInfo[]> => call('auth:ssh:delete', keyPath),
         openSshDir: (): Promise<string> => call('auth:ssh:openDir'),
         githubStatus: (): Promise<GithubUser | null> => call('auth:github:status'),
         githubVerify: (token: string): Promise<GithubUser> => call('auth:github:verify', token),

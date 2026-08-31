@@ -30,11 +30,69 @@ import type { FSWatcher } from 'node:fs'
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 
+/**
+ * simple-git (>=3.24) blocks env vars / config it considers unsafe unless the
+ * matching `unsafe.*` flag is enabled. This app intentionally injects some of
+ * them itself, so the flags must mirror `authGitEnv()` and the desktop env:
+ * - GIT_SSH_COMMAND            — pins the active SSH key        → allowUnsafeSshCommand
+ * - GIT_CONFIG_COUNT/KEY/VALUE — GitHub token extraheader      → allowUnsafeConfigEnvCount + allowUnsafeConfigPaths
+ * - GIT_EDITOR ('true')        — non-interactive rebase steps  → allowUnsafeEditor
+ * - GIT_ASKPASS / SSH_ASKPASS  — inherited from the desktop environment (e.g. VS Code) → allowUnsafeAskPass
+ */
+const SAFE_UNSAFE_OPTIONS = {
+    unsafe: {
+        allowUnsafeAskPass: true,
+        allowUnsafeSshCommand: true,
+        allowUnsafeConfigEnvCount: true,
+        allowUnsafeConfigPaths: true,
+        allowUnsafeEditor: true,
+    },
+} as unknown as Partial<SimpleGitOptions>
+
 function createGit(dir: string): SimpleGit {
     const options = {
         debug: (data: string) => log('debug', 'git', maskUrl(data)),
+        ...SAFE_UNSAFE_OPTIONS,
     } as unknown as Partial<SimpleGitOptions>
-    return simpleGit(dir, options)
+    const git = simpleGit(dir, options)
+    git.env(baseEnv())
+    return git
+}
+
+/**
+ * Clean environment for local git operations — identical to the app's own env
+ * minus askpass variables inherited from the desktop environment (e.g. VS Code),
+ * which simple-git blocks unless allowed. Auth credentials (SSH key / GitHub
+ * token) are NOT part of this; they are injected per-command via `withAuthEnv`.
+ */
+export function baseEnv(): NodeJS.ProcessEnv {
+    const env = { ...process.env }
+    delete env.GIT_ASKPASS
+    delete env.SSH_ASKPASS
+    return env
+}
+
+/**
+ * Runs a network operation (fetch/pull/push/ls-remote…) with the credentials
+ * configured in the Authentication settings injected for the duration of that
+ * command only — repo opening and all local operations always run with the
+ * clean `baseEnv()`.
+ */
+async function withAuthEnv<T>(op: (git: SimpleGit) => Promise<T>): Promise<T> {
+    const { git } = getRepo()
+    git.env({ ...baseEnv(), ...authGitEnv() })
+    try {
+        return await op(git)
+    } finally {
+        git.env(baseEnv())
+    }
+}
+
+/** One-off git instance for standalone commands (init/clone) outside repo sessions. */
+export function plainGit(dir = ''): SimpleGit {
+    const git = simpleGit(dir, SAFE_UNSAFE_OPTIONS)
+    git.env(baseEnv())
+    return git
 }
 
 export function getRepo(): { path: string; git: SimpleGit } {
@@ -49,7 +107,6 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
     if (!(await g.checkIsRepo())) {
         throw new Error(`"${dir}" is not a git repository`)
     }
-    g.env({ ...process.env, ...authGitEnv() })
     const reopened = repoInstances.has(dir)
     repoInstances.set(dir, g)
     activeRepoPath = dir
@@ -60,7 +117,6 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
 
 export function setActiveRepo(dir: string): void {
     if (!repoInstances.has(dir)) throw new Error(`Repository "${dir}" is not open`)
-    repoInstances.get(dir)?.env({ ...process.env, ...authGitEnv() })
     activeRepoPath = dir
     log('info', 'repo', `active -> ${dir}`)
 }
@@ -719,12 +775,11 @@ export async function deleteBranch(name: string): Promise<void> {
 }
 
 export async function deleteRemoteBranch(ref: string): Promise<string> {
-    const { git: g } = getRepo()
     const parts = ref.replace(/^remotes\//, '').split('/')
     const remote = parts.shift()
     const branch = parts.join('/')
     if (!remote || !branch) throw new Error(`Invalid remote branch reference: ${ref}`)
-    await g.push([remote, `:refs/heads/${branch}`])
+    await withAuthEnv(g => g.push([remote, `:refs/heads/${branch}`]))
     return `Remote branch ${branch} deleted`
 }
 
@@ -735,8 +790,7 @@ export async function merge(name: string): Promise<string> {
 }
 
 export async function fetchAll(): Promise<string> {
-    const { git: g } = getRepo()
-    await g.fetch(['--all', '--tags'])
+    await withAuthEnv(git => git.fetch(['--all', '--tags']))
     return 'Fetch completed'
 }
 
@@ -745,14 +799,13 @@ export async function push(): Promise<string> {
     const status = await g.status()
     const branch = status.current
     const tracking = status.tracking
-    if (tracking) await g.push()
-    else await g.push(['--set-upstream', 'origin', branch as string])
+    if (tracking) await withAuthEnv(git => git.push())
+    else await withAuthEnv(git => git.push(['--set-upstream', 'origin', branch as string]))
     return 'Pushed successfully'
 }
 
 export async function pull(): Promise<string> {
-    const { git: g } = getRepo()
-    const res = await g.pull(['--no-rebase'])
+    const res = await withAuthEnv(git => git.pull(['--no-rebase']))
     return `Pulled (${res.summary.changes} changes)`
 }
 
@@ -767,17 +820,17 @@ export async function pushBranch(name: string, force = false): Promise<string> {
         const slash = upstream.indexOf('/')
         const remote = slash > 0 ? upstream.slice(0, slash) : 'origin'
         const remoteBranch = slash > 0 ? upstream.slice(slash + 1) : name
-        await g.push([remote, `refs/heads/${name}:refs/heads/${remoteBranch}`, ...flags])
+        await withAuthEnv(git => git.push([remote, `refs/heads/${name}:refs/heads/${remoteBranch}`, ...flags]))
         return force ? `${name} force-pushed` : `${name} pushed`
     }
-    await g.push(['--set-upstream', 'origin', name, ...flags])
+    await withAuthEnv(git => git.push(['--set-upstream', 'origin', name, ...flags]))
     return force ? `${name} force-pushed` : `${name} pushed`
 }
 
 export async function pullBranch(name: string): Promise<string> {
     const { git: g } = getRepo()
     if ((await g.status()).current === name) {
-        const res = await g.pull(['--no-rebase'])
+        const res = await withAuthEnv(git => git.pull(['--no-rebase']))
         return `Pulled (${res.summary.changes} changes)`
     }
     let upstream = ''
@@ -787,7 +840,7 @@ export async function pullBranch(name: string): Promise<string> {
     if (!upstream) throw new Error(`"${name}" has no upstream; can't pull`)
     const slash = upstream.indexOf('/')
     if (slash <= 0) throw new Error(`Invalid upstream for "${name}": ${upstream}`)
-    await g.fetch([upstream.slice(0, slash), upstream.slice(slash + 1)])
+    await withAuthEnv(git => git.fetch([upstream.slice(0, slash), upstream.slice(slash + 1)]))
     const oldTip = (await g.raw(['rev-parse', name])).trim()
     const fetched = (await g.raw(['rev-parse', 'FETCH_HEAD'])).trim()
     const base = (await g.raw(['merge-base', name, 'FETCH_HEAD'])).trim()
@@ -850,12 +903,22 @@ export async function rebaseOnto(ref: string): Promise<string> {
 
 export async function rebaseAbort(): Promise<void> {
     const { git: g } = getRepo()
-    await g.env({ ...process.env, GIT_EDITOR: 'true' }).raw(['rebase', '--abort'])
+    g.env({ ...baseEnv(), GIT_EDITOR: 'true' })
+    try {
+        await g.raw(['rebase', '--abort'])
+    } finally {
+        g.env(baseEnv())
+    }
 }
 
 export async function rebaseContinue(): Promise<void> {
     const { git: g } = getRepo()
-    await g.env({ ...process.env, GIT_EDITOR: 'true' }).raw(['rebase', '--continue'])
+    g.env({ ...baseEnv(), GIT_EDITOR: 'true' })
+    try {
+        await g.raw(['rebase', '--continue'])
+    } finally {
+        g.env(baseEnv())
+    }
 }
 
 export async function cherryPick(hash: string): Promise<void> {
@@ -996,21 +1059,18 @@ export async function deleteTag(name: string): Promise<void> {
 }
 
 export async function pushTags(): Promise<string> {
-    const { git: g } = getRepo()
-    await g.push(['origin', '--tags'])
+    await withAuthEnv(git => git.push(['origin', '--tags']))
     return 'Tags pushed'
 }
 
 export async function pushTag(name: string): Promise<string> {
-    const { git: g } = getRepo()
-    await g.push(['origin', `refs/tags/${name.trim()}`])
+    await withAuthEnv(git => git.push(['origin', `refs/tags/${name.trim()}`]))
     return `Tag ${name.trim()} pushed`
 }
 
 export async function listRemoteTags(): Promise<string[]> {
-    const { git: g } = getRepo()
     try {
-        const out = await g.raw(['ls-remote', '--tags', 'origin'])
+        const out = await withAuthEnv(git => git.raw(['ls-remote', '--tags', 'origin']))
         const names = new Set<string>()
         for (const line of out.split('\n')) {
             const ref = line.split('\t')[1] ?? ''
@@ -1024,8 +1084,7 @@ export async function listRemoteTags(): Promise<string[]> {
 }
 
 export async function deleteRemoteTag(name: string): Promise<string> {
-    const { git: g } = getRepo()
-    await g.push(['origin', `:refs/tags/${name.trim()}`])
+    await withAuthEnv(git => git.push(['origin', `:refs/tags/${name.trim()}`]))
     return `Remote tag ${name.trim()} deleted`
 }
 
@@ -1058,7 +1117,7 @@ export async function testRemoteUrl(rawUrl: string): Promise<RemoteTestResult> {
     if (!url) return { ok: false, message: 'Enter a remote URL first' }
     try {
         await new Promise<void>((resolve, reject) => {
-            execFile('git', ['ls-remote', url, 'HEAD'], { timeout: 20_000 }, err => {
+            execFile('git', ['ls-remote', url, 'HEAD'], { timeout: 20_000, env: { ...baseEnv(), ...authGitEnv() } }, err => {
                 if (err) reject(new Error(err instanceof Error ? err.message : String(err)))
                 else resolve()
             })
@@ -1434,7 +1493,6 @@ export function listSubmodules(): string[] {
 }
 
 export async function updateSubmodules(): Promise<string> {
-    const { git: g } = getRepo()
-    await g.submoduleUpdate(['--init', '--recursive'])
+    await withAuthEnv(git => git.submoduleUpdate(['--init', '--recursive']))
     return 'Submodules updated'
 }

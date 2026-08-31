@@ -78,6 +78,7 @@ declare module 'vue' {
     ILucideTrash2: typeof import('~icons/lucide/trash2')['default']
     ILucideUnfoldVertical: typeof import('~icons/lucide/unfold-vertical')['default']
     ILucideUserRound: typeof import('~icons/lucide/user-round')['default']
+    ILucideUsers: typeof import('~icons/lucide/users')['default']
     ILucideX: typeof import('~icons/lucide/x')['default']
     ILucideZap: typeof import('~icons/lucide/zap')['default']
     IMageMessageDots: typeof import('~icons/mage/message-dots')['default']

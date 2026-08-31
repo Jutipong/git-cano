@@ -93,9 +93,12 @@ import {
     updateSubmodules,
     listFiles,
     addIgnoreRule,
+    plainGit,
+    baseEnv,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
 import {
+    authGitEnv,
     generateSshKey,
     getAuthConfig,
     githubStatus,
@@ -105,6 +108,7 @@ import {
     saveAuthConfig,
     testSshKey,
     verifyGithubToken,
+    deleteSshKey,
 } from './auth'
 import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
@@ -245,9 +249,7 @@ app.whenReady().then(() => {
             properties: ['openDirectory', 'createDirectory'],
         })
         if (res.canceled || !res.filePaths[0]) return null
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { simpleGit } = await import('simple-git')
-        await simpleGit(res.filePaths[0]).init()
+        await plainGit(res.filePaths[0]).init()
         return openRepo(res.filePaths[0])
     })
     handle('repo:pickDir', async () => {
@@ -269,10 +271,10 @@ app.whenReady().then(() => {
             if (res.canceled || !res.filePaths[0]) return null
             dest = res.filePaths[0]
         }
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
-        const { simpleGit } = await import('simple-git')
         const destPath = path.join(dest, path.basename(url, '.git'))
-        await simpleGit().clone(url, destPath)
+        const g = plainGit()
+        g.env({ ...baseEnv(), ...authGitEnv() })
+        await g.clone(url, destPath)
         return openRepo(destPath)
     })
     handle('repo:openPath', (_dir: string) => openRepo(_dir as string))
@@ -666,6 +668,7 @@ app.whenReady().then(() => {
         generateSshKey(String(name), String(comment ?? ''), typeof passphrase === 'string' ? passphrase : undefined)
     )
     handleSensitive('auth:ssh:test', (keyPath: string) => testSshKey(String(keyPath)))
+    handleSensitive('auth:ssh:delete', (keyPath: string) => deleteSshKey(String(keyPath)))
     handle('auth:ssh:openDir', () => openSshDir())
     handleSensitive('auth:github:status', () => githubStatus())
     handleSensitive('auth:github:verify', (token: string) => verifyGithubToken(String(token)))

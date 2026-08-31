@@ -90,8 +90,32 @@ export function listSshKeys(): SshKeyInfo[] {
     return keys
 }
 
+/**
+ * Permanently removes a key pair (private + `.pub`) from ~/.ssh and returns the
+ * remaining keys. Only files inside ~/.ssh may be deleted; if the deleted key
+ * was the active one the selection is cleared.
+ */
+export function deleteSshKey(privateKeyPath: string): SshKeyInfo[] {
+    const dir = sshDir()
+    const resolved = path.resolve(privateKeyPath.trim())
+    if (!resolved.startsWith(dir + path.sep)) throw new Error('Only keys inside ~/.ssh can be deleted')
+    const pub = resolved.endsWith('.pub') ? resolved : `${resolved}.pub`
+    const priv = pub.replace(/\.pub$/, '')
+    if (!fs.existsSync(priv) && !fs.existsSync(pub)) throw new Error(`Key "${path.basename(priv)}" not found`)
+    fs.rmSync(priv, { force: true })
+    fs.rmSync(pub, { force: true })
+    const cfg = getAuthConfig()
+    if (cfg.sshKeyPath && path.resolve(cfg.sshKeyPath) === priv) {
+        saveAuthConfig({ ...cfg, sshKeyPath: '' })
+        log('info', 'auth', 'active SSH key deleted — selection cleared')
+    }
+    log('info', 'auth', `deleted SSH key ${path.basename(priv)}`)
+    return listSshKeys()
+}
+
 export function generateSshKey(name: string, comment: string, passphrase?: string): SshKeyInfo {
-    const cleanName = name.trim() || 'id_ed25519'
+    const cleanName = name.trim()
+    if (!cleanName) throw new Error('Enter a key file name')
     if (!/^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(cleanName)) throw new Error('Invalid key file name')
     const dir = sshDir()
     fs.mkdirSync(dir, { recursive: true })
@@ -154,9 +178,17 @@ export async function verifyGithubToken(token: string): Promise<GithubUser> {
     if (!res.ok) {
         throw new Error(res.status === 401 ? 'Invalid token (401 Unauthorized)' : `GitHub request failed (HTTP ${res.status})`)
     }
-    const json = (await res.json().catch(() => null)) as { login?: unknown; name?: unknown } | null
+    const json = (await res.json().catch(() => null)) as Record<string, unknown> | null
     if (!json || typeof json.login !== 'string') throw new Error('Unexpected response from GitHub')
-    return { login: json.login, name: typeof json.name === 'string' ? json.name : '' }
+    return {
+        login: json.login,
+        name: typeof json.name === 'string' ? json.name : '',
+        avatarUrl: typeof json.avatar_url === 'string' ? json.avatar_url : '',
+        htmlUrl: typeof json.html_url === 'string' ? json.html_url : '',
+        bio: typeof json.bio === 'string' ? json.bio : '',
+        publicRepos: typeof json.public_repos === 'number' ? json.public_repos : 0,
+        followers: typeof json.followers === 'number' ? json.followers : 0,
+    }
 }
 
 export async function githubStatus(): Promise<GithubUser | null> {
