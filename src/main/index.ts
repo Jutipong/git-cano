@@ -114,6 +114,8 @@ import {
 import { log, summarize, summarizeArgs } from './logger'
 import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
+import type { MergeMode } from '@shared/types'
+
 let win: BrowserWindow | null = null
 
 onRepoChanged(repoPath => {

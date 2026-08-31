@@ -193,7 +193,7 @@
         for (const author of new Set(visibleCommits.value.map(commit => commit.author))) {
             widest = Math.max(widest, measureText(author, 13))
         }
-        return Math.round(Math.min(AUTHOR_MAX_W, Math.max(AUTHOR_MIN_W, widest + 32)))
+        return Math.round(Math.min(AUTHOR_MAX_W, Math.max(AUTHOR_MIN_W, widest + 8)))
     })
     const dateW = computed(() => {
         let widest = 0
@@ -257,6 +257,23 @@
     }
     function nameColor(name: string): string {
         return COLORS[hashString(name) % COLORS.length]
+    }
+
+    /* row tick: lane color, slightly darkened */
+    function tickColor(commit: CommitNode): string {
+        return `color-mix(in srgb, ${nodeColor(commit)} 80%, black)`
+    }
+
+    function hasAvatar(commit: CommitNode): boolean {
+        return auth.isGithubUser(commit.author, commit.authorEmail) && !!auth.githubUser?.avatarUrl
+    }
+
+    function avatarStyle(commit: CommitNode) {
+        return {
+            left: `${nodeX(commit)}px`,
+            '--avatar-color': nameColor(commit.author),
+            '--node-color': nodeColor(commit),
+        }
     }
 
     interface SubjectPart {
@@ -373,6 +390,29 @@
                     aria-hidden="true">
                     <template
                         v-for="(commit, index) in visibleCommits"
+                        :key="`tint-${commit.hash}`">
+                        <rect
+                            v-show="index >= visibleRange[0] - 5 && index <= visibleRange[1] + 5"
+                            class="lane-tint"
+                            :x="nodeX(commit)"
+                            :y="index * rowH + 1"
+                            :width="Math.max(0, graphW - nodeX(commit))"
+                            :height="rowH - 2"
+                            rx="2"
+                            :fill="nodeColor(commit)"
+                            fill-opacity="0.1" />
+                        <rect
+                            v-show="index >= visibleRange[0] - 5 && index <= visibleRange[1] + 5"
+                            class="lane-tick"
+                            :x="graphW - 3"
+                            :y="index * rowH + 1"
+                            width="3"
+                            :height="rowH - 2"
+                            rx="1.5"
+                            :fill="tickColor(commit)" />
+                    </template>
+                    <template
+                        v-for="(commit, index) in visibleCommits"
                         :key="commit.hash">
                         <template
                             v-for="parent in commit.parents"
@@ -415,28 +455,6 @@
                             r="12"
                             fill="none"
                             stroke-width="2" />
-                        <circle
-                            class="node-dot"
-                            :class="{
-                                selected: selectedHash === commit.hash,
-                                merge: commit.parents.length > 1,
-                            }"
-                            :style="{ '--node-color': nodeColor(commit) }"
-                            :cx="nodeX(commit)"
-                            :cy="nodeY(index)"
-                            :r="selectedHash === commit.hash ? 7 : 6"
-                            :fill="nodeColor(commit)"
-                            stroke="var(--canvas)"
-                            stroke-width="2" />
-                        <circle
-                            v-if="commit.parents.length > 1"
-                            class="merge-ring"
-                            :style="{ '--node-color': nodeColor(commit) }"
-                            :cx="nodeX(commit)"
-                            :cy="nodeY(index)"
-                            r="7.5"
-                            fill="none"
-                            stroke-width="1.5" />
                     </g>
                 </svg>
                 <div
@@ -455,7 +473,6 @@
                         height: `${rowH}px`,
                         '--graph-w': `${graphW}px`,
                         '--row-color': nodeColor(commit),
-                        '--row-start': `${nodeX(commit)}px`,
                     }"
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
@@ -473,7 +490,18 @@
                     @dragleave="dropTargetHash = null">
                     <div
                         class="graph-cell"
-                        :style="{ width: `${graphW}px` }" />
+                        :style="{ width: `${graphW}px` }">
+                        <span
+                            class="node-avatar"
+                            :class="{ selected: selectedHash === commit.hash, photo: hasAvatar(commit) }"
+                            :style="avatarStyle(commit)"
+                            ><img
+                                v-if="hasAvatar(commit)"
+                                class="author-avatar-img"
+                                :src="auth.githubUser?.avatarUrl"
+                                :alt="commit.author"
+                        /></span>
+                    </div>
                     <span class="commit-subject">
                         <span
                             v-if="commit.refs.length"
@@ -533,16 +561,6 @@
                     <span
                         v-if="ui.commitColumns.author"
                         class="commit-author">
-                        <span
-                            class="author-avatar"
-                            :style="{ '--avatar-color': nameColor(commit.author) }"
-                            ><img
-                                v-if="auth.isGithubUser(commit.author, commit.authorEmail) && auth.githubUser?.avatarUrl"
-                                class="author-avatar-img"
-                                :src="auth.githubUser.avatarUrl"
-                                :alt="commit.author" />
-                            <template v-else>{{ commit.author.slice(0, 1).toUpperCase() }}</template>
-                        </span>
                         <span class="author-name">{{ commit.author }}</span>
                     </span>
                     <span

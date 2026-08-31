@@ -18,6 +18,28 @@
     const uiTransient = useUiTransientStore()
 
     const ui = useUiStore()
+
+    const ZOOM_CHOICES = [70, 80, 90, 100, 110, 125, 140, 150]
+    const zoomMenuOpen = ref(false)
+    const zoomMenuRoot = ref<HTMLElement | null>(null)
+    function selectZoom(value: number) {
+        ui.zoom = value
+        zoomMenuOpen.value = false
+    }
+    function onZoomMenuMouseDown(event: MouseEvent) {
+        if (zoomMenuOpen.value && zoomMenuRoot.value && !zoomMenuRoot.value.contains(event.target as Node)) zoomMenuOpen.value = false
+    }
+    function onZoomMenuKeyDown(event: KeyboardEvent) {
+        if (event.key === 'Escape') zoomMenuOpen.value = false
+    }
+    onMounted(() => {
+        document.addEventListener('mousedown', onZoomMenuMouseDown)
+        document.addEventListener('keydown', onZoomMenuKeyDown)
+    })
+    onBeforeUnmount(() => {
+        document.removeEventListener('mousedown', onZoomMenuMouseDown)
+        document.removeEventListener('keydown', onZoomMenuKeyDown)
+    })
     const repoStore = useRepoStore()
     const local = ref<{ name: string; current: boolean; detached?: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
     const remote = ref<{ name: string; current: boolean; commitHash?: string }[]>([])
@@ -544,6 +566,46 @@
 
         <div class="sidebar-bottom">
             <div class="sidebar-bottom-actions">
+                <div
+                    ref="zoomMenuRoot"
+                    class="zoom-group">
+                    <button
+                        class="toolbar-icon-button zoom-btn"
+                        title="UI zoom"
+                        :aria-expanded="zoomMenuOpen"
+                        @click="zoomMenuOpen = !zoomMenuOpen">
+                        <i-lucide-zoom-in
+                            width="15"
+                            height="15" />
+                        <span class="zoom-label">{{ ui.zoom }}%</span>
+                        <i-lucide-chevron-up
+                            width="12"
+                            height="12" />
+                    </button>
+                    <div
+                        v-if="zoomMenuOpen"
+                        class="zoom-menu"
+                        role="listbox"
+                        aria-label="UI zoom level">
+                        <button
+                            v-for="value in ZOOM_CHOICES"
+                            :key="value"
+                            class="zoom-menu-item"
+                            :class="{ active: ui.zoom === value }"
+                            role="option"
+                            :aria-selected="ui.zoom === value"
+                            @click="selectZoom(value)">
+                            <i-lucide-check
+                                v-if="ui.zoom === value"
+                                width="13"
+                                height="13" />
+                            <span
+                                v-else
+                                class="zoom-menu-bullet" />
+                            {{ value }}%
+                        </button>
+                    </div>
+                </div>
                 <button
                     class="toolbar-icon-button"
                     :class="{ 'bisect-active': repoStore.repoState.bisectActive }"

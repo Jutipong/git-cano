@@ -32,7 +32,7 @@ export const FONT_SIZE_OPTIONS = [12, 13, 14, 15, 16]
 export const DEFAULT_FONT_SIZE = 14
 
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
-export const ZOOM_OPTIONS = [80, 90, 100, 110, 125, 150]
+export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
 export const DEFAULT_ZOOM = 100
 
 /** Code viewer font size (Blame / File History diff) — adjustable with Ctrl+wheel. */

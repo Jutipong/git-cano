@@ -13,7 +13,7 @@
     ]
 
     const COLUMNS: { key: CommitColumn; label: string; hint: string }[] = [
-        { key: 'author', label: 'Author', hint: 'Author avatar and name' },
+        { key: 'author', label: 'Author', hint: 'Author name' },
         { key: 'hash', label: 'Hash', hint: 'Short commit hash' },
         { key: 'date', label: 'Date', hint: 'Commit date' },
     ]
