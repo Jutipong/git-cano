@@ -316,16 +316,31 @@
     }
 
     let syncing = false
+
+    /**
+     * All three views scroll together (like GitKraken's merge tool). The output pane has a different line count than the top panes, so sync
+     * is proportional (scroll ratio), not pixel-exact — for the two top panes (identical heights) the ratio still lands on the same
+     * pixels.
+     */
     function onPaneScroll(event: Event) {
         if (syncing) return
         const source = event.target as HTMLElement
+        const sourceMax = source.scrollHeight - source.clientHeight
+        if (sourceMax <= 0) return
+        const ratio = source.scrollTop / sourceMax
         syncing = true
-        for (const side of Object.keys(paneEls) as Side[]) {
-            const el = paneEls[side]
-            if (el && el !== source) {
-                el.scrollTop = source.scrollTop
-                el.scrollLeft = source.scrollLeft
-            }
+        const targets = [...(Object.keys(paneEls) as Side[]).map(side => paneEls[side]), outputEl.value]
+        for (const el of targets) {
+            if (!el || el === source) continue
+            const targetMax = el.scrollHeight - el.clientHeight
+            el.scrollTop = targetMax > 0 ? ratio * targetMax : 0
+        }
+        // horizontal scroll stays pixel-exact between the two top panes (same content shape)
+        const sides = Object.keys(paneEls) as Side[]
+        const sourceSide = sides.find(side => paneEls[side] === source)
+        if (sourceSide) {
+            const other = paneEls[sourceSide === 'ours' ? 'theirs' : 'ours']
+            if (other && other.scrollLeft !== source.scrollLeft) other.scrollLeft = source.scrollLeft
         }
         requestAnimationFrame(() => {
             syncing = false
@@ -349,6 +364,8 @@
     function scrollToBlock(blockIndex: number) {
         const block = blocks.value[blockIndex]
         if (!block) return
+        // exact per-view positioning — suppress scroll-sync feedback while doing it
+        syncing = true
         for (const side of Object.keys(paneEls) as Side[]) {
             const el = paneEls[side]
             const start = block.matchIdx[side]
@@ -366,6 +383,9 @@
             const lineEl = out.querySelectorAll('.diff-line')[firstOut] as HTMLElement | undefined
             if (lineEl) out.scrollTop = Math.max(0, lineEl.offsetTop - out.clientHeight / 3)
         }
+        requestAnimationFrame(() => {
+            syncing = false
+        })
     }
 
     // ---- output pane resizing (height persists via ui store, like the other splitters) ----
@@ -592,7 +612,8 @@
                     </div>
                     <div
                         ref="outputEl"
-                        class="output-body">
+                        class="output-body"
+                        @scroll.passive="onPaneScroll">
                         <div
                             v-for="(line, idx) in resultLines"
                             :key="idx"
