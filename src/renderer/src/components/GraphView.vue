@@ -71,6 +71,7 @@
     }
     onMounted(() => window.addEventListener('keydown', onKeydown))
     onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+    onBeforeUnmount(() => window.clearTimeout(avatarTipTimer))
 
     const normalizedQuery = computed(() => uiTransient.searchQuery.trim().toLowerCase())
     const visibleCommits = computed(() =>
@@ -89,6 +90,7 @@
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
 
     function onScroll() {
+        hideAvatarTip()
         const el = scrollEl.value
         if (!el) return
         const start = Math.max(0, Math.floor(el.scrollTop / rowH) - 15)
@@ -274,6 +276,22 @@
             '--avatar-color': nameColor(commit.author),
             '--node-color': nodeColor(commit),
         }
+    }
+
+    const avatarTip = ref<{ commit: CommitNode; x: number; y: number } | null>(null)
+    let avatarTipTimer: number | undefined
+
+    function showAvatarTip(commit: CommitNode, event: MouseEvent) {
+        const { clientX, clientY } = event
+        window.clearTimeout(avatarTipTimer)
+        avatarTipTimer = window.setTimeout(() => {
+            avatarTip.value = { commit, x: clientX, y: clientY }
+        }, 500)
+    }
+
+    function hideAvatarTip() {
+        window.clearTimeout(avatarTipTimer)
+        avatarTip.value = null
     }
 
     interface SubjectPart {
@@ -495,6 +513,8 @@
                             class="node-avatar"
                             :class="{ selected: selectedHash === commit.hash, photo: hasAvatar(commit) }"
                             :style="avatarStyle(commit)"
+                            @mouseenter="event => showAvatarTip(commit, event)"
+                            @mouseleave="hideAvatarTip"
                             ><img
                                 v-if="hasAvatar(commit)"
                                 class="author-avatar-img"
@@ -599,6 +619,18 @@
                     Load more commits
                 </button>
             </div>
+        </div>
+        <div
+            v-if="avatarTip"
+            class="avatar-tip"
+            :style="{ left: `${avatarTip.x + 14}px`, top: `${avatarTip.y + 14}px` }">
+            <strong>{{ avatarTip.commit.author }}</strong>
+            <span
+                v-if="avatarTip.commit.authorEmail"
+                class="avatar-tip-email"
+                >{{ avatarTip.commit.authorEmail }}</span
+            >
+            <span class="avatar-tip-date">{{ formatDatePattern(avatarTip.commit.date, commitDatePattern) }}</span>
         </div>
         <CommitContextMenu
             :menu="menu"

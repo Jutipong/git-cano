@@ -1407,6 +1407,35 @@ body {
         0 0 6px color-mix(in srgb, var(--node-color, var(--teal)) 70%, transparent);
 }
 
+/* Avatar hover tooltip (author / email / commit time), delayed 500ms */
+.avatar-tip {
+    position: fixed;
+    z-index: 95;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 280px;
+    padding: 8px 11px;
+    background: var(--surface-3, var(--surface-2));
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    color: var(--text);
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.avatar-tip-email {
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 11px;
+}
+
+.avatar-tip-date {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
 .ref-chip {
     gap: 4px;
     padding: 2px 7px;
