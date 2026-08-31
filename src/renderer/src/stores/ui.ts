@@ -51,7 +51,7 @@ export interface ThemeOption {
 
 const themeOptions: ThemeOption[] = [
     { value: 'dark', label: 'Dark', description: 'Simple Dark palette', icon: 'moon' },
-    { value: 'dark-modern', label: 'Dark Modern', description: 'Vivid neon accents on dark', icon: 'moon' },
+    { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon' },
     { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
 ]
