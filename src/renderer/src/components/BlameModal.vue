@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import CloseXIcon from './CloseXIcon.vue'
+
     interface BlameLine {
         hash: string
         author: string
@@ -11,8 +13,19 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})
 
+    const isFullscreen = ref(false)
+
     const lines = ref<BlameLine[]>([])
     const loading = ref(true)
+
+    function onKey(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            event.stopPropagation()
+            emit('close')
+        }
+    }
+    onMounted(() => document.addEventListener('keydown', onKey))
+    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
     onMounted(async () => {
         try {
@@ -43,43 +56,56 @@
 
 <template>
     <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
-        <div class="rebase-modal blame-modal">
-            <div class="rebase-modal-header">
-                <strong>Blame</strong>
-                <code class="rebase-base">{{ file }}</code>
-                <span class="spacer" />
-                <span
-                    v-if="loading"
-                    class="muted"
-                    >loading…</span
-                >
-                <button
-                    class="icon-btn danger"
-                    @click="emit('close')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
-                </button>
+        class="blame-view"
+        :class="{ fullscreen: isFullscreen }">
+        <div class="diff-header">
+            <strong>Blame</strong>
+            <code class="rebase-base">{{ file }}</code>
+            <span
+                v-if="loading"
+                class="muted"
+                >loading…</span
+            >
+            <div class="diff-header-center">
+                <div class="segmented diff-header-actions">
+                    <button
+                        class="icon-btn"
+                        :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+                        @click="isFullscreen = !isFullscreen">
+                        <i-lucide-minimize
+                            v-if="isFullscreen"
+                            width="15"
+                            height="15" />
+                        <i-lucide-maximize
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                    <button
+                        class="icon-btn danger diff-close-btn"
+                        title="Close blame"
+                        @click="emit('close')">
+                        <CloseXIcon />
+                    </button>
+                </div>
             </div>
-            <div class="blame-body">
-                <div
-                    v-for="line in lines"
-                    :key="line.lineNumber"
-                    class="blame-line"
-                    :class="`shade-${shadeOf.get(line.hash) ?? 0}`">
-                    <code class="blame-hash">{{ line.hash.slice(0, 7) }}</code>
-                    <span class="blame-author">{{ line.author }}</span>
-                    <span class="blame-date">{{ formatDate(line.date) }}</span>
-                    <span class="blame-ln">{{ line.lineNumber }}</span>
-                    <pre>{{ line.content }}</pre>
-                </div>
-                <div
-                    v-if="!loading && lines.length === 0"
-                    class="sidebar-empty">
-                    Nothing to blame
-                </div>
+        </div>
+        <div class="blame-body">
+            <div
+                v-for="line in lines"
+                :key="line.lineNumber"
+                class="blame-line"
+                :class="`shade-${shadeOf.get(line.hash) ?? 0}`">
+                <code class="blame-hash">{{ line.hash.slice(0, 7) }}</code>
+                <span class="blame-author">{{ line.author }}</span>
+                <span class="blame-date">{{ formatDate(line.date) }}</span>
+                <span class="blame-ln">{{ line.lineNumber }}</span>
+                <pre>{{ line.content }}</pre>
+            </div>
+            <div
+                v-if="!loading && lines.length === 0"
+                class="sidebar-empty">
+                Nothing to blame
             </div>
         </div>
     </div>

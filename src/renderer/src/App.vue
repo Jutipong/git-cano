@@ -111,6 +111,7 @@
         const onKeyDown = (event: KeyboardEvent) => {
             if (uiTransient.busy) return
             if (event.key === 'Escape') {
+                if (historyFile.value || blameFile.value) return
                 if (selectedFile.value) selectedFile.value = null
                 else if (selectedCommit.value) selectedCommit.value = null
                 return
@@ -336,10 +337,14 @@
             " />
         <FileHistoryModal
             v-if="historyFile"
+            class="diff-overlay"
+            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
             :file="historyFile"
             @close="historyFile = null" />
         <BlameModal
             v-if="blameFile"
+            class="diff-overlay"
+            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
             :file="blameFile"
             @close="blameFile = null" />
         <TagCreateModal

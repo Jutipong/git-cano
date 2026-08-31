@@ -552,6 +552,14 @@ kbd {
     inset: 0 !important;
     box-shadow: none;
 }
+.history-view.fullscreen,
+.blame-view.fullscreen {
+    position: fixed;
+    z-index: 60;
+
+    inset: 0 !important;
+    box-shadow: none;
+}
 .graph-view {
     display: flex;
     flex: 1;
@@ -1160,6 +1168,13 @@ kbd {
     align-items: center;
     justify-content: center;
     color: var(--text-muted);
+}
+.history-view,
+.blame-view {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
 }
 .diff-header {
     display: flex;
@@ -2342,13 +2357,10 @@ mark {
     pointer-events: none;
 }
 
-.history-modal {
-    width: min(860px, 94vw);
-}
 .history-body {
     display: flex;
-    min-height: 340px;
-    max-height: 60vh;
+    flex: 1;
+    min-height: 0;
 }
 .history-list {
     flex: 0 0 45%;
@@ -2408,11 +2420,9 @@ mark {
     color: var(--blue);
 }
 
-.blame-modal {
-    width: min(900px, 94vw);
-}
 .blame-body {
-    max-height: 62vh;
+    flex: 1;
+    min-height: 0;
     overflow: auto;
     font-family: var(--font-mono);
     font-size: 11px;

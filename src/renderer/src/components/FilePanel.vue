@@ -309,18 +309,17 @@
         window.addEventListener('mouseup', onEnd)
     }
 
-    function openFileMenu(event: MouseEvent, path: string, file?: FileEntry) {
-        if (!isWorkdir.value) return
-        if (file && !hasWorkdirStatus(file)) return
+    function openFileMenu(event: MouseEvent, path: string, file?: FileEntry | CommitFile) {
+        if (isWorkdir.value && file && !hasWorkdirStatus(file as FileEntry)) return
         menu.value = {
             x: event.clientX,
             y: event.clientY,
             path,
-            untracked: file ? isUntracked(file) : false,
+            untracked: isWorkdir.value && file ? isUntracked(file as FileEntry) : false,
+            deleted: !isWorkdir.value && !!file && unifiedCommitFile(file).status === 'D',
         }
     }
     function openDirectoryMenu(event: MouseEvent, path: string) {
-        if (!isWorkdir.value) return
         menu.value = { x: event.clientX, y: event.clientY, path, directory: true }
     }
 
@@ -518,7 +517,7 @@
                         :class="{ selected: selected?.path === row.fullPath }"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="emit('select', { path: row.fullPath, staged: unifiedStaged(row.file!) })"
-                        @contextmenu.prevent="openFileMenu($event, row.fullPath, isWorkdir ? unifiedWorkdirFile(row.file!) : undefined)">
+                        @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
                         <span
                             v-if="unifiedStatus(row.file!)"
                             class="badge"
@@ -789,7 +788,8 @@
                             class="file-row"
                             :class="{ selected: selected?.path === row.fullPath }"
                             :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                            @click="emit('select', { path: row.fullPath, staged: false })">
+                            @click="emit('select', { path: row.fullPath, staged: false })"
+                            @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
                             <span
                                 class="badge"
                                 :class="badgeClass(row.file!.status)"

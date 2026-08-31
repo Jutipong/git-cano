@@ -14,6 +14,7 @@
         path: string
         directory?: boolean
         untracked?: boolean
+        deleted?: boolean
     }
 
     const props = defineProps<{
@@ -64,6 +65,7 @@
     function act(kind: 'history' | 'blame') {
         const menu = props.menu
         if (!menu || menu.directory || menu.untracked) return
+        if (kind === 'blame' && menu.deleted) return
         emit('close')
         if (kind === 'history') emit('show-history', menu.path)
         else emit('show-blame', menu.path)
@@ -103,8 +105,16 @@
         </button>
         <button
             class="file-context-menu-item"
-            :disabled="menu.directory || menu.untracked"
-            :title="menu.untracked ? 'Untracked files have no git history yet' : menu.directory ? 'Choose a file to view blame' : ''"
+            :disabled="menu.directory || menu.untracked || menu.deleted"
+            :title="
+                menu.deleted
+                    ? 'Deleted files cannot be blamed (no longer in working tree)'
+                    : menu.untracked
+                      ? 'Untracked files have no git history yet'
+                      : menu.directory
+                        ? 'Choose a file to view blame'
+                        : ''
+            "
             @click="act('blame')">
             <ScanSearch
                 class="file-context-menu-icon"
