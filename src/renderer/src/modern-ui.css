@@ -1396,13 +1396,19 @@ body {
     filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent));
 
     stroke-linecap: round;
-    stroke-dasharray: 6 6.57;
-    animation: node-dot-spin 2.2s linear infinite;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: node-ring-pulse 2.2s ease-in-out infinite;
 }
 
-@keyframes node-dot-spin {
-    to {
-        stroke-dashoffset: -75.4;
+@keyframes node-ring-pulse {
+    0%,
+    100% {
+        transform: scale(0.97);
+    }
+
+    50% {
+        transform: scale(1.1);
     }
 }
 
