@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, type MenuItemConstructorOptions } from 'electron'
 
 import {
     authGitEnv,
@@ -240,8 +240,33 @@ ipcMain.on('app:log', (_e, level: string, message: unknown) => {
     log(safeLevel, 'renderer', summarize(message))
 })
 
+/**
+ * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't zoom the web frame behind the
+ * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead.
+ */
+function setupMenu(): void {
+    const template: MenuItemConstructorOptions[] = [
+        ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+        { role: 'fileMenu' },
+        { role: 'editMenu' },
+        {
+            label: 'View',
+            submenu: [
+                { role: 'reload' },
+                { role: 'forceReload' },
+                { role: 'toggleDevTools' },
+                { type: 'separator' },
+                { role: 'togglefullscreen' },
+            ],
+        },
+        { role: 'windowMenu' },
+    ]
+    Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
 app.whenReady().then(() => {
     log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.OPEN_GIT_LOG_LEVEL ?? 'auto'})`)
+    setupMenu()
     handle('repo:pickAndOpen', async () => {
         const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
         if (res.canceled || !res.filePaths[0]) return null

@@ -46,6 +46,8 @@
     ]
     const laneW = 32
     const rowH = 28
+    /* breathing room between the graph panel's left edge and the first lane */
+    const GRAPH_PAD = 4
 
     const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
@@ -100,8 +102,8 @@
             : props.commits
     )
     const GRAPH_MIN_W = 120
-    const graphW = computed(() =>
-        Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W)
+    const graphW = computed(
+        () => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W) + GRAPH_PAD
     )
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
     const totalHeight = computed(() => visibleCommits.value.length * rowH)
@@ -135,7 +137,7 @@
         return commit.parents.indexOf(parent) > 0
     }
     function nodeX(commit: CommitNode) {
-        return commit.lane * laneW + laneW / 2
+        return GRAPH_PAD + commit.lane * laneW + laneW / 2
     }
     function nodeY(index: number) {
         return index * rowH + rowH / 2

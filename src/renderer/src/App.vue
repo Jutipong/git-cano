@@ -16,6 +16,7 @@
     import TagCreateModal from './components/TagCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
     import { useAuthStore } from './stores/auth'
+    import { DEFAULT_ZOOM } from './stores/ui'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
 
@@ -44,6 +45,9 @@
 
     const RIGHT_PANEL_MIN_WIDTH = 360
     if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
+
+    const SIDEBAR_MIN_WIDTH = 280
+    if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
@@ -110,6 +114,24 @@
         watch(() => ui.refreshInterval, startAutoRefresh)
 
         const onKeyDown = (event: KeyboardEvent) => {
+            // app zoom shortcuts — kept above the busy gate so zooming always works
+            if (event.metaKey || event.ctrlKey) {
+                if (event.key === '=' || event.key === '+') {
+                    event.preventDefault()
+                    ui.stepZoom(1)
+                    return
+                }
+                if (event.key === '-') {
+                    event.preventDefault()
+                    ui.stepZoom(-1)
+                    return
+                }
+                if (event.key === '0') {
+                    event.preventDefault()
+                    ui.zoom = DEFAULT_ZOOM
+                    return
+                }
+            }
             if (uiTransient.busy) return
             if (event.key === 'Escape') {
                 if (historyFile.value || blameFile.value) return
@@ -139,6 +161,21 @@
             window.removeEventListener('keydown', onKeyDown)
         })
         window.addEventListener('keydown', onKeyDown)
+
+        // Ctrl/Cmd+wheel zooms the app itself (steps of ui.zoom) instead of letting
+        // Chromium page-zoom behind the app's own zoom setting
+        let wheelAcc = 0
+        const onWheelZoom = (event: WheelEvent) => {
+            if (!(event.ctrlKey || event.metaKey)) return
+            event.preventDefault()
+            wheelAcc += event.deltaY
+            if (Math.abs(wheelAcc) >= 100) {
+                ui.stepZoom(wheelAcc < 0 ? 1 : -1)
+                wheelAcc = 0
+            }
+        }
+        window.addEventListener('wheel', onWheelZoom, { passive: false })
+        onUnmounted(() => window.removeEventListener('wheel', onWheelZoom))
     })
 
     function beginResize(side: 'left' | 'right', event: MouseEvent) {
@@ -152,7 +189,7 @@
             const resize = resizeRef.value
             if (!resize) return
             const delta = moveEvent.clientX - resize.startX
-            if (resize.side === 'left') ui.sidebarWidth = Math.min(380, Math.max(300, resize.startWidth + delta))
+            if (resize.side === 'left') ui.sidebarWidth = Math.min(380, Math.max(SIDEBAR_MIN_WIDTH, resize.startWidth + delta))
             else ui.rightPanelWidth = Math.min(500, Math.max(RIGHT_PANEL_MIN_WIDTH, resize.startWidth - delta))
         }
         const onEnd = () => {

@@ -274,10 +274,6 @@
                 :disabled="!!syncBusy || !repo"
                 title="Fetch"
                 @click="actFetch()">
-                <i-lucide-refresh-cw
-                    :class="{ spinning: syncBusy === 'Fetch' }"
-                    width="15"
-                    height="15" />
                 <span>Fetch</span>
             </button>
             <span class="tab-actions-sep" />
@@ -286,9 +282,6 @@
                 :disabled="!repo || !repo.files.length"
                 :title="repo?.files.length ? 'Stashes' : 'No changes to stash'"
                 @click="emit('create-stash')">
-                <i-lucide-archive
-                    width="15"
-                    height="15" />
                 <span>Stashes</span>
             </button>
         </div>

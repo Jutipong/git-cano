@@ -5,9 +5,9 @@ export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 export type CommitColumn = 'author' | 'hash' | 'date'
 
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
-    author: true,
+    author: false,
     hash: false,
-    date: true,
+    date: false,
 }
 
 export const DEFAULT_THEME: Theme = 'dark'
@@ -65,8 +65,8 @@ export const useUiStore = defineStore(
             if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern' && savedTheme !== 'dark-neon')
                 theme.value = DEFAULT_THEME
         })
-        const sidebarWidth = ref(244)
-        const rightPanelWidth = ref(410)
+        const sidebarWidth = ref(280)
+        const rightPanelWidth = ref(360)
         const summaryHeight = ref(140)
         const fileViewMode = ref<FileViewMode>(DEFAULT_FILE_VIEW_MODE)
         const fileFilterMode = ref<'changed' | 'all'>('changed')
@@ -99,6 +99,12 @@ export const useUiStore = defineStore(
         /** Ctrl+wheel zoom for code viewers — delta from the wheel event (+1 / -1). */
         function zoomCodeFontSize(delta: number) {
             codeFontSize.value = Math.min(CODE_FONT_SIZE_MAX, Math.max(CODE_FONT_SIZE_MIN, codeFontSize.value + delta))
+        }
+
+        /** Step through ZOOM_OPTIONS one slot (Ctrl+= / Ctrl+- / Ctrl+wheel). */
+        function stepZoom(direction: number) {
+            const idx = ZOOM_OPTIONS.indexOf(zoom.value)
+            zoom.value = ZOOM_OPTIONS[Math.min(ZOOM_OPTIONS.length - 1, Math.max(0, idx + direction))]
         }
         const sidebarSections = ref<Record<'local' | 'tags' | 'remote' | 'stashes', boolean>>({
             local: true,
@@ -156,6 +162,7 @@ export const useUiStore = defineStore(
             refreshInterval,
             fontSize,
             zoom,
+            stepZoom,
             codeFontSize,
             zoomCodeFontSize,
             sidebarSections,
