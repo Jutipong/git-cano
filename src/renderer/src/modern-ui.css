@@ -1078,20 +1078,18 @@ body {
     letter-spacing: 0.75px;
 }
 
+.group-header {
+    padding: 14px 12px 6px;
+}
+
 .group-header h4 span {
     display: inline-flex;
     align-items: center;
-    min-width: 17px;
-    height: 16px;
-    justify-content: center;
-    padding: 0 6px;
-    color: var(--text-secondary);
-    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
-    border: 1px solid var(--line-soft);
-    border-radius: 999px;
+    color: var(--text-muted);
     font-size: 10px;
-    font-weight: 650;
+    font-weight: 500;
     line-height: 1;
+    letter-spacing: 0;
 }
 
 .branch-row,
@@ -1649,6 +1647,17 @@ body {
     border-color: color-mix(in srgb, currentColor 50%, transparent);
 }
 
+/* คลิกที่ label กลุ่ม (Staged files / Unstaged) เพื่อ collapse/expand all ได้ด้วย */
+.group-header h4.can-toggle {
+    cursor: pointer;
+    user-select: none;
+}
+
+.group-header h4.can-toggle:hover,
+.group-header h4.can-toggle:hover span {
+    color: var(--text);
+}
+
 /* ยุบครบทุกโฟลเดอร์แล้ว — เชฟรอนกลับทิศชี้ลง + เขียวเพื่อบอกว่ากดเพื่อขยายกลับได้ */
 .collapse-all-btn.all-collapsed {
     color: var(--green);
@@ -1797,22 +1806,20 @@ body {
 }
 
 .group-header-actions .link-btn {
-    padding: 2px 10px;
-    color: var(--text-secondary);
-    background: color-mix(in srgb, var(--surface-2) 45%, transparent);
-    border: 1px solid var(--line-soft);
-    border-radius: 999px;
+    padding: 2px 6px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 4px;
     font-size: 11px;
     transition:
         color 0.15s ease,
-        background 0.15s ease,
-        border-color 0.15s ease;
+        background 0.15s ease;
 }
 
 .group-header-actions .link-btn:hover {
     color: var(--text);
-    background: var(--surface-hover);
-    border-color: var(--line);
+    background: transparent;
     text-decoration: none;
 }
 
@@ -1821,29 +1828,14 @@ body {
     color: var(--orange);
 }
 
-.group-header-actions .link-btn.warn:hover {
-    background: color-mix(in srgb, var(--orange) 12%, transparent);
-    border-color: color-mix(in srgb, var(--orange) 40%, transparent);
-}
-
 .group-header-actions .link-btn.good,
 .group-header-actions .link-btn.good:hover {
     color: var(--green);
 }
 
-.group-header-actions .link-btn.good:hover {
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-    border-color: color-mix(in srgb, var(--green) 40%, transparent);
-}
-
 .group-header-actions .link-btn.danger,
 .group-header-actions .link-btn.danger:hover {
     color: var(--red);
-}
-
-.group-header-actions .link-btn.danger:hover {
-    background: color-mix(in srgb, var(--red) 12%, transparent);
-    border-color: color-mix(in srgb, var(--red) 40%, transparent);
 }
 
 .panel-count,

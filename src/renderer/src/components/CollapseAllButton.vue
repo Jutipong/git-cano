@@ -13,7 +13,7 @@
         :class="{ 'all-collapsed': allCollapsed }"
         :title="allCollapsed ? 'Expand all folders' : 'Collapse all folders'"
         :aria-label="allCollapsed ? 'Expand all folders' : 'Collapse all folders'"
-        @click="$emit('toggle')">
+        @click.stop="$emit('toggle')">
         <i-clarity-collapse-line
             width="13"
             height="13" />

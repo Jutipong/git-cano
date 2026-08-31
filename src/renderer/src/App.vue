@@ -16,9 +16,9 @@
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
+    import { useAuthStore } from './stores/auth'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
-    import { useAuthStore } from './stores/auth'
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'

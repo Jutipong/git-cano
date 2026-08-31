@@ -169,9 +169,9 @@
         return [...dirs]
     })
     /** Derived from collapsedDirs so manually collapsed folders stay in sync. */
-    const allDirsCollapsed = computed(
-        () => allDirPaths.value.length > 0 && allDirPaths.value.every(path => collapsedDirs.has(path))
-    )
+    const allDirsCollapsed = computed(() => allDirPaths.value.length > 0 && allDirPaths.value.every(path => collapsedDirs.has(path)))
+    /** Whole group-header label is clickable only when collapsing actually does something. */
+    const canToggleAll = computed(() => ui.fileViewMode === 'tree' && allDirPaths.value.length > 0)
     function toggleAllDirs() {
         if (allDirsCollapsed.value) collapsedDirs.clear()
         else for (const path of allDirPaths.value) collapsedDirs.add(path)
@@ -619,9 +619,11 @@
             <template v-else-if="mode === 'workdir'">
                 <template v-if="staged.length > 0">
                     <div class="group-header">
-                        <h4>
+                        <h4
+                            :class="{ 'can-toggle': canToggleAll }"
+                            @click="canToggleAll && toggleAllDirs()">
                             <CollapseAllButton
-                                v-if="ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                                v-if="canToggleAll"
                                 :all-collapsed="allDirsCollapsed"
                                 @toggle="toggleAllDirs()" />
                             Staged files <span>{{ staged.length }}</span>
@@ -694,9 +696,11 @@
                 </template>
 
                 <div class="group-header">
-                    <h4>
+                    <h4
+                        :class="{ 'can-toggle': canToggleAll }"
+                        @click="canToggleAll && toggleAllDirs()">
                         <CollapseAllButton
-                            v-if="ui.fileViewMode === 'tree' && allDirPaths.length > 0"
+                            v-if="canToggleAll"
                             :all-collapsed="allDirsCollapsed"
                             @toggle="toggleAllDirs()" />
                         Unstaged <span>{{ unstaged.length + untracked.length }}</span>

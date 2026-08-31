@@ -5,6 +5,20 @@ import * as path from 'node:path'
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 
 import {
+    authGitEnv,
+    generateSshKey,
+    getAuthConfig,
+    githubStatus,
+    listSshKeys,
+    openGithubTokenPage,
+    openSshDir,
+    saveAuthConfig,
+    testSshKey,
+    verifyGithubToken,
+    deleteSshKey,
+    refreshGithubProfile,
+} from './auth'
+import {
     checkout,
     closeRepo,
     commit,
@@ -97,20 +111,6 @@ import {
     baseEnv,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
-import {
-    authGitEnv,
-    generateSshKey,
-    getAuthConfig,
-    githubStatus,
-    listSshKeys,
-    openGithubTokenPage,
-    openSshDir,
-    saveAuthConfig,
-    testSshKey,
-    verifyGithubToken,
-    deleteSshKey,
-    refreshGithubProfile,
-} from './auth'
 import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
 let win: BrowserWindow | null = null

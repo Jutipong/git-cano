@@ -211,9 +211,7 @@
 
     const auth = useAuthStore()
     const authSub = ref<'ssh' | 'github'>('ssh')
-    const activeKey = computed<SshKeyInfo | null>(
-        () => auth.keys.find(key => key.privateKeyPath === auth.config.sshKeyPath) ?? null
-    )
+    const activeKey = computed<SshKeyInfo | null>(() => auth.keys.find(key => key.privateKeyPath === auth.config.sshKeyPath) ?? null)
     const keyOpen = ref(false)
 
     function toggleKeyPop() {
@@ -745,11 +743,15 @@
                                         {{ auth.githubUser.login }}
                                         <span
                                             v-if="auth.githubUser.name"
-                                            class="github-account-name">{{ auth.githubUser.name }}</span>
+                                            class="github-account-name"
+                                            >{{ auth.githubUser.name }}</span
+                                        >
                                     </strong>
                                     <small
                                         v-if="auth.githubUser.bio"
-                                        class="github-account-bio">{{ auth.githubUser.bio }}</small>
+                                        class="github-account-bio"
+                                        >{{ auth.githubUser.bio }}</small
+                                    >
                                     <small class="github-account-stats">
                                         <i-lucide-folder-git-2
                                             width="12"

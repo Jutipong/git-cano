@@ -31,13 +31,13 @@ const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 
 /**
- * simple-git (>=3.24) blocks env vars / config it considers unsafe unless the
- * matching `unsafe.*` flag is enabled. This app intentionally injects some of
- * them itself, so the flags must mirror `authGitEnv()` and the desktop env:
- * - GIT_SSH_COMMAND            — pins the active SSH key        → allowUnsafeSshCommand
- * - GIT_CONFIG_COUNT/KEY/VALUE — GitHub token extraheader      → allowUnsafeConfigEnvCount + allowUnsafeConfigPaths
- * - GIT_EDITOR ('true')        — non-interactive rebase steps  → allowUnsafeEditor
- * - GIT_ASKPASS / SSH_ASKPASS  — inherited from the desktop environment (e.g. VS Code) → allowUnsafeAskPass
+ * Simple-git (>=3.24) blocks env vars / config it considers unsafe unless the matching `unsafe.*` flag is enabled. This app intentionally
+ * injects some of them itself, so the flags must mirror `authGitEnv()` and the desktop env:
+ *
+ * - GIT_SSH_COMMAND — pins the active SSH key → allowUnsafeSshCommand
+ * - GIT_CONFIG_COUNT/KEY/VALUE — GitHub token extraheader → allowUnsafeConfigEnvCount + allowUnsafeConfigPaths
+ * - GIT_EDITOR ('true') — non-interactive rebase steps → allowUnsafeEditor
+ * - GIT_ASKPASS / SSH_ASKPASS — inherited from the desktop environment (e.g. VS Code) → allowUnsafeAskPass
  */
 const SAFE_UNSAFE_OPTIONS = {
     unsafe: {
@@ -60,10 +60,9 @@ function createGit(dir: string): SimpleGit {
 }
 
 /**
- * Clean environment for local git operations — identical to the app's own env
- * minus askpass variables inherited from the desktop environment (e.g. VS Code),
- * which simple-git blocks unless allowed. Auth credentials (SSH key / GitHub
- * token) are NOT part of this; they are injected per-command via `withAuthEnv`.
+ * Clean environment for local git operations — identical to the app's own env minus askpass variables inherited from the desktop
+ * environment (e.g. VS Code), which simple-git blocks unless allowed. Auth credentials (SSH key / GitHub token) are NOT part of this; they
+ * are injected per-command via `withAuthEnv`.
  */
 export function baseEnv(): NodeJS.ProcessEnv {
     const env = { ...process.env }
@@ -73,10 +72,8 @@ export function baseEnv(): NodeJS.ProcessEnv {
 }
 
 /**
- * Runs a network operation (fetch/pull/push/ls-remote…) with the credentials
- * configured in the Authentication settings injected for the duration of that
- * command only — repo opening and all local operations always run with the
- * clean `baseEnv()`.
+ * Runs a network operation (fetch/pull/push/ls-remote…) with the credentials configured in the Authentication settings injected for the
+ * duration of that command only — repo opening and all local operations always run with the clean `baseEnv()`.
  */
 async function withAuthEnv<T>(op: (git: SimpleGit) => Promise<T>): Promise<T> {
     const { git } = getRepo()

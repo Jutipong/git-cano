@@ -42,10 +42,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     /**
-     * True when the given commit author refers to the signed-in GitHub user.
-     * Matched by (in order): exact login/name, GitHub email, GitHub noreply
-     * email, then a loose name comparison (dots/dashes/underscores/spaces
-     * stripped, one side a prefix of the other — "Jutipong" ~ "Jutipong.Dev").
+     * True when the given commit author refers to the signed-in GitHub user. Matched by (in order): exact login/name, GitHub email, GitHub
+     * noreply email, then a loose name comparison (dots/dashes/underscores/spaces stripped, one side a prefix of the other — "Jutipong" ~
+     * "Jutipong.Dev").
      */
     function isGithubUser(author: string, email?: string): boolean {
         const u = githubUser.value

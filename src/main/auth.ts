@@ -92,9 +92,8 @@ export function listSshKeys(): SshKeyInfo[] {
 }
 
 /**
- * Permanently removes a key pair (private + `.pub`) from ~/.ssh and returns the
- * remaining keys. Only files inside ~/.ssh may be deleted; if the deleted key
- * was the active one the selection is cleared.
+ * Permanently removes a key pair (private + `.pub`) from ~/.ssh and returns the remaining keys. Only files inside ~/.ssh may be deleted; if
+ * the deleted key was the active one the selection is cleared.
  */
 export function deleteSshKey(privateKeyPath: string): SshKeyInfo[] {
     const dir = sshDir()
@@ -122,7 +121,16 @@ export function generateSshKey(name: string, comment: string, passphrase?: strin
     fs.mkdirSync(dir, { recursive: true })
     const privatePath = path.join(dir, cleanName)
     if (fs.existsSync(privatePath)) throw new Error(`Key "${cleanName}" already exists in ~/.ssh`)
-    const args = ['-t', 'ed25519', '-f', privatePath, '-C', comment.trim() || 'open-git', '-N', typeof passphrase === 'string' && passphrase ? passphrase : '']
+    const args = [
+        '-t',
+        'ed25519',
+        '-f',
+        privatePath,
+        '-C',
+        comment.trim() || 'open-git',
+        '-N',
+        typeof passphrase === 'string' && passphrase ? passphrase : '',
+    ]
     execFileSync('ssh-keygen', args, { timeout: 30_000, encoding: 'utf8' })
     log('info', 'auth', `generated SSH key ${cleanName}`)
     return {
@@ -295,8 +303,9 @@ export function openGithubTokenPage(): Promise<void> {
 }
 
 /**
- * Environment injected into every git instance so pushes/pulls use the
- * credentials configured in the Authentication settings (global scope).
+ * Environment injected into every git instance so pushes/pulls use the credentials configured in the Authentication settings (global
+ * scope).
+ *
  * - SSH remotes: GIT_SSH_COMMAND pins the selected private key
  * - HTTPS github.com remotes: config extraheader carries the token as basic auth
  */

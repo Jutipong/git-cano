@@ -1,7 +1,6 @@
 <script setup lang="ts">
-    import CloseXIcon from './CloseXIcon.vue'
-
     import { formatDateTime } from '../utils/format'
+    import CloseXIcon from './CloseXIcon.vue'
 
     interface BlameLine {
         hash: string
@@ -55,8 +54,6 @@
         }
         return map
     })
-
-
 </script>
 
 <template>
