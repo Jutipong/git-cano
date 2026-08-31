@@ -95,7 +95,10 @@
             :disabled="menu.directory || menu.untracked"
             :title="menu.untracked ? 'Untracked files have no git history yet' : menu.directory ? 'Choose a file to view history' : ''"
             @click="act('history')">
-            <History class="file-context-menu-icon" width="13" height="13" />
+            <History
+                class="file-context-menu-icon"
+                width="13"
+                height="13" />
             View history
         </button>
         <button
@@ -103,7 +106,10 @@
             :disabled="menu.directory || menu.untracked"
             :title="menu.untracked ? 'Untracked files have no git history yet' : menu.directory ? 'Choose a file to view blame' : ''"
             @click="act('blame')">
-            <ScanSearch class="file-context-menu-icon" width="13" height="13" />
+            <ScanSearch
+                class="file-context-menu-icon"
+                width="13"
+                height="13" />
             Blame
         </button>
         <div class="file-context-menu-separator" />
@@ -111,31 +117,45 @@
             <button
                 class="file-context-menu-item has-sub"
                 type="button">
-                <Folder class="file-context-menu-icon" width="13" height="13" />
+                <Folder
+                    class="file-context-menu-icon"
+                    width="13"
+                    height="13" />
                 Ignore
-                <ChevronRight class="file-context-menu-chevron" width="12" height="12" />
+                <ChevronRight
+                    class="file-context-menu-chevron"
+                    width="12"
+                    height="12" />
             </button>
-            <div
-                class="file-context-menu-sub">
+            <div class="file-context-menu-sub">
                 <button
                     v-if="!menu.directory"
                     class="file-context-menu-item"
                     @click="addIgnoreRule(menu.path)">
-                    <File class="file-context-menu-icon" width="13" height="13" />
+                    <File
+                        class="file-context-menu-icon"
+                        width="13"
+                        height="13" />
                     Ignore {{ fileName }}
                 </button>
                 <button
                     v-if="!menu.directory && fileExtension"
                     class="file-context-menu-item"
                     @click="addIgnoreRule(`*${fileExtension}`)">
-                    <Files class="file-context-menu-icon" width="13" height="13" />
+                    <Files
+                        class="file-context-menu-icon"
+                        width="13"
+                        height="13" />
                     Ignore All {{ fileExtension }} Files...
                 </button>
                 <button
                     v-if="menu.directory"
                     class="file-context-menu-item"
                     @click="addIgnoreRule(`${menu.path}/`)">
-                    <Folder class="file-context-menu-icon" width="13" height="13" />
+                    <Folder
+                        class="file-context-menu-icon"
+                        width="13"
+                        height="13" />
                     Ignore All Files in '{{ menu.path }}'...
                 </button>
                 <span

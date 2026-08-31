@@ -9,9 +9,7 @@
 
     function buildItems(): MenuItem[] {
         const run = (fn: () => Promise<unknown>) => {
-            fn().catch((error: unknown) =>
-                useUiTransientStore().notify(String(error).replace(/^Error:\s*/, ''), 'error')
-            )
+            fn().catch((error: unknown) => useUiTransientStore().notify(String(error).replace(/^Error:\s*/, ''), 'error'))
         }
         return [
             {

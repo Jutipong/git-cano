@@ -603,11 +603,13 @@ app.whenReady().then(() => {
     handleSensitive('ai:test', (provider: string, token: string, modelId: string) =>
         testConnection(provider as 'opencode-go' | 'openrouter', token as string, modelId as string)
     )
-    handleSensitive('ai:generateCommitMessage', () => {
+    handleSensitive('ai:generateCommitMessage', (shouldFormat: boolean) => {
         requireRepo()
-        return generateCommitMessage()
+        return generateCommitMessage(Boolean(shouldFormat))
     })
-    handleSensitive('ai:listModels', (provider: string, token: string) => listModels(provider as 'opencode-go' | 'openrouter', token as string))
+    handleSensitive('ai:listModels', (provider: string, token: string) =>
+        listModels(provider as 'opencode-go' | 'openrouter', token as string)
+    )
 
     createWindow()
 

@@ -52,7 +52,10 @@
                 </button>
             </div>
             <div class="graph-settings-body">
-                <p class="graph-settings-hint">Graph and Message are always shown. Choose which other fields to display in the commit history. Applies to every repository.</p>
+                <p class="graph-settings-hint">
+                    Graph and Message are always shown. Choose which other fields to display in the commit history. Applies to every
+                    repository.
+                </p>
                 <div
                     v-for="column in STATIC_COLUMNS"
                     :key="column.key"
@@ -88,8 +91,7 @@
                         <small>{{ column.hint }}</small>
                     </span>
                 </label>
-                <div
-                    class="graph-settings-format">
+                <div class="graph-settings-format">
                     <label class="graph-settings-format-label">Date format</label>
                     <input
                         v-model="ui.commitDateFormat"
@@ -97,7 +99,8 @@
                         :placeholder="DEFAULT_DATE_FORMAT"
                         spellcheck="false" />
                     <div class="graph-settings-format-meta">
-                        <code>yyyy</code><code>yy</code><code>MM</code><code>dd</code><code>HH</code><code>hh</code><code>mm</code><code>ss</code><code>a</code>
+                        <code>yyyy</code><code>yy</code><code>MM</code><code>dd</code><code>HH</code><code>hh</code><code>mm</code
+                        ><code>ss</code><code>a</code>
                     </div>
                     <small class="graph-settings-format-preview">{{ datePreview }}</small>
                 </div>

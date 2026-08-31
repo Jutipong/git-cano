@@ -294,8 +294,7 @@ function cssDeclaration(code: string): string {
     return `${escapeHtml(m[1])}<span class="tok-support">${escapeHtml(m[2])}</span>${escapeHtml(m[3])}${cssValues(code.slice(m[0].length))}`
 }
 
-const CSS_SELECTOR_PATTERN =
-    /(\/\*.*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(:{1,2}[\w-]+)|([.#][-\w]+)|(@[\w-]+)|([A-Za-z_][\w-]*)/g
+const CSS_SELECTOR_PATTERN = /(\/\*.*?\*\/)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|(:{1,2}[\w-]+)|([.#][-\w]+)|(@[\w-]+)|([A-Za-z_][\w-]*)/g
 
 function cssSelector(code: string): string {
     let out = ''
@@ -484,8 +483,7 @@ export function highlightDiffLines(
                     section = 'other'
                     tagged = true
                 } else if (!tagged) {
-                    initialSection =
-                        state.htmlString || state.htmlComment ? 'template' : guessSfcSection(content)
+                    initialSection = state.htmlString || state.htmlComment ? 'template' : guessSfcSection(content)
                     section = initialSection
                 }
             }

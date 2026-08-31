@@ -1,17 +1,17 @@
 <script setup lang="ts">
-    import type { CommitNode } from '@shared/types'
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
-
-    import ChevronRight from '~icons/lucide/chevron-right'
     import Cherry from '~icons/lucide/cherry'
+    import ChevronRight from '~icons/lucide/chevron-right'
     import CircleCheck from '~icons/lucide/circle-check'
-    import CornerDownRight from '~icons/lucide/corner-down-right'
     import Copy from '~icons/lucide/copy'
+    import CornerDownRight from '~icons/lucide/corner-down-right'
     import GitBranchPlus from '~icons/lucide/git-branch-plus'
     import RotateCcw from '~icons/lucide/rotate-ccw'
     import Tag from '~icons/lucide/tag'
     import Trash2 from '~icons/lucide/trash2'
     import Undo2 from '~icons/lucide/undo-2'
+
+    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
+    import type { CommitNode } from '@shared/types'
 
     export interface CommitMenuState {
         x: number
@@ -50,14 +50,7 @@
         document.removeEventListener('keydown', onKey)
     })
 
-    type CommitAction =
-        | 'checkout'
-        | 'create-branch'
-        | 'create-tag'
-        | 'cherry-pick'
-        | 'revert'
-        | 'reset-soft'
-        | 'reset-hard'
+    type CommitAction = 'checkout' | 'create-branch' | 'create-tag' | 'cherry-pick' | 'revert' | 'reset-soft' | 'reset-hard'
 
     function act(kind: CommitAction) {
         const commit = props.menu?.commit

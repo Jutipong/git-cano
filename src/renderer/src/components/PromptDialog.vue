@@ -66,8 +66,7 @@
                 <strong>{{ promptStore.current.title }}</strong>
             </div>
             <div class="confirm-dialog-body">
-                <pre
-                    v-if="promptStore.current.message">{{ promptStore.current.message }}</pre>
+                <pre v-if="promptStore.current.message">{{ promptStore.current.message }}</pre>
                 <input
                     ref="input"
                     v-model="value"
@@ -77,7 +76,9 @@
                     @input="error = ''" />
                 <span
                     v-if="error || isDuplicate"
-                    class="prompt-error">{{ error || `${value.trim()} already exists` }}</span>
+                    class="prompt-error"
+                    >{{ error || `${value.trim()} already exists` }}</span
+                >
             </div>
             <div class="confirm-dialog-actions">
                 <button

@@ -1,10 +1,10 @@
 <script setup lang="ts">
-    import type { StashEntry } from '@shared/types'
-    import type { ToastKind } from '../stores/uiTransient'
-
-    import { formatDateTime } from '../utils/format'
     import { confirmDialog } from '../utils/confirm'
+    import { formatDateTime } from '../utils/format'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
+
+    import type { ToastKind } from '../stores/uiTransient'
+    import type { StashEntry } from '@shared/types'
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -37,8 +37,7 @@
     async function load() {
         try {
             stashes.value = await window.api.stashes()
-        } catch {
-        }
+        } catch {}
     }
     onMounted(load)
     watch(() => props.repoPath, load)

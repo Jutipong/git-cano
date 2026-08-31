@@ -32,9 +32,8 @@ export const useWorkspaceStore = defineStore(
         }
 
         /**
-         * Removes a workspace together with its session. Always keeps at least one
-         * workspace; if the active one is removed, falls back to the first remaining.
-         * Returns whether the workspace was removed.
+         * Removes a workspace together with its session. Always keeps at least one workspace; if the active one is removed, falls back to
+         * the first remaining. Returns whether the workspace was removed.
          */
         function remove(name: string): boolean {
             if (!names.value.includes(name)) return false

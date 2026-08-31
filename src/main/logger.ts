@@ -1,6 +1,7 @@
-import { app } from 'electron'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+
+import { app } from 'electron'
 
 type Level = 'debug' | 'info' | 'warn' | 'error'
 
@@ -51,8 +52,7 @@ function rotateIfNeeded(file: string): void {
         if (fs.existsSync(file) && fs.statSync(file).size > MAX_FILE_BYTES) {
             fs.renameSync(file, `${file}.old`)
         }
-    } catch {
-    }
+    } catch {}
 }
 
 function emit(level: Level, scope: string, message: string): void {
@@ -63,8 +63,7 @@ function emit(level: Level, scope: string, message: string): void {
         fs.mkdirSync(path.dirname(file), { recursive: true })
         rotateIfNeeded(file)
         fs.appendFileSync(file, `${line}\n`)
-    } catch {
-    }
+    } catch {}
     // eslint-disable-next-line @typescript-eslint/no-console
     const print = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
     print(line)

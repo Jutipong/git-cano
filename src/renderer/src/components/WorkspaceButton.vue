@@ -1,10 +1,11 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
-    import { confirmDialog } from '../utils/confirm'
     import { useRepoStore } from '../stores/repo'
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import { useWorkspaceStore } from '../stores/workspace'
+    import { confirmDialog } from '../utils/confirm'
+
+    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
 
     const repoStore = useRepoStore()
     const ws = useWorkspaceStore()

@@ -9,8 +9,8 @@
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
 
-    import type { MenuItem, RepoStatus } from '@shared/types'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
+    import type { MenuItem, RepoStatus } from '@shared/types'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
@@ -51,9 +51,7 @@
     function focusBranch(branch: { name: string; commitHash?: string }) {
         const hash =
             branch.commitHash ??
-            repoStore.commits.find(commit =>
-                commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`)
-            )?.hash
+            repoStore.commits.find(commit => commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`))?.hash
         if (hash) repoStore.pendingFocusHash = hash
     }
 
@@ -62,18 +60,15 @@
             const branches = await window.api.branches()
             local.value = branches.local
             remote.value = branches.remote
-        } catch {
-        }
+        } catch {}
         try {
             tags.value = await window.api.tags()
-        } catch {
-        }
+        } catch {}
         try {
             const [names, has] = await Promise.all([window.api.remoteTags(), window.api.hasRemote()])
             remoteTagNames.value = names
             hasRemote.value = has
-        } catch {
-        }
+        } catch {}
     }
 
     watch(() => props.repo, loadAll, { immediate: true })
@@ -185,7 +180,11 @@
             existing: local.value.map(b => b.name),
         })
         if (!name?.trim()) return
-        void run(() => window.api.createBranch(name.trim(), false, branch.commitHash ?? undefined), `Created branch ${name.trim()}`, `Creating branch ${name.trim()}…`)
+        void run(
+            () => window.api.createBranch(name.trim(), false, branch.commitHash ?? undefined),
+            `Created branch ${name.trim()}`,
+            `Creating branch ${name.trim()}…`
+        )
     }
     async function createTagHere(branch: LocalBranchMenuState['branch']) {
         const name = await promptDialog({
@@ -196,7 +195,11 @@
             existing: tags.value.map(t => t.name),
         })
         if (!name?.trim()) return
-        void run(() => window.api.createTag(name.trim(), branch.commitHash ?? null), `Tag ${name.trim()} created`, `Creating tag ${name.trim()}…`)
+        void run(
+            () => window.api.createTag(name.trim(), branch.commitHash ?? null),
+            `Tag ${name.trim()} created`,
+            `Creating tag ${name.trim()}…`
+        )
     }
     function copyBranchName(branch: LocalBranchMenuState['branch']) {
         void navigator.clipboard
@@ -308,59 +311,63 @@
             </div>
 
             <template v-if="localExpanded">
-            <div
-                v-for="branch in local"
-                :key="branch.name"
-                class="branch-row"
-                :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
-                draggable="true"
-                @click="focusBranch(branch)"
-                @dblclick="!branch.current && checkoutBranch(branch.name)"
-                :title="
-                    branch.detached
-                        ? 'Detached HEAD — click to locate this commit'
-                        : branch.current
-                          ? 'Current branch'
-                          : 'Click to locate · Double-click to checkout'
-                "
-                @contextmenu.prevent="openLocalBranchContextMenu(branch, $event)"
-                @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
-                @dragover="onDragOver(branch.name, $event)"
-                @dragleave="dropTarget = null"
-                @drop="handleDrop(branch.name, $event)">
-                <i-lucide-git-branch
-                    width="14"
-                    height="14" />
-                <span class="branch-name">
-                    <template v-if="branch.detached">
-                        <span class="branch-detached">HEAD</span>
-                        <span class="branch-detached-hash">{{ branch.name }}</span>
-                    </template>
-                    <template v-else>{{ branch.name }}</template>
-                </span>
-                <span
-                    v-if="branch.ahead || branch.behind"
-                    class="track-badge">
+                <div
+                    v-for="branch in local"
+                    :key="branch.name"
+                    class="branch-row"
+                    :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
+                    draggable="true"
+                    @click="focusBranch(branch)"
+                    @dblclick="!branch.current && checkoutBranch(branch.name)"
+                    :title="
+                        branch.detached
+                            ? 'Detached HEAD — click to locate this commit'
+                            : branch.current
+                              ? 'Current branch'
+                              : 'Click to locate · Double-click to checkout'
+                    "
+                    @contextmenu.prevent="openLocalBranchContextMenu(branch, $event)"
+                    @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
+                    @dragover="onDragOver(branch.name, $event)"
+                    @dragleave="dropTarget = null"
+                    @drop="handleDrop(branch.name, $event)">
+                    <i-lucide-git-branch
+                        width="14"
+                        height="14" />
+                    <span class="branch-name">
+                        <template v-if="branch.detached">
+                            <span class="branch-detached">HEAD</span>
+                            <span class="branch-detached-hash">{{ branch.name }}</span>
+                        </template>
+                        <template v-else>{{ branch.name }}</template>
+                    </span>
                     <span
-                        v-if="branch.ahead"
-                        class="track-ahead">↑{{ branch.ahead }}</span>
+                        v-if="branch.ahead || branch.behind"
+                        class="track-badge">
+                        <span
+                            v-if="branch.ahead"
+                            class="track-ahead"
+                            >↑{{ branch.ahead }}</span
+                        >
+                        <span
+                            v-if="branch.behind"
+                            class="track-behind"
+                            >↓{{ branch.behind }}</span
+                        >
+                    </span>
                     <span
-                        v-if="branch.behind"
-                        class="track-behind">↓{{ branch.behind }}</span>
-                </span>
-                <span
-                    v-if="!branch.current"
-                    class="row-actions">
-                    <button
-                        class="icon-btn danger"
-                        title="Delete branch"
-                        @click.stop="deleteBranch(branch.name)">
-                        <i-lucide-trash2
-                            width="14"
-                            height="14" />
-                    </button>
-                </span>
-            </div>
+                        v-if="!branch.current"
+                        class="row-actions">
+                        <button
+                            class="icon-btn danger"
+                            title="Delete branch"
+                            @click.stop="deleteBranch(branch.name)">
+                            <i-lucide-trash2
+                                width="14"
+                                height="14" />
+                        </button>
+                    </span>
+                </div>
             </template>
         </div>
 
@@ -396,35 +403,39 @@
                 </button>
             </div>
             <template v-if="remoteExpanded">
-            <div
-                v-if="remote.length === 0"
-                class="sidebar-empty">
-                Fetch a remote to see branches
-            </div>
-            <div
-                v-for="branch in remote"
-                :key="branch.name"
-                class="branch-row remote"
-                :class="{ current: isRemoteCurrent(branch.name) }"
-                @click="focusBranch(branch)"
-                @dblclick="checkoutRemote(branch.name)"
-                @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
-                :title="isRemoteCurrent(branch.name) ? 'Already checked out locally' : 'Click to locate · Double-click to checkout · Right-click for options'">
-                <i-lucide-globe2
-                    width="14"
-                    height="14" />
-                <span class="branch-name">{{ stripRemote(branch.name) }}</span>
-                <span class="row-actions">
-                    <button
-                        class="icon-btn danger"
-                        title="Delete remote branch"
-                        @click.stop="deleteRemoteBranch(branch.name)">
-                        <i-lucide-trash2
-                            width="14"
-                            height="14" />
-                    </button>
-                </span>
-            </div>
+                <div
+                    v-if="remote.length === 0"
+                    class="sidebar-empty">
+                    Fetch a remote to see branches
+                </div>
+                <div
+                    v-for="branch in remote"
+                    :key="branch.name"
+                    class="branch-row remote"
+                    :class="{ current: isRemoteCurrent(branch.name) }"
+                    @click="focusBranch(branch)"
+                    @dblclick="checkoutRemote(branch.name)"
+                    @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
+                    :title="
+                        isRemoteCurrent(branch.name)
+                            ? 'Already checked out locally'
+                            : 'Click to locate · Double-click to checkout · Right-click for options'
+                    ">
+                    <i-lucide-globe2
+                        width="14"
+                        height="14" />
+                    <span class="branch-name">{{ stripRemote(branch.name) }}</span>
+                    <span class="row-actions">
+                        <button
+                            class="icon-btn danger"
+                            title="Delete remote branch"
+                            @click.stop="deleteRemoteBranch(branch.name)">
+                            <i-lucide-trash2
+                                width="14"
+                                height="14" />
+                        </button>
+                    </span>
+                </div>
             </template>
         </div>
 
@@ -447,41 +458,41 @@
                 </button>
             </div>
             <template v-if="tagsExpanded">
-            <div
-                v-if="tags.length === 0"
-                class="sidebar-empty">
-                No tags yet
-            </div>
-            <div
-                v-for="tag in tags"
-                :key="tag.name"
-                class="branch-row tag-row"
-                :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
-                @click="focusTag(tag)"
-                @contextmenu.prevent="openTagMenu(tag, $event)">
-                <i-lucide-tag
-                    width="13"
-                    height="13" />
-                <i-lucide-loader-2
-                    v-if="pendingRemoteTag === tag.name"
-                    class="tag-remote-ic spinning"
-                    title="Working…"
-                    width="14"
-                    height="14" />
-                <i-lucide-cloud
-                    v-else-if="remoteTagNames.includes(tag.name)"
-                    class="tag-remote-ic"
-                    title="On remote"
-                    width="14"
-                    height="14" />
-                <i-lucide-cloud-off
-                    v-else-if="hasRemote"
-                    class="tag-remote-ic off"
-                    title="Not pushed to remote"
-                    width="14"
-                    height="14" />
-                <span class="branch-name">{{ tag.name }}</span>
-            </div>
+                <div
+                    v-if="tags.length === 0"
+                    class="sidebar-empty">
+                    No tags yet
+                </div>
+                <div
+                    v-for="tag in tags"
+                    :key="tag.name"
+                    class="branch-row tag-row"
+                    :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
+                    @click="focusTag(tag)"
+                    @contextmenu.prevent="openTagMenu(tag, $event)">
+                    <i-lucide-tag
+                        width="13"
+                        height="13" />
+                    <i-lucide-loader-2
+                        v-if="pendingRemoteTag === tag.name"
+                        class="tag-remote-ic spinning"
+                        title="Working…"
+                        width="14"
+                        height="14" />
+                    <i-lucide-cloud
+                        v-else-if="remoteTagNames.includes(tag.name)"
+                        class="tag-remote-ic"
+                        title="On remote"
+                        width="14"
+                        height="14" />
+                    <i-lucide-cloud-off
+                        v-else-if="hasRemote"
+                        class="tag-remote-ic off"
+                        title="Not pushed to remote"
+                        width="14"
+                        height="14" />
+                    <span class="branch-name">{{ tag.name }}</span>
+                </div>
             </template>
         </div>
 

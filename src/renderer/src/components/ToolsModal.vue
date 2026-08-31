@@ -2,10 +2,11 @@
     import Moon from '~icons/lucide/moon'
     import Sun from '~icons/lucide/sun'
 
-    import type { ToastKind } from '../stores/uiTransient'
-    import type { AiConfig, AiProvider, AiProviderConfig, GoModel } from '@shared/types'
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, ZOOM_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
+
+    import type { ToastKind } from '../stores/uiTransient'
+    import type { AiConfig, AiProvider, AiProviderConfig, GoModel } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -14,9 +15,10 @@
 
     const TABS = [
         { key: 'general', label: 'General' },
+        { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
     ] as const
-    const tab = ref<'general' | 'ai'>('general')
+    const tab = ref<'general' | 'hook' | 'ai'>('general')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
@@ -81,9 +83,7 @@
             left: `${rect.left}px`,
             width: `${rect.width}px`,
             maxHeight: `${height}px`,
-            ...(openAbove
-                ? { bottom: `${window.innerHeight - rect.top + 4}px` }
-                : { top: `${rect.bottom + 4}px` }),
+            ...(openAbove ? { bottom: `${window.innerHeight - rect.top + 4}px` } : { top: `${rect.bottom + 4}px` }),
         }
     })
 
@@ -118,8 +118,7 @@
             Object.assign(providerDrafts.openrouter, ai.config.openrouter)
             modelOptions.value = [...providerDrafts[selectedProvider.value].models]
             modelQuery.value = aiModel.value
-        } catch {
-        }
+        } catch {}
     }
 
     watch(tab, async current => {
@@ -251,6 +250,10 @@
                         v-if="tabItem.key === 'general'"
                         width="13"
                         height="13" />
+                    <i-lucide-zap
+                        v-else-if="tabItem.key === 'hook'"
+                        width="13"
+                        height="13" />
                     <i-lucide-sparkles
                         v-else
                         width="13"
@@ -344,6 +347,30 @@
                     </div>
                 </template>
 
+                <template v-else-if="tab === 'hook'">
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Commit message</strong>
+                        <span class="setting-label">Format before generating</span>
+                        <div class="setting-choice-row">
+                            <button
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.formatBeforeGenerate }"
+                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
+                                <i-lucide-check
+                                    v-if="ui.formatBeforeGenerate"
+                                    width="13"
+                                    height="13" />
+                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">
+                            When enabled, the repository's format command runs first if it has an
+                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
+                        </p>
+                    </div>
+                </template>
+
                 <template v-else>
                     <div class="tools-section ai-provider-section">
                         <strong class="tools-section-title">
@@ -381,7 +408,9 @@
                                 href="https://opencode.ai/auth"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="ai-link">opencode.ai/auth</a>.
+                                class="ai-link"
+                                >opencode.ai/auth</a
+                            >.
                         </p>
                         <label class="ai-field">
                             <span>Token</span>
@@ -410,7 +439,9 @@
                             <span
                                 v-if="connectResult"
                                 class="ai-test-result"
-                                :class="connectResult.ok ? 'ok' : 'err'">{{ connectResult.message }}</span>
+                                :class="connectResult.ok ? 'ok' : 'err'"
+                                >{{ connectResult.message }}</span
+                            >
                         </label>
                         <label class="ai-field">
                             <span>Model ID</span>
@@ -440,7 +471,9 @@
                                     </button>
                                     <span
                                         v-if="filteredModelOptions.length === 0"
-                                        class="ai-model-empty">No models found</span>
+                                        class="ai-model-empty"
+                                        >No models found</span
+                                    >
                                 </div>
                                 <i-lucide-chevron-down
                                     class="ai-select-caret"
@@ -460,7 +493,9 @@
                                 href="https://openrouter.ai/keys"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                class="ai-link">openrouter.ai/keys</a>.
+                                class="ai-link"
+                                >openrouter.ai/keys</a
+                            >.
                         </p>
                         <label class="ai-field">
                             <span>API key</span>
@@ -489,7 +524,9 @@
                             <span
                                 v-if="connectResult"
                                 class="ai-test-result"
-                                :class="connectResult.ok ? 'ok' : 'err'">{{ connectResult.message }}</span>
+                                :class="connectResult.ok ? 'ok' : 'err'"
+                                >{{ connectResult.message }}</span
+                            >
                         </label>
                         <label class="ai-field">
                             <span>Model</span>
@@ -519,7 +556,9 @@
                                     </button>
                                     <span
                                         v-if="filteredModelOptions.length === 0"
-                                        class="ai-model-empty">No models found</span>
+                                        class="ai-model-empty"
+                                        >No models found</span
+                                    >
                                 </div>
                                 <i-lucide-chevron-down
                                     class="ai-select-caret"
@@ -547,7 +586,9 @@
                         <span
                             v-if="aiTestResult"
                             class="ai-test-result"
-                            :class="aiTestResult.ok ? 'ok' : 'err'">{{ aiTestResult.message }}</span>
+                            :class="aiTestResult.ok ? 'ok' : 'err'"
+                            >{{ aiTestResult.message }}</span
+                        >
                         <span class="spacer" />
                         <button
                             class="btn small"

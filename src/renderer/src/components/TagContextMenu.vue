@@ -1,7 +1,7 @@
 <script setup lang="ts">
+    import CloudUpload from '~icons/lucide/cloud-upload'
     import Copy from '~icons/lucide/copy'
     import Trash2 from '~icons/lucide/trash2'
-    import CloudUpload from '~icons/lucide/cloud-upload'
 
     export interface TagMenuState {
         x: number

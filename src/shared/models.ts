@@ -29,7 +29,7 @@ export const MODEL_NAMES: Record<string, string> = {
     'qwen3.7-plus': 'Qwen3.7 Plus',
     'qwen3.6-plus': 'Qwen3.6 Plus',
     'qwen3.5-plus': 'Qwen3.5 Plus',
-    'hy3': 'Hy3',
+    hy3: 'Hy3',
 }
 
 export function modelName(id: string): string {

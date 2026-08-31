@@ -1,8 +1,9 @@
 <script setup lang="ts">
-    import type { ToastKind } from '../stores/uiTransient'
-
     import { nextTick, useTemplateRef } from 'vue'
+
     import { useRepoStore } from '../stores/repo'
+
+    import type { ToastKind } from '../stores/uiTransient'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -28,8 +29,7 @@
         try {
             const stashes = await window.api.stashes()
             existing.value = stashes.map(stash => stash.message)
-        } catch {
-        }
+        } catch {}
     })
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 

@@ -1,7 +1,6 @@
-import { execFile } from 'node:child_process'
+import { execFile, spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import type { FSWatcher } from 'node:fs'
 
 import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
@@ -24,6 +23,7 @@ import type {
     StashEntry,
     WorktreeInfo,
 } from '@shared/types'
+import type { FSWatcher } from 'node:fs'
 
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
@@ -101,8 +101,7 @@ function watchRepo(dir: string): void {
             })
         )
         watchers.push(fs.watch(path.join(gitDir, 'refs'), { recursive: true } as never, emit))
-    } catch {
-    }
+    } catch {}
     repoWatchers.set(dir, watchers)
 }
 
@@ -278,7 +277,16 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
     const REC = '\x1e'
     const fmt = ['%H', '%P', '%h', '%an', '%ad', '%d', '%s', '%b'].join(SEP)
 
-    const text = await g.raw(['log', '--branches', '--remotes', '--tags', `--pretty=format:${fmt}${REC}`, '--date=iso', `--max-count=${limit}`, '--'])
+    const text = await g.raw([
+        'log',
+        '--branches',
+        '--remotes',
+        '--tags',
+        `--pretty=format:${fmt}${REC}`,
+        '--date=iso',
+        `--max-count=${limit}`,
+        '--',
+    ])
 
     const commits: CommitNode[] = []
     for (const line of text.split(REC)) {
@@ -354,8 +362,7 @@ export async function unstageAll(): Promise<void> {
     try {
         await g.reset(['--'])
         return
-    } catch {
-    }
+    } catch {}
     await g.raw(['rm', '--cached', '-r', '--ignore-unmatch', '--quiet', '.'])
 }
 
@@ -395,14 +402,11 @@ export async function getDiff(file: string, staged: boolean, context?: number): 
         return getUntrackedDiff(p, file)
     }
     const unified = `--unified=${context ?? 3}`
-    const args = staged
-        ? ['diff', '--cached', unified, '--no-color', '--', file]
-        : ['diff', unified, '--no-color', '--', file]
+    const args = staged ? ['diff', '--cached', unified, '--no-color', '--', file] : ['diff', unified, '--no-color', '--', file]
     let text = ''
     try {
         text = await g.raw(args)
-    } catch {
-    }
+    } catch {}
     return parseDiff(text, file)
 }
 
@@ -655,8 +659,7 @@ export async function pushBranch(name: string, force = false): Promise<string> {
     let upstream = ''
     try {
         upstream = (await g.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${name}@{upstream}`])).trim()
-    } catch {
-    }
+    } catch {}
     const flags = force ? ['--force-with-lease'] : []
     if (upstream) {
         const slash = upstream.indexOf('/')
@@ -678,8 +681,7 @@ export async function pullBranch(name: string): Promise<string> {
     let upstream = ''
     try {
         upstream = (await g.raw(['rev-parse', '--abbrev-ref', '--symbolic-full-name', `${name}@{upstream}`])).trim()
-    } catch {
-    }
+    } catch {}
     if (!upstream) throw new Error(`"${name}" has no upstream; can't pull`)
     const slash = upstream.indexOf('/')
     if (slash <= 0) throw new Error(`Invalid upstream for "${name}": ${upstream}`)
@@ -774,8 +776,7 @@ export async function getCommitFileDiff(hash: string, file: string, context?: nu
     let text = ''
     try {
         text = await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
-    } catch {
-    }
+    } catch {}
     if (text.trim() || text.includes('Binary files')) return parseDiff(text)
 
     let snapshot: Buffer
@@ -986,7 +987,10 @@ export async function getChangesContext(): Promise<string> {
     let allLines: string[] = []
     try {
         const statusText = await g.raw(['status', '--porcelain'])
-        allLines = statusText.split('\n').map(line => line.trimEnd()).filter(Boolean)
+        allLines = statusText
+            .split('\n')
+            .map(line => line.trimEnd())
+            .filter(Boolean)
         stagedFiles = allLines.filter(line => line[0] !== ' ' && line[0] !== '?')
     } catch {}
 
@@ -995,8 +999,7 @@ export async function getChangesContext(): Promise<string> {
         try {
             const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
             if (staged.trim()) parts.push(staged)
-        } catch {
-        }
+        } catch {}
         return parts.join('\n')
     }
 
@@ -1009,7 +1012,11 @@ export async function getChangesContext(): Promise<string> {
     } catch {}
     try {
         const untracked = await g.raw(['ls-files', '--others', '--exclude-standard'])
-        const files = untracked.split('\n').map(line => line.trim()).filter(Boolean).slice(0, 10)
+        const files = untracked
+            .split('\n')
+            .map(line => line.trim())
+            .filter(Boolean)
+            .slice(0, 10)
         if (files.length) {
             const block = files
                 .map(file => {
@@ -1023,9 +1030,63 @@ export async function getChangesContext(): Promise<string> {
                 .join('\n')
             parts.push(block)
         }
-    } catch {
-    }
+    } catch {}
     return parts.join('\n')
+}
+
+/** Runs the repository's formatter before AI commit-message generation. Does nothing when the repo has no `.oxfmtrc.json`. */
+export function formatRepoIfConfigured(): Promise<void> {
+    const repoRoot = getRepo().path
+    if (!fs.existsSync(path.join(repoRoot, '.oxfmtrc.json'))) return Promise.resolve()
+    return runRepoFormat(repoRoot)
+}
+
+async function runRepoFormat(repoRoot: string): Promise<void> {
+    const formatScript = readFormatScript(repoRoot)
+    const [cmd, args] = formatScript ? [packageManager(repoRoot), ['run', 'format']] : npxOxfmtArgs(repoRoot)
+    await runFormatCommand(cmd, args, repoRoot)
+}
+
+function readFormatScript(repoRoot: string): string | null {
+    try {
+        const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as {
+            scripts?: Record<string, string>
+        }
+        const script = pkg.scripts?.format?.trim()
+        return script ? script : null
+    } catch {
+        return null
+    }
+}
+
+function packageManager(repoRoot: string): string {
+    for (const [lockfile, manager] of [
+        ['pnpm-lock.yaml', 'pnpm'],
+        ['bun.lockb', 'bun'],
+        ['yarn.lock', 'yarn'],
+        ['package-lock.json', 'npm'],
+        ['npm-shrinkwrap.json', 'npm'],
+    ]) {
+        if (fs.existsSync(path.join(repoRoot, lockfile))) return manager
+    }
+    return 'npm'
+}
+
+function npxOxfmtArgs(repoRoot: string): [string, string[]] {
+    const args = ['oxfmt', '--write']
+    if (fs.existsSync(path.join(repoRoot, '.oxfmtignore'))) args.push('--ignore-path', '.oxfmtignore')
+    return ['npx', args]
+}
+
+function runFormatCommand(cmd: string, args: string[], cwd: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const child = spawn(cmd, args, { cwd, stdio: 'ignore', shell: process.platform === 'win32' })
+        child.on('error', err => reject(new Error(`Failed to launch formatter "${cmd} ${args.join(' ')}": ${err.message}`)))
+        child.on('exit', code => {
+            if (code === 0) resolve()
+            else reject(new Error(`Formatter "${cmd} ${args.join(' ')}" exited with code ${code}`))
+        })
+    })
 }
 
 function writeTempPatch(patch: string): string {

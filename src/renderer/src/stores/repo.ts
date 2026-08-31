@@ -46,8 +46,7 @@ function loadSavedSession(): { session: PersistedSession; fromLegacy: boolean } 
 
         const legacy = parsePersistedSession(localStorage.getItem(LEGACY_SESSION_STORAGE_KEY), false)
         if (legacy) return { session: legacy, fromLegacy: true }
-    } catch {
-    }
+    } catch {}
     return { session: { paths: [], active: 0 }, fromLegacy: false }
 }
 
@@ -96,8 +95,7 @@ export const useRepoStore = defineStore('repo', () => {
                 localStorage.removeItem(LEGACY_SESSION_STORAGE_KEY)
                 legacyMigrationPending = false
             }
-        } catch {
-        }
+        } catch {}
     }
 
     function addTab(status: RepoStatus) {
@@ -205,8 +203,7 @@ export const useRepoStore = defineStore('repo', () => {
                     // oxlint-disable-next-line no-await-in-loop
                     addTab(await window.api.openPath(path))
                     openedCount++
-                } catch {
-                }
+                } catch {}
             }
             const restoredActive = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
             if (openedCount > 0 && restoredActive >= 0) {
@@ -246,8 +243,7 @@ export const useRepoStore = defineStore('repo', () => {
                     // oxlint-disable-next-line no-await-in-loop
                     addTab(await window.api.openPath(path))
                     openedCount++
-                } catch {
-                }
+                } catch {}
             }
             const savedActivePath = saved.paths[saved.active]
             const restored = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
@@ -277,8 +273,7 @@ export const useRepoStore = defineStore('repo', () => {
                     commitAuthor.value = details.author
                     commitDate.value = details.date
                 }
-            } catch {
-            }
+            } catch {}
         },
         { immediate: true }
     )

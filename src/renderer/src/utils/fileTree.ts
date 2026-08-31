@@ -51,12 +51,7 @@ function sortNodes(nodes: FileNode[]) {
     for (const node of nodes) if (node.isDir) sortNodes(node.children)
 }
 
-export function flattenTree(
-    nodes: FileNode[],
-    collapsed: ReadonlySet<string>,
-    keyPrefix = '',
-    depth = 0
-): TreeRow[] {
+export function flattenTree(nodes: FileNode[], collapsed: ReadonlySet<string>, keyPrefix = '', depth = 0): TreeRow[] {
     const rows: TreeRow[] = []
     for (const node of nodes) {
         if (node.isDir) {

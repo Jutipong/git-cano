@@ -5,8 +5,8 @@
     import OpenRepoMenu from './OpenRepoMenu.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
 
-    import type { RepoStatus } from '@shared/types'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
+    import type { RepoStatus } from '@shared/types'
 
     interface Tab {
         path: string
@@ -248,7 +248,9 @@
                 <span>Push</span>
                 <span
                     v-if="repo?.ahead"
-                    class="sync-count">{{ repo.ahead }}</span>
+                    class="sync-count"
+                    >{{ repo.ahead }}</span
+                >
             </button>
             <span class="tab-actions-sep" />
             <button
@@ -263,7 +265,9 @@
                 <span>Pull</span>
                 <span
                     v-if="repo?.behind"
-                    class="sync-count">{{ repo.behind }}</span>
+                    class="sync-count"
+                    >{{ repo.behind }}</span
+                >
             </button>
             <span class="tab-actions-sep" />
             <button

@@ -10,12 +10,13 @@ import './modern-ui.css'
 function reportError(message: string): void {
     try {
         window.api.clientLog('error', message.slice(0, 2000))
-    } catch {
-    }
+    } catch {}
 }
 
 window.addEventListener('error', event => {
-    reportError(event.error instanceof Error ? (event.error.stack ?? event.error.message) : `${event.message} (${event.filename}:${event.lineno})`)
+    reportError(
+        event.error instanceof Error ? (event.error.stack ?? event.error.message) : `${event.message} (${event.filename}:${event.lineno})`
+    )
 })
 window.addEventListener('unhandledrejection', event => {
     const reason = event.reason

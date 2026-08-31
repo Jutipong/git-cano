@@ -1,14 +1,13 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+import { toGoModel } from '@shared/models'
 import { app } from 'electron'
 
-import type { AiConfig, AiProvider, AiProviderConfig, AiTestResult, GoModel } from '@shared/types'
-
-import { toGoModel } from '@shared/models'
-
-import { getChangesContext } from './git'
+import { formatRepoIfConfigured, getChangesContext } from './git'
 import { log } from './logger'
+
+import type { AiConfig, AiProvider, AiProviderConfig, AiTestResult, GoModel } from '@shared/types'
 
 const BASE_URL = 'https://opencode.ai/zen/go/v1'
 const GO_MODELS_URL = `${BASE_URL}/models`
@@ -34,11 +33,7 @@ export function getConfig(): AiConfig {
                 modelId: typeof cfg.modelId === 'string' ? cfg.modelId : '',
                 models: Array.isArray(cfg.models)
                     ? cfg.models.filter(
-                          model =>
-                              model &&
-                              typeof model === 'object' &&
-                              typeof model.id === 'string' &&
-                              typeof model.name === 'string'
+                          model => model && typeof model === 'object' && typeof model.id === 'string' && typeof model.name === 'string'
                       )
                     : [],
             }
@@ -74,8 +69,7 @@ export function saveConfig(cfg: AiConfig): void {
     fs.writeFileSync(file, JSON.stringify(clean, null, 2))
     try {
         fs.chmodSync(file, 0o600)
-    } catch {
-    }
+    } catch {}
 }
 
 function familyOf(modelId: string): Family {
@@ -90,13 +84,7 @@ function endpointOf(family: Family): string {
     return `${BASE_URL}/chat/completions`
 }
 
-function buildBody(
-    family: Family,
-    modelId: string,
-    systemPrompt: string,
-    userPrompt: string,
-    maxTokens: number
-): Record<string, unknown> {
+function buildBody(family: Family, modelId: string, systemPrompt: string, userPrompt: string, maxTokens: number): Record<string, unknown> {
     if (family === 'responses') {
         const body: Record<string, unknown> = { model: modelId, input: userPrompt, max_output_tokens: maxTokens }
         if (systemPrompt) body.instructions = systemPrompt
@@ -113,8 +101,7 @@ function extractErrorDetail(text: string, status: number): string {
     try {
         const json = JSON.parse(text) as { error?: { message?: string } }
         message = json.error?.message ?? ''
-    } catch {
-    }
+    } catch {}
     const fallback: Record<number, string> = {
         401: 'Invalid API token (401 Unauthorized)',
         403: 'Access denied (403) — check your OpenCode subscription',
@@ -147,9 +134,7 @@ function extractContent(family: Family, json: unknown): string {
     const data = json as { output_text?: unknown; output?: Array<{ content?: Array<{ text?: unknown }> }> }
     if (typeof data.output_text === 'string') return data.output_text
     const message = data.output?.find(item => Array.isArray(item.content))
-    return Array.isArray(message?.content)
-        ? message.content.map(part => (typeof part.text === 'string' ? part.text : '')).join('')
-        : ''
+    return Array.isArray(message?.content) ? message.content.map(part => (typeof part.text === 'string' ? part.text : '')).join('') : ''
 }
 
 async function callModel(
@@ -180,7 +165,9 @@ async function callModel(
             signal: controller.signal,
         })
     } catch (err) {
-        throw new Error(err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err))
+        throw new Error(
+            err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err)
+        )
     } finally {
         clearTimeout(timer)
     }
@@ -242,13 +229,20 @@ function truncateForPrompt(text: string): string {
 }
 
 function stripFences(text: string): string {
-    return text.replace(/^```(?:\w+)?\s*/i, '').replace(/\s*```\s*$/, '').trim()
+    return text
+        .replace(/^```(?:\w+)?\s*/i, '')
+        .replace(/\s*```\s*$/, '')
+        .trim()
 }
 
-export async function generateCommitMessage(): Promise<string> {
+export async function generateCommitMessage(formatFirst = false): Promise<string> {
+    if (formatFirst) await formatRepoIfConfigured()
     const cfg = getConfig()
     const active = cfg.provider === 'openrouter' ? cfg.openrouter : cfg.opencodeGo
-    if (!active.token || !active.modelId) throw new Error(`No AI configured — set your ${cfg.provider === 'openrouter' ? 'OpenRouter API key' : 'OpenCode token'} and model-id in Settings first`)
+    if (!active.token || !active.modelId)
+        throw new Error(
+            `No AI configured — set your ${cfg.provider === 'openrouter' ? 'OpenRouter API key' : 'OpenCode token'} and model-id in Settings first`
+        )
     const changes = await getChangesContext()
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
@@ -301,7 +295,7 @@ export async function listModels(provider: AiProvider, token: string): Promise<G
         if (!Array.isArray(json?.data)) return []
         return json.data
             .filter(model => typeof model.id === 'string')
-            .map(model => ({ id: model.id as string, name: typeof model.name === 'string' ? model.name : model.id as string }))
+            .map(model => ({ id: model.id as string, name: typeof model.name === 'string' ? model.name : (model.id as string) }))
     }
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)

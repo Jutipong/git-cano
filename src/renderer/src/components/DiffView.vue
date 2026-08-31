@@ -3,8 +3,8 @@
 
     import { intraLineRange, isWhitespaceOnlyChange, detectMovedLines, highlightDiffLines } from '../utils/highlight'
 
-    import type { DiffLine } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
+    import type { DiffLine } from '@shared/types'
 
     interface Props {
         file: { path: string; staged: boolean } | null
@@ -137,8 +137,7 @@
             while (i < lines.value.length && lines.value[i].type === 'add') adds.push(lines.value[i++])
             const leftPad = Math.max(0, adds.length - dels.length)
             const rightPad = Math.max(0, dels.length - adds.length)
-            const at = (arr: DiffLine[], index: number): DiffLine | undefined =>
-                index >= 0 && index < arr.length ? arr[index] : undefined
+            const at = (arr: DiffLine[], index: number): DiffLine | undefined => (index >= 0 && index < arr.length ? arr[index] : undefined)
             for (let p = 0; p < Math.max(dels.length, adds.length); p++) {
                 const row: SideBySideRow = { left: at(dels, p - leftPad), right: at(adds, p - rightPad) }
                 if (!inChange) {
@@ -286,9 +285,7 @@
     function minimapRows(): { kind?: MinimapKind; left?: MinimapKind; right?: MinimapKind }[] {
         const change = (type?: string) => (type === 'add' || type === 'del' ? (type as MinimapKind) : undefined)
         if (ui.diffViewMode === 'split') {
-            return sideBySide.value.map(row =>
-                row.hunkHeader ? {} : { left: change(row.left?.type), right: change(row.right?.type) }
-            )
+            return sideBySide.value.map(row => (row.hunkHeader ? {} : { left: change(row.left?.type), right: change(row.right?.type) }))
         }
         return lines.value.map(line => ({ kind: change(line.type) }))
     }
@@ -544,7 +541,7 @@
                         @click="ui.showEntireFile = !ui.showEntireFile">
                         <i-lucide-unfold-vertical
                             width="15"
-                        height="15" />
+                            height="15" />
                     </button>
                 </div>
                 <div class="segmented diff-header-actions">

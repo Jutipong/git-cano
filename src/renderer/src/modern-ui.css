@@ -1,6 +1,5 @@
 :root,
 :root[data-theme='dark'] {
-
     --canvas: #202124;
     --surface-0: #1f2020;
     --surface-1: #202124;
@@ -32,7 +31,6 @@
 }
 
 :root[data-theme='light'] {
-
     --canvas: #faf5e8;
     --surface-0: #f8f1e3;
     --surface-1: #faf5e8;
@@ -68,7 +66,6 @@
 }
 
 :root[data-theme='dark-modern'] {
-
     --canvas: #181818;
     --surface-0: #181818;
     --surface-1: #1f1f1f;
@@ -271,11 +268,11 @@ body {
     padding: 0 8px;
 }
 
-.tab-actions:not(.search-open)>.tab-actions-sep {
+.tab-actions:not(.search-open) > .tab-actions-sep {
     display: none;
 }
 
-.tab-actions:not(.search-open)>.workspace-wrap {
+.tab-actions:not(.search-open) > .workspace-wrap {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
@@ -335,7 +332,7 @@ body {
     border-radius: 999px;
 }
 
-.tab-sync-actions>.tab-actions-sep {
+.tab-sync-actions > .tab-actions-sep {
     display: block;
 }
 
@@ -378,7 +375,6 @@ body {
     background: color-mix(in srgb, var(--purple) 15%, transparent);
     border-color: transparent;
 }
-
 
 .tab-search-input:focus {
     border-color: color-mix(in srgb, var(--teal) 45%, transparent);
@@ -799,7 +795,6 @@ body {
 }
 
 .app-body {
-
     gap: 0;
     margin-top: 6px;
     border: none;
@@ -808,7 +803,6 @@ body {
 }
 
 .diff-overlay {
-
     top: 6px;
     bottom: 6px;
     left: 6px;
@@ -914,9 +908,7 @@ body {
     height: 20px;
     align-items: center;
     min-width: max-content;
-    background: repeating-linear-gradient(-45deg,
-            transparent 0 4px,
-            color-mix(in srgb, var(--text-muted) 14%, transparent) 4px 7px);
+    background: repeating-linear-gradient(-45deg, transparent 0 4px, color-mix(in srgb, var(--text-muted) 14%, transparent) 4px 7px);
     border-top: 1px solid var(--line-soft);
     border-bottom: 1px solid var(--line-soft);
 }
@@ -982,9 +974,7 @@ body {
 }
 
 .diff-line.half.blank {
-    background: repeating-linear-gradient(-45deg,
-            transparent 0 5px,
-            color-mix(in srgb, var(--text-muted) 10%, transparent) 5px 8px);
+    background: repeating-linear-gradient(-45deg, transparent 0 5px, color-mix(in srgb, var(--text-muted) 10%, transparent) 5px 8px);
 }
 
 .split-pane.right {
@@ -1328,7 +1318,10 @@ body {
 .commit-ring {
     stroke: var(--text);
     stroke-opacity: 0;
-    transition: stroke-opacity 0.15s ease, stroke 0.15s ease, filter 0.15s ease;
+    transition:
+        stroke-opacity 0.15s ease,
+        stroke 0.15s ease,
+        filter 0.15s ease;
 }
 
 .commit-ring.selected,
@@ -1374,7 +1367,7 @@ body {
     padding: 2px 7px;
 }
 
-.ref-chip>svg {
+.ref-chip > svg {
     flex: 0 0 auto;
     opacity: 0.85;
 }
@@ -1419,7 +1412,10 @@ body {
     border: 1px solid color-mix(in srgb, var(--text-secondary) 30%, transparent);
     border-radius: 999px;
     cursor: pointer;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease,
+        color 0.15s ease;
 }
 
 .msg-toggle:hover {
@@ -1470,7 +1466,7 @@ body {
     border-radius: 999px;
 }
 
-.stash-row>svg {
+.stash-row > svg {
     color: var(--text-muted);
     flex-shrink: 0;
 }
@@ -1504,7 +1500,6 @@ body {
 }
 
 @keyframes commit-ring-pulse {
-
     0%,
     100% {
         opacity: 0.55;
@@ -1547,7 +1542,9 @@ body {
     border: 0;
     border-radius: 999px;
     cursor: pointer;
-    transition: color 0.15s ease, background 0.15s ease;
+    transition:
+        color 0.15s ease,
+        background 0.15s ease;
 }
 
 .file-mode-btn:hover {
@@ -1648,7 +1645,7 @@ body {
     display: block;
 }
 
-.file-context-menu-wrap:hover>.file-context-menu-item {
+.file-context-menu-wrap:hover > .file-context-menu-item {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -1929,7 +1926,7 @@ body {
 
 .commit-box textarea,
 .new-branch input,
-.tag-modal-body>input:not([type='checkbox']),
+.tag-modal-body > input:not([type='checkbox']),
 .clone-box input,
 .tools-body input,
 .tools-body select,
@@ -2022,11 +2019,13 @@ body {
     inset: -1px;
     border-radius: inherit;
     padding: 1px;
-    background: conic-gradient(from var(--busy-spin),
-            transparent 0%,
-            transparent 55%,
-            color-mix(in srgb, var(--teal) 90%, transparent) 75%,
-            transparent 95%);
+    background: conic-gradient(
+        from var(--busy-spin),
+        transparent 0%,
+        transparent 55%,
+        color-mix(in srgb, var(--teal) 90%, transparent) 75%,
+        transparent 95%
+    );
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,
         linear-gradient(#fff 0 0);
@@ -2255,7 +2254,7 @@ body {
     display: block;
 }
 
-.commit-menu-wrap:hover>.commit-menu-item {
+.commit-menu-wrap:hover > .commit-menu-item {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -2547,7 +2546,7 @@ body {
 .error-dialog-body pre {
     margin: 0;
     color: var(--text-secondary);
-    font-family: 'SF Mono', Menlo, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
     line-height: 1.5;
     white-space: pre-wrap;
@@ -2871,7 +2870,6 @@ body {
 }
 
 @keyframes splash-breathe {
-
     0%,
     100% {
         transform: translateY(0);
@@ -2940,7 +2938,7 @@ body {
     width: 70px;
     overflow: hidden;
     color: var(--text-muted);
-    font-family: 'SF Mono', Menlo, monospace;
+    font-family: var(--font-mono);
     font-size: 11px;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -3080,7 +3078,7 @@ body {
     border: 1px solid var(--line);
     border-radius: 8px;
     color: var(--text);
-    font-family: 'SF Mono', Menlo, monospace;
+    font-family: var(--font-mono);
     font-size: 12px;
 }
 
@@ -3139,15 +3137,15 @@ body {
     text-align: center;
 }
 
-.graph-header>.graph-author-header {
+.graph-header > .graph-author-header {
     flex: 0 1 var(--author-w, 140px);
 }
 
-.graph-header>.graph-date-header {
+.graph-header > .graph-date-header {
     flex: 0 0 var(--date-w, 110px);
 }
 
-.graph-header>.graph-hash-header {
+.graph-header > .graph-hash-header {
     flex: 0 0 var(--hash-w, 70px);
 }
 
@@ -3364,7 +3362,7 @@ body {
 }
 
 .setting-chip.active {
-    background: color-mix(in srgb, var(--teal) 14%, transparent);
+    background: color-mix(in srgb, var(--green) 14%, transparent);
 }
 
 .tools-reset-row {

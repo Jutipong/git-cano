@@ -24,6 +24,9 @@ export const DEFAULT_FILE_VIEW_MODE: FileViewMode = 'tree'
 export const REFRESH_INTERVAL_OPTIONS = [3, 5, 10, 15, 20, 24, 30]
 export const DEFAULT_REFRESH_INTERVAL = 5
 
+/** Run the repo formatter (when it has .oxfmtrc.json) before AI commit-message generation. */
+export const DEFAULT_FORMAT_BEFORE_GENERATE = false
+
 /** App-wide UI font size options (applied via CSS zoom relative to the base size). */
 export const FONT_SIZE_OPTIONS = [12, 13, 14, 15, 16]
 export const DEFAULT_FONT_SIZE = 14
@@ -51,8 +54,7 @@ export const useUiStore = defineStore(
         const theme = ref<Theme>(DEFAULT_THEME)
         watchEffect(() => {
             const savedTheme = theme.value as string
-            if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern')
-                theme.value = DEFAULT_THEME
+            if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern') theme.value = DEFAULT_THEME
         })
         const sidebarWidth = ref(244)
         const rightPanelWidth = ref(410)
@@ -63,6 +65,7 @@ export const useUiStore = defineStore(
         if (diffViewMode.value === ('hunk' as DiffViewMode)) diffViewMode.value = DEFAULT_DIFF_VIEW_MODE
         const showEntireFile = ref(DEFAULT_SHOW_ENTIRE_FILE)
         const aiCommitMode = ref<AiCommitMode>('off')
+        const formatBeforeGenerate = ref(DEFAULT_FORMAT_BEFORE_GENERATE)
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
         watchEffect(() => {
             if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
@@ -127,6 +130,7 @@ export const useUiStore = defineStore(
             diffViewMode,
             showEntireFile,
             aiCommitMode,
+            formatBeforeGenerate,
             refreshInterval,
             fontSize,
             zoom,
@@ -151,6 +155,7 @@ export const useUiStore = defineStore(
                 'diffViewMode',
                 'showEntireFile',
                 'aiCommitMode',
+                'formatBeforeGenerate',
                 'refreshInterval',
                 'fontSize',
                 'zoom',

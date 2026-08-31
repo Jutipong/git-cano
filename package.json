@@ -1,72 +1,72 @@
 {
-  "name": "open-git",
-  "version": "0.1.0",
-  "description": "Open Git - a lightweight Git GUI with basic features",
-  "author": "Open Git contributors",
-  "type": "module",
-  "main": "out/main/index.js",
-  "scripts": {
-    "dev": "electron-vite dev",
-    "postinstall": "node scripts/fix-electron-path.mjs",
-    "build": "electron-vite build",
-    "start": "electron-vite preview",
-    "dist": "electron-vite build && electron-builder --mac dmg",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
-    "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
-    "format": "oxfmt --write --ignore-path .oxfmtignore"
-  },
-  "dependencies": {
-    "pinia": "^4.0.3",
-    "pinia-plugin-persistedstate": "^4.7.1",
-    "simple-git": "^3.36.0",
-    "vue": "^3.5.42"
-  },
-  "devDependencies": {
-    "@iconify-json/fluent-emoji-flat": "^1.2.6",
-    "@iconify-json/lucide": "^1.2.126",
-    "@iconify-json/mage": "^1.2.4",
-    "@iconify-json/simple-icons": "^1.2.93",
-    "@iconify-json/streamline-flex-color": "^1.2.2",
-    "@types/node": "^26.4.0",
-    "@vitejs/plugin-vue": "^6.0.8",
-    "electron": "^44.0.0",
-    "electron-builder": "^26.15.7",
-    "electron-vite": "^5.0.0",
-    "oxfmt": "^0.65.0",
-    "oxlint": "^1.80.0",
-    "typescript": "^6.0.3",
-    "unplugin-auto-import": "^21.1.0",
-    "unplugin-icons": "^23.0.1",
-    "unplugin-vue-components": "^32.1.0",
-    "vite": "^8.2.2",
-    "vue-tsc": "^3.3.11"
-  },
-  "allowScripts": {
-    "electron@44.0.0": true,
-    "esbuild@0.28.2": true
-  },
-  "build": {
-    "appId": "com.jutipong.open-git",
-    "productName": "Open Git",
-    "directories": {
-      "output": "release"
+    "name": "open-git",
+    "version": "0.1.0",
+    "description": "Open Git - a lightweight Git GUI with basic features",
+    "author": "Open Git contributors",
+    "type": "module",
+    "main": "out/main/index.js",
+    "scripts": {
+        "dev": "electron-vite dev",
+        "postinstall": "node scripts/fix-electron-path.mjs",
+        "build": "electron-vite build",
+        "start": "electron-vite preview",
+        "dist": "electron-vite build && electron-builder --mac dmg",
+        "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
+        "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
+        "format": "oxfmt --write --ignore-path .oxfmtignore"
     },
-    "files": [
-      "out/**/*",
-      "node_modules/**/*",
-      "package.json"
-    ],
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64"
-          ]
+    "dependencies": {
+        "pinia": "^4.0.3",
+        "pinia-plugin-persistedstate": "^4.7.1",
+        "simple-git": "^3.36.0",
+        "vue": "^3.5.42"
+    },
+    "devDependencies": {
+        "@iconify-json/fluent-emoji-flat": "^1.2.6",
+        "@iconify-json/lucide": "^1.2.126",
+        "@iconify-json/mage": "^1.2.4",
+        "@iconify-json/simple-icons": "^1.2.93",
+        "@iconify-json/streamline-flex-color": "^1.2.2",
+        "@types/node": "^26.4.0",
+        "@vitejs/plugin-vue": "^6.0.8",
+        "electron": "^44.0.0",
+        "electron-builder": "^26.15.7",
+        "electron-vite": "^5.0.0",
+        "oxfmt": "^0.65.0",
+        "oxlint": "^1.80.0",
+        "typescript": "^6.0.3",
+        "unplugin-auto-import": "^21.1.0",
+        "unplugin-icons": "^23.0.1",
+        "unplugin-vue-components": "^32.1.0",
+        "vite": "^8.2.2",
+        "vue-tsc": "^3.3.11"
+    },
+    "allowScripts": {
+        "electron@44.0.0": true,
+        "esbuild@0.28.2": true
+    },
+    "build": {
+        "appId": "com.jutipong.open-git",
+        "productName": "Open Git",
+        "directories": {
+            "output": "release"
+        },
+        "files": [
+            "out/**/*",
+            "node_modules/**/*",
+            "package.json"
+        ],
+        "mac": {
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "arm64"
+                    ]
+                }
+            ],
+            "category": "public.app-category.developer-tools",
+            "identity": null
         }
-      ],
-      "category": "public.app-category.developer-tools",
-      "identity": null
     }
-  }
 }

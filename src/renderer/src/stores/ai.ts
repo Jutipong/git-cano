@@ -16,8 +16,7 @@ export const useAiStore = defineStore('ai', () => {
         try {
             const cfg = await window.api.ai.getConfig()
             config.value = cfg
-        } catch {
-        }
+        } catch {}
     }
 
     async function save(cfg: AiConfig) {

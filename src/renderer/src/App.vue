@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import BlameModal from './components/BlameModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
-    import ConflictBanner from './components/ConflictBanner.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
+    import ConflictBanner from './components/ConflictBanner.vue'
     import DiffView from './components/DiffView.vue'
     import ErrorDialog from './components/ErrorDialog.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
@@ -12,22 +12,33 @@
     import PromptDialog from './components/PromptDialog.vue'
     import RebaseEditor from './components/RebaseEditor.vue'
     import Sidebar from './components/Sidebar.vue'
+    import StashCreateModal from './components/StashCreateModal.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
-    import StashCreateModal from './components/StashCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
-
-    import type { CommitNode, RepoStatus } from '@shared/types'
-    import type { NotifyOptions, ToastKind } from './stores/uiTransient'
-
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
+
+    import type { NotifyOptions, ToastKind } from './stores/uiTransient'
+    import type { CommitNode, RepoStatus } from '@shared/types'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
     const uiTransient = useUiTransientStore()
-    const { tabs, activeTab, commits, hasMore, selectedFile, selectedCommit, repoState, rebaseBase, historyFile, blameFile, toolsOpen, booted } =
-        storeToRefs(repoStore)
+    const {
+        tabs,
+        activeTab,
+        commits,
+        hasMore,
+        selectedFile,
+        selectedCommit,
+        repoState,
+        rebaseBase,
+        historyFile,
+        blameFile,
+        toolsOpen,
+        booted,
+    } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
     const conflicts = computed(() => repoStore.conflicts)
 
@@ -66,9 +77,12 @@
         }
         const minutes = ui.refreshInterval
         if (!minutes || minutes <= 0) return
-        autoRefreshTimer.value = setInterval(() => {
-            if (repoStore.repo) void repoStore.refresh()
-        }, minutes * 60 * 1000)
+        autoRefreshTimer.value = setInterval(
+            () => {
+                if (repoStore.repo) void repoStore.refresh()
+            },
+            minutes * 60 * 1000
+        )
     }
 
     function debouncedRefresh() {
@@ -177,7 +191,12 @@
             confirmLabel: 'Create',
             existing,
         })
-        if (name?.trim()) void run(`Created branch ${name.trim()}`, () => window.api.createBranch(name.trim(), false, commit.hash), `Creating branch ${name.trim()}…`)
+        if (name?.trim())
+            void run(
+                `Created branch ${name.trim()}`,
+                () => window.api.createBranch(name.trim(), false, commit.hash),
+                `Creating branch ${name.trim()}…`
+            )
     }
 
     function cherryPickCommit(commit: CommitNode) {

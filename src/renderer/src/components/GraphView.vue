@@ -1,10 +1,8 @@
 <script setup lang="ts">
-    import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
-
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { formatDatePattern, formatShortDate } from '../utils/format'
-
+    import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
 
     import type { CommitNode } from '@shared/types'
@@ -30,9 +28,18 @@
 
     const FIRST_LANE_COLOR = '#4C9AFF'
     const COLORS = [
-        '#F062A4', '#8BC34A', '#B388FF', '#EF5350',
-        '#26C6DA', '#FFD166', '#5C6BC0', '#66BB6A',
-        '#EC407A', '#29B6F6', '#AB47BC', '#FFCA28',
+        '#F062A4',
+        '#8BC34A',
+        '#B388FF',
+        '#EF5350',
+        '#26C6DA',
+        '#FFD166',
+        '#5C6BC0',
+        '#66BB6A',
+        '#EC407A',
+        '#29B6F6',
+        '#AB47BC',
+        '#FFCA28',
         '#7E57C2',
     ]
     const laneW = 32
@@ -72,7 +79,9 @@
             : props.commits
     )
     const GRAPH_MIN_W = 120
-    const graphW = computed(() => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W))
+    const graphW = computed(() =>
+        Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W)
+    )
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
     const totalHeight = computed(() => visibleCommits.value.length * rowH)
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
@@ -167,8 +176,10 @@
     const AUTHOR_MAX_W = 220
     const DATE_MIN_W = 76
     const HASH_MIN_W = 48
-    const UI_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-    const MONO_FONT = '"SF Mono", Menlo, monospace'
+    const cssFont = (name: string, fallback: string): string =>
+        getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+    const UI_FONT = cssFont('--font-ui', '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
+    const MONO_FONT = cssFont('--font-mono', '"SF Mono", Menlo, monospace')
     const measureCtx = document.createElement('canvas').getContext('2d')
     function measureText(text: string, size: number, font = UI_FONT): number {
         if (!measureCtx) return Math.ceil(text.length * size * 0.62)
@@ -265,24 +276,21 @@
         return parts
     }
 
-    watch(
-        [() => repoStore.pendingFocusHash, rowIndex],
-        ([hash]) => {
-            if (!hash) return
-            const index = rowIndex.value.get(hash)
-            const el = scrollEl.value
-            if (!el) return
-            if (index === undefined) {
-                if (props.hasMore) emit('load-more')
-                else repoStore.pendingFocusHash = null
-                return
-            }
-            el.scrollTop = Math.max(0, index * rowH - el.clientHeight / 2)
-            onScroll()
-            select(visibleCommits.value[index])
-            repoStore.pendingFocusHash = null
+    watch([() => repoStore.pendingFocusHash, rowIndex], ([hash]) => {
+        if (!hash) return
+        const index = rowIndex.value.get(hash)
+        const el = scrollEl.value
+        if (!el) return
+        if (index === undefined) {
+            if (props.hasMore) emit('load-more')
+            else repoStore.pendingFocusHash = null
+            return
         }
-    )
+        el.scrollTop = Math.max(0, index * rowH - el.clientHeight / 2)
+        onScroll()
+        select(visibleCommits.value[index])
+        repoStore.pendingFocusHash = null
+    })
 
     watch(
         () => props.commitOpen,
@@ -314,7 +322,9 @@
             </span>
             <span class="graph-message-header">
                 COMMIT MESSAGE
-                <span class="commit-count">{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span>
+                <span class="commit-count"
+                    >{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span
+                >
                 <label
                     class="commit-search"
                     title="Search commits">
@@ -335,13 +345,19 @@
             </span>
             <span
                 v-if="ui.commitColumns.author"
-                class="graph-author-header">AUTHOR</span>
+                class="graph-author-header"
+                >AUTHOR</span
+            >
             <span
                 v-if="ui.commitColumns.hash"
-                class="graph-hash-header">HASH</span>
+                class="graph-hash-header"
+                >HASH</span
+            >
             <span
                 v-if="ui.commitColumns.date"
-                class="graph-date-header">DATE</span>
+                class="graph-date-header"
+                >DATE</span
+            >
         </div>
         <div
             ref="scrollEl"
@@ -389,7 +405,7 @@
                             class="commit-ring"
                             :class="{
                                 selected: selectedHash === commit.hash,
-                                'drop-target': dropTargetHash === commit.hash
+                                'drop-target': dropTargetHash === commit.hash,
                             }"
                             :style="{ '--node-color': nodeColor(commit) }"
                             :cx="nodeX(commit)"
@@ -401,7 +417,7 @@
                             class="node-dot"
                             :class="{
                                 selected: selectedHash === commit.hash,
-                                merge: commit.parents.length > 1
+                                merge: commit.parents.length > 1,
                             }"
                             :style="{ '--node-color': nodeColor(commit) }"
                             :cx="nodeX(commit)"
@@ -431,13 +447,13 @@
                     :class="{
                         selected: selectedHash === commit.hash,
                         'drop-target': dropTargetHash === commit.hash,
-                        'msg-expanded': expandedHash === commit.hash
+                        'msg-expanded': expandedHash === commit.hash,
                     }"
                     :style="{
                         height: `${rowH}px`,
                         '--graph-w': `${graphW}px`,
                         '--row-color': nodeColor(commit),
-                        '--row-start': `${nodeX(commit)}px`
+                        '--row-start': `${nodeX(commit)}px`,
                     }"
                     :title="`${commit.shortHash} — ${commit.subject}`"
                     draggable="true"
@@ -467,7 +483,7 @@
                                 :class="refKind(ref)"
                                 :style="{
                                     '--chip-color': chipColor(ref),
-                                    '--chip-fg': contrastText(chipColor(ref))
+                                    '--chip-fg': contrastText(chipColor(ref)),
                                 }">
                                 <i-lucide-git-branch
                                     v-if="refKind(ref) === 'head' || refKind(ref) === 'local'"
@@ -485,11 +501,17 @@
                             </span>
                         </span>
                         <span class="subject-line">
-                            <span class="subject-text"><template
-                                v-for="(part, pi) in subjectParts(commit.subject)"
-                                :key="pi"><mark
-                                    v-if="part.hit"
-                                    class="search-hit">{{ part.text }}</mark><template v-else>{{ part.text }}</template></template></span>
+                            <span class="subject-text"
+                                ><template
+                                    v-for="(part, pi) in subjectParts(commit.subject)"
+                                    :key="pi"
+                                    ><mark
+                                        v-if="part.hit"
+                                        class="search-hit"
+                                        >{{ part.text }}</mark
+                                    ><template v-else>{{ part.text }}</template></template
+                                ></span
+                            >
                             <button
                                 v-if="commit.body"
                                 class="msg-toggle"
@@ -511,15 +533,21 @@
                         class="commit-author">
                         <span
                             class="author-avatar"
-                            :style="{ '--avatar-color': nameColor(commit.author) }">{{ commit.author.slice(0, 1).toUpperCase() }}</span>
+                            :style="{ '--avatar-color': nameColor(commit.author) }"
+                            >{{ commit.author.slice(0, 1).toUpperCase() }}</span
+                        >
                         <span class="author-name">{{ commit.author }}</span>
                     </span>
                     <span
                         v-if="ui.commitColumns.hash"
-                        class="commit-hash">{{ commit.shortHash }}</span>
+                        class="commit-hash"
+                        >{{ commit.shortHash }}</span
+                    >
                     <span
                         v-if="ui.commitColumns.date"
-                        class="commit-date">{{ formatDatePattern(commit.date, commitDatePattern) }}</span>
+                        class="commit-date"
+                        >{{ formatDatePattern(commit.date, commitDatePattern) }}</span
+                    >
                     <div
                         v-if="expandedHash === commit.hash"
                         class="commit-msg-popover"

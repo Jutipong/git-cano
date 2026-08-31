@@ -145,9 +145,8 @@ const api = {
     ai: {
         getConfig: (): Promise<AiConfig> => call('ai:getConfig'),
         saveConfig: (cfg: AiConfig): Promise<void> => call('ai:saveConfig', cfg),
-        test: (provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> =>
-            call('ai:test', provider, token, modelId),
-        generateCommitMessage: (): Promise<string> => call('ai:generateCommitMessage'),
+        test: (provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> => call('ai:test', provider, token, modelId),
+        generateCommitMessage: (formatFirst: boolean): Promise<string> => call('ai:generateCommitMessage', formatFirst),
         listModels: (provider: AiProvider, token: string): Promise<GoModel[]> => call('ai:listModels', provider, token),
     },
 }

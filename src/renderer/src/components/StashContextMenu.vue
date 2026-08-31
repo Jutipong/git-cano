@@ -1,9 +1,9 @@
 <script setup lang="ts">
-    import type { StashEntry } from '@shared/types'
-
     import Download from '~icons/lucide/download'
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
+
+    import type { StashEntry } from '@shared/types'
 
     export interface StashMenuState {
         x: number

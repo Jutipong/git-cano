@@ -11,6 +11,7 @@ declare global {
   const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
   const DEFAULT_DIFF_VIEW_MODE: typeof import('./stores/ui').DEFAULT_DIFF_VIEW_MODE
   const DEFAULT_FILE_VIEW_MODE: typeof import('./stores/ui').DEFAULT_FILE_VIEW_MODE
+  const DEFAULT_FORMAT_BEFORE_GENERATE: typeof import('./stores/ui').DEFAULT_FORMAT_BEFORE_GENERATE
   const DEFAULT_REFRESH_INTERVAL: typeof import('./stores/ui').DEFAULT_REFRESH_INTERVAL
   const DEFAULT_SHOW_ENTIRE_FILE: typeof import('./stores/ui').DEFAULT_SHOW_ENTIRE_FILE
   const DEFAULT_THEME: typeof import('./stores/ui').DEFAULT_THEME

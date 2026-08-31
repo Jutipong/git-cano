@@ -13,8 +13,7 @@
     onMounted(async () => {
         try {
             recent.value = await window.api.recentList()
-        } catch {
-        }
+        } catch {}
     })
 
     function openPick() {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-    import type { CommitNode } from '@shared/types'
-    import type { ToastKind } from '../stores/uiTransient'
-
     import { useRepoStore } from '../stores/repo'
+
+    import type { ToastKind } from '../stores/uiTransient'
+    import type { CommitNode } from '@shared/types'
 
     const props = defineProps<{ commit: CommitNode }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -21,8 +21,7 @@
         try {
             const tags = await window.api.tags()
             existing.value = tags.map(tag => tag.name)
-        } catch {
-        }
+        } catch {}
     })
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 

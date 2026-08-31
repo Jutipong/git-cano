@@ -1,6 +1,6 @@
 <script setup lang="ts">
-    import type { RepoState } from '@shared/types'
     import type { ToastKind } from '../stores/uiTransient'
+    import type { RepoState } from '@shared/types'
 
     const props = defineProps<{
         conflicts: string[]
