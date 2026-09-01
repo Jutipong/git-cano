@@ -329,6 +329,7 @@ app.whenReady().then(() => {
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
+    handle('app:getVersion', () => app.getVersion())
     handle('repo:log', (_limit?: number) => {
         requireRepo()
         return getLog(typeof _limit === 'number' ? _limit : 500)

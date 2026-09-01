@@ -19,6 +19,7 @@
     const ui = useUiStore()
 
     const ZOOM_CHOICES = [70, 80, 90, 100, 110, 125, 140, 150]
+    const appVersion = ref('')
     const zoomMenuOpen = ref(false)
     const zoomMenuRoot = ref<HTMLElement | null>(null)
     function selectZoom(value: number) {
@@ -32,6 +33,12 @@
         if (event.key === 'Escape') zoomMenuOpen.value = false
     }
     onMounted(() => {
+        void window.api
+            .getVersion()
+            .then(version => {
+                appVersion.value = version
+            })
+            .catch(() => {})
         document.addEventListener('mousedown', onZoomMenuMouseDown)
         document.addEventListener('keydown', onZoomMenuKeyDown)
     })
@@ -643,6 +650,20 @@
                         </button>
                     </div>
                 </div>
+                <span
+                    v-if="appVersion"
+                    class="app-version-divider"
+                    aria-hidden="true" />
+                <span
+                    v-if="appVersion"
+                    class="app-version"
+                    title="Open Git version"
+                    >Version: {{ appVersion }}</span
+                >
+                <span
+                    v-if="appVersion"
+                    class="app-version-divider"
+                    aria-hidden="true" />
                 <button
                     class="toolbar-icon-button"
                     :class="{ 'bisect-active': repoStore.repoState.bisectActive }"

@@ -42,6 +42,7 @@ const api = {
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
+    getVersion: (): Promise<string> => call('app:getVersion'),
     status: (): Promise<RepoStatus> => call('repo:status'),
     log: (limit?: number): Promise<CommitNode[]> => call('repo:log', limit),
     commitDetails: (hash: string): Promise<CommitDetails> => call('commit:details', hash),
