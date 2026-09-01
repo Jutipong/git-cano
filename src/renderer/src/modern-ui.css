@@ -552,12 +552,6 @@ body {
     background: color-mix(in srgb, var(--green) 15%, transparent);
 }
 
-.remote-settings-btn:hover {
-    color: var(--teal);
-    border-color: transparent;
-    background: color-mix(in srgb, var(--teal) 15%, transparent);
-}
-
 .open-in-btn {
     align-self: center;
     display: inline-flex;
@@ -1197,13 +1191,24 @@ body {
     flex: 1 1 auto;
     min-height: 72px;
 }
+/* collapsed sections: drop the content padding + header divider so only the header remains */
+.sidebar > .sidebar-section.collapsed {
+    padding-bottom: 0;
+}
+.sidebar > .sidebar-section.collapsed > .section-header {
+    border-bottom: 0;
+}
 
-/* keep section headers pinned while the list under them scrolls */
+/* keep section headers pinned while the list under them scrolls;
+   min-height evens out header height across sections (right-side buttons
+   differ: collapse-all 20px, remote settings 25px, tags/stashes none) */
 .sidebar > .sidebar-section > .section-header {
     position: sticky;
     top: 0;
     z-index: 1;
+    min-height: 36px;
     padding: 7px 10px 4px 15px;
+    align-items: center;
     background: var(--surface-2);
     border-bottom: 1px solid var(--line-soft);
 }

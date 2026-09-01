@@ -94,7 +94,7 @@
 <template>
     <div
         class="sidebar-section stash-section"
-        :class="{ grow: expanded }">
+        :class="{ grow: expanded, collapsed: !expanded }">
         <div class="section-header">
             <button
                 class="section-toggle"

@@ -441,6 +441,7 @@
         <ToolsModal
             v-if="toolsOpen"
             :initial-tab="repoStore.toolsTab"
+            :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
         <ErrorDialog
             :message="uiTransient.errorDialog"

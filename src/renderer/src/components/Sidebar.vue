@@ -6,7 +6,6 @@
     import CollapseAllButton from './CollapseAllButton.vue'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
-    import RemoteManager from './RemoteManager.vue'
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
 
@@ -75,7 +74,6 @@
     const menu = ref<MenuState | null>(null)
     const localBranchMenu = ref<LocalBranchMenuState | null>(null)
     const dropTarget = ref<string | null>(null)
-    const showRemoteManager = ref(false)
     const tagMenu = ref<TagMenuState | null>(null)
     const remoteTagNames = ref<string[]>([])
     const hasRemote = ref(false)
@@ -359,7 +357,7 @@
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
         <div
             class="sidebar-section"
-            :class="{ grow: localExpanded }">
+            :class="{ grow: localExpanded, collapsed: !localExpanded }">
             <div class="section-header">
                 <button
                     class="section-toggle"
@@ -444,7 +442,7 @@
 
         <div
             class="sidebar-section remote-section"
-            :class="{ grow: remoteExpanded }">
+            :class="{ grow: remoteExpanded, collapsed: !remoteExpanded }">
             <div class="section-header">
                 <button
                     class="section-toggle"
@@ -460,19 +458,6 @@
                     <h3>
                         REMOTE BRANCHES <span class="section-count">{{ remote.length }}</span>
                     </h3>
-                </button>
-                <button
-                    class="icon-btn remote-settings-btn"
-                    title="Manage remotes"
-                    @click="
-                        () => {
-                            remoteExpanded = true
-                            showRemoteManager = true
-                        }
-                    ">
-                    <i-lucide-settings2
-                        width="14"
-                        height="14" />
                 </button>
             </div>
             <template v-if="remoteExpanded">
@@ -514,7 +499,7 @@
 
         <div
             class="sidebar-section remote-section"
-            :class="{ grow: tagsExpanded }">
+            :class="{ grow: tagsExpanded, collapsed: !tagsExpanded }">
             <div class="section-header">
                 <button
                     class="section-toggle"
@@ -649,9 +634,5 @@
             @delete="deleteTag"
             @push="pushTagToRemote"
             @delete-remote="deleteRemoteTag" />
-        <RemoteManager
-            v-if="showRemoteManager"
-            :refresh="props.refresh"
-            @close="showRemoteManager = false" />
     </aside>
 </template>

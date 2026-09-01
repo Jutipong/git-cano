@@ -86,7 +86,7 @@ export const useRepoStore = defineStore('repo', () => {
     const blameFile = ref<string | null>(null)
     const toolsOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'general' | 'auth' | 'hook' | 'ai'>('general')
+    const toolsTab = ref<'general' | 'remotes' | 'auth' | 'hook' | 'ai'>('general')
 
     const pendingFocusHash = ref<string | null>(null)
 

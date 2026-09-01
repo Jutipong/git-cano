@@ -5,18 +5,20 @@
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, ZOOM_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import CloseXIcon from './CloseXIcon.vue'
+    import RemoteManager from './RemoteManager.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const props = defineProps<{ initialTab?: 'general' | 'auth' | 'hook' | 'ai' }>()
+    const props = defineProps<{ initialTab?: 'general' | 'remotes' | 'auth' | 'hook' | 'ai'; refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const ui = useUiStore()
 
     const TABS = [
         { key: 'general', label: 'General' },
+        { key: 'remotes', label: 'Remotes' },
         { key: 'auth', label: 'Authentication' },
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
@@ -428,6 +430,10 @@
                         height="13" />
                     <i-lucide-key-round
                         v-else-if="tabItem.key === 'auth'"
+                        width="13"
+                        height="13" />
+                    <i-lucide-globe2
+                        v-else-if="tabItem.key === 'remotes'"
                         width="13"
                         height="13" />
                     <i-lucide-sparkles
@@ -853,6 +859,10 @@
                             <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
                         </p>
                     </div>
+                </template>
+
+                <template v-else-if="tab === 'remotes'">
+                    <RemoteManager :refresh="props.refresh" />
                 </template>
 
                 <template v-else>
