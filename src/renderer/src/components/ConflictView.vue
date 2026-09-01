@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { confirmDialog } from '../utils/confirm'
     import { highlightDiffLines, highlightLine } from '../utils/highlight'
     import CloseXIcon from './CloseXIcon.vue'
 
@@ -157,7 +158,8 @@
     const unresolvedCount = computed(
         () => blocks.value.filter(block => !block.pickOursLines.some(Boolean) && !block.pickTheirsLines.some(Boolean)).length
     )
-    const canSave = computed(() => manualOutput.value !== null || (blocks.value.length > 0 && unresolvedCount.value === 0))
+    /** Save allowed only when every block is picked (manual edit always allowed — output is typed directly). */
+    const canSave = computed(() => manualOutput.value !== null || unresolvedCount.value === 0)
 
     /**
      * The output file assembled from the picked lines (per block: ours first, then theirs); fully unresolved blocks keep their raw markers
@@ -224,8 +226,16 @@
         if (manualOutput.value === null) manualOutput.value = resultContent.value
     }
 
-    function discardManualEdit() {
-        manualOutput.value = null
+    async function discardManualEdit() {
+        if (manualOutput.value === null) return
+        const ok = await confirmDialog({
+            title: 'Discard manual edits?',
+            message: 'Your hand-edited output will be replaced by the picks-driven result.',
+            confirmLabel: 'Discard',
+            danger: true,
+            confirmIcon: 'reset',
+        })
+        if (ok) manualOutput.value = null
     }
 
     /** Block-level checkbox: take (or un-take) every line of this side. */
@@ -256,8 +266,24 @@
         return (side === 'ours' ? block.pickOursLines : block.pickTheirsLines)[lineIndex] ?? false
     }
 
+    /** True when this side is fully picked in every block (whole-file select-all state). */
+    function allPickedFor(side: Side): boolean {
+        const withLines = blocks.value.filter(b => b[side].length > 0)
+        if (!withLines.length) return false
+        return withLines.every(b => (side === 'ours' ? b.pickOursLines : b.pickTheirsLines).every(Boolean))
+    }
+
+    /** Whole-file toggle: take every line of this side in every block (clear when already all taken). */
+    function toggleAllPicks(side: Side) {
+        const take = !allPickedFor(side)
+        for (const block of blocks.value) {
+            const lines = side === 'ours' ? block.pickOursLines : block.pickTheirsLines
+            lines.fill(take)
+        }
+    }
+
     async function saveResolved() {
-        if (!props.file || !canSave.value) return
+        if (!props.file) return
         const path = props.file.path
         const content = manualOutput.value ?? resultContent.value
         try {
@@ -407,8 +433,6 @@
         })
     }
 
-    const navLabel = computed(() => (blocks.value.length ? `conflict ${currentBlock.value + 1} of ${blocks.value.length}` : 'no conflicts'))
-
     function setCurrent(blockIndex: number) {
         currentBlock.value = blockIndex
     }
@@ -493,20 +517,28 @@
                 >กำลังโหลด…</span
             >
             <div class="diff-header-center">
-                <div class="conflict-header">
-                    <span
-                        v-if="blocks.length"
-                        class="chip conflict-chip"
-                        :class="{ ok: !unresolvedCount }">
-                        {{ unresolvedCount ? `${unresolvedCount} unresolved` : 'all picked' }}
-                    </span>
+                <div class="diff-nav">
                     <button
-                        class="detail-action accent"
-                        :disabled="!canSave"
-                        :title="canSave ? 'Write the resolved file and stage it' : 'Pick at least one side for every conflict'"
-                        @click="saveResolved()">
-                        Save
+                        class="icon-btn"
+                        :disabled="!blocks.length"
+                        title="Previous conflict"
+                        @click="goToConflict(-1)">
+                        <i-lucide-arrow-up
+                            width="15"
+                            height="15" />
                     </button>
+                    <span class="chip diff-nav-counter">{{ blocks.length ? currentBlock + 1 : 0 }}/{{ blocks.length }}</span>
+                    <button
+                        class="icon-btn"
+                        :disabled="!blocks.length"
+                        title="Next conflict"
+                        @click="goToConflict(1)">
+                        <i-lucide-arrow-down
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
+                <div class="conflict-header">
                     <button
                         v-if="!loading && !blocks.length && versions && !versions.binary"
                         class="detail-action"
@@ -603,6 +635,20 @@
                         :class="[pane.side, { missing: !pane.exists }]"
                         @scroll.passive="onPaneScroll">
                         <div class="pane-head">
+                            <span
+                                v-if="pane.exists"
+                                class="pane-head-all">
+                                <button
+                                    class="conflict-check"
+                                    :class="{ picked: allPickedFor(pane.side) }"
+                                    :title="`Take every ${pane.label} line of every conflict`"
+                                    @click="toggleAllPicks(pane.side)">
+                                    <i-lucide-check
+                                        v-if="allPickedFor(pane.side)"
+                                        width="10"
+                                        height="10" />
+                                </button>
+                            </span>
                             <span class="pane-title">{{ pane.title }}</span>
                             <span class="pane-label">{{ pane.label }}</span>
                         </div>
@@ -664,28 +710,6 @@
                     </div>
                 </div>
 
-                <div class="conflict-nav">
-                    <span class="conflict-nav-label">{{ navLabel }}</span>
-                    <button
-                        class="icon-btn"
-                        :disabled="!blocks.length"
-                        title="Previous conflict"
-                        @click="goToConflict(-1)">
-                        <i-lucide-chevron-up
-                            width="14"
-                            height="14" />
-                    </button>
-                    <button
-                        class="icon-btn"
-                        :disabled="!blocks.length"
-                        title="Next conflict"
-                        @click="goToConflict(1)">
-                        <i-lucide-chevron-down
-                            width="14"
-                            height="14" />
-                    </button>
-                </div>
-
                 <div
                     class="conflict-splitter"
                     title="Drag to resize the output pane"
@@ -706,24 +730,43 @@
                             class="pane-label"
                             >merged result</span
                         >
-                        <div class="output-head-actions">
+                        <div class="segmented output-head-actions">
                             <button
-                                v-if="manualOutput === null"
-                                class="icon-btn"
-                                title="Edit the output by hand"
-                                @click="startManualEdit()">
-                                <i-lucide-pencil
-                                    width="13"
-                                    height="13" />
-                            </button>
-                            <button
-                                v-else
-                                class="icon-btn"
+                                class="output-mini-btn output-reset-btn"
                                 title="Discard manual edits — let the picks drive the output again"
                                 @click="discardManualEdit()">
                                 <i-lucide-rotate-ccw
-                                    width="13"
-                                    height="13" />
+                                    width="12"
+                                    height="12" />
+                                Reset
+                            </button>
+                            <span class="segmented-divider" />
+                            <button
+                                class="output-mini-btn output-edit-btn"
+                                :disabled="manualOutput !== null"
+                                title="Edit the output by hand"
+                                @click="startManualEdit()">
+                                <i-lucide-pencil
+                                    width="12"
+                                    height="12" />
+                                Edit Manual
+                            </button>
+                            <span class="segmented-divider" />
+                            <span
+                                class="chip conflict-chip"
+                                :class="{ ok: !unresolvedCount }">
+                                {{ unresolvedCount ? `${unresolvedCount} unresolved` : 'all picked' }}
+                            </span>
+                            <span class="segmented-divider" />
+                            <button
+                                class="output-mini-btn output-save-btn"
+                                :disabled="!canSave"
+                                :title="canSave ? 'Write the resolved file and stage it' : 'Pick at least one side for every conflict'"
+                                @click="saveResolved()">
+                                <i-lucide-save
+                                    width="12"
+                                    height="12" />
+                                Save
                             </button>
                         </div>
                     </div>

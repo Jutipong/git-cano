@@ -4337,10 +4337,18 @@ body {
 }
 
 .conflict-chip {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    height: 20px;
+    padding: 0 8px;
+    border-radius: 999px;
     color: var(--conflict-text);
     border-color: var(--conflict-border);
     background: var(--conflict-bg);
     font-weight: 600;
+    font-size: 10px;
+    white-space: nowrap;
 }
 
 .conflict-chip.ok {
@@ -4427,6 +4435,17 @@ body {
     color: var(--text-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* whole-file master select-all checkbox — aligned with the row gutter column (.ck-all) */
+
+.conflict-pane .pane-head-all {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    margin-left: -10px;
 }
 
 .conflict-pane .pane-empty {
@@ -4556,34 +4575,6 @@ body {
     border-color: var(--green);
 }
 
-/* navigation strip between panes and output */
-
-.conflict-nav {
-    display: flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    height: 30px;
-    background: var(--surface-0);
-    border-top: 1px solid var(--line-soft);
-    border-bottom: 1px solid var(--line-soft);
-}
-
-.conflict-nav-label {
-    min-width: 130px;
-    color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
-    text-align: right;
-    white-space: nowrap;
-}
-
-.conflict-nav .icon-btn {
-    width: 22px;
-    height: 22px;
-}
-
 /* bottom: merged output (height dragged via .conflict-splitter, persisted as ui.conflictOutputHeight) */
 
 .conflict-output {
@@ -4628,17 +4619,65 @@ body {
     box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--purple) 60%, transparent);
 }
 
-/* output manual-edit mode (pencil toggle in the OUTPUT pane head) */
+/* output actions group [reset | edit | save] in the OUTPUT pane head */
 
 .output-head-actions {
-    display: flex;
-    gap: 4px;
+    gap: 3px;
     margin-left: auto;
 }
 
-.output-head-actions .icon-btn {
-    width: 20px;
+.output-head-actions .output-mini-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     height: 20px;
+    padding: 0 8px;
+    color: var(--text-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.output-head-actions .output-mini-btn:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.output-head-actions .output-mini-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+
+.output-head-actions .output-edit-btn {
+    color: var(--green);
+}
+
+.output-head-actions .output-edit-btn:hover {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.output-head-actions .output-reset-btn {
+    color: var(--orange);
+}
+
+.output-head-actions .output-reset-btn:hover {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 12%, transparent);
+}
+
+.output-head-actions .output-save-btn {
+    color: var(--teal);
+}
+
+.output-head-actions .output-save-btn:hover {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
 }
 
 .output-edit {
