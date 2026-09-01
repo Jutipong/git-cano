@@ -10,7 +10,7 @@ export const useAiStore = defineStore('ai', () => {
     const activeConfig = computed(() => (provider.value === 'opencode-go' ? config.value.opencodeGo : config.value.openrouter))
     const token = computed(() => activeConfig.value.token)
     const modelId = computed(() => activeConfig.value.modelId)
-    const configured = computed(() => token.value.trim() !== '' && modelId.value.trim() !== '')
+    const configured = computed(() => provider.value !== 'none' && token.value.trim() !== '' && modelId.value.trim() !== '')
 
     async function load() {
         try {

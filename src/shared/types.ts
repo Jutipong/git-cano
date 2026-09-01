@@ -154,7 +154,8 @@ export interface BlameLine {
     content: string
 }
 
-export type AiProvider = 'opencode-go' | 'openrouter'
+/** 'none' disables all AI features. */
+export type AiProvider = 'opencode-go' | 'openrouter' | 'none'
 
 /** Which working-tree changes to include as AI context: staged only, or everything. */
 export type AiContextScope = 'staged' | 'all'

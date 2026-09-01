@@ -24,7 +24,7 @@ function configPath(): string {
 export function getConfig(): AiConfig {
     try {
         const raw = JSON.parse(fs.readFileSync(configPath(), 'utf8')) as Partial<AiConfig> & AiProviderConfig
-        const provider = raw.provider === 'openrouter' ? raw.provider : 'opencode-go'
+        const provider: AiProvider = raw.provider === 'openrouter' ? 'openrouter' : raw.provider === 'none' ? 'none' : 'opencode-go'
         const hasLegacyConfig = typeof raw.token === 'string' || typeof raw.modelId === 'string'
         const clean = (value: unknown): AiProviderConfig => {
             const cfg = value && typeof value === 'object' ? (value as Partial<AiProviderConfig>) : {}
@@ -61,7 +61,7 @@ export function saveConfig(cfg: AiConfig): void {
             : [],
     })
     const clean: AiConfig = {
-        provider: cfg.provider === 'openrouter' ? 'openrouter' : 'opencode-go',
+        provider: cfg.provider === 'openrouter' ? 'openrouter' : cfg.provider === 'none' ? 'none' : 'opencode-go',
         opencodeGo: cleanProvider(cfg.opencodeGo),
         openrouter: cleanProvider(cfg.openrouter),
     }
@@ -273,6 +273,7 @@ function stripFences(text: string): string {
 export async function generateCommitMessage(formatFirst = false, scope: AiContextScope = 'staged'): Promise<string> {
     if (formatFirst) await formatRepoIfConfigured()
     const cfg = getConfig()
+    if (cfg.provider === 'none') throw new Error('AI is disabled — select a provider in Settings first')
     const active = cfg.provider === 'openrouter' ? cfg.openrouter : cfg.opencodeGo
     if (!active.token || !active.modelId)
         throw new Error(

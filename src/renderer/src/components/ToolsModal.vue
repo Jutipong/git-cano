@@ -33,22 +33,24 @@
 
     const ai = useAiStore()
     const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
+        { value: 'none', label: 'No' },
         { value: 'opencode-go', label: 'OpenCode Go' },
         { value: 'openrouter', label: 'OpenRouter' },
     ]
     const selectedProvider = ref<AiProvider>('opencode-go')
-    const providerDrafts = reactive<Record<AiProvider, AiProviderConfig>>({
+    const providerDrafts = reactive<Record<Exclude<AiProvider, 'none'>, AiProviderConfig>>({
         'opencode-go': { token: '', modelId: '', models: [] },
         openrouter: { token: '', modelId: '', models: [] },
     })
+    const currentDraft = computed(() => (selectedProvider.value === 'none' ? null : providerDrafts[selectedProvider.value]))
     const modelQuery = ref('')
     const modelDropdownOpen = ref(false)
     const modelInput = ref<HTMLInputElement | null>(null)
     const aiToken = computed({
-        get: () => providerDrafts[selectedProvider.value].token,
+        get: () => currentDraft.value?.token ?? '',
         set: value => {
-            const draft = providerDrafts[selectedProvider.value]
-            if (draft.token === value) return
+            const draft = currentDraft.value
+            if (!draft || draft.token === value) return
             draft.token = value
             draft.modelId = ''
             draft.models = []
@@ -59,8 +61,10 @@
         },
     })
     const aiModel = computed({
-        get: () => providerDrafts[selectedProvider.value].modelId,
-        set: value => (providerDrafts[selectedProvider.value].modelId = value),
+        get: () => currentDraft.value?.modelId ?? '',
+        set: value => {
+            if (currentDraft.value) currentDraft.value.modelId = value
+        },
     })
     const aiTesting = ref(false)
     const aiTestResult = ref<{ ok: boolean; message: string } | null>(null)
@@ -121,13 +125,13 @@
             selectedProvider.value = ai.config.provider
             Object.assign(providerDrafts['opencode-go'], ai.config.opencodeGo)
             Object.assign(providerDrafts.openrouter, ai.config.openrouter)
-            modelOptions.value = [...providerDrafts[selectedProvider.value].models]
+            modelOptions.value = selectedProvider.value === 'none' ? [] : [...providerDrafts[selectedProvider.value].models]
             modelQuery.value = aiModel.value
         } catch {}
     }
 
     watch(selectedProvider, () => {
-        modelOptions.value = [...providerDrafts[selectedProvider.value].models]
+        modelOptions.value = selectedProvider.value === 'none' ? [] : [...providerDrafts[selectedProvider.value].models]
         modelQuery.value = aiModel.value
         modelDropdownOpen.value = false
         connectResult.value = null
@@ -149,7 +153,7 @@
     }
 
     async function connectProvider() {
-        if (!aiToken.value.trim() || connecting.value) return
+        if (selectedProvider.value === 'none' || !aiToken.value.trim() || connecting.value) return
         connecting.value = true
         connectResult.value = null
         try {
@@ -978,7 +982,7 @@
                     </div>
 
                     <div
-                        v-else
+                        v-else-if="selectedProvider === 'openrouter'"
                         class="tools-section">
                         <strong class="tools-section-title">OpenRouter</strong>
                         <p class="tools-section-hint">
@@ -1061,28 +1065,39 @@
                             </div>
                         </label>
                     </div>
+
+                    <div
+                        v-else
+                        class="tools-section">
+                        <strong class="tools-section-title">No AI</strong>
+                        <p class="tools-section-hint">
+                            AI features are disabled. Select a provider above to enable commit-message generation.
+                        </p>
+                    </div>
                     <div class="tools-actions">
-                        <button
-                            class="btn success small"
-                            :disabled="!aiToken.trim() || !aiModel.trim() || aiTesting"
-                            @click="testAi()">
-                            <i-lucide-flask-conical
-                                v-if="!aiTesting"
-                                width="13"
-                                height="13" />
-                            <i-lucide-loader-circle
-                                v-else
-                                class="spinning"
-                                width="13"
-                                height="13" />
-                            {{ aiTesting ? 'Testing…' : 'Test connect' }}
-                        </button>
-                        <span
-                            v-if="aiTestResult"
-                            class="ai-test-result"
-                            :class="aiTestResult.ok ? 'ok' : 'err'"
-                            >{{ aiTestResult.message }}</span
-                        >
+                        <template v-if="selectedProvider !== 'none'">
+                            <button
+                                class="btn success small"
+                                :disabled="!aiToken.trim() || !aiModel.trim() || aiTesting"
+                                @click="testAi()">
+                                <i-lucide-flask-conical
+                                    v-if="!aiTesting"
+                                    width="13"
+                                    height="13" />
+                                <i-lucide-loader-circle
+                                    v-else
+                                    class="spinning"
+                                    width="13"
+                                    height="13" />
+                                {{ aiTesting ? 'Testing…' : 'Test connect' }}
+                            </button>
+                            <span
+                                v-if="aiTestResult"
+                                class="ai-test-result"
+                                :class="aiTestResult.ok ? 'ok' : 'err'"
+                                >{{ aiTestResult.message }}</span
+                            >
+                        </template>
                         <span class="spacer" />
                         <button
                             class="btn small"
