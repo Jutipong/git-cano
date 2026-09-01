@@ -81,6 +81,7 @@
     const menu = ref<MenuState | null>(null)
     const localBranchMenu = ref<LocalBranchMenuState | null>(null)
     const dropTarget = ref<string | null>(null)
+    const activeTag = ref<string | null>(null)
     const tagMenu = ref<TagMenuState | null>(null)
     const remoteTagNames = ref<string[]>([])
     const hasRemote = ref(false)
@@ -285,6 +286,7 @@
         }
     }
     function focusTag(tag: { name: string; hash: string }) {
+        activeTag.value = tag.name
         if (!tag.hash) return
         repoStore.pendingFocusHash = tag.hash
     }
@@ -561,6 +563,7 @@
                         v-for="tag in tagsFiltered"
                         :key="tag.name"
                         class="branch-row tag-row"
+                        :class="{ active: activeTag === tag.name }"
                         :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
                         @click="focusTag(tag)"
                         @contextmenu.prevent="openTagMenu(tag, $event)">
