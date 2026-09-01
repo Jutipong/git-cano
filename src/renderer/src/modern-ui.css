@@ -3088,9 +3088,26 @@ body {
 
 /* ---- Zoom dropdown (sidebar bottom, left of Settings) ---- */
 
-/* behind count next to branch names — match the Pull button accent */
+/* ahead/behind counts next to branch names — tinted pill chips */
+.track-badge {
+    gap: 3px;
+}
+
+.track-ahead,
 .track-behind {
-    color: var(--blue);
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-weight: 600;
+    background: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.track-behind {
+    color: var(--orange);
+}
+
+/* hover on a deletable branch row: swap the ↑/↓ badge for the row actions */
+.branch-row:hover:has(.row-actions) .track-badge {
+    display: none;
 }
 
 .sidebar-bottom-actions {

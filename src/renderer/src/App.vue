@@ -74,6 +74,7 @@
     const SPLASH_MIN_MS = 1800
     const splashMinElapsed = ref(false)
     const splashVisible = computed(() => !booted.value || !splashMinElapsed.value || switchingWorkspace.value)
+    const splashText = computed(() => (switchingWorkspace.value ? 'Switching workspace…' : 'Restoring your repositories…'))
     const showEmptyWorkspace = computed(() => wsStore.names.some(name => name !== wsStore.active))
 
     provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
@@ -534,7 +535,7 @@
                     <div
                         class="splash-bar"
                         aria-hidden="true" />
-                    <span class="splash-muted">Restoring your repositories…</span>
+                    <span class="splash-muted">{{ splashText }}</span>
                 </div>
             </div>
         </Transition>
