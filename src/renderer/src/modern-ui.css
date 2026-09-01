@@ -3733,6 +3733,16 @@ body {
     scrollbar-color: auto;
 }
 
+.diff-body .diff-loading {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    cursor: wait;
+}
+
 .diff-body.split .diff-line.add .ln::after,
 .diff-body.split .diff-line.del .ln::after {
     position: absolute;

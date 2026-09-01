@@ -34,8 +34,10 @@
 
     const diffBody = ref<HTMLElement | null>(null)
     const currentChange = ref(0)
+    let loadSeq = 0
 
     async function loadDiff() {
+        const seq = ++loadSeq
         lines.value = []
         meta.value = null
         images.value = null
@@ -51,6 +53,7 @@
                     window.api.stashFileDiff(props.stashHash, f.path, context),
                     window.api.stashFileMeta(props.stashHash, f.path),
                 ])
+                if (seq !== loadSeq) return
                 lines.value = stashDiff
                 meta.value = stashMeta
                 if (stashMeta.image) {
@@ -63,6 +66,7 @@
                     window.api.commitFileDiff(props.commitHash, f.path, context),
                     window.api.getCommitFileMeta(props.commitHash, f.path),
                 ])
+                if (seq !== loadSeq) return
                 lines.value = commitDiff
                 meta.value = commitMeta
                 if (commitMeta.image) {
@@ -75,6 +79,7 @@
                 window.api.diffMeta(f.path, f.staged),
                 window.api.rawPatch(f.path, f.staged),
             ])
+            if (seq !== loadSeq) return
             lines.value = diff
             meta.value = diffMeta
             rawPatch.value = patch
@@ -83,13 +88,15 @@
                     window.api.imageVersion(f.path, 'head'),
                     f.staged ? window.api.imageVersion(f.path, 'index') : window.api.imageVersion(f.path, 'workdir'),
                 ])
+                if (seq !== loadSeq) return
                 images.value = { oldUrl, newUrl }
             }
         } catch {
+            if (seq !== loadSeq) return
             lines.value = []
             meta.value = null
         } finally {
-            loading.value = false
+            if (seq === loadSeq) loading.value = false
         }
     }
 
@@ -589,7 +596,19 @@
                 class="diff-body"
                 :class="{ split: ui.diffViewMode === 'split' }"
                 @scroll.passive="onBodyScroll">
-                <template v-if="meta?.image">
+                <div
+                    v-if="loading"
+                    class="diff-loading">
+                    <div class="busy-card">
+                        <i-lucide-loader-circle
+                            class="spinning"
+                            width="18"
+                            height="18" />
+                        <span>Loading diff…</span>
+                    </div>
+                </div>
+
+                <template v-else-if="meta?.image">
                     <div class="image-diff">
                         <figure>
                             <figcaption>Previous</figcaption>
