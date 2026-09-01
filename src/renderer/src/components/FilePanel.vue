@@ -121,11 +121,6 @@
         ui.aiCommitMode = mode
         aiMenuOpen.value = false
     }
-    function openAiSettings() {
-        aiMenuOpen.value = false
-        repoStore.toolsTab = 'ai'
-        repoStore.toolsOpen = true
-    }
     function onAiMenuMouseDown(event: MouseEvent) {
         if (aiMenuOpen.value && aiMenuRoot.value && !aiMenuRoot.value.contains(event.target as Node)) aiMenuOpen.value = false
     }
@@ -1181,14 +1176,6 @@
                                     v-else
                                     class="cb-ai-menu-bullet" />
                                 {{ option.label }}
-                            </button>
-                            <span class="cb-ai-menu-sep" />
-                            <button
-                                class="cb-ai-menu-item cb-ai-menu-settings"
-                                title="Open AI settings"
-                                @click.stop="openAiSettings()">
-                                <span class="cb-ai-menu-bullet" />
-                                Settings
                             </button>
                         </div>
                     </div>
