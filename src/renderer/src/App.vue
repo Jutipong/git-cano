@@ -317,6 +317,17 @@
                 <div
                     class="panel-splitter"
                     @mousedown="event => beginResize('left', event)" />
+                <div
+                    v-if="repoStore.loadingRepo"
+                    class="repo-loading-overlay">
+                    <div class="busy-card">
+                        <i-lucide-loader-circle
+                            class="spinning"
+                            width="18"
+                            height="18" />
+                        <span>Loading repository…</span>
+                    </div>
+                </div>
                 <div class="app-main">
                     <div class="app-body">
                         <div class="center-column">

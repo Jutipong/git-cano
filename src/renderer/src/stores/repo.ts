@@ -63,6 +63,8 @@ export const useRepoStore = defineStore('repo', () => {
     const selectedStash = ref<StashEntry | null>(null)
     const booted = ref(false)
     const switchingWorkspace = ref(false)
+    /** Path of the repo whose status/commits are actually loaded — used to detect a mid-switch tab. */
+    const loadedPath = ref<string | null>(null)
     const commitFiles = ref<CommitFile[]>([])
     const commitMessage = ref('')
     const commitAuthor = ref('')
@@ -89,6 +91,11 @@ export const useRepoStore = defineStore('repo', () => {
     const pendingFocusHash = ref<string | null>(null)
 
     const repo = computed<RepoStatus | null>(() => tabs.value[activeTab.value]?.status ?? null)
+    /** True while the active tab still shows another repo's data (switch/new tab not refreshed yet). */
+    const loadingRepo = computed(() => {
+        const tab = tabs.value[activeTab.value]
+        return !!tab && loadedPath.value !== tab.path
+    })
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
 
     /** Labels for the two sides of a merge conflict (shared by FilePanel and ConflictView). */
@@ -129,6 +136,7 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     async function refresh() {
+        const targetPath = tabs.value[activeTab.value]?.path
         try {
             const [status, log, branches, state] = await Promise.all([
                 window.api.status(),
@@ -141,10 +149,13 @@ export const useRepoStore = defineStore('repo', () => {
             commits.value = log
             hasMore.value = log.length >= logLimit.value
             repoState.value = state
+            loadedPath.value = status.path
             const index = tabs.value.findIndex(tab => tab.path === status.path)
             if (index >= 0) tabs.value[index].status = status
             return branches
         } catch (error) {
+            // clear the loading overlay even on failure — the error dialog surfaces the problem
+            if (targetPath && tabs.value[activeTab.value]?.path === targetPath) loadedPath.value = targetPath
             useUiTransientStore().notify(String(error))
             return undefined
         }
@@ -365,6 +376,7 @@ export const useRepoStore = defineStore('repo', () => {
         theirsLabel,
         booted,
         switchingWorkspace,
+        loadingRepo,
         addTab,
         refresh,
         selectTab,
