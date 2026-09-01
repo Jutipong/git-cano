@@ -1512,10 +1512,6 @@ body {
     left: 2px;
 }
 
-.graph-header.commit-mode {
-    background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
-}
-
 /* breathing room so the first row's node ring + glow clears the header
    (SVG canvas is shifted by the same offset to stay aligned with rows) */
 .graph-scroll {

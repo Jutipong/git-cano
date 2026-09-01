@@ -382,9 +382,7 @@
     <main
         class="graph-view"
         :style="{ '--author-w': `${authorW}px`, '--date-w': `${dateW}px`, '--hash-w': `${hashW}px` }">
-        <div
-            class="graph-header"
-            :class="{ 'commit-mode': props.commitOpen }">
+        <div class="graph-header">
             <span
                 class="graph-graph-header"
                 :style="{ width: `${graphW}px` }">
