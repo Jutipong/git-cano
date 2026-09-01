@@ -310,7 +310,10 @@
             let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
             let willConflict = false
             try {
-                const check = await window.api.mergeCheckConflicts(value, targetBranch)
+                const check = await uiTransient.withBusy(
+                    () => window.api.mergeCheckConflicts(value, targetBranch),
+                    `Checking merge of ${value} into ${targetBranch}…`
+                )
                 willConflict = check.conflicts.length > 0
                 status = !check.supported
                     ? { kind: 'unknown', text: 'Conflict check unavailable (git too old)' }
@@ -332,7 +335,11 @@
                 confirmLabel: 'Merge',
             })
             if (!ok) return
-            void run(() => window.api.mergeInto(value, targetBranch), `Merged ${value} into ${targetBranch}`)
+            void run(
+                () => window.api.mergeInto(value, targetBranch),
+                `Merged ${value} into ${targetBranch}`,
+                `Merging ${value} into ${targetBranch}…`
+            )
         }
     }
     function onDragOver(branchName: string, event: DragEvent) {
