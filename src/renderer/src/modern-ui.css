@@ -1196,6 +1196,9 @@ body {
 .sidebar > .sidebar-section.collapsed {
     padding-bottom: 0;
 }
+.sidebar > .sidebar-section.collapsed > .section-body {
+    padding-top: 0;
+}
 .sidebar > .sidebar-section.collapsed > .section-header {
     border-bottom: 0;
 }
@@ -1204,7 +1207,7 @@ body {
 .sidebar > .sidebar-section > .section-header {
     flex: 0 0 auto;
     min-height: 36px;
-    padding: 7px 10px 4px 15px;
+    padding: 7px 10px 7px 15px;
     align-items: center;
     background: var(--surface-2);
     border-bottom: 1px solid var(--line-soft);
@@ -1213,6 +1216,7 @@ body {
 .sidebar > .sidebar-section > .section-body {
     flex: 1 1 auto;
     min-height: 0;
+    padding-top: 3px;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
@@ -1239,12 +1243,12 @@ body {
     flex: 0 0 auto;
     align-items: center;
     margin: 0 18px 18px;
-    gap: 6px;
+    gap: 10px;
 }
 /* size the collapse button to the search pill so the row ends evenly */
 .sidebar > .sidebar-toolbar > .collapse-all-btn {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     margin-right: 0;
 }
 .sidebar .section-search {
@@ -1252,8 +1256,8 @@ body {
     flex: 1;
     align-items: center;
     min-width: 0;
-    height: 26px;
-    padding: 0 10px;
+    height: 28px;
+    padding: 0 12px;
     gap: 6px;
     color: var(--text-muted);
     background: var(--surface-1);
