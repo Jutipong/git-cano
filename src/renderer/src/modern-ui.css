@@ -4486,7 +4486,7 @@ body {
 .block-use-btn {
     position: absolute;
     top: -1px;
-    right: 6px;
+    left: 62px;
     z-index: 1;
     padding: 1px 8px;
     color: var(--text-secondary);
@@ -4511,6 +4511,17 @@ body {
 }
 
 .conflict-pane .diff-line .ck {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+}
+
+/* gutter before the line number — "whole block" checkbox (empty for rows outside a block so
+   line numbers and code stay aligned across the whole file) */
+
+.conflict-pane .diff-line .ck-all {
     display: inline-flex;
     flex: none;
     align-items: center;

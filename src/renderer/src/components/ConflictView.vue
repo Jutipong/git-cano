@@ -478,7 +478,7 @@
         v-if="!file"
         class="diff-view empty"
         :class="{ fullscreen: isFullscreen }">
-        <p>Select a conflicted file to resolve it</p>
+        <p>เลือกไฟล์ที่มี conflict เพื่อแก้ไข</p>
     </div>
     <div
         v-else
@@ -490,7 +490,7 @@
             <span
                 v-if="loading"
                 class="muted"
-                >loading…</span
+                >กำลังโหลด…</span
             >
             <div class="diff-header-center">
                 <div class="conflict-header">
@@ -630,20 +630,23 @@
                                     @click.stop="togglePick(pane.side, pane.meta.block[idx])">
                                     Use {{ pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel }}
                                 </button>
-                                <span class="ck">
+                                <span class="ck-all">
                                     <button
                                         v-if="pane.meta.block[idx] >= 0 && pane.meta.start[idx]"
                                         class="conflict-check"
                                         :class="{ picked: isPicked(pane.side, pane.meta.block[idx]) }"
-                                        :title="`Include the whole ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} side of this conflict in the output`"
+                                        :title="`Use the whole ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} side of this conflict`"
                                         @click.stop="togglePick(pane.side, pane.meta.block[idx])">
                                         <i-lucide-check
                                             v-if="isPicked(pane.side, pane.meta.block[idx])"
                                             width="10"
                                             height="10" />
                                     </button>
+                                </span>
+                                <span class="ln">{{ idx + 1 }}</span>
+                                <span class="ck">
                                     <button
-                                        v-else-if="pane.meta.block[idx] >= 0"
+                                        v-if="pane.meta.block[idx] >= 0"
                                         class="conflict-check"
                                         :class="{ picked: isLinePicked(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx]) }"
                                         :title="`Include this ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} line in the output`"
@@ -654,7 +657,6 @@
                                             height="10" />
                                     </button>
                                 </span>
-                                <span class="ln">{{ idx + 1 }}</span>
                                 <!-- eslint-disable-next-line vue/no-v-html -->
                                 <pre v-html="htmlMaps[pane.side].get(line) ?? ''" />
                             </div>
