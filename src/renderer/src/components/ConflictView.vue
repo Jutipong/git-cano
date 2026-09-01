@@ -22,8 +22,9 @@
         theirs: string[]
         /** Name of the incoming side parsed from the `>>>>>>>` marker. */
         label: string
-        pickOurs: boolean
-        pickTheirs: boolean
+        /** Per-line picks (GitKraken-style: a hunk can be taken whole or line by line). */
+        pickOursLines: boolean[]
+        pickTheirsLines: boolean[]
         matchIdx: { ours: number; theirs: number }
     }
 
@@ -35,6 +36,12 @@
     const blocks = ref<ConflictBlock[]>([])
     /** Conflict the prev/next navigation points at (-1 = none yet). */
     const currentBlock = ref(-1)
+    /**
+     * Manual output editing (GitKraken-style "type in the output box to fine-tune"). null = output is driven by the picks; a string = the
+     * user took over and edits by hand (picks no longer change the output until the edits are discarded). Declared before loadConflict
+     * because the immediate watch runs during setup.
+     */
+    const manualOutput = ref<string | null>(null)
 
     const MARK_OURS = /^<{7}(?: (.*))?$/
     const MARK_BASE = /^\|{7}(?: .*)?$/
@@ -72,7 +79,14 @@
             const labelM = MARK_THEIRS.exec(lines[i] ?? '')
             const label = labelM?.[1]?.trim() || fallbackTheirs
             if (MARK_THEIRS.test(lines[i] ?? '')) i++
-            blocks.push({ ours, theirs, label, pickOurs: false, pickTheirs: false, matchIdx: { ours: -1, theirs: -1 } })
+            blocks.push({
+                ours,
+                theirs,
+                label,
+                pickOursLines: Array.from({ length: ours.length }, () => false),
+                pickTheirsLines: Array.from({ length: theirs.length }, () => false),
+                matchIdx: { ours: -1, theirs: -1 },
+            })
         }
         return blocks
     }
@@ -113,6 +127,7 @@
         versions.value = null
         blocks.value = []
         currentBlock.value = -1
+        manualOutput.value = null
         try {
             const [content, vers] = await Promise.all([window.api.readConflictFile(f.path), window.api.conflictVersions(f.path)])
             if (props.file !== f) return
@@ -125,8 +140,8 @@
                 repoStore.selectedFile = { path: f.path, staged: false }
                 return
             }
-            worktree.value = content
-            const parsed = parseBlocks(content, repoStore.theirsLabel)
+            worktree.value = content.replace(/\r\n/g, '\n')
+            const parsed = parseBlocks(worktree.value, repoStore.theirsLabel)
             annotateMatches(parsed)
             blocks.value = parsed
         } catch (error) {
@@ -138,12 +153,15 @@
 
     watch(() => props.file, loadConflict, { immediate: true })
 
-    const unresolvedCount = computed(() => blocks.value.filter(block => !block.pickOurs && !block.pickTheirs).length)
-    const canSave = computed(() => blocks.value.length > 0 && unresolvedCount.value === 0)
+    /** A block is unresolved until at least one line of either side is picked. */
+    const unresolvedCount = computed(
+        () => blocks.value.filter(block => !block.pickOursLines.some(Boolean) && !block.pickTheirsLines.some(Boolean)).length
+    )
+    const canSave = computed(() => manualOutput.value !== null || (blocks.value.length > 0 && unresolvedCount.value === 0))
 
     /**
-     * The output file assembled from the picked sides; unresolved blocks keep their raw markers so they are visible (and make the
-     * main-process marker validation fail).
+     * The output file assembled from the picked lines (per block: ours first, then theirs); fully unresolved blocks keep their raw markers
+     * so they are visible (and make the main-process marker validation fail).
      */
     interface OutLine {
         text: string
@@ -167,9 +185,13 @@
             i++
             while (i < lines.length && !MARK_THEIRS.test(lines[i])) i++
             const end = i < lines.length ? i : lines.length - 1 // last marker line (or EOF)
-            if (block && (block.pickOurs || block.pickTheirs)) {
-                if (block.pickOurs) block.ours.forEach(text => out.push({ text, block: idx }))
-                if (block.pickTheirs) block.theirs.forEach(text => out.push({ text, block: idx }))
+            if (block && (block.pickOursLines.some(Boolean) || block.pickTheirsLines.some(Boolean))) {
+                block.ours.forEach((text, li) => {
+                    if (block.pickOursLines[li]) out.push({ text, block: idx })
+                })
+                block.theirs.forEach((text, li) => {
+                    if (block.pickTheirsLines[li]) out.push({ text, block: idx })
+                })
             } else {
                 lines.slice(start, end + 1).forEach(text => out.push({ text, block: idx }))
             }
@@ -196,24 +218,50 @@
         })
     })
 
-    function togglePick(side: 'ours' | 'theirs', blockIndex: number) {
-        const block = blocks.value[blockIndex]
-        if (!block) return
-        if (side === 'ours') block.pickOurs = !block.pickOurs
-        else block.pickTheirs = !block.pickTheirs
+    // ---- manual output editing (GitKraken-style "type in the output box to fine-tune") ----
+
+    function startManualEdit() {
+        if (manualOutput.value === null) manualOutput.value = resultContent.value
     }
 
-    function isPicked(side: 'ours' | 'theirs', blockIndex: number): boolean {
+    function discardManualEdit() {
+        manualOutput.value = null
+    }
+
+    /** Block-level checkbox: take (or un-take) every line of this side. */
+    function togglePick(side: Side, blockIndex: number) {
+        const block = blocks.value[blockIndex]
+        if (!block) return
+        const lines = side === 'ours' ? block.pickOursLines : block.pickTheirsLines
+        const take = !lines.some(Boolean)
+        lines.fill(take)
+    }
+
+    function isPicked(side: Side, blockIndex: number): boolean {
         const block = blocks.value[blockIndex]
         if (!block) return false
-        return side === 'ours' ? block.pickOurs : block.pickTheirs
+        return (side === 'ours' ? block.pickOursLines : block.pickTheirsLines).some(Boolean)
+    }
+
+    function toggleLine(side: Side, blockIndex: number, lineIndex: number) {
+        const block = blocks.value[blockIndex]
+        if (!block) return
+        const lines = side === 'ours' ? block.pickOursLines : block.pickTheirsLines
+        lines[lineIndex] = !lines[lineIndex]
+    }
+
+    function isLinePicked(side: Side, blockIndex: number, lineIndex: number): boolean {
+        const block = blocks.value[blockIndex]
+        if (!block) return false
+        return (side === 'ours' ? block.pickOursLines : block.pickTheirsLines)[lineIndex] ?? false
     }
 
     async function saveResolved() {
         if (!props.file || !canSave.value) return
         const path = props.file.path
+        const content = manualOutput.value ?? resultContent.value
         try {
-            await uiTransient.withBusy(() => window.api.saveResolvedFile(path, resultContent.value), 'Resolving…')
+            await uiTransient.withBusy(() => window.api.saveResolvedFile(path, content), 'Resolving…')
             await props.refresh?.()
             notify(`${path}: conflicts resolved`, 'success')
             // the overlay closes itself — the store watch clears selectedConflict once
@@ -269,21 +317,25 @@
     }))
 
     /**
-     * Per-line block metadata precomputed from block geometry (matchIdx + lengths). Deliberately never reads pickOurs/pickTheirs, so
+     * Per-line block metadata precomputed from block geometry (matchIdx + lengths). Deliberately never reads the per-line picks, so
      * toggling a checkbox does NOT re-run this — per-line template work stays O(1) instead of O(blocks).
      */
-    const paneMeta = computed<Record<Side, { block: number[]; start: boolean[] }>>(() => {
+    const paneMeta = computed<Record<Side, { block: number[]; start: boolean[]; lineInBlock: number[] }>>(() => {
         const build = (side: Side, lines: DiffLine[]) => {
             const block = Array.from<number>({ length: lines.length }).fill(-1)
             const start = Array.from<boolean>({ length: lines.length }).fill(false)
+            const lineInBlock = Array.from<number>({ length: lines.length }).fill(-1)
             for (let bi = 0; bi < blocks.value.length; bi++) {
                 const b = blocks.value[bi]
                 const from = b.matchIdx[side]
                 if (from < 0) continue
-                for (let i = from; i < from + b[side].length && i < block.length; i++) block[i] = bi
+                for (let i = from; i < from + b[side].length && i < block.length; i++) {
+                    block[i] = bi
+                    lineInBlock[i] = i - from
+                }
                 if (from < start.length) start[from] = true
             }
-            return { block, start }
+            return { block, start, lineInBlock }
         }
         return { ours: build('ours', paneLines.value.ours), theirs: build('theirs', paneLines.value.theirs) }
     })
@@ -487,8 +539,14 @@
             class="diff-main conflict-main">
             <div
                 v-if="loading"
-                class="diff-empty">
-                Loading conflict…
+                class="diff-loading">
+                <div class="busy-card">
+                    <i-lucide-loader-circle
+                        class="spinning"
+                        width="18"
+                        height="18" />
+                    <span>Loading conflict…</span>
+                </div>
             </div>
 
             <div
@@ -553,17 +611,37 @@
                                 :class="{
                                     hl: pane.meta.block[idx] >= 0,
                                     current: pane.meta.block[idx] >= 0 && pane.meta.block[idx] === currentBlock,
+                                    'blk-top': pane.meta.edge[idx] === 'top' || pane.meta.edge[idx] === 'only',
+                                    'blk-bottom': pane.meta.edge[idx] === 'bottom' || pane.meta.edge[idx] === 'only',
                                 }"
                                 @click="pane.meta.block[idx] >= 0 && setCurrent(pane.meta.block[idx])">
+                                <button
+                                    v-if="pane.meta.start[idx]"
+                                    class="block-use-btn"
+                                    :title="`Use every ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} line of this conflict`"
+                                    @click.stop="togglePick(pane.side, pane.meta.block[idx])">
+                                    Use {{ pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel }}
+                                </button>
                                 <span class="ck">
                                     <button
-                                        v-if="pane.meta.start[idx]"
+                                        v-if="pane.meta.block[idx] >= 0 && pane.meta.start[idx]"
                                         class="conflict-check"
                                         :class="{ picked: isPicked(pane.side, pane.meta.block[idx]) }"
-                                        :title="`Include the ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} side of this conflict in the output`"
+                                        :title="`Include the whole ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} side of this conflict in the output`"
                                         @click.stop="togglePick(pane.side, pane.meta.block[idx])">
                                         <i-lucide-check
                                             v-if="isPicked(pane.side, pane.meta.block[idx])"
+                                            width="10"
+                                            height="10" />
+                                    </button>
+                                    <button
+                                        v-else-if="pane.meta.block[idx] >= 0"
+                                        class="conflict-check"
+                                        :class="{ picked: isLinePicked(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx]) }"
+                                        :title="`Include this ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} line in the output`"
+                                        @click.stop="toggleLine(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx])">
+                                        <i-lucide-check
+                                            v-if="isLinePicked(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx])"
                                             width="10"
                                             height="10" />
                                     </button>
@@ -608,9 +686,46 @@
                     :style="{ flexBasis: `${ui.conflictOutputHeight}%` }">
                     <div class="pane-head">
                         <span class="pane-title">OUTPUT</span>
-                        <span class="pane-label">merged result</span>
+                        <span
+                            v-if="manualOutput !== null"
+                            class="pane-label"
+                            >edited by hand — picks won't update this</span
+                        >
+                        <span
+                            v-else
+                            class="pane-label"
+                            >merged result</span
+                        >
+                        <div class="output-head-actions">
+                            <button
+                                v-if="manualOutput === null"
+                                class="icon-btn"
+                                title="Edit the output by hand"
+                                @click="startManualEdit()">
+                                <i-lucide-pencil
+                                    width="13"
+                                    height="13" />
+                            </button>
+                            <button
+                                v-else
+                                class="icon-btn"
+                                title="Discard manual edits — let the picks drive the output again"
+                                @click="discardManualEdit()">
+                                <i-lucide-rotate-ccw
+                                    width="13"
+                                    height="13" />
+                            </button>
+                        </div>
                     </div>
+                    <textarea
+                        v-if="manualOutput !== null"
+                        ref="outputEl"
+                        v-model="manualOutput"
+                        class="output-edit"
+                        spellcheck="false"
+                        @scroll.passive="onPaneScroll" />
                     <div
+                        v-else
                         ref="outputEl"
                         class="output-body"
                         @scroll.passive="onPaneScroll">

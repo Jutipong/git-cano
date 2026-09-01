@@ -73,6 +73,7 @@ declare module 'vue' {
     ILucideMinus: typeof import('~icons/lucide/minus')['default']
     ILucidePalette: typeof import('~icons/lucide/palette')['default']
     ILucidePauseCircle: typeof import('~icons/lucide/pause-circle')['default']
+    ILucidePencil: typeof import('~icons/lucide/pencil')['default']
     ILucidePlay: typeof import('~icons/lucide/play')['default']
     ILucidePlugZap: typeof import('~icons/lucide/plug-zap')['default']
     ILucidePlus: typeof import('~icons/lucide/plus')['default']
