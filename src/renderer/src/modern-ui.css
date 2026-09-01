@@ -4485,15 +4485,16 @@ body {
 
 .block-use-btn {
     position: absolute;
-    top: -1px;
+    top: -21px;
     left: 62px;
     z-index: 1;
-    padding: 1px 8px;
-    color: var(--text-secondary);
-    background: var(--surface-2);
-    border: 1px solid var(--line);
+    padding: 2px 9px;
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 16%, var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--green) 65%, var(--line));
     border-radius: 999px;
     font-size: 10px;
+    font-weight: 700;
     cursor: pointer;
 }
 
