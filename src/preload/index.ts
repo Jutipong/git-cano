@@ -40,6 +40,7 @@ const api = {
     listRepos: (): Promise<string[]> => call('repo:list'),
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
+    openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
     status: (): Promise<RepoStatus> => call('repo:status'),
     log: (limit?: number): Promise<CommitNode[]> => call('repo:log', limit),

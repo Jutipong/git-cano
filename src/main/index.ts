@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-import { app, BrowserWindow, dialog, ipcMain, Menu, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 
 import {
     authGitEnv,
@@ -213,6 +213,12 @@ function openTerminal(dir: string): Promise<void> {
     return runCmd('open', ['-a', 'Terminal', dir], dir)
 }
 
+function openFolder(dir: string): Promise<void> {
+    return shell.openPath(dir).then(errorMessage => {
+        if (errorMessage) throw new Error(errorMessage)
+    })
+}
+
 function openVSCode(dir: string): Promise<void> {
     for (const candidate of CODE_CLI_PATHS) {
         if (fs.existsSync(candidate)) {
@@ -321,6 +327,7 @@ app.whenReady().then(() => {
         return isOpen()
     })
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
+    handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
     handle('repo:log', (_limit?: number) => {
         requireRepo()

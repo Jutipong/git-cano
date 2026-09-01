@@ -13,6 +13,11 @@
         }
         return [
             {
+                label: 'Open in Folder',
+                icon: 'folder',
+                action: () => run(() => window.api.openInFolder(props.path)),
+            },
+            {
                 label: 'Open in Terminal',
                 icon: 'terminal',
                 action: () => run(() => window.api.openTerminal(props.path)),

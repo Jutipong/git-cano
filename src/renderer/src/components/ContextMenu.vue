@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
+    import Folder from '~icons/lucide/folder'
     import GitBranch from '~icons/lucide/git-branch'
     import Pencil from '~icons/lucide/pencil'
     import SquareTerminal from '~icons/lucide/square-terminal'
@@ -27,6 +28,7 @@
         zap: Zap,
         pencil: Pencil,
         copy: Copy,
+        folder: Folder,
         terminal: SquareTerminal,
         vscode: VisualStudioCode,
         trash: Trash2,
