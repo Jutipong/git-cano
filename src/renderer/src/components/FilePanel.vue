@@ -99,9 +99,9 @@
         return `${providerName}: ${selectedModel?.name ?? modelName(ai.modelId)}`
     })
     const AI_MODE_OPTIONS: { value: AiCommitMode; label: string }[] = [
-        { value: 'off', label: 'Generate only' },
-        { value: 'commit', label: 'auto commit' },
-        { value: 'commit-push', label: 'auto commit + push' },
+        { value: 'off', label: 'Generate Only' },
+        { value: 'commit', label: 'Auto Commit' },
+        { value: 'commit-push', label: 'Auto Commit & Push' },
     ]
     const aiModeLabel = (mode: AiCommitMode) => AI_MODE_OPTIONS.find(option => option.value === mode)?.label ?? ''
     const commitModelLabel = computed(() =>
@@ -1114,7 +1114,7 @@
                                 v-else
                                 width="14"
                                 height="14" />
-                            {{ committing ? 'Committing…' : 'Commit + push' }}
+                            {{ committing ? 'Committing…' : 'Commit & Push' }}
                         </button>
                     </div>
                     <div
