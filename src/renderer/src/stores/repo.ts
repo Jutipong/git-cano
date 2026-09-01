@@ -62,6 +62,7 @@ export const useRepoStore = defineStore('repo', () => {
     const selectedCommit = ref<CommitNode | null>(null)
     const selectedStash = ref<StashEntry | null>(null)
     const booted = ref(false)
+    const switchingWorkspace = ref(false)
     const commitFiles = ref<CommitFile[]>([])
     const commitMessage = ref('')
     const commitAuthor = ref('')
@@ -212,9 +213,16 @@ export const useRepoStore = defineStore('repo', () => {
         restoringSession = true
         let paths: string[] = []
         try {
-            const saved = ws.getSession(ws.active) ?? session.value
+            const wsSession = ws.getSession(ws.active)
+            const saved = wsSession ?? session.value
             const savedActivePath = saved.paths[saved.active]
-            paths = saved.paths.length ? saved.paths : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
+            // Respect a deliberately empty workspace session (user closed every repo).
+            // The recent-repo fallback is only for a workspace with no saved session at all (first run).
+            paths = saved.paths.length
+                ? saved.paths
+                : wsSession
+                  ? []
+                  : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
             let openedCount = 0
             for (const path of paths) {
                 try {
@@ -243,6 +251,7 @@ export const useRepoStore = defineStore('repo', () => {
     async function switchWorkspace(name: string) {
         if (useUiTransientStore().busy) return
         if (name === ws.active || !ws.names.includes(name)) return
+        switchingWorkspace.value = true
         syncSession()
         ws.select(name)
         restoringSession = true
@@ -272,6 +281,7 @@ export const useRepoStore = defineStore('repo', () => {
                 await selectTab(activeTab.value)
             }
         } finally {
+            switchingWorkspace.value = false
             restoringSession = false
         }
         syncSession()
@@ -354,6 +364,7 @@ export const useRepoStore = defineStore('repo', () => {
         oursLabel,
         theirsLabel,
         booted,
+        switchingWorkspace,
         addTab,
         refresh,
         selectTab,

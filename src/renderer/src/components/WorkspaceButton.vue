@@ -14,6 +14,7 @@
 
     const open = ref(false)
     const adding = ref(false)
+    const switching = ref(false)
     const newName = ref('')
     const nameInput = ref<HTMLInputElement | null>(null)
 
@@ -78,13 +79,15 @@
         open.value = false
         resetAdd()
         if (name === ws.active) return
+        switching.value = true
         try {
             // switchWorkspace has its own busy guard and needs busy clear internally,
             // so it must NOT be wrapped in withBusy (which would no-op the switch).
             await repoStore.switchWorkspace(name)
-            notify(`Switched to workspace ${name}`, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            switching.value = false
         }
     }
 
@@ -104,8 +107,15 @@
         <button
             class="workspace-btn"
             title="Work spaces"
+            :disabled="switching"
             @click="toggle">
+            <i-lucide-loader-circle
+                v-if="switching"
+                class="spinning"
+                width="13"
+                height="13" />
             <i-lucide-layers
+                v-else
                 width="13"
                 height="13" />
             <span class="workspace-btn-name">{{ ws.active }}</span>

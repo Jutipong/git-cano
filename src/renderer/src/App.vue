@@ -16,8 +16,10 @@
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
+    import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAuthStore } from './stores/auth'
     import { DEFAULT_ZOOM } from './stores/ui'
+    import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
 
@@ -28,6 +30,7 @@
     const ui = useUiStore()
     const uiTransient = useUiTransientStore()
     const auth = useAuthStore()
+    const wsStore = useWorkspaceStore()
     const {
         tabs,
         activeTab,
@@ -42,6 +45,7 @@
         blameFile,
         toolsOpen,
         booted,
+        switchingWorkspace,
     } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
 
@@ -69,7 +73,8 @@
 
     const SPLASH_MIN_MS = 1800
     const splashMinElapsed = ref(false)
-    const splashVisible = computed(() => !booted.value || !splashMinElapsed.value)
+    const splashVisible = computed(() => !booted.value || !splashMinElapsed.value || switchingWorkspace.value)
+    const showEmptyWorkspace = computed(() => wsStore.names.some(name => name !== wsStore.active))
 
     provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
 
@@ -356,11 +361,18 @@
         <div
             v-if="!repo"
             class="app-empty">
-            <i-lucide-folder-git2
-                width="42"
-                height="42" />
+            <span class="app-empty-icon">
+                <i-lucide-folder-git2
+                    width="34"
+                    height="34" />
+            </span>
             <strong>No repository opened</strong>
-            <span>Open a repository to see its graph, branches and changes</span>
+            <div
+                v-if="showEmptyWorkspace"
+                class="app-empty-workspace">
+                <span class="app-empty-workspace-label">Workspace</span>
+                <WorkspaceButton />
+            </div>
             <OpenRepoMenu
                 label="Open repository"
                 @clone="cloneOpen = true" />

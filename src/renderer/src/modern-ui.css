@@ -163,36 +163,57 @@ body {
 }
 
 .app-empty {
+    position: fixed;
+    inset: 0;
+    z-index: 1;
     display: flex;
-    flex: 1;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 16px;
     color: var(--text-muted);
-    background: var(--surface-0);
-    border: 1px dashed var(--line);
-    border-radius: 12px;
+    background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--teal) 9%, transparent), transparent 44%), var(--canvas);
     text-align: center;
 }
 
-.app-empty svg {
+.app-empty-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
     color: var(--teal);
-    opacity: 0.7;
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+    margin-bottom: 2px;
+    animation: splash-breathe 2.4s ease-in-out infinite;
 }
 
 .app-empty strong {
     color: var(--text);
     font-size: 15px;
+    letter-spacing: 0.01em;
 }
 
-.app-empty span {
+.app-empty-workspace {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.app-empty-workspace-label {
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .app-empty .btn {
-    margin-top: 8px;
+    margin-top: 6px;
 }
 
 .commit-search {
@@ -558,7 +579,8 @@ body {
     display: inline-flex;
 }
 
-.tab-actions .workspace-btn {
+.tab-actions .workspace-btn,
+.app-empty .workspace-btn {
     align-self: center;
     display: inline-flex;
     align-items: center;
@@ -580,7 +602,8 @@ body {
         border-color 0.15s ease;
 }
 
-.tab-actions .workspace-btn:hover {
+.tab-actions .workspace-btn:hover,
+.app-empty .workspace-btn:hover {
     color: var(--text);
     background: color-mix(in srgb, var(--teal) 18%, transparent);
     border-color: var(--teal);
@@ -3303,7 +3326,7 @@ body {
     color: var(--teal);
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
-    border-radius: 18px;
+    border-radius: 50%;
     animation: splash-breathe 2.4s ease-in-out infinite;
 }
 
