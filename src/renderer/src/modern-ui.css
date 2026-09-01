@@ -1167,7 +1167,7 @@ body {
        so the sidebar height matches the graph height */
     margin-top: 6px;
     /* the floating search toolbar provides the breathing room above the first card */
-    padding-top: 8px;
+    padding-top: 16px;
     background: var(--surface-0);
     border-right-color: var(--line-soft);
 }
@@ -1238,7 +1238,7 @@ body {
     display: flex;
     flex: 0 0 auto;
     align-items: center;
-    margin: 0 8px 8px;
+    margin: 0 18px 18px;
     gap: 6px;
 }
 /* size the collapse button to the search pill so the row ends evenly */
