@@ -1264,6 +1264,35 @@ export async function listRemotes(): Promise<{ name: string; url: string }[]> {
     return remotes.map(r => ({ name: r.name, url: r.refs.fetch || r.refs.push || '' }))
 }
 
+function sshHostFromUrl(url: string): string | null {
+    const u = url.trim()
+    if (!u) return null
+    if (u.startsWith('ssh://')) {
+        try {
+            return new URL(u).hostname || null
+        } catch {
+            return null
+        }
+    }
+    // scp-like syntax: git@host:path
+    const m = u.match(/^(?:[^@\s]+@)?([A-Za-z0-9._-]+):/)
+    if (m && !/^(https?|git|ssh|file)$/i.test(m[1])) return m[1]
+    return null
+}
+
+/** SSH host for key tests, taken from the active repo's first SSH remote (e.g. `git@gitlab.com:…` → `gitlab.com`); defaults to GitHub. */
+export async function sshTestHost(): Promise<string> {
+    try {
+        const { git: g } = getRepo()
+        const remotes = await g.getRemotes(true)
+        for (const r of remotes) {
+            const host = sshHostFromUrl(r.refs.fetch || r.refs.push || '')
+            if (host) return host
+        }
+    } catch {}
+    return 'github.com'
+}
+
 export async function addRemote(name: string, url: string): Promise<void> {
     const { git: g } = getRepo()
     if (!name.trim() || !url.trim()) throw new Error('Name and URL are required')

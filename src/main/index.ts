@@ -96,6 +96,7 @@ import {
     testRemoteUrl,
     getRawPatch,
     stageHunks,
+    sshTestHost,
     applyPatch,
     getFileHistory,
     getBlame,
@@ -723,7 +724,7 @@ app.whenReady().then(() => {
     handleSensitive('auth:ssh:generate', (name: string, comment: string, passphrase?: string) =>
         generateSshKey(String(name), String(comment ?? ''), typeof passphrase === 'string' ? passphrase : undefined)
     )
-    handleSensitive('auth:ssh:test', (keyPath: string) => testSshKey(String(keyPath)))
+    handleSensitive('auth:ssh:test', (keyPath: string) => sshTestHost().then(host => testSshKey(String(keyPath), host)))
     handleSensitive('auth:ssh:delete', (keyPath: string) => deleteSshKey(String(keyPath)))
     handle('auth:ssh:openDir', () => openSshDir())
     handleSensitive('auth:github:status', () => githubStatus())

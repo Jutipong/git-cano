@@ -638,7 +638,7 @@
                                     <button
                                         class="btn small"
                                         :disabled="sshTesting"
-                                        :title="`Test ${activeKey.name} against git@github.com`"
+                                        :title="`Test ${activeKey.name} against the repo's SSH remote`"
                                         @click="testKey(activeKey)">
                                         <i-lucide-flask-conical
                                             v-if="!sshTesting"
@@ -733,7 +733,8 @@
                                 </button>
                             </div>
                             <p class="tools-section-hint">
-                                Copy the public key to GitHub → Settings → SSH keys, then press Test to verify the connection.
+                                Copy the public key to your host (e.g. GitHub → Settings → SSH keys, or GitLab → SSH Keys) then press Test
+                                to verify the connection.
                             </p>
                         </div>
                     </template>

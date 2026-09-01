@@ -162,19 +162,20 @@ function execAsync(cmd: string, args: string[], timeoutMs: number): Promise<Exec
     })
 }
 
-export async function testSshKey(privateKeyPath: string): Promise<SshTestResult> {
+export async function testSshKey(privateKeyPath: string, host = 'github.com'): Promise<SshTestResult> {
     const key = privateKeyPath.trim()
     if (!key || !fs.existsSync(key)) return { ok: false, message: 'Select a key first (private key not found)' }
+    const target = `git@${host}`
     const { code, stderr } = await execAsync(
         'ssh',
-        ['-T', 'git@github.com', '-i', key, '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'BatchMode=yes'],
+        ['-T', target, '-i', key, '-o', 'IdentitiesOnly=yes', '-o', 'StrictHostKeyChecking=accept-new', '-o', 'BatchMode=yes'],
         20_000
     )
-    // `ssh -T git@github.com` exits 1 even on success (no shell access), the message is what matters
+    // `ssh -T git@host` exits 1 even on success (no shell access), the message is what matters
     const text = stderr.trim()
     const match = text.match(/Hi ([^!]+)!/)
-    if (match) return { ok: true, message: `Authenticated as ${match[1]}` }
-    if (code === 0) return { ok: true, message: text || 'Connected' }
+    if (match) return { ok: true, message: `Authenticated as ${match[1]} (${target})` }
+    if (code === 0) return { ok: true, message: text || `Connected to ${target}` }
     return { ok: false, message: text || `ssh exited with code ${code}` }
 }
 
