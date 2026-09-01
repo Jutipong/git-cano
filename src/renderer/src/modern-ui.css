@@ -1182,8 +1182,12 @@ body {
 .sidebar > .sidebar-section {
     flex: 0 0 auto;
     min-height: 0;
+    margin: 0 8px 8px;
     overflow-y: auto;
     overflow-x: hidden;
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
     scrollbar-width: thin;
     scrollbar-color: var(--surface-3) transparent;
 }
@@ -1199,17 +1203,21 @@ body {
     position: sticky;
     top: 0;
     z-index: 1;
-    background: var(--surface-0);
+    padding: 7px 10px 4px 15px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line-soft);
 }
-/* container padding-top would leave a gap above the sticky header where
-   scrolled rows stay visible — carry the spacing inside the header instead */
+/* base styles give remote/stash sections a container padding-top (leaves a gap
+   above the sticky header where scrolled rows stay visible) and a border-top
+   (duplicates the card border) — cards carry their own spacing/border instead */
 .sidebar > .sidebar-section.remote-section,
 .sidebar > .sidebar-section.stash-section {
     padding-top: 0;
+    border-top: 0;
 }
-.sidebar > .sidebar-section.remote-section > .section-header,
-.sidebar > .sidebar-section.stash-section > .section-header {
-    padding: 8px 10px 4px 15px;
+/* the old footer divider — cards now provide the separation above it */
+.sidebar-bottom {
+    border-top: 0;
 }
 
 /* collapse/expand all sidebar sections — right edge of the top section header */
