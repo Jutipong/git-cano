@@ -1180,16 +1180,36 @@ body {
 
 /* --- Sidebar proportions: sections size to content; expanded lists take the rest --- */
 .sidebar > .sidebar-section {
-    flex: 0 1 auto;
+    flex: 0 0 auto;
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--surface-3) transparent;
 }
-/* expanded list sections absorb the leftover space instead of leaving a void */
+/* expanded list sections absorb the leftover space instead of leaving a void;
+   min-height keeps the header + a few rows visible when several lists are open */
 .sidebar > .sidebar-section.grow {
     flex: 1 1 auto;
+    min-height: 72px;
+}
+
+/* keep section headers pinned while the list under them scrolls */
+.sidebar > .sidebar-section > .section-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface-0);
+}
+/* container padding-top would leave a gap above the sticky header where
+   scrolled rows stay visible — carry the spacing inside the header instead */
+.sidebar > .sidebar-section.remote-section,
+.sidebar > .sidebar-section.stash-section {
+    padding-top: 0;
+}
+.sidebar > .sidebar-section.remote-section > .section-header,
+.sidebar > .sidebar-section.stash-section > .section-header {
+    padding: 8px 10px 4px 15px;
 }
 
 /* collapse/expand all sidebar sections — right edge of the top section header */

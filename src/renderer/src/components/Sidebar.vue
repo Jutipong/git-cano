@@ -442,7 +442,9 @@
             </template>
         </div>
 
-        <div class="sidebar-section remote-section">
+        <div
+            class="sidebar-section remote-section"
+            :class="{ grow: remoteExpanded }">
             <div class="section-header">
                 <button
                     class="section-toggle"
@@ -510,7 +512,9 @@
             </template>
         </div>
 
-        <div class="sidebar-section remote-section">
+        <div
+            class="sidebar-section remote-section"
+            :class="{ grow: tagsExpanded }">
             <div class="section-header">
                 <button
                     class="section-toggle"
