@@ -498,23 +498,6 @@
                             </template>
                         </template>
                     </template>
-                    <g
-                        v-for="(commit, index) in visibleCommits"
-                        v-show="index >= visibleRange[0] - 5 && index <= visibleRange[1] + 5"
-                        :key="`node-${commit.hash}`">
-                        <circle
-                            class="commit-ring"
-                            :class="{
-                                selected: selectedHash === commit.hash,
-                                'drop-target': dropTargetHash === commit.hash,
-                            }"
-                            :style="{ '--node-color': nodeColor(commit) }"
-                            :cx="nodeX(commit)"
-                            :cy="nodeY(index)"
-                            r="12"
-                            fill="none"
-                            stroke-width="2" />
-                    </g>
                 </svg>
                 <div
                     :style="{ height: `${visibleRange[0] * rowH}px` }"
@@ -551,6 +534,13 @@
                     <div
                         class="graph-cell"
                         :style="{ width: `${graphW}px` }">
+                        <span
+                            class="node-ring"
+                            :class="{
+                                selected: selectedHash === commit.hash,
+                                'drop-target': dropTargetHash === commit.hash,
+                            }"
+                            :style="avatarStyle(commit)"></span>
                         <span
                             class="node-avatar"
                             :class="{ selected: selectedHash === commit.hash, photo: hasAvatar(commit), icon: !hasAvatar(commit) }"

@@ -36,6 +36,10 @@
     const currentChange = ref(0)
     let loadSeq = 0
 
+    const searchQuery = ref('')
+    const searchInput = ref<HTMLInputElement | null>(null)
+    const currentMatch = ref(0)
+
     async function loadDiff() {
         const seq = ++loadSeq
         lines.value = []
@@ -114,6 +118,8 @@
         if (props.commitHash) return `${props.commitHash.slice(0, 7)} · commit`
         return props.file?.staged ? 'staged' : 'working directory'
     })
+
+    const displayName = computed(() => props.file?.path.split('/').pop() ?? '')
 
     interface SideBySideRow {
         left?: DiffLine
@@ -235,12 +241,9 @@
 
     let scrollAnimation: number | null = null
 
-    function scrollToChange(index: number) {
+    function animateBodyScrollTo(target: number) {
         const body = diffBody.value
         if (!body) return
-        const el = body.querySelector(`[data-change="${index}"]`)
-        if (!el) return
-        const target = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop
         const from = body.scrollTop
         const distance = target - from
         if (Math.abs(distance) < 4) return
@@ -260,10 +263,47 @@
         scrollAnimation = requestAnimationFrame(step)
     }
 
+    function scrollToChange(index: number) {
+        const body = diffBody.value
+        if (!body) return
+        const el = body.querySelector(`[data-change="${index}"]`)
+        if (!el) return
+        const target = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop
+        animateBodyScrollTo(target)
+    }
+
     function goToChange(delta: number) {
         if (!changeCount.value) return
         currentChange.value = (currentChange.value + delta + changeCount.value) % changeCount.value
         nextTick(() => scrollToChange(currentChange.value))
+    }
+
+    function scrollToSearch(index: number) {
+        const body = diffBody.value
+        if (!body) return
+        const el = body.querySelector(`[data-search="${index}"]`)
+        if (!el) return
+        const target =
+            el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - (body.clientHeight - el.clientHeight) / 2
+        animateBodyScrollTo(target)
+    }
+
+    function goToMatch(delta: number) {
+        const count = searchHits.value.length
+        if (!count) return
+        currentMatch.value = (currentMatch.value + delta + count) % count
+        nextTick(() => scrollToSearch(currentMatch.value))
+    }
+
+    function focusSearch() {
+        searchInput.value?.focus()
+    }
+
+    function onGlobalKeyDown(event: KeyboardEvent) {
+        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'f' && props.file) {
+            event.preventDefault()
+            focusSearch()
+        }
     }
 
     async function actOnHunk(hunkOrdinal: number) {
@@ -283,16 +323,87 @@
     function renderOne(line: DiffLine, highlight: (content: string) => string): string {
         const content = line.text.slice(1)
         if (!content) return ''
-        if (line.type !== 'add' && line.type !== 'del') return highlight(content)
-        const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
-        if (!mark) return highlight(content)
-        const start = Math.min(mark[0], content.length)
-        const end = Math.min(mark[1], content.length)
-        if (end <= start) return highlight(content)
-        return `${highlight(content.slice(0, start))}<mark>${highlight(content.slice(start, end))}</mark>${highlight(content.slice(end))}`
+        const ranges: { start: number; end: number; kind: 'diff' | 'search' }[] = []
+        if (line.type === 'add' || line.type === 'del') {
+            const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
+            if (mark && mark[1] > mark[0]) {
+                ranges.push({ start: Math.min(mark[0], content.length), end: Math.min(mark[1], content.length), kind: 'diff' })
+            }
+        }
+        for (const [start, end] of searchRangesByLine.value.get(line) ?? []) {
+            if (end > start) ranges.push({ start: Math.min(start, content.length), end: Math.min(end, content.length), kind: 'search' })
+        }
+        if (!ranges.length) return highlight(content)
+        const points = [...new Set(ranges.flatMap(range => [range.start, range.end]))].sort((a, b) => a - b)
+        const merged: { start: number; end: number; kind: 'diff' | 'search' }[] = []
+        for (let i = 0; i < points.length - 1; i++) {
+            const start = points[i]!
+            const end = points[i + 1]!
+            let kind: 'diff' | 'search' | null = null
+            for (const range of ranges) {
+                if (range.start <= start && end <= range.end) {
+                    if (range.kind === 'search') {
+                        kind = 'search'
+                        break
+                    }
+                    kind = range.kind
+                }
+            }
+            if (kind) merged.push({ start, end, kind })
+        }
+        let out = ''
+        let cursor = 0
+        for (const range of merged) {
+            if (range.start > cursor) out += highlight(content.slice(cursor, range.start))
+            const inner = highlight(content.slice(range.start, range.end))
+            out += range.kind === 'search' ? `<mark class="search-hit">${inner}</mark>` : `<mark>${inner}</mark>`
+            cursor = range.end
+        }
+        if (cursor < content.length) out += highlight(content.slice(cursor))
+        return out
     }
 
     const htmlMap = computed(() => highlightDiffLines(lines.value, props.file?.path ?? '', renderOne))
+
+    interface SearchHit {
+        line: DiffLine
+        ranges: [number, number][]
+    }
+
+    const searchHits = computed<SearchHit[]>(() => {
+        const query = searchQuery.value.trim()
+        const hits: SearchHit[] = []
+        if (!query || meta.value?.binary || meta.value?.image) return hits
+        const lower = query.toLowerCase()
+        for (const line of lines.value) {
+            if (line.type === 'hunk' || line.type === 'meta') continue
+            const content = line.text.slice(1)
+            const ranges: [number, number][] = []
+            let from = 0
+            while (from < content.length) {
+                const i = content.toLowerCase().indexOf(lower, from)
+                if (i === -1) break
+                ranges.push([i, i + query.length])
+                from = i + query.length
+            }
+            if (ranges.length) hits.push({ line, ranges })
+        }
+        return hits
+    })
+
+    const searchRangesByLine = computed(() => {
+        const map = new Map<DiffLine, [number, number][]>()
+        for (const hit of searchHits.value) map.set(hit.line, hit.ranges)
+        return map
+    })
+
+    const searchIndexMap = computed(() => {
+        const map = new Map<DiffLine | undefined, number>()
+        searchHits.value.forEach((hit, index) => map.set(hit.line, index))
+        return map
+    })
+
+    const matchCount = computed(() => searchHits.value.length)
 
     const minimapEl = ref<HTMLElement | null>(null)
     const minimapCanvas = ref<HTMLCanvasElement | null>(null)
@@ -480,6 +591,17 @@
         resizeObserver?.disconnect()
         resizeObserver = null
         if (scrollSyncTimer) clearTimeout(scrollSyncTimer)
+        window.removeEventListener('keydown', onGlobalKeyDown, true)
+    })
+
+    onMounted(() => window.addEventListener('keydown', onGlobalKeyDown, true))
+
+    watch(searchQuery, () => {
+        currentMatch.value = 0
+        if (searchHits.value.length) nextTick(() => scrollToSearch(0))
+    })
+    watch(searchHits, () => {
+        if (currentMatch.value >= searchHits.value.length) currentMatch.value = 0
     })
 
     watch([diffBody, minimapCanvas], ([body]) => {
@@ -507,7 +629,7 @@
         class="diff-view"
         :class="{ fullscreen: isFullscreen }">
         <div class="diff-header">
-            <strong>{{ file.path }}</strong>
+            <strong :title="file.path">{{ displayName }}</strong>
             <span class="diff-source">· {{ sourceLabel }}</span>
             <span
                 v-if="loading"
@@ -515,6 +637,49 @@
                 >loading…</span
             >
             <div class="diff-header-center">
+                <div class="diff-search">
+                    <div class="diff-search-field">
+                        <i-lucide-search
+                            width="15"
+                            height="15" />
+                        <input
+                            ref="searchInput"
+                            v-model="searchQuery"
+                            class="diff-search-input"
+                            type="text"
+                            placeholder="Find in diff…"
+                            @keydown.enter.prevent="goToMatch(1)" />
+                        <button
+                            v-if="searchQuery"
+                            type="button"
+                            class="search-clear"
+                            aria-label="Clear search"
+                            @click="searchQuery = ''">
+                            ×
+                        </button>
+                    </div>
+                    <div class="diff-nav">
+                        <button
+                            class="icon-btn"
+                            :disabled="!matchCount"
+                            title="Previous match"
+                            @click="goToMatch(-1)">
+                            <i-lucide-arrow-up
+                                width="15"
+                                height="15" />
+                        </button>
+                        <span class="chip diff-nav-counter">{{ matchCount ? currentMatch + 1 : 0 }}/{{ matchCount }}</span>
+                        <button
+                            class="icon-btn"
+                            :disabled="!matchCount"
+                            title="Next match"
+                            @click="goToMatch(1)">
+                            <i-lucide-arrow-down
+                                width="15"
+                                height="15" />
+                        </button>
+                    </div>
+                </div>
                 <div class="diff-nav">
                     <button
                         class="icon-btn"
@@ -661,8 +826,13 @@
                                 <div
                                     v-else
                                     class="diff-line half"
-                                    :class="[row.left?.type ?? 'blank', lineFlagClass(row.left)]"
-                                    :data-change="row.change">
+                                    :class="[
+                                        row.left?.type ?? 'blank',
+                                        lineFlagClass(row.left),
+                                        { 'search-current': searchIndexMap.get(row.left) === currentMatch },
+                                    ]"
+                                    :data-change="row.change"
+                                    :data-search="searchIndexMap.get(row.left)">
                                     <span class="ln">{{ row.left?.oldNo ?? '' }}</span>
                                     <pre
                                         v-if="row.left"
@@ -689,8 +859,13 @@
                                 <div
                                     v-else
                                     class="diff-line half"
-                                    :class="[row.right?.type ?? 'blank', lineFlagClass(row.right)]"
-                                    :data-change="row.change">
+                                    :class="[
+                                        row.right?.type ?? 'blank',
+                                        lineFlagClass(row.right),
+                                        { 'search-current': searchIndexMap.get(row.right) === currentMatch },
+                                    ]"
+                                    :data-change="row.change"
+                                    :data-search="searchIndexMap.get(row.right)">
                                     <span class="ln">{{ row.right?.newNo ?? '' }}</span>
                                     <pre
                                         v-if="row.right"
@@ -707,8 +882,9 @@
                         v-for="(line, index) in lines"
                         :key="index"
                         class="diff-line"
-                        :class="[line.type, lineFlagClass(line)]"
-                        :data-change="changeIndexMap.get(index)">
+                        :class="[line.type, lineFlagClass(line), { 'search-current': searchIndexMap.get(line) === currentMatch }]"
+                        :data-change="changeIndexMap.get(index)"
+                        :data-search="searchIndexMap.get(line)">
                         <span class="ln">{{ line.oldNo ?? '' }}</span>
                         <span class="ln">{{ line.newNo ?? '' }}</span>
                         <!-- eslint-disable-next-line vue/no-v-html -->

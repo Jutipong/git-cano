@@ -992,6 +992,72 @@ body {
     gap: 6px;
 }
 
+.diff-search {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 3px;
+    padding: 2px;
+    background: color-mix(in srgb, var(--surface-hover) 45%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+
+/* the match-nav inside the search pill must not draw its own pill —
+   it would stack padding+border and make the group taller than its neighbours */
+.diff-search .diff-nav {
+    padding: 0;
+    background: transparent;
+    border: 0;
+}
+
+.diff-search-field {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 8px;
+    color: var(--text-muted);
+}
+
+.diff-search-field .diff-search-input {
+    width: 120px;
+    height: 25px;
+    min-width: 0;
+    padding: 0;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    font-size: 11px;
+}
+
+.diff-search-field .diff-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+.diff-line.add mark.search-hit,
+.diff-line.del mark.search-hit,
+.diff-line mark.search-hit {
+    background: color-mix(in srgb, var(--teal) 55%, transparent);
+    color: var(--text);
+    border-radius: 2px;
+}
+
+.diff-line {
+    position: relative;
+}
+
+.diff-line.search-current::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+    width: 3px;
+    background: color-mix(in srgb, var(--teal) 70%, transparent);
+}
+
 .split-hunk-separator {
     display: flex;
     box-sizing: border-box;
@@ -1425,44 +1491,48 @@ body {
     stroke-opacity: 0.9;
 }
 
-.commit-ring {
-    stroke: var(--text);
-    stroke-opacity: 0;
+.node-ring {
+    position: absolute;
+    top: 50%;
+    width: 26px;
+    height: 26px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    border: 2px solid var(--text);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
     transition:
-        stroke-opacity 0.15s ease,
-        stroke 0.15s ease,
-        filter 0.15s ease;
+        opacity 0.15s ease,
+        border-color 0.15s ease,
+        box-shadow 0.15s ease;
 }
 
-.commit-ring.selected,
-.commit-ring.drop-target {
-    stroke-opacity: 0.85;
-    stroke-width: 2;
+.node-ring.selected,
+.node-ring.drop-target {
+    opacity: 0.85;
 }
 
-.commit-ring.selected {
-    stroke: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
-    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent));
+.node-ring.selected {
+    border-color: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
+    box-shadow: 0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
 
-    stroke-linecap: round;
-    transform-box: fill-box;
-    transform-origin: center;
     animation: node-ring-pulse 2.2s ease-in-out infinite;
 }
 
 @keyframes node-ring-pulse {
     0%,
     100% {
-        transform: scale(1.05);
+        transform: translate(-50%, -50%) scale(1.05);
     }
 
     50% {
-        transform: scale(1.2);
+        transform: translate(-50%, -50%) scale(1.2);
     }
 }
 
-.commit-ring.drop-target {
-    stroke: var(--teal);
+.node-ring.drop-target {
+    border-color: var(--teal);
 }
 
 .graph-row:hover .node-avatar {
