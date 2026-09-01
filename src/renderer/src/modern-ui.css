@@ -1166,8 +1166,8 @@ body {
     /* align top with the commit-history area (.app-body has margin-top: 6px)
        so the sidebar height matches the graph height */
     margin-top: 6px;
-    /* breathing room above the first section (sync card used to provide it) */
-    padding-top: 14px;
+    /* the floating search toolbar provides the breathing room above the first card */
+    padding-top: 8px;
     background: var(--surface-0);
     border-right-color: var(--line-soft);
 }
@@ -1223,6 +1223,58 @@ body {
 /* the old footer divider — cards now provide the separation above it */
 .sidebar-bottom {
     border-top: 0;
+}
+
+/* sidebar toolbar — floats above the LOCAL BRANCHES card, outside it;
+   the search filters local/remote/tags/stashes, the button collapse/expands all.
+   Side margins match the section cards; bottom gap matches the card spacing */
+.sidebar > .sidebar-toolbar {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    margin: 0 8px 8px;
+    gap: 6px;
+}
+/* size the collapse button to the search pill so the row ends evenly */
+.sidebar > .sidebar-toolbar > .collapse-all-btn {
+    width: 26px;
+    height: 26px;
+    margin-right: 0;
+}
+.sidebar .section-search {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    min-width: 0;
+    height: 26px;
+    padding: 0 10px;
+    gap: 6px;
+    color: var(--text-muted);
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 999px;
+}
+.sidebar .section-search:focus-within {
+    border-color: var(--line);
+}
+.sidebar .section-search-input {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    color: var(--text);
+    background: transparent;
+    border: 0;
+    font-size: 11.5px;
+    outline: 0;
+}
+.sidebar .section-search-input::placeholder {
+    color: var(--text-muted);
+}
+.sidebar .section-search .search-clear {
+    flex: none;
+    font-size: 14px;
 }
 
 /* collapse/expand all sidebar sections — right edge of the top section header */

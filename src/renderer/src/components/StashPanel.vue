@@ -6,7 +6,7 @@
     import type { ToastKind } from '../stores/uiTransient'
     import type { StashEntry } from '@shared/types'
 
-    const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown> }>()
+    const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown>; filter?: string }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
 
@@ -34,6 +34,13 @@
             }
         })
     )
+
+    const filterActive = computed(() => !!props.filter?.trim())
+    const filteredRows = computed(() => {
+        const q = props.filter?.trim().toLowerCase()
+        if (!q) return stashRows.value
+        return stashRows.value.filter(row => row.text.toLowerCase().includes(q) || row.meta.toLowerCase().includes(q))
+    })
 
     async function load() {
         try {
@@ -112,14 +119,14 @@
                 </h3>
             </button>
         </div>
-        <template v-if="expanded">
+        <template v-if="expanded || filterActive">
             <div
                 v-if="stashes.length === 0"
                 class="sidebar-empty">
                 No stashes
             </div>
             <div
-                v-for="row in stashRows"
+                v-for="row in filteredRows"
                 :key="`${row.stash.hash}-${row.stash.index}`"
                 class="stash-row"
                 :class="{ selected: repoStore.selectedStash?.hash === row.stash.hash }"

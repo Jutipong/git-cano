@@ -65,6 +65,13 @@
         ui.sidebarSections.tags = target
         ui.sidebarSections.stashes = target
     }
+
+    const search = ref('')
+    const searching = computed(() => search.value.trim().length > 0)
+    const matchText = (text: string) => text.toLowerCase().includes(search.value.trim().toLowerCase())
+    const localFiltered = computed(() => local.value.filter(b => matchText(b.name)))
+    const remoteFiltered = computed(() => remote.value.filter(b => matchText(b.name)))
+    const tagsFiltered = computed(() => tags.value.filter(t => matchText(t.name)))
     const remoteExpanded = computed({
         get: () => ui.sidebarSections.remote,
         set: value => {
@@ -355,6 +362,31 @@
     <aside
         class="sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
+        <div class="sidebar-toolbar">
+            <div class="section-search">
+                <i-lucide-search
+                    width="12"
+                    height="12" />
+                <input
+                    v-model="search"
+                    class="section-search-input"
+                    type="text"
+                    placeholder="Search…"
+                    aria-label="Search sidebar" />
+                <button
+                    v-if="search"
+                    type="button"
+                    class="search-clear"
+                    aria-label="Clear search"
+                    @click="search = ''">
+                    ×
+                </button>
+            </div>
+            <CollapseAllButton
+                :all-collapsed="allSectionsCollapsed"
+                @toggle="toggleAllSections()" />
+        </div>
+
         <div
             class="sidebar-section"
             :class="{ grow: localExpanded, collapsed: !localExpanded }">
@@ -374,14 +406,11 @@
                         LOCAL BRANCHES <span class="section-count">{{ local.length }}</span>
                     </h3>
                 </button>
-                <CollapseAllButton
-                    :all-collapsed="allSectionsCollapsed"
-                    @toggle="toggleAllSections()" />
             </div>
 
-            <template v-if="localExpanded">
+            <template v-if="localExpanded || searching">
                 <div
-                    v-for="branch in local"
+                    v-for="branch in localFiltered"
                     :key="branch.name"
                     class="branch-row"
                     :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
@@ -460,14 +489,14 @@
                     </h3>
                 </button>
             </div>
-            <template v-if="remoteExpanded">
+            <template v-if="remoteExpanded || searching">
                 <div
                     v-if="remote.length === 0"
                     class="sidebar-empty">
                     Fetch a remote to see branches
                 </div>
                 <div
-                    v-for="branch in remote"
+                    v-for="branch in remoteFiltered"
                     :key="branch.name"
                     class="branch-row remote"
                     :class="{ current: isRemoteCurrent(branch.name) }"
@@ -517,14 +546,14 @@
                     </h3>
                 </button>
             </div>
-            <template v-if="tagsExpanded">
+            <template v-if="tagsExpanded || searching">
                 <div
                     v-if="tags.length === 0"
                     class="sidebar-empty">
                     No tags yet
                 </div>
                 <div
-                    v-for="tag in tags"
+                    v-for="tag in tagsFiltered"
                     :key="tag.name"
                     class="branch-row tag-row"
                     :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
@@ -558,6 +587,7 @@
 
         <StashPanel
             :repo-path="repo.path"
+            :filter="search"
             :refresh="props.refresh" />
 
         <div class="sidebar-bottom">
