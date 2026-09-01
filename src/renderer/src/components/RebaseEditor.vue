@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import CloseXIcon from './CloseXIcon.vue'
+
     import type { CommitNode, RebaseCommand } from '@shared/types'
 
     interface Entry {
@@ -112,12 +114,10 @@
                 <span class="spacer" />
                 <button
                     v-if="!pausedMessage"
-                    class="icon-btn danger"
+                    class="icon-btn danger commit-close-btn"
                     :disabled="running"
                     @click="emit('cancel')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
+                    <CloseXIcon />
                 </button>
             </div>
 

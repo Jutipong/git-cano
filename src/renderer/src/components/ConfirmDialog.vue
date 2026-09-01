@@ -119,9 +119,6 @@
                 <button
                     class="btn"
                     @click="confirmStore.settle(false)">
-                    <i-lucide-x
-                        width="13"
-                        height="13" />
                     Cancel
                 </button>
                 <button

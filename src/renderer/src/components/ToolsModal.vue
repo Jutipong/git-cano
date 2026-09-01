@@ -919,7 +919,7 @@
                                     placeholder="opencode token"
                                     autocomplete="off" />
                                 <button
-                                    class="btn success small"
+                                    class="btn small"
                                     :disabled="!aiToken.trim() || connecting"
                                     @click="connectProvider()">
                                     <i-lucide-loader-circle
@@ -1004,7 +1004,7 @@
                                     placeholder="sk-or-v1-..."
                                     autocomplete="off" />
                                 <button
-                                    class="btn success small"
+                                    class="btn small"
                                     :disabled="!aiToken.trim() || connecting"
                                     @click="connectProvider()">
                                     <i-lucide-loader-circle
@@ -1103,9 +1103,6 @@
                             class="btn small"
                             :disabled="aiTesting"
                             @click="emit('close')">
-                            <i-lucide-x
-                                width="13"
-                                height="13" />
                             Close
                         </button>
                         <button

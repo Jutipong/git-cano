@@ -6,6 +6,7 @@
 
     const originUrl = ref('')
     const hasOrigin = ref(false)
+    const loaded = ref(false)
     const saving = ref(false)
 
     async function load() {
@@ -16,6 +17,8 @@
             originUrl.value = origin?.url ?? ''
         } catch (error) {
             notify(String(error))
+        } finally {
+            loaded.value = true
         }
     }
     onMounted(load)
@@ -78,7 +81,7 @@
 
         <div class="remote-list">
             <div
-                v-if="hasOrigin"
+                v-if="loaded && hasOrigin"
                 class="remote-row">
                 <strong>origin</strong>
                 <input
@@ -88,14 +91,14 @@
                     @keydown.enter.prevent="save()" />
             </div>
             <div
-                v-else
+                v-else-if="loaded"
                 class="sidebar-empty">
                 origin is not configured yet
             </div>
         </div>
 
         <form
-            v-if="!hasOrigin"
+            v-if="loaded && !hasOrigin"
             class="remote-add origin-add"
             @submit.prevent="addOrigin()">
             <input

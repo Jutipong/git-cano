@@ -1477,7 +1477,7 @@ kbd {
 }
 .stash-create-actions {
     display: flex;
-    gap: 5px;
+    gap: 8px;
     margin-top: 6px;
 }
 .stash-row {

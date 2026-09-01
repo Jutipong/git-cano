@@ -84,9 +84,6 @@
                 <button
                     class="btn"
                     @click="promptStore.settle(null)">
-                    <i-lucide-x
-                        width="13"
-                        height="13" />
                     Cancel
                 </button>
                 <button

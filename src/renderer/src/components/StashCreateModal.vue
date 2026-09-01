@@ -2,6 +2,7 @@
     import { nextTick, useTemplateRef } from 'vue'
 
     import { useRepoStore } from '../stores/repo'
+    import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
 
@@ -69,11 +70,9 @@
                 <strong>Create stash</strong>
                 <span class="spacer" />
                 <button
-                    class="icon-btn danger"
+                    class="icon-btn danger commit-close-btn"
                     @click="emit('close')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
+                    <CloseXIcon />
                 </button>
             </div>
             <div class="tag-modal-body">

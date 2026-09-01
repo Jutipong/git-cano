@@ -664,6 +664,10 @@ body {
     background: color-mix(in srgb, var(--teal) 10%, transparent);
 }
 
+.workspace-item.active svg {
+    color: var(--teal);
+}
+
 .workspace-item-spacer {
     flex: 0 0 13px;
 }
@@ -710,25 +714,41 @@ body {
 }
 
 .workspace-add-input:focus {
-    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+    border-color: color-mix(in srgb, var(--teal) 55%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 15%, transparent);
+}
+
+.workspace-add-input.invalid {
+    border-color: color-mix(in srgb, var(--red) 55%, transparent);
+}
+
+.workspace-add-input.invalid:focus {
+    border-color: color-mix(in srgb, var(--red) 65%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 15%, transparent);
 }
 
 .workspace-add-actions {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .workspace-add-actions .btn {
-    min-width: 80px;
+    min-width: 64px;
     padding: 0 12px;
     font-weight: 600;
 }
 
 .workspace-add-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
     color: var(--red);
-    font-size: 12px;
+    font-size: 11px;
+    background: color-mix(in srgb, var(--red) 10%, transparent);
+    border-radius: 8px;
 }
 
 .workspace-row {
@@ -3350,6 +3370,12 @@ body {
     border-top: 1px solid var(--line-soft);
 }
 
+.confirm-dialog-actions .btn {
+    min-width: 78px;
+    padding: 0 12px;
+    font-weight: 600;
+}
+
 .btn.danger {
     color: var(--red);
     background: color-mix(in srgb, var(--red) 14%, transparent);
@@ -4257,7 +4283,7 @@ body {
 }
 
 .tools-body .ai-token-row .btn {
-    min-width: 104px;
+    min-width: 78px;
 }
 
 .ai-model-picker {

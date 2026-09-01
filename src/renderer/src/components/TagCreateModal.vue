@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { useRepoStore } from '../stores/repo'
+    import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { CommitNode } from '@shared/types'
@@ -78,11 +79,9 @@
                 <code class="rebase-base">{{ head }}</code>
                 <span class="spacer" />
                 <button
-                    class="icon-btn danger"
+                    class="icon-btn danger commit-close-btn"
                     @click="emit('close')">
-                    <i-lucide-x
-                        width="16"
-                        height="16" />
+                    <CloseXIcon />
                 </button>
             </div>
             <div class="tag-modal-body">

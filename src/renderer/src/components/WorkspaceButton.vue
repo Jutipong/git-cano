@@ -162,6 +162,7 @@
                     ref="nameInput"
                     v-model="newName"
                     class="workspace-add-input"
+                    :class="{ invalid: isDuplicate }"
                     type="text"
                     placeholder="Workspace name"
                     @keydown.enter.prevent="confirmAdd()"
@@ -169,15 +170,15 @@
                 <div
                     v-if="isDuplicate"
                     class="workspace-add-error">
+                    <i-lucide-alert-triangle
+                        width="12"
+                        height="12" />
                     Workspace name already exists
                 </div>
                 <div class="workspace-add-actions">
                     <button
                         class="btn small"
                         @click="resetAdd()">
-                        <i-lucide-x
-                            width="13"
-                            height="13" />
                         Cancel
                     </button>
                     <button
