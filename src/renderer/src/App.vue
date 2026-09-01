@@ -63,6 +63,13 @@
         }
     }
 
+    function selectCommit(commit: CommitNode) {
+        selectedFile.value = null
+        selectedConflict.value = null
+        selectedStash.value = null
+        selectedCommit.value = commit
+    }
+
     const SIDEBAR_MIN_WIDTH = 280
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
@@ -338,7 +345,7 @@
                                 :commits="commits"
                                 :has-more="hasMore"
                                 :commit-open="!!selectedCommit || !!selectedStash"
-                                @select-commit="selectedCommit = $event"
+                                @select-commit="selectCommit"
                                 @load-more="repoStore.loadMore()"
                                 @checkout="checkoutCommit"
                                 @create-branch="createBranchAt"
