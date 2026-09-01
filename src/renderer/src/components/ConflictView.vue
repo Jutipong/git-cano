@@ -538,9 +538,10 @@
                             height="15" />
                     </button>
                 </div>
-                <div class="conflict-header">
+                <div
+                    v-if="!loading && !blocks.length && versions && !versions.binary"
+                    class="conflict-header">
                     <button
-                        v-if="!loading && !blocks.length && versions && !versions.binary"
                         class="detail-action"
                         title="I resolved this file outside the app — stage it as resolved"
                         @click="markResolved()">
