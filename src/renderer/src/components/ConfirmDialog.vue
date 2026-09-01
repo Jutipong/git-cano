@@ -4,6 +4,8 @@
     const confirmStore = useConfirmStore()
     const confirmBtn = useTemplateRef<HTMLButtonElement>('confirmBtn')
 
+    const conflict = computed(() => confirmStore.current?.status?.kind === 'warn')
+
     function onKey(event: KeyboardEvent) {
         if (!confirmStore.current) return
         if (event.key === 'Escape') confirmStore.settle(false)
@@ -45,32 +47,48 @@
                             height="12" />
                         {{ confirmStore.current.flow.from }}
                     </span>
-                    <span class="confirm-flow-wire">
+                    <span
+                        class="confirm-flow-wire"
+                        :class="{ conflict, 'can-merge': !conflict }">
                         <svg
-                            viewBox="0 0 100 26"
+                            viewBox="0 0 100 2"
                             preserveAspectRatio="none"
                             aria-hidden="true">
-                            <path
-                                class="confirm-flow-lane-from"
-                                d="M2 6 C 36 6 42 20 68 20"
-                                vector-effect="non-scaling-stroke" />
-                            <path
-                                class="confirm-flow-lane-to"
-                                d="M2 20 H 88"
-                                vector-effect="non-scaling-stroke" />
-                            <circle
-                                class="confirm-flow-dot"
-                                cx="72"
-                                cy="20"
-                                r="3" />
-                            <path
-                                class="confirm-flow-lane-to"
-                                d="M84 15 L 91 20 L 84 25"
-                                vector-effect="non-scaling-stroke" />
+                            <template v-if="!conflict">
+                                <path
+                                    class="confirm-flow-lane"
+                                    d="M1 1 H 99"
+                                    vector-effect="non-scaling-stroke" />
+                            </template>
+                            <template v-else>
+                                <path
+                                    class="confirm-flow-lane"
+                                    d="M1 1 H 44"
+                                    vector-effect="non-scaling-stroke" />
+                                <path
+                                    class="confirm-flow-blocked"
+                                    d="M56 1 H 99"
+                                    vector-effect="non-scaling-stroke" />
+                            </template>
                         </svg>
-                        <em>{{ confirmStore.current.flow.label ?? 'merge into' }}</em>
+                        <span
+                            v-if="!conflict"
+                            class="confirm-flow-arrow"
+                            aria-hidden="true" />
+                        <svg
+                            v-else
+                            class="confirm-flow-clash"
+                            viewBox="0 0 28 16"
+                            aria-hidden="true">
+                            <path d="M1 8 H 9" />
+                            <path d="M9 4 L 13 8 L 9 12" />
+                            <path d="M27 8 H 19" />
+                            <path d="M19 4 L 15 8 L 19 12" />
+                        </svg>
                     </span>
-                    <span class="confirm-flow-chip target">
+                    <span
+                        class="confirm-flow-chip target"
+                        :class="{ conflict }">
                         <i-lucide-git-branch
                             width="12"
                             height="12" />

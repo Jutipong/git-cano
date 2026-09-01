@@ -2896,58 +2896,96 @@ body {
 }
 
 .confirm-flow-chip.target {
-    border-color: color-mix(in srgb, var(--blue) 55%, transparent);
+    color: var(--green);
+    border-color: color-mix(in srgb, var(--green) 55%, transparent);
+    background: color-mix(in srgb, var(--green) 10%, var(--surface-1));
 }
 
 .confirm-flow-chip.target svg {
-    color: var(--blue);
+    color: var(--green);
+}
+
+.confirm-flow-chip.target.conflict {
+    color: var(--orange);
+    border-color: color-mix(in srgb, var(--orange) 55%, transparent);
+    background: color-mix(in srgb, var(--orange) 10%, var(--surface-1));
+}
+
+.confirm-flow-chip.target.conflict svg {
+    color: var(--orange);
 }
 
 .confirm-flow-wire {
     position: relative;
     display: flex;
     flex: 1;
-    flex-direction: column;
     align-items: center;
-    min-width: 64px;
+    min-width: 56px;
+    height: 16px;
 }
 
 .confirm-flow-wire svg {
+    display: block;
     width: 100%;
-    height: 26px;
+    height: 2px;
     overflow: visible;
 }
 
 .confirm-flow-wire path {
     fill: none;
-    stroke: var(--text-secondary);
+    stroke: var(--blue);
     stroke-width: 1.5;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
 
-.confirm-flow-wire .confirm-flow-lane-from {
-    stroke: var(--text-secondary);
-    stroke-dasharray: 3 3;
+.confirm-flow-wire .confirm-flow-lane {
+    opacity: 0.8;
 }
 
-.confirm-flow-wire .confirm-flow-lane-to {
-    stroke: var(--blue);
+.confirm-flow-wire .confirm-flow-arrow {
+    position: absolute;
+    right: 0;
+    width: 8px;
+    height: 8px;
+    border-top: 1.5px solid var(--blue);
+    border-right: 1.5px solid var(--blue);
+    transform: translate(-1px, 0) rotate(45deg);
 }
 
-.confirm-flow-wire .confirm-flow-dot {
-    fill: var(--blue);
+.confirm-flow-wire.can-merge .confirm-flow-lane {
+    stroke: var(--green);
 }
 
-.confirm-flow-wire em {
-    margin-top: 2px;
-    color: var(--text-secondary);
-    font-size: 9px;
-    font-style: normal;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    white-space: nowrap;
+.confirm-flow-wire.can-merge .confirm-flow-arrow {
+    border-color: var(--green);
+}
+
+.confirm-flow-wire.conflict .confirm-flow-lane {
+    stroke: var(--orange);
+    opacity: 1;
+}
+
+.confirm-flow-wire.conflict .confirm-flow-blocked {
+    stroke: var(--orange);
+    stroke-dasharray: 4 4;
+    opacity: 0.45;
+}
+
+.confirm-flow-wire .confirm-flow-clash {
+    position: absolute;
+    left: 50%;
+    width: 28px;
+    height: 16px;
+    transform: translateX(-50%);
+}
+
+.confirm-flow-clash path {
+    fill: none;
+    stroke: var(--orange);
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .confirm-status {
