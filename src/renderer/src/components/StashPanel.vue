@@ -119,7 +119,9 @@
                 </h3>
             </button>
         </div>
-        <template v-if="expanded || filterActive">
+        <div
+            v-if="expanded || filterActive"
+            class="section-body">
             <div
                 v-if="stashes.length === 0"
                 class="sidebar-empty">
@@ -150,7 +152,7 @@
                     </button>
                 </span>
             </div>
-        </template>
+        </div>
         <StashContextMenu
             :menu="menu"
             @close="menu = null"

@@ -408,65 +408,67 @@
                 </button>
             </div>
 
-            <template v-if="localExpanded || searching">
-                <div
-                    v-for="branch in localFiltered"
-                    :key="branch.name"
-                    class="branch-row"
-                    :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
-                    draggable="true"
-                    @click="focusBranch(branch)"
-                    @dblclick="!branch.current && checkoutBranch(branch.name)"
-                    :title="
-                        branch.detached
-                            ? 'Detached HEAD — click to locate this commit'
-                            : branch.current
-                              ? 'Current branch'
-                              : 'Click to locate · Double-click to checkout'
-                    "
-                    @contextmenu.prevent="openLocalBranchContextMenu(branch, $event)"
-                    @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
-                    @dragover="onDragOver(branch.name, $event)"
-                    @dragleave="dropTarget = null"
-                    @drop="handleDrop(branch.name, $event)">
-                    <i-lucide-git-branch
-                        width="14"
-                        height="14" />
-                    <span class="branch-name">
-                        <template v-if="branch.detached">
-                            <span class="branch-detached">HEAD</span>
-                            <span class="branch-detached-hash">{{ branch.name }}</span>
-                        </template>
-                        <template v-else>{{ branch.name }}</template>
-                    </span>
-                    <span
-                        v-if="branch.ahead || branch.behind"
-                        class="track-badge">
+            <div class="section-body">
+                <template v-if="localExpanded || searching">
+                    <div
+                        v-for="branch in localFiltered"
+                        :key="branch.name"
+                        class="branch-row"
+                        :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
+                        draggable="true"
+                        @click="focusBranch(branch)"
+                        @dblclick="!branch.current && checkoutBranch(branch.name)"
+                        :title="
+                            branch.detached
+                                ? 'Detached HEAD — click to locate this commit'
+                                : branch.current
+                                  ? 'Current branch'
+                                  : 'Click to locate · Double-click to checkout'
+                        "
+                        @contextmenu.prevent="openLocalBranchContextMenu(branch, $event)"
+                        @dragstart="$event.dataTransfer?.setData('text/plain', `branch:${branch.name}`)"
+                        @dragover="onDragOver(branch.name, $event)"
+                        @dragleave="dropTarget = null"
+                        @drop="handleDrop(branch.name, $event)">
+                        <i-lucide-git-branch
+                            width="14"
+                            height="14" />
+                        <span class="branch-name">
+                            <template v-if="branch.detached">
+                                <span class="branch-detached">HEAD</span>
+                                <span class="branch-detached-hash">{{ branch.name }}</span>
+                            </template>
+                            <template v-else>{{ branch.name }}</template>
+                        </span>
                         <span
-                            v-if="branch.ahead"
-                            class="track-ahead"
-                            >↑{{ branch.ahead }}</span
-                        >
+                            v-if="branch.ahead || branch.behind"
+                            class="track-badge">
+                            <span
+                                v-if="branch.ahead"
+                                class="track-ahead"
+                                >↑{{ branch.ahead }}</span
+                            >
+                            <span
+                                v-if="branch.behind"
+                                class="track-behind"
+                                >↓{{ branch.behind }}</span
+                            >
+                        </span>
                         <span
-                            v-if="branch.behind"
-                            class="track-behind"
-                            >↓{{ branch.behind }}</span
-                        >
-                    </span>
-                    <span
-                        v-if="!branch.current"
-                        class="row-actions">
-                        <button
-                            class="icon-btn danger"
-                            title="Delete branch"
-                            @click.stop="deleteBranch(branch.name)">
-                            <i-lucide-trash2
-                                width="14"
-                                height="14" />
-                        </button>
-                    </span>
-                </div>
-            </template>
+                            v-if="!branch.current"
+                            class="row-actions">
+                            <button
+                                class="icon-btn danger"
+                                title="Delete branch"
+                                @click.stop="deleteBranch(branch.name)">
+                                <i-lucide-trash2
+                                    width="14"
+                                    height="14" />
+                            </button>
+                        </span>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <div
@@ -489,41 +491,43 @@
                     </h3>
                 </button>
             </div>
-            <template v-if="remoteExpanded || searching">
-                <div
-                    v-if="remote.length === 0"
-                    class="sidebar-empty">
-                    Fetch a remote to see branches
-                </div>
-                <div
-                    v-for="branch in remoteFiltered"
-                    :key="branch.name"
-                    class="branch-row remote"
-                    :class="{ current: isRemoteCurrent(branch.name) }"
-                    @click="focusBranch(branch)"
-                    @dblclick="checkoutRemote(branch.name)"
-                    @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
-                    :title="
-                        isRemoteCurrent(branch.name)
-                            ? 'Already checked out locally'
-                            : 'Click to locate · Double-click to checkout · Right-click for options'
-                    ">
-                    <i-lucide-globe2
-                        width="14"
-                        height="14" />
-                    <span class="branch-name">{{ stripRemote(branch.name) }}</span>
-                    <span class="row-actions">
-                        <button
-                            class="icon-btn danger"
-                            title="Delete remote branch"
-                            @click.stop="deleteRemoteBranch(branch.name)">
-                            <i-lucide-trash2
-                                width="14"
-                                height="14" />
-                        </button>
-                    </span>
-                </div>
-            </template>
+            <div class="section-body">
+                <template v-if="remoteExpanded || searching">
+                    <div
+                        v-if="remote.length === 0"
+                        class="sidebar-empty">
+                        Fetch a remote to see branches
+                    </div>
+                    <div
+                        v-for="branch in remoteFiltered"
+                        :key="branch.name"
+                        class="branch-row remote"
+                        :class="{ current: isRemoteCurrent(branch.name) }"
+                        @click="focusBranch(branch)"
+                        @dblclick="checkoutRemote(branch.name)"
+                        @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
+                        :title="
+                            isRemoteCurrent(branch.name)
+                                ? 'Already checked out locally'
+                                : 'Click to locate · Double-click to checkout · Right-click for options'
+                        ">
+                        <i-lucide-globe2
+                            width="14"
+                            height="14" />
+                        <span class="branch-name">{{ stripRemote(branch.name) }}</span>
+                        <span class="row-actions">
+                            <button
+                                class="icon-btn danger"
+                                title="Delete remote branch"
+                                @click.stop="deleteRemoteBranch(branch.name)">
+                                <i-lucide-trash2
+                                    width="14"
+                                    height="14" />
+                            </button>
+                        </span>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <div
@@ -546,43 +550,45 @@
                     </h3>
                 </button>
             </div>
-            <template v-if="tagsExpanded || searching">
-                <div
-                    v-if="tags.length === 0"
-                    class="sidebar-empty">
-                    No tags yet
-                </div>
-                <div
-                    v-for="tag in tagsFiltered"
-                    :key="tag.name"
-                    class="branch-row tag-row"
-                    :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
-                    @click="focusTag(tag)"
-                    @contextmenu.prevent="openTagMenu(tag, $event)">
-                    <i-lucide-tag
-                        width="13"
-                        height="13" />
-                    <i-lucide-loader-2
-                        v-if="pendingRemoteTag === tag.name"
-                        class="tag-remote-ic spinning"
-                        title="Working…"
-                        width="14"
-                        height="14" />
-                    <i-lucide-cloud
-                        v-else-if="remoteTagNames.includes(tag.name)"
-                        class="tag-remote-ic"
-                        title="On remote"
-                        width="14"
-                        height="14" />
-                    <i-lucide-cloud-off
-                        v-else-if="hasRemote"
-                        class="tag-remote-ic off"
-                        title="Not pushed to remote"
-                        width="14"
-                        height="14" />
-                    <span class="branch-name">{{ tag.name }}</span>
-                </div>
-            </template>
+            <div class="section-body">
+                <template v-if="tagsExpanded || searching">
+                    <div
+                        v-if="tags.length === 0"
+                        class="sidebar-empty">
+                        No tags yet
+                    </div>
+                    <div
+                        v-for="tag in tagsFiltered"
+                        :key="tag.name"
+                        class="branch-row tag-row"
+                        :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
+                        @click="focusTag(tag)"
+                        @contextmenu.prevent="openTagMenu(tag, $event)">
+                        <i-lucide-tag
+                            width="13"
+                            height="13" />
+                        <i-lucide-loader-2
+                            v-if="pendingRemoteTag === tag.name"
+                            class="tag-remote-ic spinning"
+                            title="Working…"
+                            width="14"
+                            height="14" />
+                        <i-lucide-cloud
+                            v-else-if="remoteTagNames.includes(tag.name)"
+                            class="tag-remote-ic"
+                            title="On remote"
+                            width="14"
+                            height="14" />
+                        <i-lucide-cloud-off
+                            v-else-if="hasRemote"
+                            class="tag-remote-ic off"
+                            title="Not pushed to remote"
+                            width="14"
+                            height="14" />
+                        <span class="branch-name">{{ tag.name }}</span>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <StashPanel

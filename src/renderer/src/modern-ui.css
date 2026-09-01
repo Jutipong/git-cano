@@ -1172,18 +1172,19 @@ body {
     border-right-color: var(--line-soft);
 }
 
-/* --- Sidebar proportions: sections size to content; expanded lists take the rest --- */
+/* --- Sidebar proportions: sections size to content; expanded lists take the rest.
+       Header sits OUTSIDE the scroll area: the card is a flex column and only
+       .section-body scrolls, so the scrollbar/rows never reach the header --- */
 .sidebar > .sidebar-section {
+    display: flex;
+    flex-direction: column;
     flex: 0 0 auto;
     min-height: 0;
     margin: 0 8px 8px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     background: var(--surface-1);
     border: 1px solid var(--line-soft);
     border-radius: 12px;
-    scrollbar-width: thin;
-    scrollbar-color: var(--surface-3) transparent;
 }
 /* expanded list sections absorb the leftover space instead of leaving a void;
    min-height keeps the header + a few rows visible when several lists are open */
@@ -1199,18 +1200,23 @@ body {
     border-bottom: 0;
 }
 
-/* keep section headers pinned while the list under them scrolls;
-   min-height evens out header height across sections (right-side buttons
-   differ: collapse-all 20px, remote settings 25px, tags/stashes none) */
+/* section header is fixed — only the list under it scrolls */
 .sidebar > .sidebar-section > .section-header {
-    position: sticky;
-    top: 0;
-    z-index: 1;
+    flex: 0 0 auto;
     min-height: 36px;
     padding: 7px 10px 4px 15px;
     align-items: center;
     background: var(--surface-2);
     border-bottom: 1px solid var(--line-soft);
+}
+/* the scrollable list under a fixed header */
+.sidebar > .sidebar-section > .section-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-3) transparent;
 }
 /* base styles give remote/stash sections a container padding-top (leaves a gap
    above the sticky header where scrolled rows stay visible) and a border-top
@@ -1281,14 +1287,14 @@ body {
 .section-header > .collapse-all-btn {
     margin-right: 0;
 }
-.sidebar > .sidebar-section::-webkit-scrollbar {
+.sidebar > .sidebar-section > .section-body::-webkit-scrollbar {
     width: 6px;
 }
-.sidebar > .sidebar-section::-webkit-scrollbar-thumb {
+.sidebar > .sidebar-section > .section-body::-webkit-scrollbar-thumb {
     background: var(--surface-3);
     border-radius: 999px;
 }
-.sidebar > .sidebar-section::-webkit-scrollbar-track {
+.sidebar > .sidebar-section > .section-body::-webkit-scrollbar-track {
     background: transparent;
 }
 
