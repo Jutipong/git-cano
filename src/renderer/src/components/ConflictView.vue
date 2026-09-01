@@ -316,29 +316,37 @@
         theirs: highlightDiffLines(paneLines.value.theirs, props.file?.path ?? '', (line, highlight) => highlight(line.text.slice(1))),
     }))
 
+    /** Where a line sits inside its block — drives the GitKraken-style rounded block outline. */
+    type BlockEdge = 'top' | 'bottom' | 'only'
+
     /**
      * Per-line block metadata precomputed from block geometry (matchIdx + lengths). Deliberately never reads the per-line picks, so
      * toggling a checkbox does NOT re-run this — per-line template work stays O(1) instead of O(blocks).
      */
-    const paneMeta = computed<Record<Side, { block: number[]; start: boolean[]; lineInBlock: number[] }>>(() => {
-        const build = (side: Side, lines: DiffLine[]) => {
-            const block = Array.from<number>({ length: lines.length }).fill(-1)
-            const start = Array.from<boolean>({ length: lines.length }).fill(false)
-            const lineInBlock = Array.from<number>({ length: lines.length }).fill(-1)
-            for (let bi = 0; bi < blocks.value.length; bi++) {
-                const b = blocks.value[bi]
-                const from = b.matchIdx[side]
-                if (from < 0) continue
-                for (let i = from; i < from + b[side].length && i < block.length; i++) {
-                    block[i] = bi
-                    lineInBlock[i] = i - from
+    const paneMeta = computed<Record<Side, { block: number[]; start: boolean[]; lineInBlock: number[]; edge: (BlockEdge | null)[] }>>(
+        () => {
+            const build = (side: Side, lines: DiffLine[]) => {
+                const block = Array.from<number>({ length: lines.length }).fill(-1)
+                const start = Array.from<boolean>({ length: lines.length }).fill(false)
+                const lineInBlock = Array.from<number>({ length: lines.length }).fill(-1)
+                const edge = Array.from<BlockEdge | null>({ length: lines.length }).fill(null)
+                for (let bi = 0; bi < blocks.value.length; bi++) {
+                    const b = blocks.value[bi]
+                    const from = b.matchIdx[side]
+                    if (from < 0) continue
+                    for (let i = from; i < from + b[side].length && i < block.length; i++) {
+                        block[i] = bi
+                        lineInBlock[i] = i - from
+                        if (i === from) edge[i] = b[side].length === 1 ? 'only' : 'top'
+                        else if (i === from + b[side].length - 1) edge[i] = 'bottom'
+                    }
+                    if (from < start.length) start[from] = true
                 }
-                if (from < start.length) start[from] = true
+                return { block, start, lineInBlock, edge }
             }
-            return { block, start, lineInBlock }
+            return { ours: build('ours', paneLines.value.ours), theirs: build('theirs', paneLines.value.theirs) }
         }
-        return { ours: build('ours', paneLines.value.ours), theirs: build('theirs', paneLines.value.theirs) }
-    })
+    )
 
     const panes = computed(() => [
         {

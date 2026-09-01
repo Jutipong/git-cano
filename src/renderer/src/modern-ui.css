@@ -4459,6 +4459,57 @@ body {
     background: color-mix(in srgb, var(--yellow) 30%, transparent);
 }
 
+/* GitKraken-style rounded outline framing each conflicted block (side-colored) */
+
+.conflict-pane .diff-line.hl.blk-top {
+    border-top: 1.5px solid color-mix(in srgb, var(--blue) 70%, transparent);
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+}
+
+.conflict-pane.theirs .diff-line.hl.blk-top {
+    border-top-color: color-mix(in srgb, var(--yellow) 80%, transparent);
+}
+
+.conflict-pane .diff-line.hl.blk-bottom {
+    border-bottom: 1.5px solid color-mix(in srgb, var(--blue) 70%, transparent);
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+}
+
+.conflict-pane.theirs .diff-line.hl.blk-bottom {
+    border-bottom-color: color-mix(in srgb, var(--yellow) 80%, transparent);
+}
+
+/* "Use <side>" pill on the top edge of a block — one click picks the whole side */
+
+.block-use-btn {
+    position: absolute;
+    top: -1px;
+    right: 6px;
+    z-index: 1;
+    padding: 1px 8px;
+    color: var(--text-secondary);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.block-use-btn:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+}
+
+.conflict-pane.ours .block-use-btn:hover {
+    border-color: color-mix(in srgb, var(--blue) 70%, transparent);
+}
+
+.conflict-pane.theirs .block-use-btn:hover {
+    border-color: color-mix(in srgb, var(--yellow) 80%, transparent);
+}
+
 .conflict-pane .diff-line .ck {
     display: inline-flex;
     flex: none;
@@ -4485,16 +4536,12 @@ body {
     border-color: var(--text-muted);
 }
 
-.conflict-pane.ours .conflict-check.picked {
-    color: #fff;
-    background: var(--blue);
-    border-color: var(--blue);
-}
+/* picked ✓ = solid green on both sides (GitKraken-style, per user preference) */
 
-.conflict-pane.theirs .conflict-check.picked {
-    color: #1c1c1c;
-    background: var(--yellow);
-    border-color: var(--yellow);
+.conflict-pane .conflict-check.picked {
+    color: #fff;
+    background: var(--green);
+    border-color: var(--green);
 }
 
 /* navigation strip between panes and output */
