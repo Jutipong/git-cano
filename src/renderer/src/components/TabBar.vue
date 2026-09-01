@@ -52,8 +52,10 @@
         if (syncBusy.value) return
         syncBusy.value = label
         try {
-            await uiTransient.withBusy(fn, `${label}ing…`)
-            await props.refresh()
+            await uiTransient.withBusy(async () => {
+                await fn()
+                await props.refresh()
+            }, `${label}ing…`)
             notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')

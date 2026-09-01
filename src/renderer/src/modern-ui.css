@@ -156,17 +156,6 @@ body {
     min-height: 0;
 }
 
-/* covers sidebar + graph + right pane while a tab's repo data is still loading */
-.repo-loading-overlay {
-    position: absolute;
-    inset: 0;
-    z-index: 40;
-    display: grid;
-    place-items: center;
-    background: color-mix(in srgb, var(--canvas) 65%, transparent);
-    cursor: wait;
-}
-
 .app-main {
     display: flex;
     flex-direction: column;

@@ -227,8 +227,10 @@
 
     async function run(label: string, fn: () => Promise<unknown>, busyLabel = 'Working…') {
         try {
-            await uiTransient.withBusy(fn, busyLabel)
-            await repoStore.refresh()
+            await uiTransient.withBusy(async () => {
+                await fn()
+                await repoStore.refresh()
+            }, busyLabel)
             uiTransient.notify(label, 'success')
         } catch (error) {
             uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
@@ -320,7 +322,7 @@
                     @mousedown="event => beginResize('left', event)" />
                 <div
                     v-if="repoStore.loadingRepo"
-                    class="repo-loading-overlay">
+                    class="busy-overlay">
                     <div class="busy-card">
                         <i-lucide-loader-circle
                             class="spinning"

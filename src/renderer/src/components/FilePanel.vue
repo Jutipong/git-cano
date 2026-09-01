@@ -274,9 +274,11 @@
         if (pending.value) return false
         pending.value = true
         try {
-            await uiTransient.withBusy(fn, busyLabel)
-            await props.refresh()
-            await loadAllFiles()
+            await uiTransient.withBusy(async () => {
+                await fn()
+                await props.refresh()
+                await loadAllFiles()
+            }, busyLabel)
             if (ok) notify(ok, 'success')
             return true
         } catch (error) {

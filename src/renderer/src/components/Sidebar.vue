@@ -114,9 +114,11 @@
 
     async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
-            await uiTransient.withBusy(fn, busyLabel)
-            await props.refresh()
-            await loadAll()
+            await uiTransient.withBusy(async () => {
+                await fn()
+                await props.refresh()
+                await loadAll()
+            }, busyLabel)
             notify(ok, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
