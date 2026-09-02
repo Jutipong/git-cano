@@ -1683,6 +1683,15 @@ body {
     background: color-mix(in srgb, var(--red) 14%, transparent);
 }
 
+.file-view-controls .refresh-btn {
+    color: var(--orange);
+}
+
+.file-view-controls .refresh-btn:hover {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 15%, transparent);
+}
+
 .panel-heading.commit-mode {
     background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
 }
@@ -2034,8 +2043,8 @@ body {
 .file-view-controls {
     display: inline-flex;
     align-items: center;
-    height: 28px;
-    padding: 2px;
+    height: 32px;
+    padding: 3px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
@@ -2045,8 +2054,8 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 25px;
-    height: 24px;
+    width: 29px;
+    height: 26px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -2133,7 +2142,7 @@ body {
 
 .file-controls-divider {
     width: 1px;
-    height: 18px;
+    height: 20px;
     margin: 0 6px;
     background: var(--line-soft);
 }

@@ -478,17 +478,6 @@
                     height="16" /><strong>{{ isDetails ? (mode === 'stash' ? 'Stash Changes' : 'Committed History') : 'Changes' }}</strong>
             </div>
             <div class="panel-heading-side">
-                <button
-                    v-if="mode === 'workdir'"
-                    class="view-toggle refresh-btn"
-                    title="Refresh changes"
-                    :disabled="pending"
-                    @click="refreshPanel()">
-                    <i-lucide-refresh-cw
-                        :class="{ spinning: pending }"
-                        width="14"
-                        height="14" />
-                </button>
                 <div class="file-view-controls">
                     <button
                         class="file-mode-btn"
@@ -514,6 +503,19 @@
                             width="15"
                             height="15" />
                     </button>
+                    <template v-if="mode === 'workdir'">
+                        <span class="file-controls-divider" />
+                        <button
+                            class="file-mode-btn refresh-btn"
+                            title="Refresh changes"
+                            :disabled="pending"
+                            @click="refreshPanel()">
+                            <i-lucide-refresh-cw
+                                :class="{ spinning: pending }"
+                                width="15"
+                                height="15" />
+                        </button>
+                    </template>
                     <template v-if="isDetails">
                         <span class="file-controls-divider" />
                         <button
