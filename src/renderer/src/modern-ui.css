@@ -1407,6 +1407,7 @@ body {
 }
 
 .branch-row.current {
+    border-left-color: var(--green);
     background: color-mix(in srgb, var(--green) 16%, var(--surface-1));
 }
 
@@ -1416,6 +1417,7 @@ body {
 
 .branch-row.current .branch-name {
     font-weight: 600;
+    color: var(--green);
 }
 
 .branch-row .branch-detached {
