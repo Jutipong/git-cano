@@ -25,6 +25,7 @@
     "devDependencies": {
         "@iconify-json/clarity": "^1.2.4",
         "@iconify-json/fluent-emoji-flat": "^1.2.6",
+        "@iconify-json/icon-park-outline": "^1.2.4",
         "@iconify-json/lucide": "^1.2.128",
         "@iconify-json/mage": "^1.2.4",
         "@iconify-json/simple-icons": "^1.2.94",

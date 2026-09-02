@@ -468,13 +468,10 @@
             class="panel-heading"
             :class="{ 'commit-mode': isDetails }">
             <div class="panel-heading-title">
-                <button
+                <i-icon-park-outline-change
                     v-if="isDetails"
-                    class="icon-btn danger commit-close-btn"
-                    title="Close details (show working directory)"
-                    @click="emit('close-commit')">
-                    <CloseXIcon />
-                </button>
+                    width="16"
+                    height="16" />
                 <i-lucide-file-diff
                     v-else
                     width="16"
@@ -518,6 +515,13 @@
                             height="15" />
                     </button>
                 </div>
+                <button
+                    v-if="isDetails"
+                    class="icon-btn danger commit-close-btn"
+                    title="Close details (show working directory)"
+                    @click="emit('close-commit')">
+                    <CloseXIcon />
+                </button>
             </div>
         </div>
 

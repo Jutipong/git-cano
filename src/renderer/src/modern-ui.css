@@ -1672,12 +1672,11 @@ body {
     font-weight: 650;
 }
 
-.panel-heading-title .commit-close-btn {
-    margin-right: 4px;
+.panel-heading-side .commit-close-btn {
     color: var(--red);
 }
 
-.panel-heading-title .commit-close-btn svg {
+.panel-heading-side .commit-close-btn svg {
     color: var(--red);
 }
 

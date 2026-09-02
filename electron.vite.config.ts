@@ -67,7 +67,14 @@ export default defineConfig({
                 resolvers: [
                     IconsResolver({
                         prefix: 'i',
-                        enabledCollections: ['lucide', 'fluent-emoji-flat', 'streamline-flex-color', 'mage', 'clarity'],
+                        enabledCollections: [
+                            'lucide',
+                            'fluent-emoji-flat',
+                            'streamline-flex-color',
+                            'mage',
+                            'clarity',
+                            'icon-park-outline',
+                        ],
                     }),
                 ],
             }),

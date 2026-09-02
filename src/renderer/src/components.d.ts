@@ -28,6 +28,7 @@ declare module 'vue' {
     GraphView: typeof import('./components/GraphView.vue')['default']
     IClarityCollapseLine: typeof import('~icons/clarity/collapse-line')['default']
     IFluentEmojiFlatRobot: typeof import('~icons/fluent-emoji-flat/robot')['default']
+    IIconParkOutlineChange: typeof import('~icons/icon-park-outline/change')['default']
     ILucideAlertTriangle: typeof import('~icons/lucide/alert-triangle')['default']
     ILucideArchive: typeof import('~icons/lucide/archive')['default']
     ILucideArrowDown: typeof import('~icons/lucide/arrow-down')['default']

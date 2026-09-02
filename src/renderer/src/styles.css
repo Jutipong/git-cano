@@ -940,7 +940,7 @@ kbd {
 .panel-heading-title svg {
     color: var(--teal);
 }
-.panel-heading-title .commit-close-btn {
+.panel-heading-side .commit-close-btn {
     margin-left: 0;
 }
 .panel-count {
