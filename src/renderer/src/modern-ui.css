@@ -1594,7 +1594,7 @@ body {
 }
 
 .busy-card svg {
-    color: var(--green);
+    color: var(--orange);
 }
 
 .graph-row {
@@ -2443,16 +2443,54 @@ body {
 }
 
 .busy-card {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 9px;
     padding: 10px 16px;
     border-radius: 12px;
     color: var(--text-secondary);
-    background: color-mix(in srgb, var(--green) 8%, var(--surface-2));
-    border: 1px solid color-mix(in srgb, var(--green) 35%, var(--line));
+    background: color-mix(in srgb, var(--orange) 4%, var(--surface-2));
+    border: 1px solid var(--line);
     box-shadow: 0 8px 24px var(--shadow);
     font-size: 14px;
+}
+
+@property --busy-spin {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+.busy-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: conic-gradient(
+        from var(--busy-spin),
+        transparent 0%,
+        transparent 55%,
+        color-mix(in srgb, var(--orange) 90%, transparent) 75%,
+        transparent 95%
+    );
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    pointer-events: none;
+    animation: busy-spin 1.4s linear infinite;
+}
+
+@keyframes busy-spin {
+    to {
+        --busy-spin: 360deg;
+    }
 }
 
 .btn.success:disabled {
