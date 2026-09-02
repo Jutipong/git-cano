@@ -133,8 +133,14 @@
         const unwatch = window.api.onRepoChanged(debouncedRefresh)
         onUnmounted(unwatch)
 
-        window.addEventListener('focus', debouncedRefresh)
-        onUnmounted(() => window.removeEventListener('focus', debouncedRefresh))
+        // Window focus fires often (alt-tab) — use the light status-only refresh (1 spawn) and
+        // escalate to a full refresh only when something actually changed. Real git activity
+        // still arrives via onRepoChanged (debouncedRefresh, full refresh below).
+        const onFocus = () => {
+            if (repoStore.repo) void repoStore.refreshStatusOnly()
+        }
+        window.addEventListener('focus', onFocus)
+        onUnmounted(() => window.removeEventListener('focus', onFocus))
 
         startAutoRefresh()
         watch(() => ui.refreshInterval, startAutoRefresh)

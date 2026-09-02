@@ -1,4 +1,4 @@
-export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'dark-for-windows'
+export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon'
 
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 
@@ -61,10 +61,9 @@ export interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
-    { value: 'dark', label: 'Dark', description: 'Simple Dark palette', icon: 'moon' },
+    { value: 'dark', label: 'Dark', description: 'Deep navy with vivid blue accents', icon: 'moon' },
     { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon' },
     { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon' },
-    { value: 'dark-for-windows', label: 'Dark for Windows', description: 'Dark Neon clone with vivid Windows 11 accents', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
 ]
 
@@ -74,13 +73,7 @@ export const useUiStore = defineStore(
         const theme = ref<Theme>(DEFAULT_THEME)
         watchEffect(() => {
             const savedTheme = theme.value as string
-            if (
-                savedTheme !== 'dark' &&
-                savedTheme !== 'light' &&
-                savedTheme !== 'dark-modern' &&
-                savedTheme !== 'dark-neon' &&
-                savedTheme !== 'dark-for-windows'
-            )
+            if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern' && savedTheme !== 'dark-neon')
                 theme.value = DEFAULT_THEME
         })
         const sidebarWidth = ref(280)
@@ -161,11 +154,14 @@ export const useUiStore = defineStore(
             repoTabColors.value = next
         }
 
-        function resetGeneral() {
+        function resetAppearance() {
             theme.value = DEFAULT_THEME
-            refreshInterval.value = DEFAULT_REFRESH_INTERVAL
             fontSize.value = DEFAULT_FONT_SIZE
             zoom.value = DEFAULT_ZOOM
+        }
+
+        function resetGeneral() {
+            refreshInterval.value = DEFAULT_REFRESH_INTERVAL
         }
 
         watchEffect(() => {
@@ -203,6 +199,7 @@ export const useUiStore = defineStore(
             commitDateFormat,
             toggleSection,
             resetCommitColumns,
+            resetAppearance,
             resetGeneral,
             setTheme,
             setRepoTabColor,

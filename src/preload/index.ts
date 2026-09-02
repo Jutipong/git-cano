@@ -43,8 +43,14 @@ const api = {
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
     getVersion: (): Promise<string> => call('app:getVersion'),
+    getStatusAccelerators: (): Promise<boolean> => call('app:getStatusAccelerators'),
+    setStatusAccelerators: (enabled: boolean): Promise<boolean> => call('app:setStatusAccelerators', enabled),
+    getDefaultOpenDir: (): Promise<string> => call('app:getDefaultOpenDir'),
+    setDefaultOpenDir: (dir: string): Promise<boolean> => call('app:setDefaultOpenDir', dir),
     status: (): Promise<RepoStatus> => call('repo:status'),
     log: (limit?: number): Promise<CommitNode[]> => call('repo:log', limit),
+    logCached: (limit?: number): Promise<CommitNode[] | null> => call('repo:logCached', limit),
+    logPage: (offset: number, limit: number): Promise<CommitNode[]> => call('repo:logPage', offset, limit),
     commitDetails: (hash: string): Promise<CommitDetails> => call('commit:details', hash),
     revertCommit: (hash: string): Promise<void> => call('commit:revert', hash),
     checkoutCommit: (hash: string): Promise<void> => call('commit:checkout', hash),
@@ -88,6 +94,7 @@ const api = {
     lastCommitMessage: (): Promise<string> => call('commit:lastMessage'),
 
     branches: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> => call('branch:list'),
+    branchesCached: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] } | null> => call('branch:cached'),
     createBranch: (name: string, checkout: boolean, startPoint?: string): Promise<void> =>
         call('branch:create', name, checkout, startPoint),
     checkout: (ref: string): Promise<void> => call('branch:checkout', ref),

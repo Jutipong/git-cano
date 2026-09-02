@@ -32,6 +32,11 @@ import {
     getCommitDetails,
     getDiff,
     getLog,
+    getLogPage,
+    getCachedLog,
+    getCachedBranches,
+    getStatusAccelerators,
+    setStatusAccelerators,
     getStatus,
     hasRemote,
     isOpen,
@@ -250,13 +255,57 @@ ipcMain.on('app:log', (_e, level: string, message: unknown) => {
     log(safeLevel, 'renderer', summarize(message))
 })
 
+/** Main-process app settings (currently: the opt-in Windows status accelerators + the default folder-picker directory). */
+interface AppSettings {
+    statusAccelerators?: boolean
+    defaultOpenDir?: string
+}
+
+function appSettingsFile(): string {
+    return path.join(app.getPath('userData'), 'settings.json')
+}
+
+function readAppSettings(): AppSettings {
+    try {
+        return JSON.parse(fs.readFileSync(appSettingsFile(), 'utf8')) as AppSettings
+    } catch {
+        return {}
+    }
+}
+
+function writeAppSettings(patch: AppSettings): void {
+    try {
+        fs.writeFileSync(appSettingsFile(), JSON.stringify({ ...readAppSettings(), ...patch }))
+    } catch {}
+}
+
+/**
+ * Starting directory for every folder-picker dialog: the user's configured default folder when it exists on disk, otherwise the parent of
+ * the most recently opened repository, otherwise left to the OS.
+ */
+function startDir(): string | undefined {
+    const configured = readAppSettings().defaultOpenDir?.trim()
+    if (configured) {
+        try {
+            if (fs.statSync(configured).isDirectory()) return configured
+        } catch {}
+    }
+    try {
+        const file = path.join(app.getPath('userData'), 'recent.json')
+        const list = JSON.parse(fs.readFileSync(file, 'utf8')) as string[]
+        const last = list[0]
+        if (last) return path.dirname(last)
+    } catch {}
+    return undefined
+}
+
 /**
  * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't zoom the web frame behind the
  * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead.
  */
 function setupMenu(): void {
     const template: MenuItemConstructorOptions[] = [
-        ...(process.platform === 'darwin' ? [{ role: 'appMenu' }] : []),
+        ...(process.platform === 'darwin' ? [{ role: 'appMenu' } as const] : []),
         { role: 'fileMenu' },
         { role: 'editMenu' },
         {
@@ -277,8 +326,31 @@ function setupMenu(): void {
 app.whenReady().then(() => {
     log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.OPEN_GIT_LOG_LEVEL ?? 'auto'})`)
     setupMenu()
+    setStatusAccelerators(readAppSettings().statusAccelerators === true)
+    handle('app:getStatusAccelerators', () => getStatusAccelerators())
+    handle('app:setStatusAccelerators', (_v: boolean) => {
+        const enabled = _v === true
+        setStatusAccelerators(enabled)
+        writeAppSettings({ statusAccelerators: enabled })
+        return enabled
+    })
+    handle('app:getDefaultOpenDir', () => readAppSettings().defaultOpenDir ?? '')
+    handle('app:setDefaultOpenDir', (_dir: string) => {
+        const dir = String(_dir).trim()
+        if (dir) {
+            let stat: fs.Stats
+            try {
+                stat = fs.statSync(dir)
+            } catch {
+                throw new Error(`Folder does not exist: ${dir}`)
+            }
+            if (!stat.isDirectory()) throw new Error(`Not a directory: ${dir}`)
+        }
+        writeAppSettings({ defaultOpenDir: dir || undefined })
+        return true
+    })
     handle('repo:pickAndOpen', async () => {
-        const res = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+        const res = await dialog.showOpenDialog({ properties: ['openDirectory'], defaultPath: startDir() })
         if (res.canceled || !res.filePaths[0]) return null
         return openRepo(res.filePaths[0])
     })
@@ -286,6 +358,7 @@ app.whenReady().then(() => {
         const res = await dialog.showOpenDialog({
             title: 'Choose folder for new repository',
             properties: ['openDirectory', 'createDirectory'],
+            defaultPath: startDir(),
         })
         if (res.canceled || !res.filePaths[0]) return null
         await plainGit(res.filePaths[0]).init()
@@ -295,6 +368,7 @@ app.whenReady().then(() => {
         const res = await dialog.showOpenDialog({
             title: 'Choose destination folder for clone',
             properties: ['openDirectory', 'createDirectory'],
+            defaultPath: startDir(),
         })
         if (res.canceled || !res.filePaths[0]) return null
         return res.filePaths[0]
@@ -306,6 +380,7 @@ app.whenReady().then(() => {
             const res = await dialog.showOpenDialog({
                 title: 'Choose destination folder',
                 properties: ['openDirectory', 'createDirectory'],
+                defaultPath: startDir(),
             })
             if (res.canceled || !res.filePaths[0]) return null
             dest = res.filePaths[0]
@@ -334,6 +409,14 @@ app.whenReady().then(() => {
     handle('repo:log', (_limit?: number) => {
         requireRepo()
         return getLog(typeof _limit === 'number' ? _limit : 500)
+    })
+    handle('repo:logCached', (_limit?: number) => {
+        requireRepo()
+        return getCachedLog(typeof _limit === 'number' ? _limit : 500)
+    })
+    handle('repo:logPage', (_offset?: number, _limit?: number) => {
+        requireRepo()
+        return getLogPage(typeof _offset === 'number' ? _offset : 0, typeof _limit === 'number' ? _limit : 500)
     })
     handle('file:diff', (file: string, staged: boolean, context?: number) => {
         requireRepo()
@@ -476,6 +559,10 @@ app.whenReady().then(() => {
     handle('branch:list', () => {
         requireRepo()
         return listBranches()
+    })
+    handle('branch:cached', () => {
+        requireRepo()
+        return getCachedBranches()
     })
     handle('branch:create', (name: string, co: boolean, startPoint?: string) => {
         requireRepo()

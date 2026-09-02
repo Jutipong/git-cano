@@ -3,37 +3,37 @@
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
 
-    --canvas: #202124;
-    --surface-0: #1f2020;
-    --surface-1: #202124;
-    --surface-2: #292a2d;
-    --surface-3: #2c2f32;
-    --surface-hover: #3d4043;
-    --surface-selected: #35363a;
-    --line: #47494e;
-    --line-soft: rgba(189, 189, 189, 0.13);
-    --text: #bdbdbd;
-    --text-secondary: #9a9a9a;
-    --text-muted: #737373;
-    --teal: #0078d4;
-    --teal-dark: #026ec1;
-    --blue: #75abe0;
-    --green: #2ea043;
-    --orange: #e0a458;
-    --red: #ff6347;
-    --purple: #bd93f9;
-    --yellow: #cbbd73;
-    --diff-bg: #202124;
-    --diff-inline-bg: #292a2d;
-    --toast-bg: #2c2f32;
-    --toast-border: #47494e;
-    --conflict-bg: #2c2a24;
-    --conflict-border: #5a5340;
-    --conflict-text: #d9c98a;
-    --conflict-ours-bg: #232d22;
-    --conflict-theirs-bg: #2f281d;
-    --conflict-base-bg: #26262a;
-    --shadow: rgba(0, 0, 0, 0.4);
+    --canvas: #101014;
+    --surface-0: #14141a;
+    --surface-1: #191920;
+    --surface-2: #1e1e26;
+    --surface-3: #242430;
+    --surface-hover: #2a2a38;
+    --surface-selected: #2e2e44;
+    --line: #333346;
+    --line-soft: rgba(41, 168, 255, 0.25);
+    --text: #ececf4;
+    --text-secondary: #a8a8bc;
+    --text-muted: #9090a6;
+    --teal: #29a8ff;
+    --teal-dark: #0091ff;
+    --blue: #66d9ff;
+    --green: #58e06b;
+    --orange: #ffa028;
+    --red: #ff4d5e;
+    --purple: #9d7bff;
+    --yellow: #ffd60a;
+    --diff-bg: #191920;
+    --diff-inline-bg: #2e2e44;
+    --toast-bg: #191920;
+    --toast-border: #333346;
+    --conflict-bg: #2e2e44;
+    --conflict-border: #29a8ff;
+    --conflict-text: #ffd60a;
+    --conflict-ours-bg: #1d2b1d;
+    --conflict-theirs-bg: #2b2014;
+    --conflict-base-bg: #1c1c24;
+    --shadow: rgba(0, 0, 0, 0.7);
 }
 
 :root[data-theme='light'] {
@@ -135,40 +135,6 @@
     --conflict-ours-bg: #14251d;
     --conflict-theirs-bg: #25190f;
     --conflict-base-bg: #161622;
-    --shadow: rgba(0, 0, 0, 0.7);
-}
-
-:root[data-theme='dark-for-windows'] {
-    --canvas: #101014;
-    --surface-0: #14141a;
-    --surface-1: #191920;
-    --surface-2: #1e1e26;
-    --surface-3: #242430;
-    --surface-hover: #2a2a38;
-    --surface-selected: #2e2e44;
-    --line: #333346;
-    --line-soft: rgba(41, 168, 255, 0.25);
-    --text: #ececf4;
-    --text-secondary: #a8a8bc;
-    --text-muted: #9090a6;
-    --teal: #29a8ff;
-    --teal-dark: #0091ff;
-    --blue: #66d9ff;
-    --green: #58e06b;
-    --orange: #ffa028;
-    --red: #ff4d5e;
-    --purple: #9d7bff;
-    --yellow: #ffd60a;
-    --diff-bg: #191920;
-    --diff-inline-bg: #2e2e44;
-    --toast-bg: #191920;
-    --toast-border: #333346;
-    --conflict-bg: #2e2e44;
-    --conflict-border: #29a8ff;
-    --conflict-text: #ffd60a;
-    --conflict-ours-bg: #1d2b1d;
-    --conflict-theirs-bg: #2b2014;
-    --conflict-base-bg: #1c1c24;
     --shadow: rgba(0, 0, 0, 0.7);
 }
 
@@ -2323,6 +2289,12 @@ mark {
 .setting-label {
     color: var(--text-muted);
     font-size: 11px;
+}
+
+.setting-hint {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.5;
 }
 
 .setting-choice-row {

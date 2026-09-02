@@ -106,11 +106,19 @@
     }
 
     async function loadAll() {
-        try {
-            const branches = await window.api.branches()
-            local.value = branches.local
-            remote.value = branches.remote
-        } catch {}
+        // Branches come from the repo store — refresh() already fetched them, so don't spawn a
+        // second branch:list per refresh (spawn cost dominates on Windows). Fall back to a
+        // direct fetch only when the store hasn't loaded any yet.
+        if (repoStore.branchList) {
+            local.value = repoStore.branchList.local
+            remote.value = repoStore.branchList.remote
+        } else {
+            try {
+                const branches = await window.api.branches()
+                local.value = branches.local
+                remote.value = branches.remote
+            } catch {}
+        }
         try {
             tags.value = await window.api.tags()
         } catch {}

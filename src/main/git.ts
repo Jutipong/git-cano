@@ -3,6 +3,7 @@ import * as fs from 'node:fs'
 import * as os from 'node:os'
 import * as path from 'node:path'
 
+import { assignLanes } from '@shared/lanes'
 import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
 import { authGitEnv } from './auth'
@@ -34,6 +35,10 @@ import type { FSWatcher } from 'node:fs'
 
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
+/** Last computed log per repo path — lets the renderer paint instantly (stale-while-revalidate) when switching back. */
+const logCache = new Map<string, { limit: number; commits: CommitNode[] }>()
+/** Last computed branch list per repo path — same stale-while-revalidate purpose as logCache (branches change slowly). */
+const branchCache = new Map<string, { local: BranchInfo[]; remote: BranchInfo[] }>()
 
 /**
  * Simple-git (>=3.24) blocks env vars / config it considers unsafe unless the matching `unsafe.*` flag is enabled. This app intentionally
@@ -97,6 +102,32 @@ export function plainGit(dir = ''): SimpleGit {
     return git
 }
 
+/**
+ * Opt-in Windows status accelerators (Settings → General → Performance). When enabled, each opened repo gets `core.fsmonitor` +
+ * `core.untrackedCache` written to its local config once per open — they make every subsequent `git status` dramatically faster on large
+ * worktrees. Never fails the open: each config write is swallowed on old/quirky git versions.
+ */
+let statusAcceleratorsEnabled = false
+
+export function setStatusAccelerators(enabled: boolean): void {
+    statusAcceleratorsEnabled = enabled
+}
+
+export function getStatusAccelerators(): boolean {
+    return statusAcceleratorsEnabled
+}
+
+async function ensureStatusAccelerators(dir: string): Promise<void> {
+    if (!statusAcceleratorsEnabled) return
+    const g = plainGit(dir)
+    try {
+        await g.addConfig('core.fsmonitor', 'true')
+    } catch {}
+    try {
+        await g.addConfig('core.untrackedCache', 'true')
+    } catch {}
+}
+
 export function getRepo(): { path: string; git: SimpleGit } {
     if (!activeRepoPath) throw new Error('No repository opened')
     const instance = repoInstances.get(activeRepoPath)
@@ -104,17 +135,32 @@ export function getRepo(): { path: string; git: SimpleGit } {
     return { path: activeRepoPath, git: instance }
 }
 
+/**
+ * Opens a repo with a single git spawn (status doubles as the is-repo check; `checkIsRepo` only runs on the failure path to build the
+ * proper error message). Safe to run for several dirs concurrently — status is computed per-instance, not through the global active repo.
+ */
 export async function openRepo(dir: string): Promise<RepoStatus> {
+    const reopened = repoInstances.has(dir)
     const g = repoInstances.get(dir) ?? createGit(dir)
-    if (!(await g.checkIsRepo())) {
+    const prevActive = activeRepoPath
+    activeRepoPath = dir
+    if (!reopened) repoInstances.set(dir, g)
+    try {
+        const status = await getStatusFor(dir)
+        watchRepo(dir)
+        // fire-and-forget — config writes must never delay the open (see setStatusAccelerators)
+        void ensureStatusAccelerators(dir)
+        log('info', 'repo', `${reopened ? 'reopen' : 'open'} ${dir}`)
+        return status
+    } catch (error) {
+        if (!reopened) {
+            repoInstances.delete(dir)
+            unwatchRepo(dir)
+        }
+        activeRepoPath = prevActive
+        if (await g.checkIsRepo().catch(() => false)) throw error
         throw new Error(`"${dir}" is not a git repository`)
     }
-    const reopened = repoInstances.has(dir)
-    repoInstances.set(dir, g)
-    activeRepoPath = dir
-    watchRepo(dir)
-    log('info', 'repo', `${reopened ? 'reopen' : 'open'} ${dir}`)
-    return getStatus()
 }
 
 export function setActiveRepo(dir: string): void {
@@ -131,6 +177,8 @@ export function closeRepo(dir?: string): void {
     const target = dir ?? activeRepoPath
     if (!target) return
     repoInstances.delete(target)
+    // Keep the log cache for closed repos — it only costs a few hundred in-memory commits and
+    // makes reopening (tab or workspace switch) paint instantly; selectTab always re-validates.
     unwatchRepo(target)
     if (activeRepoPath === target) {
         activeRepoPath = repoInstances.keys().next().value ?? null
@@ -193,8 +241,15 @@ export function isOpen(): boolean {
     return activeRepoPath !== null
 }
 
-export async function getStatus(): Promise<RepoStatus> {
-    const { path: p, git: g } = getRepo()
+export function getStatus(): Promise<RepoStatus> {
+    const { path: p } = getRepo()
+    return getStatusFor(p)
+}
+
+/** Status for a specific open repo — independent of the global active repo, so concurrent opens are safe. */
+export async function getStatusFor(dir: string): Promise<RepoStatus> {
+    const g = repoInstances.get(dir)
+    if (!g) throw new Error(`Repository "${dir}" is not open`)
     const status = await g.status()
     const files: FileEntry[] = status.files.map(f => ({
         path: f.path,
@@ -209,7 +264,7 @@ export async function getStatus(): Promise<RepoStatus> {
     const behind = status.behind ?? 0
     const tracking = status.tracking ?? null
 
-    return { path: p, name: path.basename(p), branch, tracking, ahead, behind, files }
+    return { path: dir, name: path.basename(dir), branch, tracking, ahead, behind, files }
 }
 
 export async function getDiffMeta(file: string, staged: boolean): Promise<DiffMeta> {
@@ -333,23 +388,9 @@ export async function getImageVersion(file: string, source: 'workdir' | 'index' 
     }
 }
 
-export async function getLog(limit = 500): Promise<CommitNode[]> {
-    const { git: g } = getRepo()
+function parseLog(text: string): CommitNode[] {
     const SEP = '\x1f'
     const REC = '\x1e'
-    const fmt = ['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join(SEP)
-
-    const text = await g.raw([
-        'log',
-        '--branches',
-        '--remotes',
-        '--tags',
-        `--pretty=format:${fmt}${REC}`,
-        '--date=iso',
-        `--max-count=${limit}`,
-        '--',
-    ])
-
     const commits: CommitNode[] = []
     for (const line of text.split(REC)) {
         const t = line.replace(/^\n/, '')
@@ -378,30 +419,41 @@ export async function getLog(limit = 500): Promise<CommitNode[]> {
             lane: 0,
         })
     }
-    assignLanes(commits)
     return commits
 }
 
-function assignLanes(commits: CommitNode[]): void {
-    const lanes: string[] = []
-    for (const c of commits) {
-        let idx = lanes.indexOf(c.hash)
-        if (idx === -1) {
-            lanes.push(c.hash)
-            idx = lanes.length - 1
-        }
-        c.lane = idx
-        lanes.splice(idx, 1)
+function logArgs(limit: number, skip?: number): string[] {
+    return [
+        'log',
+        '--branches',
+        '--remotes',
+        '--tags',
+        `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join('\x1f')}\x1e`,
+        '--date=iso',
+        `--max-count=${limit}`,
+        ...(skip ? [`--skip=${skip}`] : []),
+        '--',
+    ]
+}
 
-        c.parents.forEach((parent, i) => {
-            if (!commits.some(x => x.hash === parent)) return
-            const pi = lanes.indexOf(parent)
-            if (pi === -1) {
-                if (i === 0) lanes.splice(idx, 0, parent)
-                else lanes.push(parent)
-            }
-        })
-    }
+export async function getLog(limit = 500): Promise<CommitNode[]> {
+    const { path: p, git: g } = getRepo()
+    const commits = parseLog(await g.raw(logArgs(limit)))
+    assignLanes(commits)
+    logCache.set(p, { limit, commits })
+    return commits
+}
+
+/** Returns the cached log for the active repo when it covers `limit`, else null. May be stale — the renderer re-validates with repo:log. */
+export function getCachedLog(limit = 500): CommitNode[] | null {
+    if (!activeRepoPath) return null
+    const entry = logCache.get(activeRepoPath)
+    if (!entry || entry.limit < limit) return null
+    return entry.commits.slice(0, limit)
+}
+export async function getLogPage(offset: number, limit: number): Promise<CommitNode[]> {
+    const { git: g } = getRepo()
+    return parseLog(await g.raw(logArgs(limit, Math.max(0, offset))))
 }
 
 export async function stage(paths: string[]): Promise<void> {
@@ -718,46 +770,70 @@ export async function checkoutCommit(hash: string): Promise<void> {
     await g.checkout(hash)
 }
 
-export async function listBranches(): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> {
-    const { git: g } = getRepo()
-    const b = await g.branch(['-a'])
-    const local: BranchInfo[] = []
-    const remote: BranchInfo[] = []
+/** Resolves the actual git dir — handles linked worktrees where `.git` is a pointer file. */
+function resolveGitDir(dir: string): string {
+    const dotGit = path.join(dir, '.git')
+    try {
+        if (fs.existsSync(dotGit) && fs.statSync(dotGit).isFile()) {
+            const match = /^gitdir:\s*(.+)$/m.exec(fs.readFileSync(dotGit, 'utf8'))
+            if (match) return path.resolve(dir, match[1].trim())
+        }
+    } catch {}
+    return dotGit
+}
 
-    const trackText = await g.raw([
+/**
+ * Lists local + remote branches with a single `for-each-ref` spawn — `%(HEAD)` marks the checked-out branch and `%(upstream:track)` carries
+ * ahead/behind, so `branch -a` is not needed (one spawn saved per refresh; spawn cost dominates on Windows). Detached HEAD is detected by
+ * reading the HEAD file directly instead of spawning `rev-parse`.
+ */
+export async function listBranches(): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> {
+    const { path: p, git: g } = getRepo()
+    // `%(refname)` (full) is used because `refname:short` collapses `refs/remotes/<r>/HEAD` to
+    // just `<r>`, which the /HEAD filter below would miss — the prefix strip is deterministic.
+    const refsText = await g.raw([
         'for-each-ref',
-        '--format=%(refname:short)|%(upstream:track)|%(objectname)',
+        '--format=%(refname)|%(upstream:track)|%(objectname)|%(HEAD)',
         'refs/heads',
         'refs/remotes',
     ])
-    const track = new Map<string, { ahead?: number; behind?: number; commitHash?: string }>()
-    for (const line of trackText.split('\n')) {
+
+    const local: BranchInfo[] = []
+    const remote: BranchInfo[] = []
+    for (const line of refsText.split('\n')) {
         if (!line.trim()) continue
-        const [name, t = '', commitHash = ''] = line.split('|')
-        if (name.endsWith('/HEAD')) continue
+        const [refname, t = '', commitHash = '', headFlag = ''] = line.split('|')
+        if (!refname || refname.endsWith('/HEAD')) continue
+        const isRemote = refname.startsWith('refs/remotes/')
+        const name = isRemote ? refname.replace(/^refs\/remotes\//, '') : refname.replace(/^refs\/heads\//, '')
+        if (!name || name.includes('->')) continue
         const ahead = /\bahead (\d+)/.exec(t)?.[1]
         const behind = /\bbehind (\d+)/.exec(t)?.[1]
-        track.set(name, {
-            ...(ahead ? { ahead: Number(ahead) } : {}),
-            ...(behind ? { behind: Number(behind) } : {}),
-            ...(commitHash ? { commitHash } : {}),
-        })
-    }
-
-    const detachedSha = b.detached && b.current ? await g.revparse(['HEAD']).catch(() => '') : ''
-
-    for (const ref of b.all) {
-        if (ref.includes('HEAD') || ref.includes('->')) continue
-        const info: BranchInfo = { name: ref, current: b.current === ref }
-        Object.assign(info, track.get(ref) ?? track.get(ref.replace(/^remotes\//, '')))
-        if (b.detached && b.current === ref) {
-            info.detached = true
-            if (detachedSha) info.commitHash = detachedSha
-        }
-        if (ref.startsWith('remotes/') || !b.branches[ref]) remote.push(info)
+        const info: BranchInfo = { name, current: headFlag === '*' }
+        if (ahead) info.ahead = Number(ahead)
+        if (behind) info.behind = Number(behind)
+        if (commitHash) info.commitHash = commitHash
+        if (isRemote) remote.push(info)
         else local.push(info)
     }
-    return { local, remote }
+
+    let head = ''
+    try {
+        head = fs.readFileSync(path.join(resolveGitDir(p), 'HEAD'), 'utf8').trim()
+    } catch {}
+    if (head && !head.startsWith('ref:') && !local.some(b => b.current)) {
+        local.unshift({ name: head.slice(0, 7), current: true, detached: true, commitHash: head })
+    }
+
+    const result = { local, remote }
+    branchCache.set(p, result)
+    return result
+}
+
+/** Cached branch list for the active repo, or null. May be stale — the renderer re-validates with branch:list. */
+export function getCachedBranches(): { local: BranchInfo[]; remote: BranchInfo[] } | null {
+    if (!activeRepoPath) return null
+    return branchCache.get(activeRepoPath) ?? null
 }
 
 export async function createBranch(name: string, checkout: boolean, startPoint?: string): Promise<void> {

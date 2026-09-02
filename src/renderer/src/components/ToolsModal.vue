@@ -11,19 +11,70 @@
     import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
-    const props = defineProps<{ initialTab?: 'general' | 'remotes' | 'auth' | 'hook' | 'ai'; refresh: () => Promise<unknown> }>()
+    const props = defineProps<{
+        initialTab?: 'appearance' | 'general' | 'remotes' | 'auth' | 'hook' | 'ai'
+        refresh: () => Promise<unknown>
+    }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const ui = useUiStore()
 
+    // Opt-in Windows status accelerators (persisted main-side in settings.json)
+    const statusAccelerators = ref(false)
+    onMounted(async () => {
+        statusAccelerators.value = await window.api.getStatusAccelerators().catch(() => false)
+    })
+    async function toggleStatusAccelerators() {
+        const next = !statusAccelerators.value
+        statusAccelerators.value = next
+        try {
+            await window.api.setStatusAccelerators(next)
+        } catch (error) {
+            statusAccelerators.value = !next
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    // Default folder for directory-picker dialogs (Open from local / New repo / Clone destination),
+    // persisted main-side in settings.json — falls back to the parent of the most recent repo when empty.
+    const defaultOpenDir = ref('')
+    onMounted(async () => {
+        defaultOpenDir.value = await window.api.getDefaultOpenDir().catch(() => '')
+    })
+    async function persistDefaultOpenDir(value: string) {
+        const dir = value.trim()
+        try {
+            await window.api.setDefaultOpenDir(dir)
+            notify(dir ? 'Default open folder saved' : 'Default open folder cleared', 'success')
+        } catch (error) {
+            defaultOpenDir.value = await window.api.getDefaultOpenDir().catch(() => '')
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+    async function browseDefaultOpenDir() {
+        try {
+            const dir = await window.api.pickDirectory()
+            if (!dir) return
+            defaultOpenDir.value = dir
+            await persistDefaultOpenDir(dir)
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+    function clearDefaultOpenDir() {
+        defaultOpenDir.value = ''
+        void persistDefaultOpenDir('')
+    }
+
     const TABS = [
+        { key: 'appearance', label: 'Appearance' },
         { key: 'general', label: 'General' },
         { key: 'remotes', label: 'Remotes' },
         { key: 'auth', label: 'Authentication' },
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
     ] as const
-    const tab = ref(props.initialTab ?? 'general')
+    const tab = ref(props.initialTab ?? 'appearance')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
@@ -206,7 +257,7 @@
 
     async function resetGeneral() {
         const ok = await confirmDialog({
-            message: 'Reset Appearance and Refresh settings to defaults?',
+            message: 'Reset general settings to defaults?',
             confirmLabel: 'Reset',
             danger: true,
             confirmIcon: 'reset',
@@ -214,6 +265,18 @@
         if (!ok) return
         ui.resetGeneral()
         notify('Settings reset to defaults', 'success')
+    }
+
+    async function resetAppearance() {
+        const ok = await confirmDialog({
+            message: 'Reset appearance settings to defaults?',
+            confirmLabel: 'Reset',
+            danger: true,
+            confirmIcon: 'reset',
+        })
+        if (!ok) return
+        ui.resetAppearance()
+        notify('Appearance reset to defaults', 'success')
     }
 
     const auth = useAuthStore()
@@ -424,8 +487,12 @@
                     class="graph-filter"
                     :class="{ active: tab === tabItem.key }"
                     @click="tab = tabItem.key">
+                    <i-lucide-palette
+                        v-if="tabItem.key === 'appearance'"
+                        width="13"
+                        height="13" />
                     <i-lucide-sliders-horizontal
-                        v-if="tabItem.key === 'general'"
+                        v-else-if="tabItem.key === 'general'"
                         width="13"
                         height="13" />
                     <i-lucide-zap
@@ -448,7 +515,7 @@
                 </button>
             </div>
             <div class="tools-body general-body">
-                <template v-if="tab === 'general'">
+                <template v-if="tab === 'appearance'">
                     <div class="tools-section">
                         <strong class="tools-section-title">
                             <i-lucide-palette
@@ -498,6 +565,21 @@
                         </div>
                     </div>
 
+                    <div class="tools-actions tools-reset-row">
+                        <span class="spacer" />
+                        <button
+                            class="btn danger small"
+                            title="Restore appearance settings to defaults"
+                            @click="resetAppearance()">
+                            <i-lucide-rotate-ccw
+                                width="13"
+                                height="13" />
+                            Reset to defaults
+                        </button>
+                    </div>
+                </template>
+
+                <template v-else-if="tab === 'general'">
                     <div class="tools-section">
                         <strong class="tools-section-title">
                             <i-lucide-refresh-cw
@@ -519,11 +601,74 @@
                         </div>
                     </div>
 
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-folder-open
+                                width="13"
+                                height="13" />
+                            Folders
+                        </strong>
+                        <label class="ai-field">
+                            <span>Default folder for opening repositories</span>
+                            <div class="ai-token-row">
+                                <input
+                                    v-model="defaultOpenDir"
+                                    type="text"
+                                    placeholder="Last used folder"
+                                    autocomplete="off"
+                                    @change="persistDefaultOpenDir(defaultOpenDir)" />
+                                <button
+                                    class="btn small"
+                                    title="Browse for a folder"
+                                    @click="browseDefaultOpenDir()">
+                                    <i-lucide-folder-open
+                                        width="13"
+                                        height="13" />
+                                    Browse…
+                                </button>
+                                <button
+                                    v-if="defaultOpenDir.trim()"
+                                    class="btn danger small"
+                                    title="Clear — start from the last used folder"
+                                    @click="clearDefaultOpenDir()">
+                                    <i-lucide-x
+                                        width="13"
+                                        height="13" />
+                                    Clear
+                                </button>
+                            </div>
+                        </label>
+                        <span class="setting-hint">
+                            Folder-picker dialogs (Open from local, New repository, Clone destination) start here. When empty, the parent
+                            folder of the most recently opened repository is used.
+                        </span>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-zap
+                                width="13"
+                                height="13" />
+                            Performance
+                        </strong>
+                        <label class="setting-toggle">
+                            <input
+                                type="checkbox"
+                                :checked="statusAccelerators"
+                                @change="toggleStatusAccelerators" />
+                            Speed up git status (large repos / Windows)
+                        </label>
+                        <span class="setting-hint">
+                            Lets git cache worktree state (fsmonitor + untracked cache) so refreshes are much faster. Writes to each opened
+                            repository's local git config; takes effect the next time the repo is opened.
+                        </span>
+                    </div>
+
                     <div class="tools-actions tools-reset-row">
                         <span class="spacer" />
                         <button
                             class="btn danger small"
-                            title="Restore Appearance and Refresh settings to defaults"
+                            title="Restore general settings to defaults"
                             @click="resetGeneral()">
                             <i-lucide-rotate-ccw
                                 width="13"

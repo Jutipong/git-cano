@@ -96,7 +96,15 @@
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
     const totalHeight = computed(() => visibleCommits.value.length * rowH)
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
+    /** Only the commits inside the visible window (+ overscan) get SVG nodes — tint/tick/edges. */
+    const graphWindow = computed(() => {
+        const [start, end] = visibleRange.value
+        const from = Math.max(0, start - 5)
+        const to = Math.min(visibleCommits.value.length, end + 5)
+        return visibleCommits.value.slice(from, to).map((commit, offset) => ({ commit, index: from + offset }))
+    })
 
+    let loadMoreArmed = true
     function onScroll() {
         hideTip()
         const el = scrollEl.value
@@ -104,7 +112,13 @@
         const start = Math.max(0, Math.floor(el.scrollTop / rowH) - 15)
         const count = Math.ceil(el.clientHeight / rowH) + 30
         visibleRange.value = [start, start + count]
-        if (props.hasMore && el.scrollTop + el.clientHeight >= el.scrollHeight - rowH * 10) emit('load-more')
+        const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - rowH * 10
+        if (props.hasMore && nearBottom && loadMoreArmed) {
+            loadMoreArmed = false
+            emit('load-more')
+        } else if (!nearBottom) {
+            loadMoreArmed = true
+        }
     }
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
@@ -193,10 +207,19 @@
     const UI_FONT = cssFont('--font-ui', '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif')
     const MONO_FONT = cssFont('--font-mono', '"SF Mono", Menlo, monospace')
     const measureCtx = document.createElement('canvas').getContext('2d')
+    const measureCache = new Map<string, number>()
     function measureText(text: string, size: number, font = UI_FONT): number {
-        if (!measureCtx) return Math.ceil(text.length * size * 0.62)
-        measureCtx.font = `${size}px ${font}`
-        return Math.ceil(measureCtx.measureText(text).width)
+        const key = `${size}px ${font}|${text}`
+        const cached = measureCache.get(key)
+        if (cached !== undefined) return cached
+        let width: number
+        if (!measureCtx) width = Math.ceil(text.length * size * 0.62)
+        else {
+            measureCtx.font = `${size}px ${font}`
+            width = Math.ceil(measureCtx.measureText(text).width)
+        }
+        measureCache.set(key, width)
+        return width
     }
     const authorW = computed(() => {
         let widest = 0
@@ -438,10 +461,9 @@
                     :height="totalHeight"
                     aria-hidden="true">
                     <template
-                        v-for="(commit, index) in visibleCommits"
+                        v-for="{ commit, index } in graphWindow"
                         :key="`tint-${commit.hash}`">
                         <rect
-                            v-show="index >= visibleRange[0] - 5 && index <= visibleRange[1] + 5"
                             class="lane-tint"
                             :x="nodeX(commit)"
                             :y="index * rowH + 1"
@@ -451,7 +473,6 @@
                             :fill="nodeColor(commit)"
                             fill-opacity="0.1" />
                         <rect
-                            v-show="index >= visibleRange[0] - 5 && index <= visibleRange[1] + 5"
                             class="lane-tick"
                             :x="graphW - 3"
                             :y="index * rowH + 1"
@@ -461,7 +482,7 @@
                             :fill="tickColor(commit)" />
                     </template>
                     <template
-                        v-for="(commit, index) in visibleCommits"
+                        v-for="{ commit, index } in graphWindow"
                         :key="commit.hash">
                         <template
                             v-for="parent in commit.parents"
@@ -560,7 +581,7 @@
                                     v-if="refKind(ref) === 'head' || refKind(ref) === 'local'"
                                     width="9"
                                     height="9" />
-                                <i-lucide-cloud
+                                <i-lucide-globe2
                                     v-else-if="refKind(ref) === 'remote'"
                                     width="9"
                                     height="9" />

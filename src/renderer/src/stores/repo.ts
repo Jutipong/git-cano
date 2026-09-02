@@ -1,4 +1,6 @@
-import type { CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
+import { assignLanes } from '@shared/lanes'
+
+import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
 
 const PAGE_SIZE = 500
 
@@ -54,6 +56,8 @@ export const useRepoStore = defineStore('repo', () => {
     const tabs = ref<RepoTab[]>([])
     const activeTab = ref(0)
     const commits = ref<CommitNode[]>([])
+    /** Latest branch list for the active repo — kept here so the sidebar doesn't spawn a second branch fetch per refresh. */
+    const branchList = ref<{ local: BranchInfo[]; remote: BranchInfo[] } | null>(null)
     const logLimit = ref(PAGE_SIZE)
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
@@ -87,7 +91,7 @@ export const useRepoStore = defineStore('repo', () => {
     const blameFile = ref<string | null>(null)
     const toolsOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'general' | 'remotes' | 'auth' | 'hook' | 'ai'>('general')
+    const toolsTab = ref<'appearance' | 'general' | 'remotes' | 'auth' | 'hook' | 'ai'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
 
@@ -134,22 +138,34 @@ export const useRepoStore = defineStore('repo', () => {
         tabs.value.push({ path: status.path, name: status.name, status })
         activeTab.value = tabs.value.length - 1
         syncSession()
+        // The status is fresh but the graph still holds the previous repo's data — load it.
+        // The just-computed status is passed through so refresh() doesn't spawn git status again
+        // (skipped while restoring a workspace/init: selectTab refreshes exactly once at the end).
+        if (!restoringSession) {
+            void window.api
+                .setActiveRepo(status.path)
+                .then(() => refresh(status))
+                .catch(() => {})
+        }
     }
 
-    async function refresh() {
+    async function refresh(precomputedStatus?: RepoStatus) {
         const targetPath = tabs.value[activeTab.value]?.path
         try {
+            // preserve scroll depth: if more pages were appended via loadMore, refetch the full depth
+            const limit = Math.max(logLimit.value, commits.value.length)
             const [status, log, branches, state] = await Promise.all([
-                window.api.status(),
-                window.api.log(logLimit.value),
+                precomputedStatus ? Promise.resolve(precomputedStatus) : window.api.status(),
+                window.api.log(limit),
                 window.api.branches(),
                 window.api.repoState(),
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
             if (tabs.value[activeTab.value]?.path !== status.path) return
             commits.value = log
-            hasMore.value = log.length >= logLimit.value
+            hasMore.value = log.length >= limit
             repoState.value = state
+            branchList.value = branches
             loadedPath.value = status.path
             const index = tabs.value.findIndex(tab => tab.path === status.path)
             if (index >= 0) tabs.value[index].status = status
@@ -160,6 +176,36 @@ export const useRepoStore = defineStore('repo', () => {
             useUiTransientStore().notify(String(error))
             return undefined
         }
+    }
+
+    /**
+     * Light refresh for frequent events (window focus): 1 git spawn instead of 4. Escalates to a full refresh only when the status actually
+     * changed. NOT used for repo-changed watcher events — those always mean real git activity, so they keep using the full refresh().
+     */
+    async function refreshStatusOnly() {
+        if (useUiTransientStore().busy || switchingWorkspace.value) return
+        const tab = tabs.value[activeTab.value]
+        if (!tab || loadedPath.value !== tab.path) return
+        try {
+            const status = await window.api.status()
+            if (tabs.value[activeTab.value]?.path !== status.path) return
+            const prev = tabs.value[activeTab.value]?.status
+            if (!prev) {
+                tabs.value[activeTab.value].status = status
+                return
+            }
+            // only swap the status object (and escalate) on a real change — an unconditional swap
+            // would retrigger the sidebar's repo watcher on every focus, refetching tags for nothing
+            if (statusSignature(prev) !== statusSignature(status)) {
+                tabs.value[activeTab.value].status = status
+                await refresh(status)
+            }
+        } catch {}
+    }
+
+    /** Cheap change detector — avoids a full refresh when focus found nothing new. */
+    function statusSignature(s: RepoStatus): string {
+        return `${s.branch}|${s.ahead}|${s.behind}|${s.files.map(f => `${f.path}${f.staged}${f.unstaged}`).join(',')}`
     }
 
     async function selectTab(index: number) {
@@ -173,6 +219,20 @@ export const useRepoStore = defineStore('repo', () => {
         selectedStash.value = null
         syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
+        // Stale-while-revalidate: paint the cached log and branch list for this repo instantly
+        // (no git spawn), then refresh() over it with fresh data.
+        if (loadedPath.value !== tab.path) {
+            const [cachedLog, cachedBranches] = await Promise.all([
+                window.api.logCached(logLimit.value).catch(() => null),
+                window.api.branchesCached().catch(() => null),
+            ])
+            if (cachedBranches) branchList.value = cachedBranches
+            if (cachedLog && tabs.value[activeTab.value]?.path === tab.path) {
+                commits.value = cachedLog
+                hasMore.value = cachedLog.length >= logLimit.value
+                loadedPath.value = tab.path
+            }
+        }
         await refresh()
     }
 
@@ -235,18 +295,18 @@ export const useRepoStore = defineStore('repo', () => {
                 : wsSession
                   ? []
                   : (await window.api.recentList().catch(() => [] as string[])).slice(0, 1)
-            let openedCount = 0
-            for (const path of paths) {
-                try {
-                    // oxlint-disable-next-line no-await-in-loop
-                    addTab(await window.api.openPath(path))
-                    openedCount++
-                } catch {}
+            // Open all repos concurrently — each openRepo is independent (per-instance status),
+            // and sequential spawning is the dominant cost on Windows.
+            const statuses = await Promise.all(paths.map(path => window.api.openPath(path).catch(() => null)))
+            for (const status of statuses) {
+                if (status) addTab(status)
             }
             const restoredActive = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
-            if (openedCount > 0 && restoredActive >= 0) {
+            if (restoredActive >= 0) {
                 activeTab.value = restoredActive
-                await selectTab(activeTab.value)
+                await selectTab(restoredActive)
+            } else if (tabs.value.length > 0) {
+                await selectTab(0)
             }
         } finally {
             const allOpened = paths.length > 0 && paths.every(p => tabs.value.some(tab => tab.path === p))
@@ -256,8 +316,30 @@ export const useRepoStore = defineStore('repo', () => {
         }
     }
 
-    function loadMore() {
-        logLimit.value += PAGE_SIZE
+    let loadingMore = false
+    async function loadMore() {
+        if (loadingMore || !hasMore.value || switchingWorkspace.value || useUiTransientStore().busy) return
+        loadingMore = true
+        try {
+            const page = await window.api.logPage(commits.value.length, PAGE_SIZE)
+            if (!page.length) {
+                hasMore.value = false
+                return
+            }
+            const seen = new Set(commits.value.map(c => c.hash))
+            const fresh = page.filter(c => !seen.has(c.hash))
+            // ref order may have shifted between pages (fetch/pull while scrolling) — if the
+            // page mostly overlaps what we already have, a full refresh is the safe path
+            if (fresh.length < page.length / 2) {
+                await refresh()
+                return
+            }
+            commits.value = [...commits.value, ...fresh]
+            assignLanes(commits.value)
+            hasMore.value = fresh.length >= PAGE_SIZE
+        } finally {
+            loadingMore = false
+        }
     }
 
     async function switchWorkspace(name: string) {
@@ -278,19 +360,20 @@ export const useRepoStore = defineStore('repo', () => {
             selectedCommit.value = null
             selectedStash.value = null
             const saved = ws.getSession(name) ?? { paths: [], active: 0 }
-            let openedCount = 0
-            for (const path of saved.paths) {
-                try {
-                    // oxlint-disable-next-line no-await-in-loop
-                    addTab(await window.api.openPath(path))
-                    openedCount++
-                } catch {}
+            // Open concurrently (order preserved by Promise.all) — sequential spawning dominates
+            // the switch cost on Windows. addTab skips refresh/sync while restoringSession is set,
+            // so exactly one full refresh happens below.
+            const statuses = await Promise.all(saved.paths.map(path => window.api.openPath(path).catch(() => null)))
+            for (const status of statuses) {
+                if (status) addTab(status)
             }
             const savedActivePath = saved.paths[saved.active]
             const restored = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
-            if (openedCount > 0 && restored >= 0) {
+            if (restored >= 0) {
                 activeTab.value = restored
-                await selectTab(activeTab.value)
+                await selectTab(restored)
+            } else if (tabs.value.length > 0) {
+                await selectTab(0)
             }
         } finally {
             switchingWorkspace.value = false
@@ -346,19 +429,15 @@ export const useRepoStore = defineStore('repo', () => {
         { immediate: true }
     )
 
-    watch(logLimit, () => void refresh())
-    watch([activeTab], () => {
-        if (!repo.value) return
-        void window.api
-            .setActiveRepo(repo.value.path)
-            .then(() => refresh())
-            .catch(() => {})
-    })
+    // Note: there is intentionally no watcher on activeTab — selectTab/addTab own the
+    // refresh for their tab change, so a watcher here would only duplicate full reloads
+    // (status + log + branches + state) on every switch.
 
     return {
         tabs,
         activeTab,
         commits,
+        branchList,
         logLimit,
         hasMore,
         selectedFile,
@@ -387,6 +466,7 @@ export const useRepoStore = defineStore('repo', () => {
         loadingRepo,
         addTab,
         refresh,
+        refreshStatusOnly,
         selectTab,
         setActive,
         reorderTabs,
