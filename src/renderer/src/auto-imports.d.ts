@@ -20,6 +20,7 @@ declare global {
   const DEFAULT_WORKSPACE: typeof import('./stores/workspace').DEFAULT_WORKSPACE
   const FONT_SIZE_OPTIONS: typeof import('./stores/ui').FONT_SIZE_OPTIONS
   const REFRESH_INTERVAL_OPTIONS: typeof import('./stores/ui').REFRESH_INTERVAL_OPTIONS
+  const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
   const buildTree: typeof import('./utils/fileTree').buildTree
@@ -72,7 +73,7 @@ declare global {
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
   // @ts-ignore
-  export type { Theme, AiCommitMode, CommitColumn, DiffViewMode, FileViewMode, ThemeOption } from './stores/ui'
+  export type { Theme, AiCommitMode, RepoTabColor, CommitColumn, DiffViewMode, FileViewMode, ThemeOption } from './stores/ui'
   import('./stores/ui')
   // @ts-ignore
   export type { ToastKind, NotifyOptions } from './stores/uiTransient'

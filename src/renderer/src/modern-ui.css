@@ -569,6 +569,101 @@ body {
     background: color-mix(in srgb, var(--red) 18%, transparent);
 }
 
+.repo-tab-color-dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 18%, transparent);
+}
+
+.repo-tab-menu {
+    position: fixed;
+    z-index: 1000;
+    width: 220px;
+    padding: 10px;
+    color: var(--text);
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: 12px;
+    box-shadow: 0 12px 30px var(--shadow);
+}
+
+.repo-tab-menu-title {
+    padding: 2px 4px 1px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.repo-tab-menu-repo {
+    overflow: hidden;
+    padding: 0 4px 8px;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.repo-tab-color-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.repo-tab-color-option {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 25px;
+    height: 28px;
+    padding: 0;
+    color: var(--text);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.repo-tab-color-option:hover,
+.repo-tab-color-option.active {
+    background: var(--surface-hover);
+    border-color: var(--line-soft);
+}
+
+.repo-tab-color-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+}
+
+.repo-tab-color-check {
+    position: absolute;
+    color: var(--text);
+}
+
+.repo-tab-menu-clear {
+    width: 100%;
+    margin-top: 8px;
+    padding: 7px 8px;
+    color: var(--text-muted);
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.repo-tab-menu-clear:hover,
+.repo-tab-menu-clear.active {
+    color: var(--text);
+    background: var(--surface-hover);
+    border-color: var(--line-soft);
+}
+
 .tab-new {
     color: var(--green);
     background: transparent;

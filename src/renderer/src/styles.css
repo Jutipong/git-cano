@@ -1872,7 +1872,7 @@ kbd {
     color: var(--text);
     background: var(--surface-2);
 }
-.repo-tab > span {
+.repo-tab > .repo-tab-name {
     flex: 1;
     min-width: 0;
     overflow: hidden;

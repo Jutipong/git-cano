@@ -94,6 +94,7 @@ declare module 'vue' {
     PromptDialog: typeof import('./components/PromptDialog.vue')['default']
     RebaseEditor: typeof import('./components/RebaseEditor.vue')['default']
     RemoteManager: typeof import('./components/RemoteManager.vue')['default']
+    RepoTabContextMenu: typeof import('./components/RepoTabContextMenu.vue')['default']
     Sidebar: typeof import('./components/Sidebar.vue')['default']
     StashContextMenu: typeof import('./components/StashContextMenu.vue')['default']
     StashCreateModal: typeof import('./components/StashCreateModal.vue')['default']

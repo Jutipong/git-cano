@@ -478,7 +478,7 @@
                 <i-lucide-file-diff
                     v-else
                     width="16"
-                    height="16" /><strong>{{ isDetails ? (mode === 'stash' ? 'Stash Changes' : 'Commit Changes') : 'Changes' }}</strong>
+                    height="16" /><strong>{{ isDetails ? (mode === 'stash' ? 'Stash Changes' : 'Committed History') : 'Changes' }}</strong>
             </div>
             <div class="panel-heading-side">
                 <button

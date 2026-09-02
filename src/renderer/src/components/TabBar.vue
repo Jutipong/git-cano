@@ -1,9 +1,11 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
+    import { REPO_TAB_COLOR_OPTIONS } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
     import OpenInButton from './OpenInButton.vue'
     import OpenRepoMenu from './OpenRepoMenu.vue'
+    import RepoTabContextMenu, { type RepoTabMenuState } from './RepoTabContextMenu.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
 
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
@@ -32,6 +34,7 @@
     const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
 
     const uiTransient = useUiTransientStore()
+    const ui = useUiStore()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
     const syncBusy = ref<string | null>(null)
@@ -143,6 +146,29 @@
     function onDragEnd() {
         draggingPath.value = null
     }
+
+    const tabMenu = ref<RepoTabMenuState | null>(null)
+
+    function openTabMenu(tab: Tab, event: MouseEvent) {
+        tabMenu.value = {
+            x: event.clientX,
+            y: event.clientY,
+            path: tab.path,
+            name: tab.name,
+            color: ui.repoTabColors[tab.path] ?? null,
+        }
+    }
+
+    function setTabColor(color: RepoTabMenuState['color']) {
+        const path = tabMenu.value?.path
+        if (!path) return
+        ui.setRepoTabColor(path, color)
+    }
+
+    function tabColorHex(path: string) {
+        const color = ui.repoTabColors[path]
+        return REPO_TAB_COLOR_OPTIONS.find(option => option.value === color)?.hex
+    }
 </script>
 
 <template>
@@ -224,8 +250,14 @@
                         @dragover="onDragOver(index, $event)"
                         @drop="onDrop($event)"
                         @dragend="onDragEnd"
+                        @contextmenu.prevent.stop="openTabMenu(tab, $event)"
                         @click="emit('select', index)">
-                        <span>{{ tab.name }}</span>
+                        <span
+                            v-if="ui.repoTabColors[tab.path]"
+                            class="repo-tab-color-dot"
+                            :style="{ backgroundColor: tabColorHex(tab.path) }"
+                            aria-hidden="true" />
+                        <span class="repo-tab-name">{{ tab.name }}</span>
                         <button
                             class="icon-btn danger commit-close-btn tab-close"
                             :title="`Close ${tab.name}`"
@@ -236,6 +268,10 @@
                 </TransitionGroup>
             </div>
         </div>
+        <RepoTabContextMenu
+            :menu="tabMenu"
+            @close="tabMenu = null"
+            @select-color="setTabColor" />
         <div class="tab-sync-actions">
             <button
                 class="toolbar-action primary-action"
