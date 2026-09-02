@@ -91,7 +91,7 @@
         class="commit-menu"
         :style="menuStyle()">
         <button
-            class="commit-menu-item"
+            class="commit-menu-item green"
             @click="act('create-branch')">
             <GitBranchPlus
                 class="commit-menu-ic"
@@ -100,7 +100,7 @@
             Create branch here…
         </button>
         <button
-            class="commit-menu-item"
+            class="commit-menu-item purple"
             @click="act('create-tag')">
             <Tag
                 class="commit-menu-ic"
@@ -110,7 +110,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item"
+            class="commit-menu-item pink"
             @click="act('cherry-pick')">
             <Cherry
                 class="commit-menu-ic"
@@ -120,7 +120,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item"
+            class="commit-menu-item blue"
             @click="act('checkout')">
             <CornerDownRight
                 class="commit-menu-ic"
@@ -130,7 +130,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item"
+            class="commit-menu-item orange"
             @click="act('revert')">
             <Undo2
                 class="commit-menu-ic"
@@ -139,7 +139,7 @@
             Revert this commit
         </button>
         <div class="commit-menu-wrap">
-            <button class="commit-menu-item has-sub">
+            <button class="commit-menu-item orange has-sub">
                 <RotateCcw
                     class="commit-menu-ic"
                     width="13"

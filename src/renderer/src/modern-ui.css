@@ -19,6 +19,7 @@
     --orange: #ffb86c;
     --red: #ff6347;
     --purple: #bd93f9;
+    --pink: #ff79c6;
     --yellow: #eefa7a;
     --diff-bg: #202124;
     --diff-inline-bg: #444444;
@@ -50,6 +51,7 @@
     --orange: #bc5000;
     --red: #b71c1c;
     --purple: #8020d0;
+    --pink: #c21875;
     --yellow: #9a7d0a;
     --diff-bg: #faf5e8;
     --diff-inline-bg: #f0e8d8;
@@ -85,6 +87,7 @@
     --orange: #e2c08d;
     --red: #f85149;
     --purple: #c586c0;
+    --pink: #ff7eb6;
     --yellow: #cca700;
     --diff-bg: #0a0a0e;
     --diff-inline-bg: #1a1a26;
@@ -120,6 +123,7 @@
     --orange: #ffb86c;
     --red: #ff5555;
     --purple: #ff79c6;
+    --pink: #ff79c6;
     --yellow: #f1fa8c;
     --diff-bg: #0e0e15;
     --diff-inline-bg: #202034;
@@ -155,6 +159,7 @@
     --orange: #ffa028;
     --red: #ff4d5e;
     --purple: #9d7bff;
+    --pink: #ff6fae;
     --yellow: #ffd60a;
     --diff-bg: #191920;
     --diff-inline-bg: #2e2e44;
@@ -1921,6 +1926,10 @@ body {
     background: transparent;
 }
 
+.file-path.file-deleted {
+    text-decoration: line-through;
+}
+
 .view-toggle {
     border-radius: 999px;
 }
@@ -2647,6 +2656,38 @@ body {
 .commit-menu-item:hover {
     color: var(--text);
     background: var(--surface-hover);
+}
+
+.commit-menu-item.green {
+    color: var(--green);
+}
+
+.commit-menu-item.green:hover {
+    background: color-mix(in srgb, var(--green) 12%, transparent);
+}
+
+.commit-menu-item.blue {
+    color: var(--blue);
+}
+
+.commit-menu-item.blue:hover {
+    background: color-mix(in srgb, var(--blue) 12%, transparent);
+}
+
+.commit-menu-item.pink {
+    color: var(--pink);
+}
+
+.commit-menu-item.pink:hover {
+    background: color-mix(in srgb, var(--pink) 12%, transparent);
+}
+
+.commit-menu-item.purple {
+    color: var(--purple);
+}
+
+.commit-menu-item.purple:hover {
+    background: color-mix(in srgb, var(--purple) 12%, transparent);
 }
 
 .commit-menu-item.orange {

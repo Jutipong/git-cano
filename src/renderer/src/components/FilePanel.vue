@@ -593,6 +593,7 @@
                             class="file-status-spacer" />
                         <span
                             class="file-path"
+                            :class="{ 'file-deleted': unifiedStatus(row.file!) === 'D' }"
                             :title="row.fullPath"
                             >{{ row.name }}</span
                         >
@@ -769,6 +770,7 @@
                             >
                             <span
                                 class="file-path"
+                                :class="{ 'file-deleted': row.file!.staged === 'D' }"
                                 :title="`${row.fullPath} — ${STATUS_LABEL[row.file!.staged] ?? ''}`"
                                 >{{ row.name }}</span
                             >
@@ -855,6 +857,7 @@
                         >
                         <span
                             class="file-path"
+                            :class="{ 'file-deleted': row.file!.unstaged === 'D' }"
                             :title="`${row.fullPath} — ${STATUS_LABEL[row.file!.unstaged] ?? ''}`"
                             >{{ row.name }}</span
                         >
@@ -955,6 +958,7 @@
                             >
                             <span
                                 class="file-path"
+                                :class="{ 'file-deleted': row.file!.status === 'D' }"
                                 :title="row.fullPath"
                                 >{{ row.name }}</span
                             >
