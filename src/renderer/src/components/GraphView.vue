@@ -28,21 +28,20 @@
         (e: 'reset-hard', commit: CommitNode): void
     }>()
 
-    const FIRST_LANE_COLOR = '#4C9AFF'
+    const FIRST_LANE_COLOR = '#FF4D9E'
     const COLORS = [
-        '#F062A4',
-        '#8BC34A',
-        '#B388FF',
-        '#EF5350',
-        '#26C6DA',
-        '#FFD166',
-        '#5C6BC0',
-        '#66BB6A',
-        '#EC407A',
-        '#29B6F6',
-        '#AB47BC',
-        '#FFCA28',
-        '#7E57C2',
+        '#58E06B',
+        '#29A8FF',
+        '#FFD60A',
+        '#A06BFF',
+        '#22E0D0',
+        '#FF8A3D',
+        '#F55FA0',
+        '#8CFF4D',
+        '#4DD2FF',
+        '#B84DFF',
+        '#FF5C70',
+        '#E8FF4D',
     ]
     const laneW = 32
     const rowH = 28
