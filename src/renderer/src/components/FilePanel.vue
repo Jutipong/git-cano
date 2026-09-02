@@ -514,14 +514,16 @@
                             width="15"
                             height="15" />
                     </button>
+                    <template v-if="isDetails">
+                        <span class="file-controls-divider" />
+                        <button
+                            class="commit-close-btn file-mode-btn"
+                            title="Close details (show working directory)"
+                            @click="emit('close-commit')">
+                            <CloseXIcon />
+                        </button>
+                    </template>
                 </div>
-                <button
-                    v-if="isDetails"
-                    class="icon-btn danger commit-close-btn"
-                    title="Close details (show working directory)"
-                    @click="emit('close-commit')">
-                    <CloseXIcon />
-                </button>
             </div>
         </div>
 

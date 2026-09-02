@@ -1673,11 +1673,14 @@ body {
 }
 
 .panel-heading-side .commit-close-btn {
+    margin-left: 0;
     color: var(--red);
+    background: transparent;
 }
 
-.panel-heading-side .commit-close-btn svg {
+.panel-heading-side .commit-close-btn:hover {
     color: var(--red);
+    background: color-mix(in srgb, var(--red) 14%, transparent);
 }
 
 .panel-heading.commit-mode {
@@ -2131,7 +2134,7 @@ body {
 .file-controls-divider {
     width: 1px;
     height: 18px;
-    margin: 0 3px;
+    margin: 0 6px;
     background: var(--line-soft);
 }
 
