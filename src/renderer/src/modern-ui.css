@@ -1585,6 +1585,18 @@ body {
     background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
 }
 
+.file-groups .diff-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+    cursor: wait;
+}
+
+.file-groups .diff-loading .busy-card::before {
+    display: none;
+}
+
 .graph-row {
     min-width: 590px;
     height: 28px;

@@ -364,6 +364,7 @@
                             <FilePanel
                                 :files="selectedStash ? repoStore.stashFiles : selectedCommit ? repoStore.commitFiles : repo.files"
                                 :mode="selectedStash ? 'stash' : selectedCommit ? 'commit' : 'workdir'"
+                                :loading="repoStore.loadingCommitDetails"
                                 :commit-hash="selectedStash?.hash ?? selectedCommit?.hash"
                                 :selected="selectedFile ?? (selectedConflict ? { path: selectedConflict.path, staged: true } : null)"
                                 :commit-message="selectedStash ? selectedStash.message : repoStore.commitMessage"

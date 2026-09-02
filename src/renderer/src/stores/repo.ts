@@ -66,6 +66,7 @@ export const useRepoStore = defineStore('repo', () => {
     /** Path of the repo whose status/commits are actually loaded — used to detect a mid-switch tab. */
     const loadedPath = ref<string | null>(null)
     const commitFiles = ref<CommitFile[]>([])
+    const loadingCommitDetails = ref(false)
     const commitMessage = ref('')
     const commitAuthor = ref('')
     const commitDate = ref('')
@@ -298,13 +299,16 @@ export const useRepoStore = defineStore('repo', () => {
         syncSession()
     }
 
+    let commitDetailsRequest = 0
     watch(
         () => selectedCommit.value?.hash,
         async hash => {
+            const request = ++commitDetailsRequest
             commitFiles.value = []
             commitMessage.value = ''
             commitAuthor.value = ''
             commitDate.value = ''
+            loadingCommitDetails.value = !!hash
             if (!hash) return
             try {
                 const details = await window.api.commitDetails(hash)
@@ -314,7 +318,10 @@ export const useRepoStore = defineStore('repo', () => {
                     commitAuthor.value = details.author
                     commitDate.value = details.date
                 }
-            } catch {}
+            } catch {
+            } finally {
+                if (request === commitDetailsRequest) loadingCommitDetails.value = false
+            }
         },
         { immediate: true }
     )
@@ -360,6 +367,7 @@ export const useRepoStore = defineStore('repo', () => {
         selectedStash,
         pendingFocusHash,
         commitFiles,
+        loadingCommitDetails,
         commitMessage,
         commitAuthor,
         commitDate,

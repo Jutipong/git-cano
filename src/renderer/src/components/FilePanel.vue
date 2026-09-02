@@ -17,6 +17,7 @@
         selected: { path: string; staged: boolean } | null
         refresh: () => Promise<unknown>
         mode?: 'workdir' | 'commit' | 'stash'
+        loading?: boolean
         commitHash?: string
         commitMessage?: string
         commitAuthor?: string
@@ -24,6 +25,7 @@
     }
     const props = withDefaults(defineProps<Props>(), {
         mode: 'workdir',
+        loading: false,
         commitHash: '',
         commitMessage: '',
         commitAuthor: '',
@@ -520,7 +522,18 @@
         </div>
 
         <div class="file-groups">
-            <template v-if="ui.fileFilterMode === 'all'">
+            <div
+                v-if="loading"
+                class="diff-loading">
+                <div class="busy-card">
+                    <i-lucide-loader-circle
+                        class="spinning"
+                        width="18"
+                        height="18" />
+                    <span>Loading files…</span>
+                </div>
+            </div>
+            <template v-else-if="ui.fileFilterMode === 'all'">
                 <div class="group-header">
                     <h4
                         :class="{ 'can-toggle': canToggleAll }"
