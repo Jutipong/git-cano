@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { useRepoStore } from '../stores/repo'
+    import { useUiStore } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
@@ -11,11 +12,10 @@
     const repoStore = useRepoStore()
 
     const name = ref('')
-    const annotated = ref(false)
-    const message = ref('')
     const existing = ref<string[]>([])
     const busy = ref(false)
     const error = ref('')
+    const ui = useUiStore()
 
     onMounted(async () => {
         document.addEventListener('keydown', onKey)
@@ -56,10 +56,18 @@
         busy.value = true
         error.value = ''
         try {
-            const text = annotated.value ? message.value.trim() : ''
-            await useUiTransientStore().withBusy(() => window.api.createTag(trimmed, props.commit.hash, text || undefined), 'Creating tag…')
+            await useUiTransientStore().withBusy(() => window.api.createTag(trimmed, props.commit.hash), 'Creating tag…')
             await repoStore.refresh()
-            notify(`Tag ${trimmed} created`, 'success')
+            if (ui.tagPushToOrigin) {
+                try {
+                    await useUiTransientStore().withBusy(() => window.api.pushTag(trimmed), 'Pushing tag…')
+                    notify(`Tag ${trimmed} created and pushed`, 'success')
+                } catch (pushErr) {
+                    notify(`Tag ${trimmed} created, but push failed: ${String(pushErr).replace(/^Error:\s*/, '')}`, 'error')
+                }
+            } else {
+                notify(`Tag ${trimmed} created`, 'success')
+            }
             emit('close')
         } catch (err) {
             error.value = String(err).replace(/^Error:\s*/, '')
@@ -93,15 +101,10 @@
                     @keydown.enter="submit()" />
                 <label class="tag-create-annotated">
                     <input
-                        v-model="annotated"
+                        v-model="ui.tagPushToOrigin"
                         type="checkbox" />
-                    Annotated
+                    Push to origin
                 </label>
-                <input
-                    v-if="annotated"
-                    v-model="message"
-                    placeholder="Tag message"
-                    @keydown.enter="submit()" />
                 <div
                     v-if="isDuplicate"
                     class="tag-modal-error">

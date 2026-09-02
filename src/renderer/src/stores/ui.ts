@@ -96,6 +96,8 @@ export const useUiStore = defineStore(
         const showEntireFile = ref(DEFAULT_SHOW_ENTIRE_FILE)
         const aiCommitMode = ref<AiCommitMode>('off')
         const formatBeforeGenerate = ref(DEFAULT_FORMAT_BEFORE_GENERATE)
+        /** Push a newly created tag to origin (Create tag modal checkbox). */
+        const tagPushToOrigin = ref(false)
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
         watchEffect(() => {
             if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
@@ -189,6 +191,7 @@ export const useUiStore = defineStore(
             showEntireFile,
             aiCommitMode,
             formatBeforeGenerate,
+            tagPushToOrigin,
             refreshInterval,
             fontSize,
             zoom,
@@ -220,6 +223,7 @@ export const useUiStore = defineStore(
                 'showEntireFile',
                 'aiCommitMode',
                 'formatBeforeGenerate',
+                'tagPushToOrigin',
                 'refreshInterval',
                 'fontSize',
                 'zoom',
