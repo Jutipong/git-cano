@@ -36,6 +36,13 @@
     const currentChange = ref(0)
     let loadSeq = 0
 
+    // Windowed rendering — big diffs render the first batch of rows and append more as the
+    // user scrolls near the bottom, so the loading card never freezes behind a huge sync render.
+    const RENDER_INITIAL_ROWS = 1500
+    const RENDER_CHUNK_ROWS = 800
+    const RENDER_ALL = Number.MAX_SAFE_INTEGER
+    const renderLimit = ref(RENDER_INITIAL_ROWS)
+
     const searchQuery = ref('')
     const searchInput = ref<HTMLInputElement | null>(null)
     const currentMatch = ref(0)
@@ -47,6 +54,7 @@
         images.value = null
         rawPatch.value = ''
         currentChange.value = 0
+        renderLimit.value = RENDER_INITIAL_ROWS
         const f = props.file
         if (!f) return
         loading.value = true
@@ -178,6 +186,17 @@
         return rows
     })
 
+    const visibleLines = computed(() => (renderLimit.value >= lines.value.length ? lines.value : lines.value.slice(0, renderLimit.value)))
+
+    const visibleRows = computed(() =>
+        renderLimit.value >= sideBySide.value.length ? sideBySide.value : sideBySide.value.slice(0, renderLimit.value)
+    )
+
+    /** Number of rows currently renderable — lines in inline mode, side-by-side rows in split mode. */
+    function totalRenderable(): number {
+        return ui.diffViewMode === 'split' ? sideBySide.value.length : lines.value.length
+    }
+
     const marks = computed(() => {
         const map = new Map<DiffLine, [number, number] | null>()
         for (let i = 0; i < lines.value.length - 1; i++) {
@@ -263,11 +282,18 @@
         scrollAnimation = requestAnimationFrame(step)
     }
 
-    function scrollToChange(index: number) {
+    function scrollToChange(index: number, expand = true) {
         const body = diffBody.value
         if (!body) return
         const el = body.querySelector(`[data-change="${index}"]`)
-        if (!el) return
+        if (!el) {
+            // Jump target beyond the rendered window — render everything once, then retry.
+            if (expand && renderLimit.value < totalRenderable()) {
+                renderLimit.value = RENDER_ALL
+                nextTick(() => scrollToChange(index, false))
+            }
+            return
+        }
         const target = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop
         animateBodyScrollTo(target)
     }
@@ -278,11 +304,18 @@
         nextTick(() => scrollToChange(currentChange.value))
     }
 
-    function scrollToSearch(index: number) {
+    function scrollToSearch(index: number, expand = true) {
         const body = diffBody.value
         if (!body) return
         const el = body.querySelector(`[data-search="${index}"]`)
-        if (!el) return
+        if (!el) {
+            // Match beyond the rendered window — render everything once, then retry.
+            if (expand && renderLimit.value < totalRenderable()) {
+                renderLimit.value = RENDER_ALL
+                nextTick(() => scrollToSearch(index, false))
+            }
+            return
+        }
         const target =
             el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - (body.clientHeight - el.clientHeight) / 2
         animateBodyScrollTo(target)
@@ -540,14 +573,14 @@
         let rowCount: number
         let anchors: number[]
         if (ui.diffViewMode === 'split') {
-            rowCount = sideBySide.value.length
+            rowCount = visibleRows.value.length
             anchors = []
-            sideBySide.value.forEach((row, index) => {
+            visibleRows.value.forEach((row, index) => {
                 if (row.change !== undefined) anchors.push(index)
             })
         } else {
-            rowCount = lines.value.length
-            anchors = changeStartIndexes.value
+            rowCount = visibleLines.value.length
+            anchors = changeStartIndexes.value.filter(index => index < rowCount)
         }
         if (!anchors.length) return
         const firstVisible = (body.scrollTop / body.scrollHeight) * rowCount
@@ -559,8 +592,18 @@
         currentChange.value = Math.min(Math.max(seen - 1, 0), changeCount.value - 1)
     }
 
+    function maybeGrowRenderWindow() {
+        if (renderLimit.value >= totalRenderable()) return
+        const body = diffBody.value
+        if (!body) return
+        if (body.scrollTop + body.clientHeight >= body.scrollHeight - 600) {
+            renderLimit.value = Math.min(renderLimit.value + RENDER_CHUNK_ROWS, totalRenderable())
+        }
+    }
+
     function onBodyScroll() {
         updateViewport()
+        maybeGrowRenderWindow()
         if (scrollSyncTimer) clearTimeout(scrollSyncTimer)
         scrollSyncTimer = setTimeout(syncChangeCounter, 150)
     }
@@ -815,7 +858,7 @@
                         @scroll.passive="onPaneScrollX('left', $event)">
                         <div class="split-pane-content">
                             <template
-                                v-for="(row, index) in sideBySide"
+                                v-for="(row, index) in visibleRows"
                                 :key="index">
                                 <div
                                     v-if="row.hunkHeader"
@@ -848,7 +891,7 @@
                         @scroll.passive="onPaneScrollX('right', $event)">
                         <div class="split-pane-content">
                             <template
-                                v-for="(row, index) in sideBySide"
+                                v-for="(row, index) in visibleRows"
                                 :key="index">
                                 <div
                                     v-if="row.hunkHeader"
@@ -879,7 +922,7 @@
 
                 <template v-else>
                     <div
-                        v-for="(line, index) in lines"
+                        v-for="(line, index) in visibleLines"
                         :key="index"
                         class="diff-line"
                         :class="[line.type, lineFlagClass(line), { 'search-current': searchIndexMap.get(line) === currentMatch }]"
