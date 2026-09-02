@@ -135,6 +135,41 @@
     background: #4a2a6e;
 }
 
+:root[data-theme='dark-for-windows'] {
+    --canvas: #101014;
+    --surface-0: #14141a;
+    --surface-1: #191920;
+    --surface-2: #1e1e26;
+    --surface-3: #242430;
+    --surface-hover: #2a2a38;
+    --surface-selected: #2e2e44;
+    --line: #333346;
+    --line-soft: rgba(41, 168, 255, 0.25);
+    --text: #ececf4;
+    --text-secondary: #a8a8bc;
+    --text-muted: #9090a6;
+    --teal: #29a8ff;
+    --teal-dark: #0091ff;
+    --blue: #66d9ff;
+    --green: #58e06b;
+    --orange: #ffa028;
+    --red: #ff4d5e;
+    --purple: #9d7bff;
+    --yellow: #ffd60a;
+    --diff-bg: #191920;
+    --diff-inline-bg: #2e2e44;
+    --toast-bg: #191920;
+    --toast-border: #333346;
+    --conflict-bg: #2e2e44;
+    --conflict-border: #29a8ff;
+    --conflict-text: #ffd60a;
+    --shadow: rgba(0, 0, 0, 0.7);
+}
+
+:root[data-theme='dark-for-windows'] mark {
+    background: #0f3f6e;
+}
+
 body {
     background: var(--canvas);
 }
@@ -3997,6 +4032,10 @@ body {
 
 :root[data-theme='dark-neon'] .diff-body::-webkit-scrollbar-thumb {
     background: #14141f;
+}
+
+:root[data-theme='dark-for-windows'] .diff-body::-webkit-scrollbar-thumb {
+    background: #262632;
 }
 
 .diff-body::-webkit-scrollbar-track,
