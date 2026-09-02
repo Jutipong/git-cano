@@ -11,6 +11,7 @@
     import OpenRepoMenu from './components/OpenRepoMenu.vue'
     import PromptDialog from './components/PromptDialog.vue'
     import RebaseEditor from './components/RebaseEditor.vue'
+    import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
     import StashCreateModal from './components/StashCreateModal.vue'
     import TabBar from './components/TabBar.vue'
@@ -18,10 +19,12 @@
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAuthStore } from './stores/auth'
+    import { useSyncStore } from './stores/sync'
     import { DEFAULT_ZOOM } from './stores/ui'
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
+    import { isMac } from './utils/shortcuts'
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -31,6 +34,7 @@
     const uiTransient = useUiTransientStore()
     const auth = useAuthStore()
     const wsStore = useWorkspaceStore()
+    const syncStore = useSyncStore()
     const {
         tabs,
         activeTab,
@@ -173,7 +177,57 @@
                 else if (selectedStash.value) selectedStash.value = null
                 return
             }
-            if (!(event.metaKey || event.ctrlKey)) return
+            if (!(event.metaKey || event.ctrlKey)) {
+                // '?' opens the shortcuts help modal (only outside text inputs)
+                if (event.key === '?' && !event.altKey) {
+                    const target = event.target as HTMLElement | null
+                    if (target?.closest('input, textarea, [contenteditable="true"]')) return
+                    event.preventDefault()
+                    repoStore.shortcutsOpen = true
+                }
+                return
+            }
+
+            // Pull — Ctrl+L, or Cmd+↓ (macOS) / Alt+↓ (Windows)
+            if (
+                (event.ctrlKey && event.key.toLowerCase() === 'l') ||
+                (event.key === 'ArrowDown' && (isMac ? event.metaKey : event.altKey))
+            ) {
+                if (!repoStore.repo) return
+                event.preventDefault()
+                void syncStore.pull(repoStore.refresh)
+                return
+            }
+            // Push — Ctrl+P, or Cmd+↑ (macOS) / Alt+↑ (Windows)
+            if (
+                (event.ctrlKey && event.key.toLowerCase() === 'p' && !event.shiftKey) ||
+                (event.key === 'ArrowUp' && (isMac ? event.metaKey : event.altKey))
+            ) {
+                if (!repoStore.repo) return
+                event.preventDefault()
+                void syncStore.push(repoStore.refresh)
+                return
+            }
+            // Fetch — Ctrl+F
+            if (event.ctrlKey && event.key.toLowerCase() === 'f' && !event.shiftKey) {
+                if (!repoStore.repo) return
+                event.preventDefault()
+                void syncStore.fetch(repoStore.refresh)
+                return
+            }
+            // Open repo — Ctrl+O
+            if (event.ctrlKey && event.key.toLowerCase() === 'o') {
+                event.preventDefault()
+                openNewRepo()
+                return
+            }
+            // Open settings — Ctrl+,
+            if (event.ctrlKey && event.key === ',') {
+                event.preventDefault()
+                repoStore.toolsOpen = true
+                return
+            }
+
             if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
                 event.preventDefault()
                 void repoStore.refresh()
@@ -459,6 +513,9 @@
             :initial-tab="repoStore.toolsTab"
             :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
+        <ShortcutsModal
+            v-if="repoStore.shortcutsOpen"
+            @close="repoStore.shortcutsOpen = false" />
         <ErrorDialog
             :message="uiTransient.errorDialog"
             @close="uiTransient.closeErrorDialog()" />

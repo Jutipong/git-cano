@@ -7,7 +7,6 @@
     import RepoTabContextMenu, { type RepoTabMenuState } from './RepoTabContextMenu.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
 
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { RepoStatus } from '@shared/types'
 
     interface Tab {
@@ -32,40 +31,22 @@
     const draggingPath = ref<string | null>(null)
     const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
 
-    const uiTransient = useUiTransientStore()
     const ui = useUiStore()
-    const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
-    const syncBusy = ref<string | null>(null)
+    const syncStore = useSyncStore()
+    const syncBusy = computed(() => syncStore.busy)
 
     function actFetch() {
-        void sync('Fetch', () => window.api.fetch(), 'Fetch completed')
+        void syncStore.fetch(props.refresh)
     }
 
     function actPull() {
-        void sync('Pull', () => window.api.pull(), 'Pull completed')
+        void syncStore.pull(props.refresh)
     }
 
     function actPush() {
-        void sync('Push', () => window.api.push(), 'Push completed')
+        void syncStore.push(props.refresh)
     }
-
-    async function sync(label: string, fn: () => Promise<unknown>, ok: string) {
-        if (syncBusy.value) return
-        syncBusy.value = label
-        try {
-            await uiTransient.withBusy(async () => {
-                await fn()
-                await props.refresh()
-            }, `${label}ing…`)
-            notify(ok, 'success')
-        } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        } finally {
-            syncBusy.value = null
-        }
-    }
-
     const searchOpen = ref(false)
     const searchQuery = ref('')
     const searchInput = ref<HTMLInputElement | null>(null)

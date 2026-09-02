@@ -12,12 +12,13 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'remotes' | 'auth' | 'hook' | 'ai'
+        initialTab?: 'appearance' | 'general' | 'auth' | 'hook' | 'ai'
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const ui = useUiStore()
+    const repoStore = useRepoStore()
 
     // Opt-in Windows status accelerators (persisted main-side in settings.json)
     const statusAccelerators = ref(false)
@@ -69,8 +70,7 @@
     const TABS = [
         { key: 'appearance', label: 'Appearance' },
         { key: 'general', label: 'General' },
-        { key: 'remotes', label: 'Remotes' },
-        { key: 'auth', label: 'Authentication' },
+        { key: 'auth', label: 'Remotes' },
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
     ] as const
@@ -460,6 +460,11 @@
     function onKeydown(e: KeyboardEvent) {
         if (e.key === 'Escape') emit('close')
     }
+
+    function openShortcuts() {
+        emit('close')
+        repoStore.shortcutsOpen = true
+    }
 </script>
 
 <template>
@@ -499,12 +504,8 @@
                         v-else-if="tabItem.key === 'hook'"
                         width="13"
                         height="13" />
-                    <i-lucide-key-round
-                        v-else-if="tabItem.key === 'auth'"
-                        width="13"
-                        height="13" />
                     <i-lucide-globe2
-                        v-else-if="tabItem.key === 'remotes'"
+                        v-else-if="tabItem.key === 'auth'"
                         width="13"
                         height="13" />
                     <i-lucide-sparkles
@@ -664,6 +665,28 @@
                         </span>
                     </div>
 
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-keyboard
+                                width="13"
+                                height="13" />
+                            Shortcuts
+                        </strong>
+                        <button
+                            class="btn small"
+                            title="Show the keyboard shortcuts list"
+                            @click="openShortcuts()">
+                            <i-lucide-keyboard
+                                width="13"
+                                height="13" />
+                            Keyboard shortcuts…
+                        </button>
+                        <span class="setting-hint">
+                            Pull, push, fetch, open repository and open settings all have shortcuts. Press <kbd>?</kbd> anywhere to see the
+                            full list.
+                        </span>
+                    </div>
+
                     <div class="tools-actions tools-reset-row">
                         <span class="spacer" />
                         <button
@@ -679,6 +702,8 @@
                 </template>
 
                 <template v-else-if="tab === 'auth'">
+                    <RemoteManager :refresh="props.refresh" />
+
                     <div class="tools-section">
                         <div class="setting-choice-row">
                             <button
@@ -1009,10 +1034,6 @@
                             <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
                         </p>
                     </div>
-                </template>
-
-                <template v-else-if="tab === 'remotes'">
-                    <RemoteManager :refresh="props.refresh" />
                 </template>
 
                 <template v-else>

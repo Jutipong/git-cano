@@ -90,8 +90,10 @@ export const useRepoStore = defineStore('repo', () => {
     const historyFile = ref<string | null>(null)
     const blameFile = ref<string | null>(null)
     const toolsOpen = ref(false)
+    /** Whether the keyboard-shortcuts help modal is open. */
+    const shortcutsOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'appearance' | 'general' | 'remotes' | 'auth' | 'hook' | 'ai'>('appearance')
+    const toolsTab = ref<'appearance' | 'general' | 'auth' | 'hook' | 'ai'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
 
@@ -457,6 +459,7 @@ export const useRepoStore = defineStore('repo', () => {
         blameFile,
         toolsOpen,
         toolsTab,
+        shortcutsOpen,
         repo,
         conflicts,
         oursLabel,

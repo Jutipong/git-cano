@@ -21,6 +21,7 @@ declare global {
   const FONT_SIZE_OPTIONS: typeof import('./stores/ui').FONT_SIZE_OPTIONS
   const REFRESH_INTERVAL_OPTIONS: typeof import('./stores/ui').REFRESH_INTERVAL_OPTIONS
   const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
+  const SHORTCUTS: typeof import('./utils/shortcuts').SHORTCUTS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
   const buildPrefix: typeof import('./utils/virtual').buildPrefix
@@ -43,7 +44,9 @@ declare global {
   const indexAtOffset: typeof import('./utils/virtual').indexAtOffset
   const inject: typeof import('vue').inject
   const intraLineRange: typeof import('./utils/highlight').intraLineRange
+  const isMac: typeof import('./utils/shortcuts').isMac
   const isWhitespaceOnlyChange: typeof import('./utils/highlight').isWhitespaceOnlyChange
+  const keysFor: typeof import('./utils/shortcuts').keysFor
   const onBeforeUnmount: typeof import('vue').onBeforeUnmount
   const onMounted: typeof import('vue').onMounted
   const onUnmounted: typeof import('vue').onUnmounted
@@ -59,6 +62,7 @@ declare global {
   const useConfirmStore: typeof import('./stores/confirm').useConfirmStore
   const usePromptStore: typeof import('./stores/prompt').usePromptStore
   const useRepoStore: typeof import('./stores/repo').useRepoStore
+  const useSyncStore: typeof import('./stores/sync').useSyncStore
   const useUiStore: typeof import('./stores/ui').useUiStore
   const useUiTransientStore: typeof import('./stores/uiTransient').useUiTransientStore
   const useWorkspaceStore: typeof import('./stores/workspace').useWorkspaceStore
@@ -92,4 +96,7 @@ declare global {
   // @ts-ignore
   export type { LineRenderContext } from './utils/highlight'
   import('./utils/highlight')
+  // @ts-ignore
+  export type { ShortcutDef } from './utils/shortcuts'
+  import('./utils/shortcuts')
 }

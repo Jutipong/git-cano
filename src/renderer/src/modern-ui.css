@@ -4243,15 +4243,18 @@ body {
     background: var(--surface-0);
     border: 1px solid var(--line-soft);
     border-radius: 999px;
+    overflow: hidden;
 }
 
 .tools-tabs .graph-filter {
     display: inline-flex;
     flex: 1 1 0;
+    min-width: 0;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 6px 16px;
+    gap: 5px;
+    padding: 6px 10px;
+    white-space: nowrap;
     color: var(--text-muted);
     font-size: 12px;
     font-weight: 550;
@@ -4341,6 +4344,23 @@ body {
 
 .setting-chip.active {
     background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+
+.setting-toggle {
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.setting-toggle input[type='checkbox'] {
+    flex: 0 0 auto;
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    accent-color: var(--teal);
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 /* Authentication tab */
@@ -4970,4 +4990,60 @@ body {
     color: var(--orange);
     background: color-mix(in srgb, var(--orange) 14%, transparent);
     border-color: var(--orange);
+}
+
+/* Keyboard shortcuts help modal — two-column (macOS / Windows) key reference */
+
+.shortcuts-modal {
+    width: min(520px, 92vw);
+    border-radius: 12px;
+}
+
+.shortcuts-modal-body {
+    padding: 14px 16px 16px;
+    overflow: auto;
+}
+
+.shortcuts-table {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px 18px;
+    align-items: center;
+}
+
+.shortcuts-head {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.shortcuts-label {
+    color: var(--text);
+    font-size: 13px;
+}
+
+.shortcuts-keys {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-start;
+    min-width: 130px;
+}
+
+.shortcuts-keys kbd {
+    padding: 3px 9px;
+    color: var(--text);
+    background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.shortcuts-note {
+    margin: 12px 0 0;
+    color: var(--text-muted);
+    font-size: 12px;
 }
