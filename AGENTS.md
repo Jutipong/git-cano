@@ -27,18 +27,28 @@ Key files:
 - `src/main/opencode.ts` — AI commit-message generation (see "AI commit messages" below)
 - `src/preload/index.ts` — the `window.api` surface (keep names verb-first)
 - `src/renderer/src/stores/repo.ts` — repo tabs, selected commit/file, commit files
-- `src/renderer/src/stores/ui.ts` — persisted UI state (theme, panel widths/heights)
+- `src/renderer/src/stores/ui.ts` — persisted UI state (theme, font size, zoom, panel widths/heights)
+- `src/renderer/src/stores/workspace.ts` — named workspaces, each with its own persisted
+  repo-tab session (paths + active tab)
+- `src/renderer/src/utils/shortcuts.ts` — single source of truth for keyboard shortcuts
 - `src/renderer/src/components/` — one Vue SFC per panel/modal
 
 ## UI model
 
 - **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the `+` button is a flat
   green icon styled like the panel refresh buttons — no outline.
-- **Sidebar**: fetch/pull/push sync card at the top, branch/tag sections, then the STASHES
-  section; bottom actions are Settings and the theme toggle only (no stash button there —
-  stash creation lives in the STASHES section). The STASHES and TAGS sections each have
-  their own dedicated context-menu SFC (`StashContextMenu.vue`, `TagContextMenu.vue`);
-  the shared `ContextMenu.vue` is used for branches and graph commits only.
+- **Sidebar**: fetch/pull/push sync card at the top, workspace switcher
+  (`WorkspaceButton.vue`, one persisted repo-tab session per workspace), branch/tag
+  sections, then the STASHES section; bottom actions are Settings and the theme toggle
+  only (no stash button there — stash creation lives in the STASHES section).
+- **Context menus are per-feature SFCs**: `CommitContextMenu.vue` (graph commits),
+  `LocalBranchContextMenu.vue` (local branches), `TagContextMenu.vue`,
+  `StashContextMenu.vue`, `RepoTabContextMenu.vue`, `FileContextMenu.vue`. The shared
+  `ContextMenu.vue` is only for generic dropdown menus (e.g. remote branches in the
+  sidebar and the `OpenInButton.vue` "Open in Folder/Terminal/VS Code" menu).
+  Follow the stash pattern: export a `*MenuState` interface from the component, pass it
+  through a single `menu` prop, emit a typed event per action, and import icons directly
+  inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it).
@@ -59,6 +69,20 @@ Key files:
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
   The circle and the ✕ are drawn by the `CloseXIcon.vue` component (single SVG, always
   concentric) — don't swap it back for a plain `<i-lucide-x>` icon.
+
+## Keyboard shortcuts
+
+- All shortcuts live in `src/renderer/src/utils/shortcuts.ts` (`SHORTCUTS` array) — the
+  global `keydown` handler in `App.vue` and the `ShortcutsModal.vue` help table both read
+  from it. When adding a shortcut, add the entry to `SHORTCUTS` (with `mac`/`win` keys)
+  and wire the handler in `App.vue`; macOS accepts both `⌘` and `Ctrl` for the
+  Ctrl-based combos.
+- Current set: Pull `Ctrl+L`/`⌘↓`, Push `Ctrl+P`/`⌘↑`, Fetch `Ctrl+F`, Open repo
+  `Ctrl+O`, Settings `Ctrl+,`, Refresh `⌘R`, Search commits `⌘⇧F`, New tab `⌘⇧P`,
+  Shortcuts modal `?` (outside text inputs), commit via `⌘↵` on the summary textarea,
+  app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel, `Esc` to close diff/deselect.
+- Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom,
+  which is intentionally handled above the gate in `App.vue`.
 
 ## AI commit messages
 
