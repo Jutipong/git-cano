@@ -17,17 +17,12 @@
         (e: 'selectColor', color: string | null): void
     }>()
     const root = ref<HTMLElement | null>(null)
-    const customHex = ref('')
 
-    const HEX_RE = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i
-    const customValid = computed(() => HEX_RE.test(customHex.value.trim()))
-
-    watch(
-        () => props.menu,
-        menu => {
-            if (menu) customHex.value = menu.color ?? ''
-        }
-    )
+    const HEX_RE = /^#[0-9a-f]{6}$/i
+    const pickerValue = computed(() => {
+        const color = props.menu?.color
+        return color && HEX_RE.test(color) ? color : '#ffffff'
+    })
 
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
@@ -59,10 +54,8 @@
         emit('close')
     }
 
-    function applyCustomHex() {
-        const hex = customHex.value.trim()
-        if (!HEX_RE.test(hex)) return
-        selectColor(hex.toLowerCase())
+    function onPickerInput(event: Event) {
+        emit('selectColor', (event.target as HTMLInputElement).value)
     }
 </script>
 
@@ -94,21 +87,16 @@
                     height="12" />
             </button>
         </div>
-        <div
-            class="repo-tab-color-custom"
-            :class="{ invalid: customHex.trim() && !customValid }">
-            <span
-                class="repo-tab-color-custom-swatch"
-                :style="{ backgroundColor: customValid ? customHex.trim() : 'transparent' }" />
+        <label class="repo-tab-color-picker-row">
+            <span>Custom</span>
             <input
-                v-model="customHex"
-                class="repo-tab-color-custom-input"
-                type="text"
-                spellcheck="false"
-                placeholder="#rrggbb"
-                title="Custom hex color"
-                @keydown.enter.prevent="applyCustomHex" />
-        </div>
+                type="color"
+                class="repo-tab-color-picker"
+                :value="pickerValue"
+                title="Custom color"
+                @input="onPickerInput"
+                @change="emit('close')" />
+        </label>
         <button
             type="button"
             class="repo-tab-menu-clear"
