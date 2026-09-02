@@ -1574,7 +1574,7 @@ body {
 }
 
 .panel-heading.commit-mode {
-    background: color-mix(in srgb, var(--orange) 14%, var(--surface-0));
+    background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
 }
 
 .graph-row {

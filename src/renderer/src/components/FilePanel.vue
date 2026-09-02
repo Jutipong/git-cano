@@ -477,20 +477,6 @@
                     height="16" /><strong>{{ isDetails ? (mode === 'stash' ? 'Stash Changes' : 'Commit Changes') : 'Changes' }}</strong>
             </div>
             <div class="panel-heading-side">
-                <span
-                    v-if="isDetails && commitTotals && (commitTotals.additions || commitTotals.deletions)"
-                    class="commit-file-stats">
-                    <span
-                        v-if="commitTotals.additions"
-                        class="stat-add"
-                        >+{{ commitTotals.additions.toLocaleString() }}</span
-                    >
-                    <span
-                        v-if="commitTotals.deletions"
-                        class="stat-del"
-                        >−{{ commitTotals.deletions.toLocaleString() }}</span
-                    >
-                </span>
                 <button
                     v-if="mode === 'workdir'"
                     class="view-toggle refresh-btn"
@@ -893,6 +879,20 @@
                             @toggle="toggleAllDirs()" />
                         Changed files <span>{{ commitFileList.length }}</span>
                     </h4>
+                    <span
+                        v-if="commitTotals && (commitTotals.additions || commitTotals.deletions)"
+                        class="commit-file-stats">
+                        <span
+                            v-if="commitTotals.additions"
+                            class="stat-add"
+                            >+{{ commitTotals.additions.toLocaleString() }}</span
+                        >
+                        <span
+                            v-if="commitTotals.deletions"
+                            class="stat-del"
+                            >−{{ commitTotals.deletions.toLocaleString() }}</span
+                        >
+                    </span>
                 </div>
                 <template
                     v-for="row in commitRows"
