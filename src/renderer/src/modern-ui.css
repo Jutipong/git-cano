@@ -1710,7 +1710,7 @@ body {
 }
 
 .busy-card svg {
-    color: var(--orange);
+    color: var(--teal);
 }
 
 .graph-row {
@@ -2573,7 +2573,7 @@ body {
     padding: 10px 16px;
     border-radius: 12px;
     color: var(--text-secondary);
-    background: color-mix(in srgb, var(--orange) 4%, var(--surface-2));
+    background: color-mix(in srgb, var(--teal) 4%, var(--surface-2));
     border: 1px solid var(--line);
     box-shadow: 0 8px 24px var(--shadow);
     font-size: 14px;
@@ -2595,7 +2595,7 @@ body {
         from var(--busy-spin),
         transparent 0%,
         transparent 55%,
-        color-mix(in srgb, var(--orange) 90%, transparent) 75%,
+        color-mix(in srgb, var(--teal) 90%, transparent) 75%,
         transparent 95%
     );
     -webkit-mask:
