@@ -1,6 +1,6 @@
 {
     "name": "open-git",
-    "version": "0.4.5-beta",
+    "version": "0.5.0-beta",
     "description": "Open Git - a lightweight Git GUI with basic features",
     "author": "Open Git contributors",
     "type": "module",
