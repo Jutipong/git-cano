@@ -905,7 +905,7 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
 }
 
 export async function fetchAll(): Promise<string> {
-    await withAuthEnv(git => git.fetch(['--all', '--tags']))
+    await withAuthEnv(git => git.fetch(['--all', '--tags', '--force']))
     return 'Fetch completed'
 }
 
@@ -1202,7 +1202,13 @@ export interface TagRef {
 export async function listTags(): Promise<TagRef[]> {
     const { git: g } = getRepo()
     const SEP = '\x1f'
-    const text = await g.raw(['for-each-ref', 'refs/tags', `--format=%(refname:short)${SEP}%(*objectname)${SEP}%(objectname)`])
+    const text = await g.raw([
+        'for-each-ref',
+        'refs/tags',
+        '--sort=refname', // tiebreak for equal dates
+        '--sort=-creatordate', // primary: newest → oldest by creation date
+        `--format=%(refname:short)${SEP}%(*objectname)${SEP}%(objectname)`,
+    ])
     return text
         .split('\n')
         .filter(Boolean)
