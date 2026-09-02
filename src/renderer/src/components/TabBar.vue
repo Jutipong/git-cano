@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
-    import { REPO_TAB_COLOR_OPTIONS } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
     import OpenInButton from './OpenInButton.vue'
     import OpenRepoMenu from './OpenRepoMenu.vue'
@@ -166,8 +165,7 @@
     }
 
     function tabColorHex(path: string) {
-        const color = ui.repoTabColors[path]
-        return REPO_TAB_COLOR_OPTIONS.find(option => option.value === color)?.hex
+        return ui.repoTabColors[path]
     }
 </script>
 

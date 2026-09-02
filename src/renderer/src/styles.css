@@ -532,8 +532,8 @@ kbd {
     background: var(--surface-hover);
 }
 .branch-row.current {
-    background: rgba(67, 201, 182, 0.1);
-    border-left-color: var(--teal);
+    background: transparent;
+    border-left-color: transparent;
 }
 .branch-row svg {
     flex: 0 0 auto;
@@ -1306,6 +1306,9 @@ kbd {
     overflow: auto;
     font-family: var(--font-mono);
     font-size: 14px;
+}
+.diff-spacer {
+    width: 100%;
 }
 .diff-line {
     display: flex;

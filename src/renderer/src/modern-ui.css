@@ -664,6 +664,45 @@ body {
     border-color: var(--line-soft);
 }
 
+.repo-tab-color-custom {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    padding: 0 8px;
+    border: 1px solid var(--line-soft);
+    border-radius: 7px;
+    background: var(--surface-hover);
+}
+
+.repo-tab-color-custom.invalid {
+    border-color: color-mix(in srgb, var(--red) 60%, transparent);
+}
+
+.repo-tab-color-custom:focus-within {
+    border-color: var(--teal);
+}
+
+.repo-tab-color-custom-swatch {
+    flex: 0 0 auto;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1px solid var(--line-soft);
+}
+
+.repo-tab-color-custom-input {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 0;
+    color: var(--text);
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+}
+
 .tab-new {
     color: var(--green);
     background: transparent;
@@ -1501,18 +1540,33 @@ body {
     padding-left: 9px;
 }
 
-/* sidebar active rows are green; .file-row.selected (Changes panel) keeps its teal */
+/* sidebar active branch: green dot instead of icon, no green bg; .file-row.selected keeps teal */
 .file-row.selected {
     background: color-mix(in srgb, var(--teal) 14%, var(--surface-1));
 }
 
 .branch-row.current {
-    border-left-color: var(--green);
-    background: color-mix(in srgb, var(--green) 16%, var(--surface-1));
+    background: transparent;
 }
 
-.branch-row.current > svg {
-    color: var(--green);
+.branch-active-dot {
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    margin: 0 2.5px;
+    border-radius: 50%;
+    background: var(--dot-color, var(--green));
+    animation: active-dot-pulse 2.4s ease-out infinite;
+}
+
+@keyframes active-dot-pulse {
+    0% {
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--dot-color, var(--green)) 55%, transparent);
+    }
+
+    100% {
+        box-shadow: 0 0 0 8px transparent;
+    }
 }
 
 .branch-row.tag-row.active {
@@ -1788,19 +1842,21 @@ body {
 
 .node-ring.selected {
     border-color: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
-    box-shadow: 0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent);
 
-    animation: node-ring-pulse 2.2s ease-in-out infinite;
+    animation: node-ripple 2.4s ease-out infinite;
 }
 
-@keyframes node-ring-pulse {
-    0%,
-    100% {
-        transform: translate(-50%, -50%) scale(1.05);
+@keyframes node-ripple {
+    0% {
+        box-shadow:
+            0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent),
+            0 0 0 0 color-mix(in srgb, var(--node-color, var(--teal)) 55%, transparent);
     }
 
-    50% {
-        transform: translate(-50%, -50%) scale(1.2);
+    100% {
+        box-shadow:
+            0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent),
+            0 0 0 8px transparent;
     }
 }
 

@@ -24,6 +24,7 @@ declare global {
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
   const buildTree: typeof import('./utils/fileTree').buildTree
+  const computeLineStates: typeof import('./utils/highlight').computeLineStates
   const computed: typeof import('vue').computed
   const confirmDialog: typeof import('./utils/confirm').confirmDialog
   const defineEmits: typeof import('vue').defineEmits
@@ -37,6 +38,7 @@ declare global {
   const formatShortDate: typeof import('./utils/format').formatShortDate
   const highlightDiffLines: typeof import('./utils/highlight').highlightDiffLines
   const highlightLine: typeof import('./utils/highlight').highlightLine
+  const highlightLineAt: typeof import('./utils/highlight').highlightLineAt
   const inject: typeof import('vue').inject
   const intraLineRange: typeof import('./utils/highlight').intraLineRange
   const isWhitespaceOnlyChange: typeof import('./utils/highlight').isWhitespaceOnlyChange
@@ -84,4 +86,7 @@ declare global {
   // @ts-ignore
   export type { FileNode, TreeRow } from './utils/fileTree'
   import('./utils/fileTree')
+  // @ts-ignore
+  export type { LineRenderContext } from './utils/highlight'
+  import('./utils/highlight')
 }

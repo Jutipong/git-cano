@@ -28,21 +28,8 @@
         (e: 'reset-hard', commit: CommitNode): void
     }>()
 
-    const FIRST_LANE_COLOR = '#FF4D9E'
-    const COLORS = [
-        '#58E06B',
-        '#29A8FF',
-        '#FFD60A',
-        '#A06BFF',
-        '#22E0D0',
-        '#FF8A3D',
-        '#F55FA0',
-        '#8CFF4D',
-        '#4DD2FF',
-        '#B84DFF',
-        '#FF5C70',
-        '#E8FF4D',
-    ]
+    const FIRST_LANE_COLOR = '#F55FA0'
+    const COLORS = ['#58E06B', '#B790FF', '#FF8A3D', '#29A8FF', '#22E0D0', '#FFD60A', '#FF4D9E', '#8CFF4D', '#4DD2FF', '#E8FF4D']
     const laneW = 32
     const rowH = 28
     /* breathing room between the graph panel's left edge and the first lane */

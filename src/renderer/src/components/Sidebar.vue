@@ -47,6 +47,10 @@
         document.removeEventListener('keydown', onZoomMenuKeyDown)
     })
     const repoStore = useRepoStore()
+    const activeDotColor = computed(() => {
+        const tab = repoStore.tabs[repoStore.activeTab]
+        return tab ? (ui.repoTabColors[tab.path] ?? null) : null
+    })
     const local = ref<{ name: string; current: boolean; detached?: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
     const remote = ref<{ name: string; current: boolean; commitHash?: string }[]>([])
     const tags = ref<{ name: string; hash: string }[]>([])
@@ -441,7 +445,13 @@
                         @dragover="onDragOver(branch.name, $event)"
                         @dragleave="dropTarget = null"
                         @drop="handleDrop(branch.name, $event)">
+                        <span
+                            v-if="branch.current"
+                            class="branch-active-dot"
+                            :style="activeDotColor ? { '--dot-color': activeDotColor } : undefined"
+                            aria-hidden="true" />
                         <i-lucide-git-branch
+                            v-else
                             width="14"
                             height="14" />
                         <span class="branch-name">

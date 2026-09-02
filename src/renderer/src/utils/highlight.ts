@@ -449,11 +449,19 @@ export function highlightLine(code: string, filename: string): string {
     return renderSegment(code, section, state, keywordsFor(mode), mode === 'python' || mode === 'shell')
 }
 
-export function highlightDiffLines(
-    lines: DiffLine[],
-    filename: string,
-    render: (line: DiffLine, highlight: (content: string) => string) => string
-): Map<DiffLine, string> {
+export interface LineRenderContext {
+    section: Section
+    state: TokState
+    keywords: Set<string>
+    hashComments: boolean
+}
+
+/**
+ * Single sequential pass over a diff that advances the tokenizer state line by line and records each line's initial (section, state) —
+ * cheap: no HTML is built here. The per-line contexts let callers highlight only the lines they actually render (virtual scrolling) while
+ * keeping cross-line state (block comments, backticks, SFC sections) correct.
+ */
+export function computeLineStates(lines: DiffLine[], filename: string): LineRenderContext[] {
     const mode = modeFor(filename)
     const isSfc = mode === 'vue'
     const keywords = keywordsFor(mode)
@@ -461,17 +469,12 @@ export function highlightDiffLines(
     const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
     let section = sectionFor(filename)
     let tagged = !isSfc
-
-    const map = new Map<DiffLine, string>()
+    const contexts: LineRenderContext[] = []
     for (const line of lines) {
-        if (line.type === 'hunk' || line.type === 'meta') {
-            map.set(line, escapeHtml(line.text))
-            continue
-        }
         const content = line.text.slice(1)
         let initialSection = section
         const initialState: TokState = { ...state }
-        if (content) {
+        if (line.type !== 'hunk' && line.type !== 'meta' && content) {
             if (isSfc) {
                 const open = SECTION_OPEN.exec(content)
                 if (open) {
@@ -489,11 +492,29 @@ export function highlightDiffLines(
             }
             renderSegment(content, initialSection, state, keywords, hashComments)
         }
-        map.set(
-            line,
-            render(line, seg => renderSegment(seg, initialSection, { ...initialState }, keywords, hashComments))
-        )
+        contexts.push({ section: initialSection, state: initialState, keywords, hashComments })
     }
+    return contexts
+}
+
+/** Highlights a single line using the sequential context recorded by computeLineStates. */
+export function highlightLineAt(
+    line: DiffLine,
+    context: LineRenderContext,
+    render: (line: DiffLine, highlight: (content: string) => string) => string
+): string {
+    if (line.type === 'hunk' || line.type === 'meta') return escapeHtml(line.text)
+    return render(line, seg => renderSegment(seg, context.section, { ...context.state }, context.keywords, context.hashComments))
+}
+
+export function highlightDiffLines(
+    lines: DiffLine[],
+    filename: string,
+    render: (line: DiffLine, highlight: (content: string) => string) => string
+): Map<DiffLine, string> {
+    const contexts = computeLineStates(lines, filename)
+    const map = new Map<DiffLine, string>()
+    lines.forEach((line, index) => map.set(line, highlightLineAt(line, contexts[index]!, render)))
     return map
 }
 
@@ -532,28 +553,74 @@ export function isWhitespaceOnlyChange(oldText: string, newText: string): boolea
 
 export function detectMovedLines(lines: DiffLine[]): Set<DiffLine> {
     const moved = new Set<DiffLine>()
-    const addsByKey = new Map<string, number[]>()
+    // Per key: add indexes are pushed in ascending order. `alive` marks entries already matched
+    // (the old implementation spliced them out) and `aPtr` is a forward-only cursor over dead
+    // entries, so the pathological "thousands of identical lines" case stays near-linear instead
+    // of the old O(n²) findIndex+splice.
+    const addsByKey = new Map<string, { indexes: number[]; alive: boolean[]; aPtr: number }>()
     lines.forEach((line, index) => {
         if (line.type !== 'add') return
         const key = line.text.slice(1).trimEnd()
-        const list = addsByKey.get(key)
-        if (list) list.push(index)
-        else addsByKey.set(key, [index])
+        let entry = addsByKey.get(key)
+        if (!entry) {
+            entry = { indexes: [], alive: [], aPtr: 0 }
+            addsByKey.set(key, entry)
+        }
+        entry.indexes.push(index)
+        entry.alive.push(true)
     })
-    lines.forEach((line, index) => {
-        if (line.type !== 'del') return
-        let blockEnd = index
+    // Precompute the end of each del+add block in one pass so the matching loop stays O(n).
+    const blockEndAt = new Int32Array(lines.length).fill(-1)
+    let cursor = 0
+    while (cursor < lines.length) {
+        if (lines[cursor].type !== 'del') {
+            cursor++
+            continue
+        }
+        let blockEnd = cursor
         while (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'del') blockEnd++
+        const lastDel = blockEnd
         if (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'add') {
             while (blockEnd + 1 < lines.length && lines[blockEnd + 1].type === 'add') blockEnd++
         }
-        const list = addsByKey.get(line.text.slice(1).trimEnd())
-        if (!list?.length) return
-        const match = list.findIndex(candidate => candidate < index || candidate > blockEnd)
-        if (match === -1) return
-        const addIndex = list.splice(match, 1)[0]
+        for (let d = cursor; d <= lastDel; d++) blockEndAt[d] = blockEnd
+        cursor = blockEnd + 1
+    }
+    lines.forEach((line, index) => {
+        if (line.type !== 'del') return
+        const blockEnd = blockEndAt[index]
+        if (blockEnd === -1) return
+        const entry = addsByKey.get(line.text.slice(1).trimEnd())
+        if (!entry) return
+        const { indexes, alive } = entry
+        // Match the first alive add outside this del/add block — same semantics as the old
+        // findIndex over the spliced list: the smallest alive index below the block, else the
+        // smallest alive index beyond blockEnd.
+        let pick = -1
+        while (entry.aPtr < indexes.length && !alive[entry.aPtr]) entry.aPtr++
+        if (entry.aPtr < indexes.length && indexes[entry.aPtr]! < index) {
+            pick = entry.aPtr
+        } else {
+            // Binary search for the first add index beyond the block, then skip dead entries.
+            let lo = 0
+            let hi = indexes.length - 1
+            let pos = indexes.length
+            while (lo <= hi) {
+                const mid = (lo + hi) >> 1
+                if (indexes[mid]! > blockEnd) {
+                    pos = mid
+                    hi = mid - 1
+                } else {
+                    lo = mid + 1
+                }
+            }
+            while (pos < indexes.length && !alive[pos]) pos++
+            if (pos < indexes.length) pick = pos
+        }
+        if (pick === -1) return
+        alive[pick] = false
         moved.add(line)
-        moved.add(lines[addIndex])
+        moved.add(lines[indexes[pick]!]!)
     })
     return moved
 }

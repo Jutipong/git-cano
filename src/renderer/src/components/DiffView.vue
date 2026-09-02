@@ -1,7 +1,14 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
-    import { intraLineRange, isWhitespaceOnlyChange, detectMovedLines, highlightDiffLines } from '../utils/highlight'
+    import {
+        intraLineRange,
+        isWhitespaceOnlyChange,
+        detectMovedLines,
+        computeLineStates,
+        highlightLineAt,
+        type LineRenderContext,
+    } from '../utils/highlight'
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
@@ -36,12 +43,16 @@
     const currentChange = ref(0)
     let loadSeq = 0
 
-    // Windowed rendering — big diffs render the first batch of rows and append more as the
-    // user scrolls near the bottom, so the loading card never freezes behind a huge sync render.
-    const RENDER_INITIAL_ROWS = 1500
-    const RENDER_CHUNK_ROWS = 800
-    const RENDER_ALL = Number.MAX_SAFE_INTEGER
-    const renderLimit = ref(RENDER_INITIAL_ROWS)
+    // Virtual scrolling — only the rows in (and around) the viewport are rendered. Every diff row
+    // is exactly `rowHeight` tall (white-space: pre, no wrapping), so offsets are pure arithmetic.
+    const ROW_HEIGHT = 20
+    const OVERSCAN_ROWS = 10
+    const rowHeight = ref(ROW_HEIGHT)
+    const scrollTop = ref(0)
+    const viewportH = ref(0)
+
+    // Per-line highlight cache, keyed by the stable DiffLine objects of the current load.
+    let htmlCache = new Map<DiffLine, string>()
 
     const searchQuery = ref('')
     const searchInput = ref<HTMLInputElement | null>(null)
@@ -54,7 +65,7 @@
         images.value = null
         rawPatch.value = ''
         currentChange.value = 0
-        renderLimit.value = RENDER_INITIAL_ROWS
+        htmlCache = new Map()
         const f = props.file
         if (!f) return
         loading.value = true
@@ -186,16 +197,26 @@
         return rows
     })
 
-    const visibleLines = computed(() => (renderLimit.value >= lines.value.length ? lines.value : lines.value.slice(0, renderLimit.value)))
-
-    const visibleRows = computed(() =>
-        renderLimit.value >= sideBySide.value.length ? sideBySide.value : sideBySide.value.slice(0, renderLimit.value)
-    )
-
-    /** Number of rows currently renderable — lines in inline mode, side-by-side rows in split mode. */
-    function totalRenderable(): number {
+    function totalRows(): number {
         return ui.diffViewMode === 'split' ? sideBySide.value.length : lines.value.length
     }
+
+    const virtualStart = computed(() => {
+        if (!totalRows()) return 0
+        return Math.max(0, Math.floor(scrollTop.value / rowHeight.value) - OVERSCAN_ROWS)
+    })
+    const virtualEnd = computed(() =>
+        Math.min(totalRows(), Math.ceil((scrollTop.value + (viewportH.value || 800)) / rowHeight.value) + OVERSCAN_ROWS)
+    )
+    const padTop = computed(() => virtualStart.value * rowHeight.value)
+    const padBottom = computed(() => Math.max(0, (totalRows() - virtualEnd.value) * rowHeight.value))
+
+    const virtualLines = computed(() =>
+        lines.value.slice(virtualStart.value, virtualEnd.value).map((line, offset) => ({ line, i: virtualStart.value + offset }))
+    )
+    const virtualRows = computed(() =>
+        sideBySide.value.slice(virtualStart.value, virtualEnd.value).map((row, offset) => ({ row, i: virtualStart.value + offset }))
+    )
 
     const marks = computed(() => {
         const map = new Map<DiffLine, [number, number] | null>()
@@ -282,20 +303,36 @@
         scrollAnimation = requestAnimationFrame(step)
     }
 
-    function scrollToChange(index: number, expand = true) {
+    /** Change #n → row offset: inline uses line indexes, split uses side-by-side row indexes. */
+    const splitChangeRowIndexes = computed(() => {
+        const indexes: number[] = []
+        sideBySide.value.forEach((row, index) => {
+            if (row.change !== undefined) indexes.push(index)
+        })
+        return indexes
+    })
+
+    const lineIndexMap = computed(() => {
+        const map = new Map<DiffLine, number>()
+        lines.value.forEach((line, index) => map.set(line, index))
+        return map
+    })
+
+    const splitRowByLine = computed(() => {
+        const map = new Map<DiffLine, number>()
+        sideBySide.value.forEach((row, index) => {
+            if (row.left && !map.has(row.left)) map.set(row.left, index)
+            if (row.right && !map.has(row.right)) map.set(row.right, index)
+        })
+        return map
+    })
+
+    function scrollToChange(index: number) {
         const body = diffBody.value
         if (!body) return
-        const el = body.querySelector(`[data-change="${index}"]`)
-        if (!el) {
-            // Jump target beyond the rendered window — render everything once, then retry.
-            if (expand && renderLimit.value < totalRenderable()) {
-                renderLimit.value = RENDER_ALL
-                nextTick(() => scrollToChange(index, false))
-            }
-            return
-        }
-        const target = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop
-        animateBodyScrollTo(target)
+        const rowIndex = ui.diffViewMode === 'split' ? splitChangeRowIndexes.value[index] : changeStartIndexes.value[index]
+        if (rowIndex === undefined) return
+        animateBodyScrollTo(rowIndex * rowHeight.value)
     }
 
     function goToChange(delta: number) {
@@ -304,21 +341,14 @@
         nextTick(() => scrollToChange(currentChange.value))
     }
 
-    function scrollToSearch(index: number, expand = true) {
+    function scrollToSearch(index: number) {
         const body = diffBody.value
         if (!body) return
-        const el = body.querySelector(`[data-search="${index}"]`)
-        if (!el) {
-            // Match beyond the rendered window — render everything once, then retry.
-            if (expand && renderLimit.value < totalRenderable()) {
-                renderLimit.value = RENDER_ALL
-                nextTick(() => scrollToSearch(index, false))
-            }
-            return
-        }
-        const target =
-            el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop - (body.clientHeight - el.clientHeight) / 2
-        animateBodyScrollTo(target)
+        const hit = searchHits.value[index]
+        if (!hit) return
+        const rowIndex = ui.diffViewMode === 'split' ? splitRowByLine.value.get(hit.line) : lineIndexMap.value.get(hit.line)
+        if (rowIndex === undefined) return
+        animateBodyScrollTo(rowIndex * rowHeight.value - (body.clientHeight - rowHeight.value) / 2)
     }
 
     function goToMatch(delta: number) {
@@ -396,7 +426,18 @@
         return out
     }
 
-    const htmlMap = computed(() => highlightDiffLines(lines.value, props.file?.path ?? '', renderOne))
+    const lineStates = computed(() => computeLineStates(lines.value, props.file?.path ?? ''))
+
+    /** Cached per-line highlight (visible lines only, keyed by the stable DiffLine object). */
+    function htmlFor(line: DiffLine | undefined, i: number): string {
+        if (!line) return ''
+        const cached = htmlCache.get(line)
+        if (cached !== undefined) return cached
+        const context = lineStates.value[i]
+        const html = highlightLineAt(line, context ?? computeLineStates([line], props.file?.path ?? '')[0]!, renderOne)
+        htmlCache.set(line, html)
+        return html
+    }
 
     interface SearchHit {
         line: DiffLine
@@ -573,14 +614,11 @@
         let rowCount: number
         let anchors: number[]
         if (ui.diffViewMode === 'split') {
-            rowCount = visibleRows.value.length
-            anchors = []
-            visibleRows.value.forEach((row, index) => {
-                if (row.change !== undefined) anchors.push(index)
-            })
+            rowCount = sideBySide.value.length
+            anchors = splitChangeRowIndexes.value
         } else {
-            rowCount = visibleLines.value.length
-            anchors = changeStartIndexes.value.filter(index => index < rowCount)
+            rowCount = lines.value.length
+            anchors = changeStartIndexes.value
         }
         if (!anchors.length) return
         const firstVisible = (body.scrollTop / body.scrollHeight) * rowCount
@@ -592,18 +630,10 @@
         currentChange.value = Math.min(Math.max(seen - 1, 0), changeCount.value - 1)
     }
 
-    function maybeGrowRenderWindow() {
-        if (renderLimit.value >= totalRenderable()) return
-        const body = diffBody.value
-        if (!body) return
-        if (body.scrollTop + body.clientHeight >= body.scrollHeight - 600) {
-            renderLimit.value = Math.min(renderLimit.value + RENDER_CHUNK_ROWS, totalRenderable())
-        }
-    }
-
     function onBodyScroll() {
+        const body = diffBody.value
+        if (body) scrollTop.value = body.scrollTop
         updateViewport()
-        maybeGrowRenderWindow()
         if (scrollSyncTimer) clearTimeout(scrollSyncTimer)
         scrollSyncTimer = setTimeout(syncChangeCounter, 150)
     }
@@ -639,8 +669,19 @@
 
     onMounted(() => window.addEventListener('keydown', onGlobalKeyDown, true))
 
+    /** Actual rendered row height (20px expected) — re-measured as a safety net. */
+    function measureRowHeight() {
+        const body = diffBody.value
+        if (!body) return
+        scrollTop.value = body.scrollTop
+        viewportH.value = body.clientHeight
+        const row = body.querySelector<HTMLElement>('.diff-line')
+        if (row && row.offsetHeight > 0) rowHeight.value = row.offsetHeight
+    }
+
     watch(searchQuery, () => {
         currentMatch.value = 0
+        htmlCache = new Map()
         if (searchHits.value.length) nextTick(() => scrollToSearch(0))
     })
     watch(searchHits, () => {
@@ -648,12 +689,17 @@
     })
 
     watch([diffBody, minimapCanvas], ([body]) => {
-        if (body && !resizeObserver) resizeObserver = new ResizeObserver(() => updateMinimap())
+        if (body && !resizeObserver)
+            resizeObserver = new ResizeObserver(() => {
+                viewportH.value = body.clientHeight
+                updateMinimap()
+            })
         if (body && resizeObserver) resizeObserver.observe(body)
     })
 
     watch([lines, sideBySide, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme], () =>
         nextTick(() => {
+            measureRowHeight()
             resetPaneScroll()
             updateMinimap()
         })
@@ -856,30 +902,32 @@
                         ref="leftPaneEl"
                         class="split-pane left"
                         @scroll.passive="onPaneScrollX('left', $event)">
-                        <div class="split-pane-content">
+                        <div
+                            class="split-pane-content"
+                            :style="{ paddingTop: `${padTop}px`, paddingBottom: `${padBottom}px` }">
                             <template
-                                v-for="(row, index) in visibleRows"
-                                :key="index">
+                                v-for="v in virtualRows"
+                                :key="v.i">
                                 <div
-                                    v-if="row.hunkHeader"
+                                    v-if="v.row.hunkHeader"
                                     class="split-hunk-separator"
-                                    :title="row.hunkHeader.text">
-                                    <pre>{{ row.hunkHeader.text }}</pre>
+                                    :title="v.row.hunkHeader.text">
+                                    <pre>{{ v.row.hunkHeader.text }}</pre>
                                 </div>
                                 <div
                                     v-else
                                     class="diff-line half"
                                     :class="[
-                                        row.left?.type ?? 'blank',
-                                        lineFlagClass(row.left),
-                                        { 'search-current': searchIndexMap.get(row.left) === currentMatch },
+                                        v.row.left?.type ?? 'blank',
+                                        lineFlagClass(v.row.left),
+                                        { 'search-current': searchIndexMap.get(v.row.left) === currentMatch },
                                     ]"
-                                    :data-change="row.change"
-                                    :data-search="searchIndexMap.get(row.left)">
-                                    <span class="ln">{{ row.left?.oldNo ?? '' }}</span>
+                                    :data-change="v.row.change"
+                                    :data-search="searchIndexMap.get(v.row.left)">
+                                    <span class="ln">{{ v.row.left?.oldNo ?? '' }}</span>
                                     <pre
-                                        v-if="row.left"
-                                        v-html="htmlMap.get(row.left) ?? ''" />
+                                        v-if="v.row.left"
+                                        v-html="htmlFor(v.row.left, v.i)" />
                                     <pre v-else></pre>
                                 </div>
                             </template>
@@ -889,30 +937,32 @@
                         ref="rightPaneEl"
                         class="split-pane right"
                         @scroll.passive="onPaneScrollX('right', $event)">
-                        <div class="split-pane-content">
+                        <div
+                            class="split-pane-content"
+                            :style="{ paddingTop: `${padTop}px`, paddingBottom: `${padBottom}px` }">
                             <template
-                                v-for="(row, index) in visibleRows"
-                                :key="index">
+                                v-for="v in virtualRows"
+                                :key="v.i">
                                 <div
-                                    v-if="row.hunkHeader"
+                                    v-if="v.row.hunkHeader"
                                     class="split-hunk-separator"
-                                    :title="row.hunkHeader.text">
-                                    <pre>{{ row.hunkHeader.text }}</pre>
+                                    :title="v.row.hunkHeader.text">
+                                    <pre>{{ v.row.hunkHeader.text }}</pre>
                                 </div>
                                 <div
                                     v-else
                                     class="diff-line half"
                                     :class="[
-                                        row.right?.type ?? 'blank',
-                                        lineFlagClass(row.right),
-                                        { 'search-current': searchIndexMap.get(row.right) === currentMatch },
+                                        v.row.right?.type ?? 'blank',
+                                        lineFlagClass(v.row.right),
+                                        { 'search-current': searchIndexMap.get(v.row.right) === currentMatch },
                                     ]"
-                                    :data-change="row.change"
-                                    :data-search="searchIndexMap.get(row.right)">
-                                    <span class="ln">{{ row.right?.newNo ?? '' }}</span>
+                                    :data-change="v.row.change"
+                                    :data-search="searchIndexMap.get(v.row.right)">
+                                    <span class="ln">{{ v.row.right?.newNo ?? '' }}</span>
                                     <pre
-                                        v-if="row.right"
-                                        v-html="htmlMap.get(row.right) ?? ''" />
+                                        v-if="v.row.right"
+                                        v-html="htmlFor(v.row.right, v.i)" />
                                     <pre v-else></pre>
                                 </div>
                             </template>
@@ -922,24 +972,30 @@
 
                 <template v-else>
                     <div
-                        v-for="(line, index) in visibleLines"
-                        :key="index"
+                        class="diff-spacer"
+                        :style="{ height: `${padTop}px` }" />
+                    <div
+                        v-for="v in virtualLines"
+                        :key="v.i"
                         class="diff-line"
-                        :class="[line.type, lineFlagClass(line), { 'search-current': searchIndexMap.get(line) === currentMatch }]"
-                        :data-change="changeIndexMap.get(index)"
-                        :data-search="searchIndexMap.get(line)">
-                        <span class="ln">{{ line.oldNo ?? '' }}</span>
-                        <span class="ln">{{ line.newNo ?? '' }}</span>
+                        :class="[v.line.type, lineFlagClass(v.line), { 'search-current': searchIndexMap.get(v.line) === currentMatch }]"
+                        :data-change="changeIndexMap.get(v.i)"
+                        :data-search="searchIndexMap.get(v.line)">
+                        <span class="ln">{{ v.line.oldNo ?? '' }}</span>
+                        <span class="ln">{{ v.line.newNo ?? '' }}</span>
                         <!-- eslint-disable-next-line vue/no-v-html -->
-                        <pre v-html="htmlMap.get(line) ?? ''" />
+                        <pre v-html="htmlFor(v.line, v.i)" />
                         <button
-                            v-if="!commitHash && !stashHash && line.type === 'hunk' && refresh && !meta?.binary"
+                            v-if="!commitHash && !stashHash && v.line.type === 'hunk' && refresh && !meta?.binary"
                             class="detail-action hunk-action"
                             :title="file.staged ? 'Unstage this hunk' : 'Stage just this hunk'"
-                            @click="actOnHunk(hunkHeaderIndexes.indexOf(index))">
+                            @click="actOnHunk(hunkHeaderIndexes.indexOf(v.i))">
                             {{ file.staged ? '− Unstage hunk' : '+ Stage hunk' }}
                         </button>
                     </div>
+                    <div
+                        class="diff-spacer"
+                        :style="{ height: `${padBottom}px` }" />
                     <div
                         v-if="lines.length === 0 && !loading"
                         class="diff-empty">

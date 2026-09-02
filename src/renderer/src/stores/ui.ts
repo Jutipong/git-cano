@@ -9,7 +9,6 @@ export const REPO_TAB_COLOR_OPTIONS = [
     { value: 'green', label: 'Green', hex: '#32d74b' },
     { value: 'blue', label: 'Blue', hex: '#0a84ff' },
     { value: 'purple', label: 'Purple', hex: '#bf5af2' },
-    { value: 'pink', label: 'Pink', hex: '#ff375f' },
 ] as const
 
 export type RepoTabColor = (typeof REPO_TAB_COLOR_OPTIONS)[number]['value']
@@ -111,7 +110,7 @@ export const useUiStore = defineStore(
             if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
         })
         const codeFontSize = ref(DEFAULT_CODE_FONT_SIZE)
-        const repoTabColors = ref<Record<string, RepoTabColor>>({})
+        const repoTabColors = ref<Record<string, string>>({})
         // migrate the first shipped default so existing persisted stores pick up the new default
         if (codeFontSize.value === LEGACY_CODE_FONT_SIZE) codeFontSize.value = DEFAULT_CODE_FONT_SIZE
         watchEffect(() => {
@@ -155,9 +154,9 @@ export const useUiStore = defineStore(
             theme.value = value
         }
 
-        function setRepoTabColor(path: string, color: RepoTabColor | null) {
+        function setRepoTabColor(path: string, hex: string | null) {
             const next = { ...repoTabColors.value }
-            if (color) next[path] = color
+            if (hex) next[path] = hex
             else delete next[path]
             repoTabColors.value = next
         }
