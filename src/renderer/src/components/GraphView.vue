@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import { nextTick } from 'vue'
+
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
@@ -294,17 +296,25 @@
         }
     }
 
-    const tip = ref<{ commit?: CommitNode; text?: string; x: number; y: number } | null>(null)
+    const tip = ref<{ commit: CommitNode; x: number; y: number } | null>(null)
+    const tipEl = ref<HTMLElement | null>(null)
     let tipTimer: number | undefined
 
-    function scheduleTip(content: { commit?: CommitNode; text?: string }, event: MouseEvent) {
+    function scheduleTip(content: { commit: CommitNode }, event: MouseEvent) {
         const { clientX, clientY } = event
         window.clearTimeout(tipTimer)
         tipTimer = window.setTimeout(() => {
-            // keep the card inside the viewport — never let it fall off an edge
-            const x = Math.max(8, Math.min(clientX + 14, window.innerWidth - 308))
-            const y = Math.max(8, Math.min(clientY + 14, window.innerHeight - 92))
-            tip.value = { ...content, x, y }
+            tip.value = { ...content, x: clientX + 14, y: clientY + 14 }
+            // re-clamp with the card's real size once it has rendered
+            nextTick(() => {
+                const el = tipEl.value
+                if (!el || !tip.value) return
+                tip.value = {
+                    ...content,
+                    x: Math.max(8, Math.min(clientX + 14, window.innerWidth - el.offsetWidth - 8)),
+                    y: Math.max(8, Math.min(clientY + 14, window.innerHeight - el.offsetHeight - 8)),
+                }
+            })
         }, 500)
     }
 
@@ -315,10 +325,6 @@
 
     function showAvatarTip(commit: CommitNode, event: MouseEvent) {
         scheduleTip({ commit }, event)
-    }
-
-    function showRowTip(commit: CommitNode, event: MouseEvent) {
-        scheduleTip({ text: `${commit.shortHash} — ${commit.subject}` }, event)
     }
 
     interface SubjectPart {
@@ -502,8 +508,6 @@
                     }"
                     draggable="true"
                     @click="select(commit)"
-                    @mouseenter="event => showRowTip(commit, event)"
-                    @mouseleave="hideTip"
                     @contextmenu.prevent.stop="openMenu(commit, $event)"
                     @dragstart="$event.dataTransfer?.setData('text/plain', `commit:${commit.hash}`)"
                     @dragover="
@@ -643,18 +647,16 @@
         </div>
         <div
             v-if="tip"
+            ref="tipEl"
             class="avatar-tip"
             :style="{ left: `${tip.x}px`, top: `${tip.y}px` }">
-            <template v-if="tip.commit">
-                <strong>{{ tip.commit.author }}</strong>
-                <span
-                    v-if="tip.commit.authorEmail"
-                    class="avatar-tip-email"
-                    >{{ tip.commit.authorEmail }}</span
-                >
-                <span class="avatar-tip-date">{{ formatDatePattern(tip.commit.date, commitDatePattern) }}</span>
-            </template>
-            <template v-else>{{ tip.text }}</template>
+            <strong>{{ tip.commit.author }}</strong>
+            <span
+                v-if="tip.commit.authorEmail"
+                class="avatar-tip-email"
+                >{{ tip.commit.authorEmail }}</span
+            >
+            <span class="avatar-tip-date">{{ formatDatePattern(tip.commit.date, commitDatePattern) }}</span>
         </div>
         <CommitContextMenu
             :menu="menu"

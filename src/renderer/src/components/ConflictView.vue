@@ -1,6 +1,9 @@
 <script setup lang="ts">
+    import { nextTick } from 'vue'
+
     import { confirmDialog } from '../utils/confirm'
-    import { highlightDiffLines, highlightLine } from '../utils/highlight'
+    import { highlightLine, computeLineStates, highlightLineAt, type LineRenderContext } from '../utils/highlight'
+    import { buildPrefix, windowFor } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
@@ -43,6 +46,17 @@
      * because the immediate watch runs during setup.
      */
     const manualOutput = ref<string | null>(null)
+
+    // ---- virtualization state (declared before loadConflict — the immediate watch runs during setup) ----
+
+    // Conflict rows: 20px base line-height (.diff-line pre / .ln in styles.css); the block-outline
+    // borders add 1.5px on block edges (modern-ui.css .blk-top / .blk-bottom).
+    const CONFLICT_ROW_H = 20
+    const CONFLICT_BORDER_H = 1.5
+    const OVERSCAN_PX = 400
+
+    /** Per-line highlight caches for the two version panes, keyed by the stable DiffLine objects. */
+    const paneHtmlCache: Record<'ours' | 'theirs', Map<DiffLine, string>> = { ours: new Map(), theirs: new Map() }
 
     const MARK_OURS = /^<{7}(?: (.*))?$/
     const MARK_BASE = /^\|{7}(?: .*)?$/
@@ -129,6 +143,8 @@
         blocks.value = []
         currentBlock.value = -1
         manualOutput.value = null
+        paneHtmlCache.ours.clear()
+        paneHtmlCache.theirs.clear()
         try {
             const [content, vers] = await Promise.all([window.api.readConflictFile(f.path), window.api.conflictVersions(f.path)])
             if (props.file !== f) return
@@ -205,20 +221,20 @@
     const resultContent = computed(() => resultLines.value.map(line => line.text).join('\n'))
 
     // highlightLine is pure per (path, text) — caching keeps checkbox toggles cheap: only
-    // genuinely new output lines get highlighted, the rest reuse the cached HTML string
+    // genuinely new output lines get highlighted, the rest reuse the cached HTML string.
+    // Looked up lazily per rendered row (virtualized) instead of rebuilding an O(n) array per toggle.
     const outputHtmlCache = new Map<string, string>()
-    const outputHtml = computed(() => {
-        const path = props.file?.path ?? ''
-        return resultLines.value.map(line => {
-            const key = `${path}\u0000${line.text}`
-            let html = outputHtmlCache.get(key)
-            if (html === undefined) {
-                html = highlightLine(line.text, path)
-                outputHtmlCache.set(key, html)
-            }
-            return html
-        })
-    })
+    function outputHtmlFor(idx: number): string {
+        const line = resultLines.value[idx]
+        if (!line) return ''
+        const key = `${props.file?.path ?? ''}\u0000${line.text}`
+        let html = outputHtmlCache.get(key)
+        if (html === undefined) {
+            html = highlightLine(line.text, props.file?.path ?? '')
+            outputHtmlCache.set(key, html)
+        }
+        return html
+    }
 
     // ---- manual output editing (GitKraken-style "type in the output box to fine-tune") ----
 
@@ -337,11 +353,6 @@
         theirs: toCtxLines(versions.value?.theirs ?? null),
     }))
 
-    const htmlMaps = computed<Record<Side, Map<DiffLine, string>>>(() => ({
-        ours: highlightDiffLines(paneLines.value.ours, props.file?.path ?? '', (line, highlight) => highlight(line.text.slice(1))),
-        theirs: highlightDiffLines(paneLines.value.theirs, props.file?.path ?? '', (line, highlight) => highlight(line.text.slice(1))),
-    }))
-
     /** Where a line sits inside its block — drives the GitKraken-style rounded block outline. */
     type BlockEdge = 'top' | 'bottom' | 'only'
 
@@ -349,49 +360,38 @@
      * Per-line block metadata precomputed from block geometry (matchIdx + lengths). Deliberately never reads the per-line picks, so
      * toggling a checkbox does NOT re-run this — per-line template work stays O(1) instead of O(blocks).
      */
-    const paneMeta = computed<Record<Side, { block: number[]; start: boolean[]; lineInBlock: number[]; edge: (BlockEdge | null)[] }>>(
-        () => {
-            const build = (side: Side, lines: DiffLine[]) => {
-                const block = Array.from<number>({ length: lines.length }).fill(-1)
-                const start = Array.from<boolean>({ length: lines.length }).fill(false)
-                const lineInBlock = Array.from<number>({ length: lines.length }).fill(-1)
-                const edge = Array.from<BlockEdge | null>({ length: lines.length }).fill(null)
-                for (let bi = 0; bi < blocks.value.length; bi++) {
-                    const b = blocks.value[bi]
-                    const from = b.matchIdx[side]
-                    if (from < 0) continue
-                    for (let i = from; i < from + b[side].length && i < block.length; i++) {
-                        block[i] = bi
-                        lineInBlock[i] = i - from
-                        if (i === from) edge[i] = b[side].length === 1 ? 'only' : 'top'
-                        else if (i === from + b[side].length - 1) edge[i] = 'bottom'
-                    }
-                    if (from < start.length) start[from] = true
+    const paneMeta = computed<
+        Record<Side, { block: number[]; start: boolean[]; lineInBlock: number[]; edge: (BlockEdge | null)[]; prefix: Float64Array }>
+    >(() => {
+        const build = (side: Side, lines: DiffLine[]) => {
+            const block = Array.from<number>({ length: lines.length }).fill(-1)
+            const start = Array.from<boolean>({ length: lines.length }).fill(false)
+            const lineInBlock = Array.from<number>({ length: lines.length }).fill(-1)
+            const edge = Array.from<BlockEdge | null>({ length: lines.length }).fill(null)
+            for (let bi = 0; bi < blocks.value.length; bi++) {
+                const b = blocks.value[bi]
+                const from = b.matchIdx[side]
+                if (from < 0) continue
+                for (let i = from; i < from + b[side].length && i < block.length; i++) {
+                    block[i] = bi
+                    lineInBlock[i] = i - from
+                    if (i === from) edge[i] = b[side].length === 1 ? 'only' : 'top'
+                    else if (i === from + b[side].length - 1) edge[i] = 'bottom'
                 }
-                return { block, start, lineInBlock, edge }
+                if (from < start.length) start[from] = true
             }
-            return { ours: build('ours', paneLines.value.ours), theirs: build('theirs', paneLines.value.theirs) }
+            // Row heights for virtualization: base line-height plus the block-outline borders.
+            const heights = new Float64Array(lines.length)
+            for (let i = 0; i < lines.length; i++) {
+                let h = CONFLICT_ROW_H
+                if (edge[i] === 'top' || edge[i] === 'only') h += CONFLICT_BORDER_H
+                if (edge[i] === 'bottom' || edge[i] === 'only') h += CONFLICT_BORDER_H
+                heights[i] = h
+            }
+            return { block, start, lineInBlock, edge, prefix: buildPrefix(heights) }
         }
-    )
-
-    const panes = computed(() => [
-        {
-            side: 'ours' as Side,
-            title: 'OURS',
-            label: repoStore.oursLabel,
-            lines: paneLines.value.ours,
-            meta: paneMeta.value.ours,
-            exists: versions.value !== null && versions.value.ours !== null,
-        },
-        {
-            side: 'theirs' as Side,
-            title: 'THEIRS',
-            label: repoStore.theirsLabel,
-            lines: paneLines.value.theirs,
-            meta: paneMeta.value.theirs,
-            exists: versions.value !== null && versions.value.theirs !== null,
-        },
-    ])
+        return { ours: build('ours', paneLines.value.ours), theirs: build('theirs', paneLines.value.theirs) }
+    })
 
     const paneEls: Record<Side, HTMLElement | null> = { ours: null, theirs: null }
     const outputEl = ref<HTMLElement | null>(null)
@@ -401,7 +401,109 @@
         }
     }
 
+    // ---- virtual windows (prefix offsets; rows have non-uniform heights on block edges) ----
+
+    const paneScrollTop = ref<Record<Side, number>>({ ours: 0, theirs: 0 })
+    const outputScrollTop = ref(0)
+    const paneViewportH = ref(0)
+    const outputViewportH = ref(0)
+
+    /** Content offset of the rows inside a pane scroller: the sticky .pane-head sits above them. */
+    function paneHeadOffset(el: HTMLElement): number {
+        return el.querySelector<HTMLElement>('.pane-head')?.offsetHeight ?? 0
+    }
+
+    const oursWindow = computed(() => {
+        const el = paneEls.ours
+        const headH = el ? paneHeadOffset(el) : 0
+        return windowFor(paneMeta.value.ours.prefix, paneScrollTop.value.ours - headH, paneViewportH.value, OVERSCAN_PX, 600)
+    })
+    const theirsWindow = computed(() => {
+        const el = paneEls.theirs
+        const headH = el ? paneHeadOffset(el) : 0
+        return windowFor(paneMeta.value.theirs.prefix, paneScrollTop.value.theirs - headH, paneViewportH.value, OVERSCAN_PX, 600)
+    })
+    const outputPrefix = computed(() => buildPrefix(new Float64Array(resultLines.value.length).fill(CONFLICT_ROW_H)))
+    const outputWindow = computed(() => windowFor(outputPrefix.value, outputScrollTop.value, outputViewportH.value, OVERSCAN_PX, 400))
+    const outputRows = computed(() =>
+        resultLines.value
+            .slice(outputWindow.value.start, outputWindow.value.end)
+            .map((line, off) => ({ line, idx: outputWindow.value.start + off }))
+    )
+
+    function sliceRows(side: Side, win: { start: number; end: number; padTop: number; padBottom: number }) {
+        const lines = paneLines.value[side]
+        const rows: { line: DiffLine; idx: number }[] = []
+        for (let i = win.start; i < win.end && i < lines.length; i++) rows.push({ line: lines[i]!, idx: i })
+        return { rows, padTop: win.padTop, padBottom: win.padBottom }
+    }
+
+    // Sequential tokenizer state per pane line — lets the template highlight only visible lines.
+    const lineStatesBySide = computed<Record<Side, LineRenderContext[]>>(() => ({
+        ours: computeLineStates(paneLines.value.ours, props.file?.path ?? ''),
+        theirs: computeLineStates(paneLines.value.theirs, props.file?.path ?? ''),
+    }))
+
+    function paneHtmlFor(side: Side, line: DiffLine, idx: number): string {
+        const cache = paneHtmlCache[side]
+        const cached = cache.get(line)
+        if (cached !== undefined) return cached
+        const context = lineStatesBySide.value[side][idx]
+        const html = highlightLineAt(line, context ?? computeLineStates([line], props.file?.path ?? '')[0]!, (_line, highlight) =>
+            highlight(line.text.slice(1))
+        )
+        cache.set(line, html)
+        return html
+    }
+
+    /** Keep the window-driving scroll refs in step with the actual DOM (clamps, programmatic scrolls). */
+    function syncScrollState() {
+        for (const side of Object.keys(paneEls) as Side[]) {
+            const el = paneEls[side]
+            if (el) paneScrollTop.value[side] = el.scrollTop
+        }
+        if (outputEl.value) outputScrollTop.value = outputEl.value.scrollTop
+        const paneEl = paneEls.ours ?? paneEls.theirs
+        paneViewportH.value = paneEl?.clientHeight ?? 0
+        outputViewportH.value = outputEl.value?.clientHeight ?? 0
+    }
+
+    watch([paneLines, resultLines, () => ui.conflictOutputHeight, isFullscreen], () => nextTick(syncScrollState))
+
+    const panes = computed(() => [
+        {
+            side: 'ours' as Side,
+            title: 'OURS',
+            label: repoStore.oursLabel,
+            ...sliceRows('ours', oursWindow.value),
+            meta: paneMeta.value.ours,
+            exists: versions.value !== null && versions.value.ours !== null,
+        },
+        {
+            side: 'theirs' as Side,
+            title: 'THEIRS',
+            label: repoStore.theirsLabel,
+            ...sliceRows('theirs', theirsWindow.value),
+            meta: paneMeta.value.theirs,
+            exists: versions.value !== null && versions.value.theirs !== null,
+        },
+    ])
+
     let syncing = false
+
+    /** Record a scroller's actual scrollTop so its virtual window follows (even programmatic scrolls). */
+    function trackScroll(el: HTMLElement) {
+        if (el === outputEl.value) {
+            outputScrollTop.value = el.scrollTop
+            return
+        }
+        for (const side of Object.keys(paneEls) as Side[]) {
+            if (paneEls[side] === el) {
+                paneScrollTop.value[side] = el.scrollTop
+                return
+            }
+        }
+    }
 
     /**
      * All three views scroll together (like GitKraken's merge tool). The output pane has a different line count than the top panes, so sync
@@ -409,8 +511,9 @@
      * pixels.
      */
     function onPaneScroll(event: Event) {
-        if (syncing) return
         const source = event.target as HTMLElement
+        trackScroll(source)
+        if (syncing) return
         const sourceMax = source.scrollHeight - source.clientHeight
         if (sourceMax <= 0) return
         const ratio = source.scrollTop / sourceMax
@@ -419,7 +522,9 @@
         for (const el of targets) {
             if (!el || el === source) continue
             const targetMax = el.scrollHeight - el.clientHeight
-            el.scrollTop = targetMax > 0 ? ratio * targetMax : 0
+            const top = targetMax > 0 ? ratio * targetMax : 0
+            el.scrollTop = top
+            trackScroll(el)
         }
         // horizontal scroll stays pixel-exact between the two top panes (same content shape)
         const sides = Object.keys(paneEls) as Side[]
@@ -448,7 +553,7 @@
     function scrollToBlock(blockIndex: number) {
         const block = blocks.value[blockIndex]
         if (!block) return
-        // exact per-view positioning — suppress scroll-sync feedback while doing it
+        // exact per-view positioning via prefix offsets — suppress scroll-sync feedback while doing it
         syncing = true
         for (const side of Object.keys(paneEls) as Side[]) {
             const el = paneEls[side]
@@ -456,16 +561,22 @@
             if (!el) continue
             if (start < 0) {
                 el.scrollTop = 0
+                paneScrollTop.value[side] = 0
                 continue
             }
-            const lineEl = el.querySelectorAll('.diff-line')[start] as HTMLElement | undefined
-            if (lineEl) el.scrollTop = Math.max(0, lineEl.offsetTop - el.clientHeight / 3)
+            const prefix = paneMeta.value[side].prefix
+            if (start >= prefix.length - 1) continue
+            // the sticky .pane-head sits above the rows inside the scroller
+            const top = Math.max(0, paneHeadOffset(el) + prefix[start]! - el.clientHeight / 3)
+            el.scrollTop = top
+            paneScrollTop.value[side] = top
         }
         const firstOut = resultLines.value.findIndex(line => line.block === blockIndex)
         const out = outputEl.value
-        if (out && firstOut >= 0) {
-            const lineEl = out.querySelectorAll('.diff-line')[firstOut] as HTMLElement | undefined
-            if (lineEl) out.scrollTop = Math.max(0, lineEl.offsetTop - out.clientHeight / 3)
+        if (out && firstOut >= 0 && manualOutput.value === null && firstOut < outputPrefix.value.length - 1) {
+            const top = Math.max(0, outputPrefix.value[firstOut]! - out.clientHeight / 3)
+            out.scrollTop = top
+            outputScrollTop.value = top
         }
         requestAnimationFrame(() => {
             syncing = false
@@ -660,53 +771,61 @@
                         </div>
                         <template v-else>
                             <div
-                                v-for="(line, idx) in pane.lines"
-                                :key="idx"
+                                class="diff-spacer"
+                                :style="{ height: `${pane.padTop}px` }" />
+                            <div
+                                v-for="row in pane.rows"
+                                :key="row.idx"
                                 class="diff-line ctx conflict-line"
                                 :class="{
-                                    hl: pane.meta.block[idx] >= 0,
-                                    current: pane.meta.block[idx] >= 0 && pane.meta.block[idx] === currentBlock,
-                                    'blk-top': pane.meta.edge[idx] === 'top' || pane.meta.edge[idx] === 'only',
-                                    'blk-bottom': pane.meta.edge[idx] === 'bottom' || pane.meta.edge[idx] === 'only',
+                                    hl: pane.meta.block[row.idx] >= 0,
+                                    current: pane.meta.block[row.idx] >= 0 && pane.meta.block[row.idx] === currentBlock,
+                                    'blk-top': pane.meta.edge[row.idx] === 'top' || pane.meta.edge[row.idx] === 'only',
+                                    'blk-bottom': pane.meta.edge[row.idx] === 'bottom' || pane.meta.edge[row.idx] === 'only',
                                 }"
-                                @click="pane.meta.block[idx] >= 0 && setCurrent(pane.meta.block[idx])">
+                                @click="pane.meta.block[row.idx] >= 0 && setCurrent(pane.meta.block[row.idx])">
                                 <button
-                                    v-if="pane.meta.start[idx]"
+                                    v-if="pane.meta.start[row.idx]"
                                     class="block-use-btn"
                                     :title="`Use every ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} line of this conflict`"
-                                    @click.stop="togglePick(pane.side, pane.meta.block[idx])">
+                                    @click.stop="togglePick(pane.side, pane.meta.block[row.idx])">
                                     Use {{ pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel }}
                                 </button>
                                 <span class="ck-all">
                                     <button
-                                        v-if="pane.meta.block[idx] >= 0 && pane.meta.start[idx]"
+                                        v-if="pane.meta.block[row.idx] >= 0 && pane.meta.start[row.idx]"
                                         class="conflict-check"
-                                        :class="{ picked: isPicked(pane.side, pane.meta.block[idx]) }"
+                                        :class="{ picked: isPicked(pane.side, pane.meta.block[row.idx]) }"
                                         :title="`Use the whole ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} side of this conflict`"
-                                        @click.stop="togglePick(pane.side, pane.meta.block[idx])">
+                                        @click.stop="togglePick(pane.side, pane.meta.block[row.idx])">
                                         <i-lucide-check
-                                            v-if="isPicked(pane.side, pane.meta.block[idx])"
+                                            v-if="isPicked(pane.side, pane.meta.block[row.idx])"
                                             width="10"
                                             height="10" />
                                     </button>
                                 </span>
-                                <span class="ln">{{ idx + 1 }}</span>
+                                <span class="ln">{{ row.idx + 1 }}</span>
                                 <span class="ck">
                                     <button
-                                        v-if="pane.meta.block[idx] >= 0"
+                                        v-if="pane.meta.block[row.idx] >= 0"
                                         class="conflict-check"
-                                        :class="{ picked: isLinePicked(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx]) }"
+                                        :class="{
+                                            picked: isLinePicked(pane.side, pane.meta.block[row.idx], pane.meta.lineInBlock[row.idx]),
+                                        }"
                                         :title="`Include this ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} line in the output`"
-                                        @click.stop="toggleLine(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx])">
+                                        @click.stop="toggleLine(pane.side, pane.meta.block[row.idx], pane.meta.lineInBlock[row.idx])">
                                         <i-lucide-check
-                                            v-if="isLinePicked(pane.side, pane.meta.block[idx], pane.meta.lineInBlock[idx])"
+                                            v-if="isLinePicked(pane.side, pane.meta.block[row.idx], pane.meta.lineInBlock[row.idx])"
                                             width="10"
                                             height="10" />
                                     </button>
                                 </span>
                                 <!-- eslint-disable-next-line vue/no-v-html -->
-                                <pre v-html="htmlMaps[pane.side].get(line) ?? ''" />
+                                <pre v-html="paneHtmlFor(pane.side, row.line, row.idx)" />
                             </div>
+                            <div
+                                class="diff-spacer"
+                                :style="{ height: `${pane.padBottom}px` }" />
                         </template>
                     </div>
                 </div>
@@ -784,18 +903,24 @@
                         class="output-body"
                         @scroll.passive="onPaneScroll">
                         <div
-                            v-for="(line, idx) in resultLines"
-                            :key="idx"
+                            class="diff-spacer"
+                            :style="{ height: `${outputWindow.padTop}px` }" />
+                        <div
+                            v-for="row in outputRows"
+                            :key="row.idx"
                             class="diff-line ctx output-line"
                             :class="{
-                                'out-hl': line.block >= 0,
-                                'out-current': line.block >= 0 && line.block === currentBlock,
-                                unresolved: line.block >= 0 && !isPicked('ours', line.block) && !isPicked('theirs', line.block),
+                                'out-hl': row.line.block >= 0,
+                                'out-current': row.line.block >= 0 && row.line.block === currentBlock,
+                                unresolved: row.line.block >= 0 && !isPicked('ours', row.line.block) && !isPicked('theirs', row.line.block),
                             }">
-                            <span class="ln">{{ idx + 1 }}</span>
+                            <span class="ln">{{ row.idx + 1 }}</span>
                             <!-- eslint-disable-next-line vue/no-v-html -->
-                            <pre v-html="outputHtml[idx]" />
+                            <pre v-html="outputHtmlFor(row.idx)" />
                         </div>
+                        <div
+                            class="diff-spacer"
+                            :style="{ height: `${outputWindow.padBottom}px` }" />
                     </div>
                 </div>
             </template>

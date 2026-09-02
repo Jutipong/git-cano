@@ -23,6 +23,7 @@ declare global {
   const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
+  const buildPrefix: typeof import('./utils/virtual').buildPrefix
   const buildTree: typeof import('./utils/fileTree').buildTree
   const computeLineStates: typeof import('./utils/highlight').computeLineStates
   const computed: typeof import('vue').computed
@@ -39,6 +40,7 @@ declare global {
   const highlightDiffLines: typeof import('./utils/highlight').highlightDiffLines
   const highlightLine: typeof import('./utils/highlight').highlightLine
   const highlightLineAt: typeof import('./utils/highlight').highlightLineAt
+  const indexAtOffset: typeof import('./utils/virtual').indexAtOffset
   const inject: typeof import('vue').inject
   const intraLineRange: typeof import('./utils/highlight').intraLineRange
   const isWhitespaceOnlyChange: typeof import('./utils/highlight').isWhitespaceOnlyChange
@@ -62,6 +64,7 @@ declare global {
   const useWorkspaceStore: typeof import('./stores/workspace').useWorkspaceStore
   const watch: typeof import('vue').watch
   const watchEffect: typeof import('vue').watchEffect
+  const windowFor: typeof import('./utils/virtual').windowFor
 }
 // for type re-export
 declare global {

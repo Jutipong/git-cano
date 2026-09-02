@@ -18,7 +18,7 @@ export type CommitColumn = 'author' | 'hash' | 'date'
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
     author: false,
     hash: false,
-    date: false,
+    date: true,
 }
 
 export const DEFAULT_THEME: Theme = 'dark'
