@@ -1411,13 +1411,17 @@ body {
     background: color-mix(in srgb, var(--green) 16%, var(--surface-1));
 }
 
+.branch-row.current > svg {
+    color: var(--green);
+}
+
 .branch-row.tag-row.active {
     background: color-mix(in srgb, var(--green) 16%, var(--surface-1));
 }
 
 .branch-row.current .branch-name {
     font-weight: 600;
-    color: var(--green);
+    color: var(--text-secondary);
 }
 
 .branch-row .branch-detached {
@@ -1510,6 +1514,10 @@ body {
 .graph-view,
 .file-panel {
     background: var(--surface-1);
+}
+
+.file-panel.commit-mode .file-groups {
+    background: color-mix(in srgb, var(--green) 3%, var(--surface-1));
 }
 
 .panel-heading,

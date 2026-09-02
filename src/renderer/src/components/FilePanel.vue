@@ -459,7 +459,9 @@
 </script>
 
 <template>
-    <div class="file-panel">
+    <div
+        class="file-panel"
+        :class="{ 'commit-mode': isDetails }">
         <div
             class="panel-heading"
             :class="{ 'commit-mode': isDetails }">
