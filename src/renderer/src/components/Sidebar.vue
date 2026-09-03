@@ -232,33 +232,34 @@
         })()
     }
     async function createBranchHere(branch: LocalBranchMenuState['branch']) {
-        const name = await promptDialog({
+        const result = await promptDialog({
             title: 'Create branch here…',
             message: `New branch at "${branch.name}"`,
             placeholder: 'branch name',
             confirmLabel: 'Create',
             existing: local.value.map(b => b.name),
+            branchOptions: { checkout: true, localChanges: 'stash' },
         })
-        if (!name?.trim()) return
+        if (!result?.name) return
         void run(
-            () => window.api.createBranch(name.trim(), false, branch.commitHash ?? undefined),
-            `Created branch ${name.trim()}`,
-            `Creating branch ${name.trim()}…`
+            () => window.api.createBranch(result.name, result.checkout, branch.commitHash ?? undefined, result.localChanges),
+            `Created branch ${result.name}`,
+            `Creating branch ${result.name}…`
         )
     }
     async function createTagHere(branch: LocalBranchMenuState['branch']) {
-        const name = await promptDialog({
+        const result = await promptDialog({
             title: 'Create tag here…',
             message: `New tag at "${branch.name}"`,
             placeholder: 'tag name',
             confirmLabel: 'Create',
             existing: tags.value.map(t => t.name),
         })
-        if (!name?.trim()) return
+        if (!result?.name) return
         void run(
-            () => window.api.createTag(name.trim(), branch.commitHash ?? null),
-            `Tag ${name.trim()} created`,
-            `Creating tag ${name.trim()}…`
+            () => window.api.createTag(result.name, branch.commitHash ?? null),
+            `Tag ${result.name} created`,
+            `Creating tag ${result.name}…`
         )
     }
     function copyBranchName(branch: LocalBranchMenuState['branch']) {

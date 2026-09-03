@@ -2555,6 +2555,40 @@ body {
     font-size: 11px;
 }
 
+.prompt-option {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    user-select: none;
+}
+
+.prompt-option input {
+    accent-color: var(--teal);
+    cursor: pointer;
+}
+
+.prompt-local-changes {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.prompt-local-changes.disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.prompt-local-label {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
 .busy-overlay {
     position: fixed;
     inset: 0;

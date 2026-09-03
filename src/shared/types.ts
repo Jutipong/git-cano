@@ -36,6 +36,9 @@ export interface BranchInfo {
     behind?: number
 }
 
+/** What to do with uncommitted changes when checking out the new branch. */
+export type LocalChangesMode = 'keep' | 'stash' | 'discard'
+
 export interface DiffLine {
     type: 'add' | 'del' | 'ctx' | 'hunk' | 'meta'
     oldNo: number | null

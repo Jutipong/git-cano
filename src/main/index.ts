@@ -22,7 +22,7 @@ import {
     checkout,
     closeRepo,
     commit,
-    createBranch,
+    createBranchWithOptions,
     deleteBranch,
     deleteRemoteBranch,
     discard,
@@ -123,7 +123,7 @@ import {
 import { log, summarize, summarizeArgs } from './logger'
 import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
-import type { MergeMode } from '@shared/types'
+import type { LocalChangesMode, MergeMode } from '@shared/types'
 
 let win: BrowserWindow | null = null
 
@@ -564,9 +564,9 @@ app.whenReady().then(() => {
         requireRepo()
         return getCachedBranches()
     })
-    handle('branch:create', (name: string, co: boolean, startPoint?: string) => {
+    handle('branch:create', (name: string, co: boolean, startPoint?: string, localChanges?: LocalChangesMode) => {
         requireRepo()
-        return createBranch(name as string, co as boolean, startPoint)
+        return createBranchWithOptions(name as string, co as boolean, (localChanges as LocalChangesMode) || 'keep', startPoint)
     })
     handle('branch:checkout', (ref: string) => {
         requireRepo()

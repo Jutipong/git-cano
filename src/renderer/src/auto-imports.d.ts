@@ -76,7 +76,7 @@ declare global {
   export type { ConfirmOptions, ConfirmRequest } from './stores/confirm'
   import('./stores/confirm')
   // @ts-ignore
-  export type { PromptOptions, PromptRequest } from './stores/prompt'
+  export type { PromptOptions, PromptResult, PromptRequest } from './stores/prompt'
   import('./stores/prompt')
   // @ts-ignore
   export type { RepoTab } from './stores/repo'

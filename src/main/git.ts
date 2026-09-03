@@ -19,6 +19,7 @@ import type {
     DiffLine,
     FileEntry,
     GitignoreRuleKind,
+    LocalChangesMode,
     MergeCheck,
     MergeMode,
     RebaseEntry,
@@ -841,6 +842,48 @@ export async function createBranch(name: string, checkout: boolean, startPoint?:
     const start = startPoint || 'HEAD'
     if (checkout) await g.checkoutBranch(name, start)
     else await g.raw(['branch', name, start])
+}
+
+export async function discardAllChanges(): Promise<void> {
+    const { git: g } = getRepo()
+    await g.raw(['reset', '--hard'])
+    await g.clean(['f', 'd'])
+}
+
+export async function createBranchWithOptions(
+    name: string,
+    checkout: boolean,
+    localChanges: LocalChangesMode,
+    startPoint?: string
+): Promise<void> {
+    const { git: g } = getRepo()
+    if (!checkout || localChanges === 'keep') {
+        await createBranch(name, checkout, startPoint)
+        return
+    }
+    if (localChanges === 'discard') {
+        await discardAllChanges()
+        await createBranch(name, true, startPoint)
+        return
+    }
+    // stash and reapply
+    const status = await g.status()
+    const dirty = status.files.length > 0
+    let stashed = false
+    if (dirty) {
+        await g.raw(['stash', 'push', '--include-untracked', '-m', `create-branch: ${name}`])
+        stashed = true
+    }
+    try {
+        await createBranch(name, true, startPoint)
+    } catch (error) {
+        if (stashed) await g.raw(['stash', 'pop']).catch(() => {})
+        throw error
+    }
+    if (stashed) {
+        // On conflict git keeps the stash entry — leave it for the user to resolve.
+        await g.raw(['stash', 'pop']).catch(() => {})
+    }
 }
 
 export async function checkout(ref: string): Promise<void> {

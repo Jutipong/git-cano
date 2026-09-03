@@ -291,18 +291,19 @@
             .branches()
             .then(branches => branches.local.map(branch => branch.name))
             .catch(() => [] as string[])
-        const name = await promptDialog({
+        const result = await promptDialog({
             title: 'Create branch here…',
             message: `New branch at ${commit.shortHash} — ${commit.subject}`,
             placeholder: 'branch name',
             confirmLabel: 'Create',
             existing,
+            branchOptions: { checkout: true, localChanges: 'stash' },
         })
-        if (name?.trim())
+        if (result?.name)
             void run(
-                `Created branch ${name.trim()}`,
-                () => window.api.createBranch(name.trim(), false, commit.hash),
-                `Creating branch ${name.trim()}…`
+                `Created branch ${result.name}`,
+                () => window.api.createBranch(result.name, result.checkout, commit.hash, result.localChanges),
+                `Creating branch ${result.name}…`
             )
     }
 

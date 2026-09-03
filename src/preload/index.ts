@@ -22,6 +22,7 @@ import type {
     SshKeyInfo,
     SshTestResult,
     StashEntry,
+    LocalChangesMode,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -95,8 +96,8 @@ const api = {
 
     branches: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> => call('branch:list'),
     branchesCached: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] } | null> => call('branch:cached'),
-    createBranch: (name: string, checkout: boolean, startPoint?: string): Promise<void> =>
-        call('branch:create', name, checkout, startPoint),
+    createBranch: (name: string, checkout: boolean, startPoint?: string, localChanges?: LocalChangesMode): Promise<void> =>
+        call('branch:create', name, checkout, startPoint, localChanges),
     checkout: (ref: string): Promise<void> => call('branch:checkout', ref),
     deleteBranch: (name: string): Promise<void> => call('branch:delete', name),
     deleteRemoteBranch: (ref: string): Promise<string> => call('branch:remoteDelete', ref),

@@ -1,5 +1,5 @@
-import { usePromptStore, type PromptOptions } from '../stores/prompt'
+import { usePromptStore, type PromptOptions, type PromptResult } from '../stores/prompt'
 
-export function promptDialog(options: PromptOptions): Promise<string | null> {
+export function promptDialog(options: PromptOptions): Promise<PromptResult | null> {
     return usePromptStore().request(options)
 }
