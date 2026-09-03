@@ -5,6 +5,7 @@
     import FolderGit2 from '~icons/lucide/folder-git2'
     import FolderOpen from '~icons/lucide/folder-open'
     import GitBranch from '~icons/lucide/git-branch'
+    import Layers from '~icons/lucide/layers'
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
     import Sparkles from '~icons/lucide/sparkles'
@@ -25,9 +26,10 @@
     const syncStore = useSyncStore()
     const ui = useUiStore()
     const ai = useAiStore()
+    const ws = useWorkspaceStore()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
-    type Mode = 'commands' | 'repo' | 'branch' | 'ai'
+    type Mode = 'commands' | 'repo' | 'branch' | 'workspace' | 'ai'
     const mode = ref<Mode>('commands')
     const search = ref('')
     const active = ref(0)
@@ -106,6 +108,18 @@
         ui.aiRunRequest = aiMode
     }
 
+    /** Switches workspace via the repo store (it owns the busy guard + switching splash), errors surface like WorkspaceButton's. */
+    function switchWorkspace(name: string) {
+        close()
+        void (async () => {
+            try {
+                await repoStore.switchWorkspace(name)
+            } catch (error) {
+                notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            }
+        })()
+    }
+
     const commandItems = computed<PaletteItem[]>(() => {
         const items: PaletteItem[] = []
         if (repoStore.repo) {
@@ -124,6 +138,17 @@
         items.push(
             { id: 'repo', label: 'Repo…', hint: 'Switch repository tab', icon: FolderGit2, run: () => enterMode('repo') },
             { id: 'branch', label: 'Branch…', hint: 'Checkout branch', icon: GitBranch, run: () => enterMode('branch') },
+            ...(ws.names.length > 1
+                ? [
+                      {
+                          id: 'workspace',
+                          label: 'Workspace…',
+                          hint: 'Switch workspace',
+                          icon: Layers,
+                          run: () => enterMode('workspace'),
+                      } satisfies PaletteItem,
+                  ]
+                : []),
             ...(aiCanRun.value
                 ? [{ id: 'ai', label: 'AI…', hint: 'Generate commit', icon: Sparkles, run: () => enterMode('ai') } satisfies PaletteItem]
                 : []),
@@ -165,6 +190,19 @@
             }))
     )
 
+    const workspaceItems = computed<PaletteItem[]>(() =>
+        ws.names.map(name => ({
+            id: name,
+            label: name,
+            hint: name === ws.active ? 'Active' : undefined,
+            icon: Layers,
+            run: () => {
+                close()
+                if (name !== ws.active) switchWorkspace(name)
+            },
+        }))
+    )
+
     const aiItems = computed<PaletteItem[]>(() => [
         { id: 'aiGenerate', label: 'Generate message', accent: 'green', icon: Sparkles, run: () => requestAiRun('off') },
         {
@@ -188,9 +226,11 @@
             ? repoItems.value
             : mode.value === 'branch'
               ? branchItems.value
-              : mode.value === 'ai'
-                ? aiItems.value
-                : commandItems.value
+              : mode.value === 'workspace'
+                ? workspaceItems.value
+                : mode.value === 'ai'
+                  ? aiItems.value
+                  : commandItems.value
     )
 
     /** Like-style filter: case-insensitive substring match on the item label. */
@@ -207,12 +247,14 @@
         commands: 'Type a command…',
         repo: 'Search repo…',
         branch: 'Search branch…',
+        workspace: 'Search workspace…',
         ai: 'Search AI command…',
     }
     const EMPTY_TEXTS: Record<Mode, string> = {
         commands: 'No matching command',
         repo: 'No matching repository',
         branch: 'No matching branch',
+        workspace: 'No matching workspace',
         ai: 'No matching command',
     }
     const placeholder = computed(() => PLACEHOLDERS[mode.value])
@@ -221,6 +263,7 @@
     const CHIP: Record<Exclude<Mode, 'commands'>, { icon: Component; label: string }> = {
         repo: { icon: FolderGit2, label: 'Repo' },
         branch: { icon: GitBranch, label: 'Branch' },
+        workspace: { icon: Layers, label: 'Workspace' },
         ai: { icon: Sparkles, label: 'AI' },
     }
 
