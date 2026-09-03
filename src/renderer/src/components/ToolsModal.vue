@@ -6,6 +6,7 @@
     import { confirmDialog } from '../utils/confirm'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
@@ -813,11 +814,9 @@
                                             v-if="!sshTesting"
                                             width="13"
                                             height="13" />
-                                        <i-lucide-loader-circle
+                                        <ThinkSpinner
                                             v-else
-                                            class="spinning"
-                                            width="13"
-                                            height="13" />
+                                            compact />
                                         Test
                                     </button>
                                     <button
@@ -878,11 +877,9 @@
                                         class="btn success small"
                                         :disabled="generating || !genName.trim() || genNameError !== null"
                                         @click="generateKey()">
-                                        <i-lucide-loader-circle
+                                        <ThinkSpinner
                                             v-if="generating"
-                                            class="spinning"
-                                            width="13"
-                                            height="13" />
+                                            compact />
                                         <i-lucide-plus
                                             v-else
                                             width="13"
@@ -974,11 +971,9 @@
                                         class="btn success small"
                                         :disabled="!githubTokenDraft.trim() || githubBusy"
                                         @click="saveGithubToken()">
-                                        <i-lucide-loader-circle
+                                        <ThinkSpinner
                                             v-if="githubBusy"
-                                            class="spinning"
-                                            width="13"
-                                            height="13" />
+                                            compact />
                                         <i-lucide-check
                                             v-else
                                             width="13"
@@ -1088,11 +1083,9 @@
                                     class="btn small"
                                     :disabled="!aiToken.trim() || connecting"
                                     @click="connectProvider()">
-                                    <i-lucide-loader-circle
+                                    <ThinkSpinner
                                         v-if="connecting"
-                                        class="spinning"
-                                        width="13"
-                                        height="13" />
+                                        compact />
                                     <i-lucide-download
                                         v-else
                                         width="13"
@@ -1173,11 +1166,9 @@
                                     class="btn small"
                                     :disabled="!aiToken.trim() || connecting"
                                     @click="connectProvider()">
-                                    <i-lucide-loader-circle
+                                    <ThinkSpinner
                                         v-if="connecting"
-                                        class="spinning"
-                                        width="13"
-                                        height="13" />
+                                        compact />
                                     <i-lucide-download
                                         v-else
                                         width="13"
@@ -1250,11 +1241,9 @@
                                     v-if="!aiTesting"
                                     width="13"
                                     height="13" />
-                                <i-lucide-loader-circle
+                                <ThinkSpinner
                                     v-else
-                                    class="spinning"
-                                    width="13"
-                                    height="13" />
+                                    compact />
                                 {{ aiTesting ? 'Testing…' : 'Test connect' }}
                             </button>
                             <span

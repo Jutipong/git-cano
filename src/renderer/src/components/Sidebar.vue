@@ -9,6 +9,7 @@
     import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { MenuItem, RepoStatus } from '@shared/types'
@@ -586,12 +587,11 @@
                         <i-lucide-tag
                             width="13"
                             height="13" />
-                        <i-lucide-loader-2
+                        <ThinkSpinner
                             v-if="pendingRemoteTag === tag.name"
-                            class="tag-remote-ic spinning"
-                            title="Working…"
-                            width="14"
-                            height="14" />
+                            compact
+                            class="tag-remote-ic"
+                            title="Working…" />
                         <i-lucide-cloud
                             v-else-if="remoteTagNames.includes(tag.name)"
                             class="tag-remote-ic"

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import ThinkSpinner from './ThinkSpinner.vue'
+
     import type { ToastKind } from '../stores/uiTransient'
 
     const props = defineProps<{ refresh: () => Promise<unknown> }>()
@@ -120,11 +122,9 @@
                 :disabled="!originUrl.trim() || testing"
                 title="Check that this URL is reachable"
                 @click="testUrl()">
-                <i-lucide-loader-circle
+                <ThinkSpinner
                     v-if="testing"
-                    class="spinning"
-                    width="13"
-                    height="13" />
+                    compact />
                 <i-lucide-plug-zap
                     v-else
                     width="13"

@@ -5,6 +5,7 @@
     import { highlightLine, computeLineStates, highlightLineAt, type LineRenderContext } from '../utils/highlight'
     import { buildPrefix, windowFor } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
     import type { ConflictVersions, DiffLine } from '@shared/types'
@@ -693,11 +694,7 @@
                 v-if="loading"
                 class="diff-loading">
                 <div class="busy-card">
-                    <i-lucide-loader-circle
-                        class="spinning"
-                        width="18"
-                        height="18" />
-                    <span>Loading conflict…</span>
+                    <ThinkSpinner suffix="Loading conflict…" />
                 </div>
             </div>
 

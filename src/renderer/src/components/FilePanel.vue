@@ -7,6 +7,7 @@
     import CloseXIcon from './CloseXIcon.vue'
     import CollapseAllButton from './CollapseAllButton.vue'
     import FileContextMenu, { type FileMenuState } from './FileContextMenu.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { AiCommitMode } from '../stores/ui'
     import type { ToastKind } from '../stores/uiTransient'
@@ -555,11 +556,7 @@
                 v-if="loading"
                 class="diff-loading">
                 <div class="busy-card">
-                    <i-lucide-loader-circle
-                        class="spinning"
-                        width="18"
-                        height="18" />
-                    <span>Loading files…</span>
+                    <ThinkSpinner suffix="Loading files…" />
                 </div>
             </div>
             <template v-else-if="ui.fileFilterMode === 'all'">
@@ -1030,11 +1027,9 @@
                     :disabled="conflictedFiles.length > 0 || pending"
                     :title="conflictedFiles.length ? 'Resolve all conflicts first' : ''"
                     @click="isRebasing ? continueRebase() : continueMerge()">
-                    <i-lucide-loader-circle
+                    <ThinkSpinner
                         v-if="pending"
-                        class="spinning"
-                        width="14"
-                        height="14" />
+                        compact />
                     <i-lucide-check
                         v-else
                         width="14"
@@ -1138,11 +1133,9 @@
                             :disabled="pending || !message.trim() || staged.length === 0"
                             title="Commit staged changes"
                             @click="doCommit(false)">
-                            <i-lucide-loader-circle
+                            <ThinkSpinner
                                 v-if="committing"
-                                class="spinning"
-                                width="14"
-                                height="14" />
+                                compact />
                             <i-lucide-check
                                 v-else
                                 width="14"
@@ -1155,11 +1148,9 @@
                             :disabled="pending || !message.trim() || staged.length === 0"
                             title="Commit staged changes and push to remote"
                             @click="doCommit(true)">
-                            <i-lucide-loader-circle
+                            <ThinkSpinner
                                 v-if="committing"
-                                class="spinning"
-                                width="14"
-                                height="14" />
+                                compact />
                             <i-lucide-arrow-up
                                 v-else
                                 width="14"
@@ -1183,11 +1174,9 @@
                                       : 'Generate a commit message from the current changes'
                             "
                             @click="generateMessage()">
-                            <i-lucide-loader-circle
+                            <ThinkSpinner
                                 v-if="generating"
-                                class="spinning"
-                                width="16"
-                                height="16" />
+                                compact />
                             <i-fluent-emoji-flat-robot
                                 v-else
                                 width="18"

@@ -7,6 +7,7 @@
     import { formatDatePattern, formatShortDate } from '../utils/format'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { CommitNode } from '@shared/types'
 
@@ -416,11 +417,10 @@
                 <span class="commit-count"
                     >{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span
                 >
-                <i-lucide-loader-circle
+                <ThinkSpinner
                     v-if="repoStore.refreshingRepo"
-                    class="spinning graph-refresh-spinner"
-                    width="13"
-                    height="13" />
+                    compact
+                    class="graph-refresh-spinner" />
                 <label
                     class="commit-search"
                     title="Search commits">

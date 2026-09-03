@@ -7,6 +7,8 @@
     const props = defineProps<{
         /** Stable suffix kept after the cycling verb, e.g. the busy message. */
         suffix?: string
+        /** Frames-only mode for inline use (buttons, small indicators). Inherits size/color. */
+        compact?: boolean
     }>()
 
     const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
@@ -23,9 +25,10 @@
         spinnerTimer = setInterval(() => {
             frame.value = (frame.value + 1) % SPINNER_FRAMES.length
         }, SPINNER_INTERVAL_MS)
-        verbTimer = setInterval(() => {
-            verbIndex.value = (verbIndex.value + 1) % DEFAULT_SPINNER_VERBS.length
-        }, VERB_INTERVAL_MS)
+        if (!props.compact)
+            verbTimer = setInterval(() => {
+                verbIndex.value = (verbIndex.value + 1) % DEFAULT_SPINNER_VERBS.length
+            }, VERB_INTERVAL_MS)
     })
 
     onUnmounted(() => {
@@ -46,9 +49,14 @@
 <template>
     <span
         class="think-spinner"
+        :class="{ compact }"
         role="status">
         <span class="think-spinner-frames">{{ SPINNER_FRAMES[frame] }}</span>
-        <span class="think-spinner-label">{{ label }}</span>
+        <span
+            v-if="!compact"
+            class="think-spinner-label"
+            >{{ label }}</span
+        >
     </span>
 </template>
 
@@ -68,5 +76,17 @@
         font-size: 14px;
         min-width: 12px;
         text-align: center;
+    }
+
+    .think-spinner.compact {
+        gap: 0;
+        color: inherit;
+        font-size: inherit;
+    }
+
+    .think-spinner.compact .think-spinner-frames {
+        color: currentColor;
+        font-size: inherit;
+        min-width: 1ch;
     }
 </style>

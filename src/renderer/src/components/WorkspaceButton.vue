@@ -4,6 +4,7 @@
     import { useRepoStore } from '../stores/repo'
     import { useWorkspaceStore } from '../stores/workspace'
     import { confirmDialog } from '../utils/confirm'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
 
@@ -148,11 +149,9 @@
             title="Work spaces"
             :disabled="switching"
             @click="toggle">
-            <i-lucide-loader-circle
+            <ThinkSpinner
                 v-if="switching"
-                class="spinning"
-                width="13"
-                height="13" />
+                compact />
             <i-lucide-layers
                 v-else
                 width="13"
