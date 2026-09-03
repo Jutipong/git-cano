@@ -2345,10 +2345,6 @@ mark {
     cursor: pointer;
     user-select: none;
 }
-.setting-toggle input[type='checkbox'] {
-    accent-color: var(--teal);
-}
-
 .tools-reset-row {
     margin-top: 4px;
     padding-top: 10px;

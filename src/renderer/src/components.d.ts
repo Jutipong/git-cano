@@ -11,6 +11,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppCheckbox: typeof import('./components/AppCheckbox.vue')['default']
     BlameModal: typeof import('./components/BlameModal.vue')['default']
     CloneRepoModal: typeof import('./components/CloneRepoModal.vue')['default']
     CloseXIcon: typeof import('./components/CloseXIcon.vue')['default']
@@ -91,7 +92,6 @@ declare module 'vue' {
     ILucideZoomIn: typeof import('~icons/lucide/zoom-in')['default']
     IMageMessageDots: typeof import('~icons/mage/message-dots')['default']
     IStreamlineFlexColorArtificialIntelligenceBrainChipFlat: typeof import('~icons/streamline-flex-color/artificial-intelligence-brain-chip-flat')['default']
-    KittLoader: typeof import('./components/KittLoader.vue')['default']
     LocalBranchContextMenu: typeof import('./components/LocalBranchContextMenu.vue')['default']
     OpenInButton: typeof import('./components/OpenInButton.vue')['default']
     OpenRepoMenu: typeof import('./components/OpenRepoMenu.vue')['default']

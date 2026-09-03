@@ -76,18 +76,16 @@
                         Always on
                     </span>
                 </div>
-                <label
+                <AppCheckbox
                     v-for="column in COLUMNS"
                     :key="column.key"
+                    v-model="ui.commitColumns[column.key]"
                     class="graph-settings-row">
-                    <input
-                        v-model="ui.commitColumns[column.key]"
-                        type="checkbox" />
                     <span class="graph-settings-label">
                         <strong>{{ column.label }}</strong>
                         <small>{{ column.hint }}</small>
                     </span>
-                </label>
+                </AppCheckbox>
                 <div class="graph-settings-format">
                     <label class="graph-settings-format-label">Date format</label>
                     <input

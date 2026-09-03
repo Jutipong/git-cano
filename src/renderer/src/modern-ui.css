@@ -1405,7 +1405,7 @@ body {
 /* expanded list sections absorb the leftover space instead of leaving a void;
    min-height keeps the header + a few rows visible when several lists are open */
 .sidebar > .sidebar-section.grow {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     min-height: 72px;
 }
 /* collapsed sections: drop the content padding + header divider so only the header remains */
@@ -4015,11 +4015,6 @@ body {
     color: #fff;
 }
 
-.graph-settings-row input[type='checkbox'] {
-    flex: 0 0 auto;
-    accent-color: var(--teal);
-}
-
 .graph-settings-locked {
     margin-left: auto;
     display: inline-flex;
@@ -4390,16 +4385,6 @@ body {
     color: var(--text-secondary);
     font-size: 12px;
     line-height: 1.4;
-}
-
-.setting-toggle input[type='checkbox'] {
-    flex: 0 0 auto;
-    width: 15px;
-    height: 15px;
-    margin: 0;
-    accent-color: var(--teal);
-    border-radius: 4px;
-    cursor: pointer;
 }
 
 /* Authentication tab */
@@ -5251,4 +5236,102 @@ body {
 
 .palette-chip.ai:hover {
     background: color-mix(in srgb, var(--orange) 25%, transparent);
+}
+
+/* ===== Animated checkbox (AppCheckbox.vue) — colors follow project theme ===== */
+
+.cbx19 {
+    --cbx-size: 18px;
+    --cbx-color: var(--teal);
+    --cbx-border: var(--line);
+    --cbx-halo: var(--surface-1);
+}
+
+/* keep the native input in the DOM (focusable) but invisible */
+.cbx19 input[type='checkbox'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cbx19 input[type='checkbox']:focus-visible + .check-box {
+    outline: 2px solid var(--cbx-color);
+    outline-offset: 2px;
+}
+
+.cbx19 .check-box {
+    flex: 0 0 auto;
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    width: var(--cbx-size);
+    height: var(--cbx-size);
+    border: calc(var(--cbx-size) * 0.1) solid var(--cbx-border);
+    border-radius: calc(var(--cbx-size) * 0.2);
+    background: transparent;
+    transition: border-color ease 0.2s;
+    cursor: pointer;
+}
+
+.cbx19 .check-box::before,
+.cbx19 .check-box::after {
+    position: absolute;
+    box-sizing: border-box;
+    height: 0;
+    width: calc(var(--cbx-size) * 0.2);
+    border-radius: calc(var(--cbx-size) * 0.1);
+    background: var(--cbx-color);
+    content: ' ';
+    transform-origin: left top;
+}
+
+.cbx19 .check-box::before {
+    top: calc(var(--cbx-size) * 0.72);
+    left: calc(var(--cbx-size) * 0.41);
+    box-shadow: 0 0 0 calc(var(--cbx-size) * 0.05) var(--cbx-halo);
+    transform: rotate(-135deg);
+}
+
+.cbx19 .check-box::after {
+    top: calc(var(--cbx-size) * 0.37);
+    left: calc(var(--cbx-size) * 0.05);
+    transform: rotate(-45deg);
+}
+
+@keyframes cbx19-bottom-check {
+    0% {
+        height: 0;
+    }
+    100% {
+        height: calc(var(--cbx-size) / 2);
+    }
+}
+
+@keyframes cbx19-top-check {
+    0% {
+        height: 0;
+    }
+    50% {
+        height: 0;
+    }
+    100% {
+        height: calc(var(--cbx-size) * 1.2);
+    }
+}
+
+.cbx19 input[type='checkbox']:checked + .check-box {
+    border-color: var(--cbx-color);
+}
+
+.cbx19 input[type='checkbox']:checked + .check-box::after {
+    height: calc(var(--cbx-size) / 2);
+    animation: cbx19-bottom-check 0.2s ease 0s forwards;
+}
+
+.cbx19 input[type='checkbox']:checked + .check-box::before {
+    height: calc(var(--cbx-size) * 1.2);
+    animation: cbx19-top-check 0.4s ease 0s forwards;
 }

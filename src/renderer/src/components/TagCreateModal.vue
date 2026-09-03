@@ -97,12 +97,11 @@
                     placeholder="Tag name"
                     @input="error = ''"
                     @keydown.enter="submit()" />
-                <label class="tag-create-annotated">
-                    <input
-                        v-model="ui.tagPushToOrigin"
-                        type="checkbox" />
+                <AppCheckbox
+                    v-model="ui.tagPushToOrigin"
+                    class="tag-create-annotated">
                     Push to origin
-                </label>
+                </AppCheckbox>
                 <div
                     v-if="isDuplicate"
                     class="tag-modal-error">

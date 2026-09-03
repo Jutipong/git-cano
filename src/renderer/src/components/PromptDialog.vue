@@ -97,12 +97,11 @@
                     >{{ error || `${value.trim()} already exists` }}</span
                 >
                 <template v-if="isBranch">
-                    <label class="prompt-option">
-                        <input
-                            v-model="checkout"
-                            type="checkbox" />
+                    <AppCheckbox
+                        v-model="checkout"
+                        class="prompt-option">
                         Check out after create
-                    </label>
+                    </AppCheckbox>
                     <div
                         class="prompt-local-changes"
                         :class="{ disabled: !checkout }">

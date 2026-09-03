@@ -652,13 +652,12 @@
                                 height="13" />
                             Performance
                         </strong>
-                        <label class="setting-toggle">
-                            <input
-                                type="checkbox"
-                                :checked="statusAccelerators"
-                                @change="toggleStatusAccelerators" />
+                        <AppCheckbox
+                            class="setting-toggle"
+                            :model-value="statusAccelerators"
+                            @update:model-value="toggleStatusAccelerators">
                             Speed up git status (large repos / Windows)
-                        </label>
+                        </AppCheckbox>
                         <span class="setting-hint">
                             Lets git cache worktree state (fsmonitor + untracked cache) so refreshes are much faster. Writes to each opened
                             repository's local git config; takes effect the next time the repo is opened.
