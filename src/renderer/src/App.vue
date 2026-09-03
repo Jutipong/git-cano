@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import BlameModal from './components/BlameModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
+    import CommandPalette from './components/CommandPalette.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
     import ConflictView from './components/ConflictView.vue'
     import DiffView from './components/DiffView.vue'
@@ -142,6 +143,10 @@
         startAutoRefresh()
         watch(() => ui.refreshInterval, startAutoRefresh)
 
+        // double-Shift detection for the command palette (two taps within the window)
+        const DOUBLE_SHIFT_MS = 400
+        let lastShiftTap = 0
+
         const onKeyDown = (event: KeyboardEvent) => {
             // app zoom shortcuts — kept above the busy gate so zooming always works
             if (event.metaKey || event.ctrlKey) {
@@ -170,6 +175,21 @@
                 else if (selectedStash.value) selectedStash.value = null
                 return
             }
+            // double-Shift opens the command palette — ignored while typing in text fields,
+            // otherwise capital letters would fire it
+            if (event.key === 'Shift' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey) {
+                const target = event.target as HTMLElement | null
+                if (!target?.closest('input, textarea, [contenteditable="true"]')) {
+                    const now = Date.now()
+                    if (now - lastShiftTap < DOUBLE_SHIFT_MS) {
+                        lastShiftTap = 0
+                        event.preventDefault()
+                        repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
+                        return
+                    }
+                    lastShiftTap = now
+                }
+            }
             if (!(event.metaKey || event.ctrlKey)) {
                 // '?' opens the shortcuts help modal (only outside text inputs)
                 if (event.key === '?' && !event.altKey) {
@@ -191,6 +211,12 @@
             if (event.ctrlKey && event.key === ',') {
                 event.preventDefault()
                 repoStore.toolsOpen = true
+                return
+            }
+            // Command palette — Ctrl+P (double-Shift is handled above)
+            if (event.ctrlKey && event.key.toLowerCase() === 'p' && !event.shiftKey) {
+                event.preventDefault()
+                repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
                 return
             }
         }
@@ -465,6 +491,10 @@
             :initial-tab="repoStore.toolsTab"
             :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
+        <CommandPalette
+            v-if="repoStore.commandPaletteOpen"
+            @close="repoStore.commandPaletteOpen = false"
+            @open-repo="openNewRepo" />
         <ShortcutsModal
             v-if="repoStore.shortcutsOpen"
             @close="repoStore.shortcutsOpen = false" />

@@ -15,6 +15,7 @@ declare module 'vue' {
     CloneRepoModal: typeof import('./components/CloneRepoModal.vue')['default']
     CloseXIcon: typeof import('./components/CloseXIcon.vue')['default']
     CollapseAllButton: typeof import('./components/CollapseAllButton.vue')['default']
+    CommandPalette: typeof import('./components/CommandPalette.vue')['default']
     CommitContextMenu: typeof import('./components/CommitContextMenu.vue')['default']
     ConfirmDialog: typeof import('./components/ConfirmDialog.vue')['default']
     ConflictView: typeof import('./components/ConflictView.vue')['default']

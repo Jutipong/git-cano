@@ -92,6 +92,8 @@ export const useRepoStore = defineStore('repo', () => {
     const toolsOpen = ref(false)
     /** Whether the keyboard-shortcuts help modal is open. */
     const shortcutsOpen = ref(false)
+    /** Whether the command palette overlay is open. */
+    const commandPaletteOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
     const toolsTab = ref<'appearance' | 'general' | 'auth' | 'hook' | 'ai'>('appearance')
 
@@ -460,6 +462,7 @@ export const useRepoStore = defineStore('repo', () => {
         toolsOpen,
         toolsTab,
         shortcutsOpen,
+        commandPaletteOpen,
         repo,
         conflicts,
         oursLabel,
