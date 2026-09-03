@@ -76,7 +76,7 @@
                 class="context-menu-separator" />
             <button
                 class="context-menu-item"
-                :class="{ danger: item.danger, green: item.tone === 'green', orange: item.tone === 'orange' }"
+                :class="{ danger: item.danger }"
                 @click="
                     () => {
                         emit('close')

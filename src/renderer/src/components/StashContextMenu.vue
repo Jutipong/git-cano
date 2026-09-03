@@ -61,7 +61,7 @@
         class="stash-menu"
         :style="menuStyle()">
         <button
-            class="stash-menu-item green"
+            class="stash-menu-item"
             @click="act('apply')">
             <Download
                 class="stash-menu-ic"
@@ -70,7 +70,7 @@
             Apply
         </button>
         <button
-            class="stash-menu-item orange"
+            class="stash-menu-item"
             @click="act('pop')">
             <Zap
                 class="stash-menu-ic"

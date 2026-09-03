@@ -2782,22 +2782,6 @@ body {
     background: var(--surface-hover);
 }
 
-.stash-menu-item.green {
-    color: var(--green);
-}
-
-.stash-menu-item.green:hover {
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-}
-
-.stash-menu-item.orange {
-    color: var(--orange);
-}
-
-.stash-menu-item.orange:hover {
-    background: color-mix(in srgb, var(--orange) 12%, transparent);
-}
-
 .stash-menu-item.danger {
     color: var(--red);
 }
@@ -2855,14 +2839,6 @@ body {
     background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
-.tag-menu-item.push {
-    color: var(--green);
-}
-
-.tag-menu-item.push:hover {
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-}
-
 .tag-menu-ic {
     flex: 0 0 auto;
     margin-right: 7px;
@@ -2902,46 +2878,6 @@ body {
 .commit-menu-item:hover {
     color: var(--text);
     background: var(--surface-hover);
-}
-
-.commit-menu-item.green {
-    color: var(--green);
-}
-
-.commit-menu-item.green:hover {
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-}
-
-.commit-menu-item.blue {
-    color: var(--blue);
-}
-
-.commit-menu-item.blue:hover {
-    background: color-mix(in srgb, var(--blue) 12%, transparent);
-}
-
-.commit-menu-item.pink {
-    color: var(--pink);
-}
-
-.commit-menu-item.pink:hover {
-    background: color-mix(in srgb, var(--pink) 12%, transparent);
-}
-
-.commit-menu-item.purple {
-    color: var(--purple);
-}
-
-.commit-menu-item.purple:hover {
-    background: color-mix(in srgb, var(--purple) 12%, transparent);
-}
-
-.commit-menu-item.orange {
-    color: var(--orange);
-}
-
-.commit-menu-item.orange:hover {
-    background: color-mix(in srgb, var(--orange) 12%, transparent);
 }
 
 .commit-menu-item.danger {
@@ -3057,45 +2993,6 @@ body {
 }
 
 .local-branch-menu-item.orange:disabled {
-    color: var(--text-muted);
-    background: transparent;
-}
-
-.local-branch-menu-item.green {
-    color: var(--green);
-}
-
-.local-branch-menu-item.green:hover {
-    background: color-mix(in srgb, var(--green) 12%, transparent);
-}
-
-.local-branch-menu-item.green:disabled {
-    color: var(--text-muted);
-    background: transparent;
-}
-
-.local-branch-menu-item.blue {
-    color: var(--blue);
-}
-
-.local-branch-menu-item.blue:hover {
-    background: color-mix(in srgb, var(--blue) 12%, transparent);
-}
-
-.local-branch-menu-item.blue:disabled {
-    color: var(--text-muted);
-    background: transparent;
-}
-
-.local-branch-menu-item.purple {
-    color: var(--purple);
-}
-
-.local-branch-menu-item.purple:hover {
-    background: color-mix(in srgb, var(--purple) 12%, transparent);
-}
-
-.local-branch-menu-item.purple:disabled {
     color: var(--text-muted);
     background: transparent;
 }
@@ -3256,22 +3153,6 @@ body {
 
 .context-menu-item .menu-ic-vscode {
     color: #007acc;
-}
-
-.context-menu-item.green {
-    color: var(--teal);
-}
-
-.context-menu-item.green:hover {
-    background: color-mix(in srgb, var(--teal) 12%, transparent);
-}
-
-.context-menu-item.orange {
-    color: var(--orange);
-}
-
-.context-menu-item.orange:hover {
-    background: color-mix(in srgb, var(--orange) 12%, transparent);
 }
 
 .modal-overlay {

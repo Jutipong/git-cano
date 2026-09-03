@@ -100,7 +100,7 @@
         </button>
         <div class="local-branch-menu-separator" />
         <button
-            class="local-branch-menu-item green"
+            class="local-branch-menu-item"
             :disabled="!menu.hasRemote || menu.branch.detached"
             @click="act('push')">
             <ArrowUp
@@ -110,7 +110,7 @@
             Push
         </button>
         <button
-            class="local-branch-menu-item blue"
+            class="local-branch-menu-item"
             :disabled="!menu.hasRemote || menu.branch.detached"
             @click="act('pull')">
             <ArrowDown
@@ -121,7 +121,7 @@
         </button>
         <button
             v-if="menu.branch.current"
-            class="local-branch-menu-item blue"
+            class="local-branch-menu-item"
             :disabled="!menu.hasRemote || menu.branch.detached"
             @click="act('pullRebase')">
             <GitCommitVertical
@@ -132,7 +132,7 @@
         </button>
         <button
             v-if="!menu.branch.current"
-            class="local-branch-menu-item purple"
+            class="local-branch-menu-item"
             :disabled="menu.branch.detached"
             @click="act('rebaseOnto')">
             <ListRestart

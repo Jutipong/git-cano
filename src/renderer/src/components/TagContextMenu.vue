@@ -64,7 +64,7 @@
         :style="menuStyle()">
         <button
             v-if="menu && !menu.onRemote && menu.canPush"
-            class="tag-menu-item push"
+            class="tag-menu-item"
             @click="act('push')">
             <CloudUpload
                 class="tag-menu-ic"

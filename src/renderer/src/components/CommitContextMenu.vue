@@ -110,7 +110,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item pink"
+            class="commit-menu-item"
             @click="act('cherry-pick')">
             <Cherry
                 class="commit-menu-ic"
@@ -130,7 +130,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item orange"
+            class="commit-menu-item"
             @click="act('revert')">
             <Undo2
                 class="commit-menu-ic"
@@ -139,7 +139,7 @@
             Revert this commit
         </button>
         <div class="commit-menu-wrap">
-            <button class="commit-menu-item orange has-sub">
+            <button class="commit-menu-item has-sub">
                 <RotateCcw
                     class="commit-menu-ic"
                     width="13"
@@ -152,7 +152,7 @@
             </button>
             <div class="commit-menu-sub">
                 <button
-                    class="commit-menu-item orange"
+                    class="commit-menu-item"
                     @click="act('reset-soft')">
                     <CircleCheck
                         class="commit-menu-ic"

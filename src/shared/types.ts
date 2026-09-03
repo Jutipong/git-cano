@@ -114,7 +114,6 @@ export interface MenuItem {
     label: string
     action?: () => void
     danger?: boolean
-    tone?: 'green' | 'orange'
     icon?: string
     separatorBefore?: boolean
 }
