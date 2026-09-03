@@ -920,6 +920,16 @@ body {
 .tab-actions .open-repo-wrap {
     flex: 0 0 32px;
     align-self: center;
+    /* let the popup anchor to the pill (.tab-actions) instead of this button
+       so its width can stretch to the whole group */
+    position: static;
+}
+
+.tab-actions .open-repo-pop {
+    left: 0;
+    right: auto;
+    width: 100%;
+    min-width: 0;
 }
 
 .open-repo-pop {
