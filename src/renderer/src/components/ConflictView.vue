@@ -626,7 +626,7 @@
             <span
                 v-if="loading"
                 class="muted"
-                >กำลังโหลด…</span
+                >loading…</span
             >
             <div class="diff-header-center">
                 <div class="diff-nav">

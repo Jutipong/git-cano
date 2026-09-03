@@ -5,7 +5,7 @@
     import { computed, onMounted, onUnmounted, ref } from 'vue'
 
     const props = defineProps<{
-        /** Stable suffix kept after the cycling verb, e.g. the busy message. */
+        /** Whole label to display instead of the cycling verbs, e.g. the busy message. */
         suffix?: string
         /** Frames-only mode for inline use (buttons, small indicators). Inherits size/color. */
         compact?: boolean
@@ -25,7 +25,7 @@
         spinnerTimer = setInterval(() => {
             frame.value = (frame.value + 1) % SPINNER_FRAMES.length
         }, SPINNER_INTERVAL_MS)
-        if (!props.compact)
+        if (!props.compact && !props.suffix)
             verbTimer = setInterval(() => {
                 verbIndex.value = (verbIndex.value + 1) % DEFAULT_SPINNER_VERBS.length
             }, VERB_INTERVAL_MS)
@@ -41,8 +41,8 @@
     }
 
     const label = computed(() => {
-        const verb = verbLabel(DEFAULT_SPINNER_VERBS[verbIndex.value])
-        return props.suffix ? `${verb} ${props.suffix}` : verb
+        if (props.suffix) return props.suffix
+        return verbLabel(DEFAULT_SPINNER_VERBS[verbIndex.value])
     })
 </script>
 
