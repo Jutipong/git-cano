@@ -337,6 +337,14 @@ body {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
+    /* let the popup anchor to the pill (.tab-actions) instead of this button
+       so its width can stretch to the whole group */
+    position: static;
+}
+
+.tab-actions .workspace-pop {
+    width: 100%;
+    min-width: 0;
 }
 
 .tab-actions:not(.search-open) .workspace-btn {
@@ -470,10 +478,13 @@ body {
     box-shadow: 0 10px 30px var(--shadow);
 }
 
-/* tab-actions sits on the left edge of the tab bar — anchor the search popover left */
+/* tab-actions sits on the left edge of the tab bar — anchor the search popover left
+   and stretch it to the same width as the pill group button */
 .tab-actions .tab-search-pop {
     left: 0;
     right: auto;
+    width: 100%;
+    min-width: 0;
 }
 
 .tab-search-result.active {
@@ -918,8 +929,9 @@ body {
     z-index: 60;
     display: flex;
     flex-direction: column;
-    min-width: 220px;
-    padding: 4px;
+    gap: 2px;
+    min-width: 272px;
+    padding: 6px;
     background: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: 12px;
@@ -928,12 +940,21 @@ body {
         0 0 0 1px rgba(0, 0, 0, 0.4);
 }
 
+.open-repo-label {
+    padding: 4px 10px 6px;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
 .open-repo-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 10px;
     width: 100%;
-    padding: 7px 10px;
+    padding: 8px 10px;
     color: var(--text);
     font-size: 12px;
     text-align: left;
@@ -946,6 +967,42 @@ body {
 .open-repo-item:hover {
     color: var(--text);
     background: var(--surface-hover);
+}
+
+.open-repo-icon {
+    display: inline-flex;
+    flex: 0 0 28px;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    color: var(--text-muted);
+    background: var(--surface-hover);
+    border-radius: 8px;
+}
+
+.open-repo-item:hover .open-repo-icon {
+    color: var(--text);
+}
+
+.open-repo-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.open-repo-title {
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.3;
+}
+
+.open-repo-desc {
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.3;
 }
 
 .clone-modal {

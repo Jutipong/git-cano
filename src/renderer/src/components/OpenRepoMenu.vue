@@ -77,23 +77,34 @@
         <div
             v-if="open"
             class="open-repo-pop">
+            <div class="open-repo-label">Open repository</div>
             <button
                 class="open-repo-item"
                 title="Pick a folder from your local disk"
                 @click="openLocal()">
-                <i-lucide-folder-open
-                    width="13"
-                    height="13" />
-                <span>Open from local</span>
+                <span class="open-repo-icon">
+                    <i-lucide-folder-open
+                        width="15"
+                        height="15" />
+                </span>
+                <span class="open-repo-text">
+                    <span class="open-repo-title">Open from local</span>
+                    <span class="open-repo-desc">Pick a folder from your disk</span>
+                </span>
             </button>
             <button
                 class="open-repo-item"
                 title="Clone a remote repository into a new folder"
                 @click="openClone()">
-                <i-lucide-download
-                    width="13"
-                    height="13" />
-                <span>Clone from URL</span>
+                <span class="open-repo-icon">
+                    <i-lucide-download
+                        width="15"
+                        height="15" />
+                </span>
+                <span class="open-repo-text">
+                    <span class="open-repo-title">Clone from URL</span>
+                    <span class="open-repo-desc">Download a remote repository</span>
+                </span>
             </button>
         </div>
     </div>

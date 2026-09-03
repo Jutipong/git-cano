@@ -35,8 +35,13 @@
             openInMenu.value = null
             return
         }
-        const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
-        openInMenu.value = { x: rect.left, y: rect.bottom + 4, items: buildItems() }
+        const btn = event.currentTarget as HTMLElement
+        const rect = btn.getBoundingClientRect()
+        // anchor to the pill group (.tab-actions) and stretch to its width, like the other toolbar dropdowns
+        const pill = btn.closest('.tab-actions')?.getBoundingClientRect()
+        openInMenu.value = pill
+            ? { x: pill.left, y: pill.bottom + 6, width: pill.width, items: buildItems() }
+            : { x: rect.left, y: rect.bottom + 4, items: buildItems() }
     }
 </script>
 

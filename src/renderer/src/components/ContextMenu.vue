@@ -16,6 +16,8 @@
         x: number
         y: number
         items: MenuItem[]
+        /** Optional fixed width in px — toolbar dropdowns stretch to the pill group width */
+        width?: number
     }
 
     const props = defineProps<{ menu: MenuState | null }>()
@@ -55,6 +57,7 @@
         return {
             left: `${Math.min(props.menu.x, window.innerWidth - 220)}px`,
             top: `${Math.min(props.menu.y, window.innerHeight - (props.menu.items.length + 1) * 30)}px`,
+            ...(props.menu.width ? { width: `${props.menu.width}px` } : {}),
         }
     }
 </script>
