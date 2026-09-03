@@ -9,6 +9,7 @@
     import FileHistoryModal from './components/FileHistoryModal.vue'
     import FilePanel from './components/FilePanel.vue'
     import GraphView from './components/GraphView.vue'
+    import KittScanner from './components/KittScanner.vue'
     import OpenRepoMenu from './components/OpenRepoMenu.vue'
     import PromptDialog from './components/PromptDialog.vue'
     import RebaseEditor from './components/RebaseEditor.vue'
@@ -584,9 +585,7 @@
                             height="34" />
                     </div>
                     <strong class="splash-title">Open Git</strong>
-                    <div
-                        class="splash-bar"
-                        aria-hidden="true" />
+                    <KittScanner />
                     <span class="splash-muted">{{ splashText }}</span>
                 </div>
             </div>

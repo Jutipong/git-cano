@@ -92,6 +92,7 @@ declare module 'vue' {
     ILucideZoomIn: typeof import('~icons/lucide/zoom-in')['default']
     IMageMessageDots: typeof import('~icons/mage/message-dots')['default']
     IStreamlineFlexColorArtificialIntelligenceBrainChipFlat: typeof import('~icons/streamline-flex-color/artificial-intelligence-brain-chip-flat')['default']
+    KittScanner: typeof import('./components/KittScanner.vue')['default']
     LocalBranchContextMenu: typeof import('./components/LocalBranchContextMenu.vue')['default']
     OpenInButton: typeof import('./components/OpenInButton.vue')['default']
     OpenRepoMenu: typeof import('./components/OpenRepoMenu.vue')['default']
