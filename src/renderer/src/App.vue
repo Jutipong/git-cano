@@ -19,12 +19,10 @@
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAuthStore } from './stores/auth'
-    import { useSyncStore } from './stores/sync'
     import { DEFAULT_ZOOM } from './stores/ui'
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
-    import { isMac } from './utils/shortcuts'
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -34,7 +32,6 @@
     const uiTransient = useUiTransientStore()
     const auth = useAuthStore()
     const wsStore = useWorkspaceStore()
-    const syncStore = useSyncStore()
     const {
         tabs,
         activeTab,
@@ -95,10 +92,6 @@
             .withBusy(() => window.api.pickAndOpen(), 'Opening repository…')
             .then((status: RepoStatus | null) => status && repoStore.addTab(status))
             .catch((error: unknown) => uiTransient.notify(String(error), 'error'))
-    }
-
-    function focusCommitSearch() {
-        document.querySelector<HTMLInputElement>('.commit-search input')?.focus()
     }
 
     const autoRefreshTimer = ref<ReturnType<typeof setInterval> | null>(null)
@@ -188,33 +181,6 @@
                 return
             }
 
-            // Pull — Ctrl+L, or Cmd+↓ (macOS) / Alt+↓ (Windows)
-            if (
-                (event.ctrlKey && event.key.toLowerCase() === 'l') ||
-                (event.key === 'ArrowDown' && (isMac ? event.metaKey : event.altKey))
-            ) {
-                if (!repoStore.repo) return
-                event.preventDefault()
-                void syncStore.pull(repoStore.refresh)
-                return
-            }
-            // Push — Ctrl+P, or Cmd+↑ (macOS) / Alt+↑ (Windows)
-            if (
-                (event.ctrlKey && event.key.toLowerCase() === 'p' && !event.shiftKey) ||
-                (event.key === 'ArrowUp' && (isMac ? event.metaKey : event.altKey))
-            ) {
-                if (!repoStore.repo) return
-                event.preventDefault()
-                void syncStore.push(repoStore.refresh)
-                return
-            }
-            // Fetch — Ctrl+F
-            if (event.ctrlKey && event.key.toLowerCase() === 'f' && !event.shiftKey) {
-                if (!repoStore.repo) return
-                event.preventDefault()
-                void syncStore.fetch(repoStore.refresh)
-                return
-            }
             // Open repo — Ctrl+O
             if (event.ctrlKey && event.key.toLowerCase() === 'o') {
                 event.preventDefault()
@@ -226,20 +192,6 @@
                 event.preventDefault()
                 repoStore.toolsOpen = true
                 return
-            }
-
-            if (event.key.toLowerCase() === 'r' && !event.shiftKey) {
-                event.preventDefault()
-                void repoStore.refresh()
-                uiTransient.notify('Repository refreshed', 'success')
-            }
-            if (event.shiftKey && event.key.toLowerCase() === 'f') {
-                event.preventDefault()
-                focusCommitSearch()
-            }
-            if (event.shiftKey && event.key.toLowerCase() === 'p') {
-                event.preventDefault()
-                openNewRepo()
             }
         }
 

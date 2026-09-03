@@ -10,14 +10,8 @@ export interface ShortcutDef {
 }
 
 export const SHORTCUTS: ShortcutDef[] = [
-    { id: 'pull', label: 'Pull', mac: ['Ctrl+L', 'Cmd+↓'], win: ['Ctrl+L', 'Alt+↓'] },
-    { id: 'push', label: 'Push', mac: ['Ctrl+P', 'Cmd+↑'], win: ['Ctrl+P', 'Alt+↑'] },
-    { id: 'fetch', label: 'Fetch', mac: ['Ctrl+F'], win: ['Ctrl+F'] },
     { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
-    { id: 'refresh', label: 'Refresh repository', mac: ['Cmd+R'], win: ['Ctrl+R'] },
-    { id: 'search', label: 'Search commits', mac: ['Cmd+Shift+F'], win: ['Ctrl+Shift+F'] },
-    { id: 'newRepo', label: 'Open new tab', mac: ['Cmd+Shift+P'], win: ['Ctrl+Shift+P'] },
     { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },
 ]
 

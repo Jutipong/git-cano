@@ -10,11 +10,11 @@
         "postinstall": "node scripts/fix-electron-path.mjs",
         "build": "electron-vite build",
         "start": "electron-vite preview",
-        "dist": "electron-vite build && electron-builder --mac dmg",
-        "dist:win": "electron-vite build && electron-builder --win portable",
         "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
         "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
-        "format": "oxfmt --write --ignore-path .oxfmtignore"
+        "format": "oxfmt --write --ignore-path .oxfmtignore",
+        "dist:mac": "electron-vite build && electron-builder --mac dmg",
+        "dist:win": "electron-vite build && electron-builder --win portable"
     },
     "dependencies": {
         "pinia": "^4.0.3",
