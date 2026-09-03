@@ -1059,18 +1059,18 @@ export async function fetchAll(): Promise<string> {
     return 'Fetch completed'
 }
 
-export async function push(): Promise<string> {
+export async function push(force = false): Promise<string> {
     const { git: g } = getRepo()
     const status = await g.status()
     const branch = status.current
     const tracking = status.tracking
-    if (tracking) await withAuthEnv(git => git.push())
-    else await withAuthEnv(git => git.push(['--set-upstream', 'origin', branch as string]))
-    return 'Pushed successfully'
+    if (tracking) await withAuthEnv(git => git.push(force ? ['--force-with-lease'] : []))
+    else await withAuthEnv(git => git.push(['--set-upstream', 'origin', branch as string, ...(force ? ['--force-with-lease'] : [])]))
+    return force ? 'Force-pushed successfully' : 'Pushed successfully'
 }
 
-export async function pull(): Promise<string> {
-    const res = await withAuthEnv(git => git.pull(['--no-rebase']))
+export async function pull(rebase = false): Promise<string> {
+    const res = await withAuthEnv(git => git.pull([rebase ? '--rebase' : '--no-rebase']))
     return `Pulled (${res.summary.changes} changes)`
 }
 

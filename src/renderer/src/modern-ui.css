@@ -3005,6 +3005,19 @@ body {
     background: transparent;
 }
 
+.local-branch-menu-item.purple {
+    color: var(--purple);
+}
+
+.local-branch-menu-item.purple:hover {
+    background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+
+.local-branch-menu-item.purple:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
 .local-branch-menu-ic {
     flex: 0 0 auto;
     margin-right: 7px;

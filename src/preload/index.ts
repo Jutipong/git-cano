@@ -107,8 +107,8 @@ const api = {
     pullBranch: (name: string): Promise<string> => call('branch:pull', name),
 
     fetch: (): Promise<string> => call('remote:fetch'),
-    push: (): Promise<string> => call('remote:push'),
-    pull: (): Promise<string> => call('remote:pull'),
+    push: (force = false): Promise<string> => call('remote:push', Boolean(force)),
+    pull: (rebase = false): Promise<string> => call('remote:pull', Boolean(rebase)),
     hasRemote: (): Promise<boolean> => call('remote:has'),
 
     stashes: (): Promise<StashEntry[]> => call('stash:list'),

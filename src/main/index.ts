@@ -601,13 +601,13 @@ app.whenReady().then(() => {
         requireRepo()
         return fetchAll()
     })
-    handle('remote:push', () => {
+    handle('remote:push', (force: boolean) => {
         requireRepo()
-        return push()
+        return push(Boolean(force))
     })
-    handle('remote:pull', () => {
+    handle('remote:pull', (rebase: boolean) => {
         requireRepo()
-        return pull()
+        return pull(Boolean(rebase))
     })
     handle('remote:has', () => {
         requireRepo()

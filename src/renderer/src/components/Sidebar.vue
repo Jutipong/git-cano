@@ -14,6 +14,7 @@
     import type { MenuItem, RepoStatus } from '@shared/types'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
+    const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
 
@@ -225,6 +226,12 @@
     function pullLocalBranch(branch: LocalBranchMenuState['branch']) {
         void run(() => window.api.pullBranch(branch.name), `Pulled ${branch.name}`)
     }
+    function pullRebaseCurrentBranch(branch: LocalBranchMenuState['branch']) {
+        void run(() => window.api.pull(true), `Pulled ${branch.name} (rebase)`)
+    }
+    function rebaseOntoBranch(branch: LocalBranchMenuState['branch']) {
+        emit('interactive-rebase', branch.name)
+    }
     function forcePushBranch(branch: LocalBranchMenuState['branch']) {
         void (async () => {
             const ok = await confirmDialog({
@@ -318,7 +325,7 @@
         repoStore.pendingFocusHash = tag.hash
     }
     function openLocalBranchContextMenu(branch: { name: string; current: boolean; commitHash?: string }, event: MouseEvent) {
-        localBranchMenu.value = { x: event.clientX, y: event.clientY, branch, hasRemote: hasRemote.value }
+        localBranchMenu.value = { x: event.clientX, y: event.clientY, branch, hasRemote: hasRemote.value, currentBranch: props.repo.branch }
     }
     function openRemoteBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
         menu.value = { x: event.clientX, y: event.clientY, items: buildRemoteBranchMenu(branch) }
@@ -708,7 +715,9 @@
             @close="localBranchMenu = null"
             @push="pushLocalBranch"
             @pull="pullLocalBranch"
+            @pull-rebase="pullRebaseCurrentBranch"
             @force-push="forcePushBranch"
+            @rebase-onto="rebaseOntoBranch"
             @delete="deleteLocalBranch"
             @create-branch-here="createBranchHere"
             @create-tag-here="createTagHere"

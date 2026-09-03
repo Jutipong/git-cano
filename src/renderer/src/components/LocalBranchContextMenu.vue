@@ -3,6 +3,8 @@
     import ArrowUp from '~icons/lucide/arrow-up'
     import Copy from '~icons/lucide/copy'
     import GitBranch from '~icons/lucide/git-branch'
+    import GitCommitVertical from '~icons/lucide/git-commit-vertical'
+    import ListRestart from '~icons/lucide/list-restart'
     import Tag from '~icons/lucide/tag'
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
@@ -12,6 +14,7 @@
         y: number
         branch: { name: string; current: boolean; detached?: boolean; commitHash?: string; ahead?: number; behind?: number }
         hasRemote: boolean
+        currentBranch?: string
     }
 
     const props = defineProps<{ menu: LocalBranchMenuState | null }>()
@@ -19,7 +22,9 @@
         (e: 'close'): void
         (e: 'push', branch: LocalBranchMenuState['branch']): void
         (e: 'pull', branch: LocalBranchMenuState['branch']): void
+        (e: 'pullRebase', branch: LocalBranchMenuState['branch']): void
         (e: 'forcePush', branch: LocalBranchMenuState['branch']): void
+        (e: 'rebaseOnto', branch: LocalBranchMenuState['branch']): void
         (e: 'delete', branch: LocalBranchMenuState['branch']): void
         (e: 'createBranchHere', branch: LocalBranchMenuState['branch']): void
         (e: 'createTagHere', branch: LocalBranchMenuState['branch']): void
@@ -43,13 +48,17 @@
         document.removeEventListener('keydown', onKey)
     })
 
-    function act(kind: 'push' | 'pull' | 'forcePush' | 'delete' | 'createBranchHere' | 'createTagHere' | 'copyName') {
+    function act(
+        kind: 'push' | 'pull' | 'pullRebase' | 'forcePush' | 'rebaseOnto' | 'delete' | 'createBranchHere' | 'createTagHere' | 'copyName'
+    ) {
         const branch = props.menu?.branch
         if (!branch) return
         emit('close')
         if (kind === 'push') emit('push', branch)
         else if (kind === 'pull') emit('pull', branch)
+        else if (kind === 'pullRebase') emit('pullRebase', branch)
         else if (kind === 'forcePush') emit('forcePush', branch)
+        else if (kind === 'rebaseOnto') emit('rebaseOnto', branch)
         else if (kind === 'delete') emit('delete', branch)
         else if (kind === 'createBranchHere') emit('createBranchHere', branch)
         else if (kind === 'createTagHere') emit('createTagHere', branch)
@@ -60,7 +69,7 @@
         if (!props.menu) return {}
         return {
             left: `${Math.min(props.menu.x, window.innerWidth - 220)}px`,
-            top: `${Math.min(props.menu.y, window.innerHeight - 7 * 34)}px`,
+            top: `${Math.min(props.menu.y, window.innerHeight - 9 * 34)}px`,
         }
     }
 </script>
@@ -110,7 +119,28 @@
                 height="13" />
             Pull
         </button>
-        <div class="local-branch-menu-separator" />
+        <button
+            v-if="menu.branch.current"
+            class="local-branch-menu-item blue"
+            :disabled="!menu.hasRemote || menu.branch.detached"
+            @click="act('pullRebase')">
+            <GitCommitVertical
+                class="local-branch-menu-ic"
+                width="13"
+                height="13" />
+            Pull (rebase)
+        </button>
+        <button
+            v-if="!menu.branch.current"
+            class="local-branch-menu-item purple"
+            :disabled="menu.branch.detached"
+            @click="act('rebaseOnto')">
+            <ListRestart
+                class="local-branch-menu-ic"
+                width="13"
+                height="13" />
+            Rebase {{ menu.currentBranch || 'current branch' }} onto this
+        </button>
         <button
             class="local-branch-menu-item orange"
             :disabled="!menu.hasRemote || menu.branch.detached"
@@ -121,6 +151,7 @@
                 height="13" />
             Force push
         </button>
+        <div class="local-branch-menu-separator" />
         <button
             class="local-branch-menu-item danger"
             :disabled="menu.branch.current || menu.branch.detached"
