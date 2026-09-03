@@ -416,6 +416,11 @@
                 <span class="commit-count"
                     >{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span
                 >
+                <i-lucide-loader-circle
+                    v-if="repoStore.refreshingRepo"
+                    class="spinning graph-refresh-spinner"
+                    width="13"
+                    height="13" />
                 <label
                     class="commit-search"
                     title="Search commits">

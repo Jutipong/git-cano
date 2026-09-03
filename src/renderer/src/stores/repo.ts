@@ -58,6 +58,10 @@ export const useRepoStore = defineStore('repo', () => {
     const commits = ref<CommitNode[]>([])
     /** Latest branch list for the active repo — kept here so the sidebar doesn't spawn a second branch fetch per refresh. */
     const branchList = ref<{ local: BranchInfo[]; remote: BranchInfo[] } | null>(null)
+    /** Latest tag data for the active repo — fetched alongside branches in refresh() so the sidebar reads from the store. */
+    const tagList = ref<{ name: string; hash: string }[]>([])
+    const remoteTagNames = ref<string[]>([])
+    const hasRemote = ref(false)
     const logLimit = ref(PAGE_SIZE)
     const hasMore = ref(false)
     const selectedFile = ref<{ path: string; staged: boolean } | null>(null)
@@ -71,6 +75,8 @@ export const useRepoStore = defineStore('repo', () => {
     const loadedPath = ref<string | null>(null)
     const commitFiles = ref<CommitFile[]>([])
     const loadingCommitDetails = ref(false)
+    /** True while a repo-switch-driven refresh is in flight — drives the small graph spinner (cache is painted underneath). */
+    const refreshingRepo = ref(false)
     const commitMessage = ref('')
     const commitAuthor = ref('')
     const commitDate = ref('')
@@ -148,21 +154,31 @@ export const useRepoStore = defineStore('repo', () => {
         if (!restoringSession) {
             void window.api
                 .setActiveRepo(status.path)
-                .then(() => refresh(status))
+                .then(() => refresh(status, true))
                 .catch(() => {})
         }
     }
 
-    async function refresh(precomputedStatus?: RepoStatus) {
+    async function refresh(precomputedStatus?: RepoStatus, switching = false) {
         const targetPath = tabs.value[activeTab.value]?.path
+        if (switching) {
+            refreshingRepo.value = true
+            // tags have no cached paint (unlike branches) — clear them so the sidebar never shows the previous repo's tags
+            tagList.value = []
+            remoteTagNames.value = []
+            hasRemote.value = false
+        }
         try {
             // preserve scroll depth: if more pages were appended via loadMore, refetch the full depth
             const limit = Math.max(logLimit.value, commits.value.length)
-            const [status, log, branches, state] = await Promise.all([
+            const [status, log, branches, state, tags, remoteTags, remote] = await Promise.all([
                 precomputedStatus ? Promise.resolve(precomputedStatus) : window.api.status(),
                 window.api.log(limit),
                 window.api.branches(),
                 window.api.repoState(),
+                window.api.tags(),
+                window.api.remoteTags(),
+                window.api.hasRemote(),
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
             if (tabs.value[activeTab.value]?.path !== status.path) return
@@ -170,6 +186,9 @@ export const useRepoStore = defineStore('repo', () => {
             hasMore.value = log.length >= limit
             repoState.value = state
             branchList.value = branches
+            tagList.value = tags
+            remoteTagNames.value = remoteTags
+            hasRemote.value = remote
             loadedPath.value = status.path
             const index = tabs.value.findIndex(tab => tab.path === status.path)
             if (index >= 0) tabs.value[index].status = status
@@ -179,6 +198,8 @@ export const useRepoStore = defineStore('repo', () => {
             if (targetPath && tabs.value[activeTab.value]?.path === targetPath) loadedPath.value = targetPath
             useUiTransientStore().notify(String(error))
             return undefined
+        } finally {
+            if (switching) refreshingRepo.value = false
         }
     }
 
@@ -237,7 +258,7 @@ export const useRepoStore = defineStore('repo', () => {
                 loadedPath.value = tab.path
             }
         }
-        await refresh()
+        await refresh(undefined, true)
     }
 
     async function closeTab(index: number) {
@@ -442,6 +463,10 @@ export const useRepoStore = defineStore('repo', () => {
         activeTab,
         commits,
         branchList,
+        tagList,
+        remoteTagNames,
+        hasRemote,
+        refreshingRepo,
         logLimit,
         hasMore,
         selectedFile,

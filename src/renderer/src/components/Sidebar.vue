@@ -53,9 +53,11 @@
         const tab = repoStore.tabs[repoStore.activeTab]
         return tab ? (ui.repoTabColors[tab.path] ?? null) : null
     })
-    const local = ref<{ name: string; current: boolean; detached?: boolean; ahead?: number; behind?: number; commitHash?: string }[]>([])
-    const remote = ref<{ name: string; current: boolean; commitHash?: string }[]>([])
-    const tags = ref<{ name: string; hash: string }[]>([])
+    // Branch/tag data comes from the repo store — refresh() fetches it alongside the log,
+    // so the sidebar never spawns its own git calls (spawn cost dominates on Windows).
+    const local = computed(() => repoStore.branchList?.local ?? [])
+    const remote = computed(() => repoStore.branchList?.remote ?? [])
+    const tags = computed(() => repoStore.tagList)
     const localExpanded = computed({
         get: () => ui.sidebarSections.local,
         set: value => {
@@ -96,8 +98,8 @@
     const dropTarget = ref<string | null>(null)
     const activeTag = ref<string | null>(null)
     const tagMenu = ref<TagMenuState | null>(null)
-    const remoteTagNames = ref<string[]>([])
-    const hasRemote = ref(false)
+    const remoteTagNames = computed(() => repoStore.remoteTagNames)
+    const hasRemote = computed(() => repoStore.hasRemote)
     const pendingRemoteTag = ref<string | null>(null)
 
     function focusBranch(branch: { name: string; commitHash?: string }) {
@@ -107,38 +109,11 @@
         if (hash) repoStore.pendingFocusHash = hash
     }
 
-    async function loadAll() {
-        // Branches come from the repo store — refresh() already fetched them, so don't spawn a
-        // second branch:list per refresh (spawn cost dominates on Windows). Fall back to a
-        // direct fetch only when the store hasn't loaded any yet.
-        if (repoStore.branchList) {
-            local.value = repoStore.branchList.local
-            remote.value = repoStore.branchList.remote
-        } else {
-            try {
-                const branches = await window.api.branches()
-                local.value = branches.local
-                remote.value = branches.remote
-            } catch {}
-        }
-        try {
-            tags.value = await window.api.tags()
-        } catch {}
-        try {
-            const [names, has] = await Promise.all([window.api.remoteTags(), window.api.hasRemote()])
-            remoteTagNames.value = names
-            hasRemote.value = has
-        } catch {}
-    }
-
-    watch(() => props.repo, loadAll, { immediate: true })
-
     async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
             await uiTransient.withBusy(async () => {
                 await fn()
                 await props.refresh()
-                await loadAll()
             }, busyLabel)
             notify(ok, 'success')
         } catch (error) {

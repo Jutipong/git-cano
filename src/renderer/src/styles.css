@@ -690,6 +690,10 @@ kbd {
     letter-spacing: 0.2px;
     white-space: nowrap;
 }
+.graph-refresh-spinner {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
 .graph-graph-header {
     display: flex;
     align-items: center;
