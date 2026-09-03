@@ -48,6 +48,27 @@ export const useWorkspaceStore = defineStore(
             return true
         }
 
+        /**
+         * Renames a workspace keeping its session (case-insensitive duplicate check). Returns the stored name or null when the new name is
+         * empty/duplicate or the old name is unknown.
+         */
+        function rename(oldName: string, newName: string): string | null {
+            const trimmed = newName.trim()
+            if (!trimmed || !names.value.includes(oldName)) return null
+            const lower = trimmed.toLowerCase()
+            const duplicate = names.value.some(candidate => candidate !== oldName && candidate.toLowerCase() === lower)
+            if (duplicate) return null
+            names.value = names.value.map(candidate => (candidate === oldName ? trimmed : candidate))
+            if (oldName in sessions.value) {
+                const nextSessions = { ...sessions.value }
+                nextSessions[trimmed] = nextSessions[oldName]
+                if (trimmed !== oldName) delete nextSessions[oldName]
+                sessions.value = nextSessions
+            }
+            if (active.value === oldName) active.value = trimmed
+            return trimmed
+        }
+
         function setSession(name: string, session: WorkspaceSession) {
             sessions.value = { ...sessions.value, [name]: session }
         }
@@ -56,7 +77,7 @@ export const useWorkspaceStore = defineStore(
             return sessions.value[name] ?? null
         }
 
-        return { names, active, sessions, add, remove, select, setSession, getSession }
+        return { names, active, sessions, add, remove, rename, select, setSession, getSession }
     },
     {
         persist: {

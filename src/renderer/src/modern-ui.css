@@ -900,7 +900,8 @@ body {
     background: color-mix(in srgb, var(--teal) 10%, transparent);
 }
 
-.workspace-item-delete {
+.workspace-item-delete,
+.workspace-item-rename {
     display: none;
     flex: 0 0 auto;
     width: 22px;
@@ -908,8 +909,20 @@ body {
     margin-right: 4px;
 }
 
-.workspace-row:hover .workspace-item-delete {
+.workspace-row:hover .workspace-item-delete,
+.workspace-row:hover .workspace-item-rename {
     display: inline-grid;
+}
+
+/* while renaming a row, the confirm/cancel buttons stay visible and the input stretches */
+.workspace-row.renaming .workspace-item-rename {
+    display: inline-grid;
+}
+
+.workspace-row .workspace-add-input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
 }
 
 .open-repo-wrap {

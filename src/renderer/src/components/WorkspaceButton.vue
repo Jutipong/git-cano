@@ -17,10 +17,18 @@
     const switching = ref(false)
     const newName = ref('')
     const nameInput = ref<HTMLInputElement | null>(null)
+    const renaming = ref('')
+    const renameValue = ref('')
+    const renameInput = ref<HTMLInputElement | null>(null)
 
     const isDuplicate = computed(() => {
         const trimmed = newName.value.trim()
         return trimmed.length > 0 && ws.names.some(name => name.toLowerCase() === trimmed.toLowerCase())
+    })
+
+    const isRenameDuplicate = computed(() => {
+        const trimmed = renameValue.value.trim()
+        return trimmed.length > 0 && ws.names.some(name => name !== renaming.value && name.toLowerCase() === trimmed.toLowerCase())
     })
 
     function resetAdd() {
@@ -28,14 +36,43 @@
         newName.value = ''
     }
 
+    function cancelRename() {
+        renaming.value = ''
+        renameValue.value = ''
+    }
+
     function toggle() {
         open.value = !open.value
-        if (!open.value) resetAdd()
+        if (!open.value) {
+            resetAdd()
+            cancelRename()
+        }
     }
 
     function startAdd() {
+        cancelRename()
         adding.value = true
         nextTick(() => nameInput.value?.focus())
+    }
+
+    function startRename(name: string) {
+        resetAdd()
+        renaming.value = name
+        renameValue.value = name
+        nextTick(() => {
+            renameInput.value?.focus()
+            renameInput.value?.select()
+        })
+    }
+
+    function confirmRename() {
+        if (!renaming.value || !renameValue.value.trim() || isRenameDuplicate.value) return
+        const stored = ws.rename(renaming.value, renameValue.value)
+        if (!stored) {
+            notify(`Workspace "${renameValue.value.trim()}" already exists`, 'error')
+            return
+        }
+        cancelRename()
     }
 
     async function confirmAdd() {
@@ -78,6 +115,7 @@
     async function switchTo(name: string) {
         open.value = false
         resetAdd()
+        cancelRename()
         if (name === ws.active) return
         switching.value = true
         try {
@@ -96,6 +134,7 @@
         if ((event.target as HTMLElement | null)?.closest('.workspace-wrap')) return
         open.value = false
         resetAdd()
+        cancelRename()
     }
 
     onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
@@ -129,30 +168,78 @@
             <div
                 v-for="name in ws.names"
                 :key="name"
-                class="workspace-row">
-                <button
-                    class="workspace-item"
-                    :class="{ active: name === ws.active }"
-                    :title="name"
-                    @click="switchTo(name)">
-                    <i-lucide-check
-                        v-if="name === ws.active"
-                        width="13"
-                        height="13" />
-                    <span
-                        v-else
-                        class="workspace-item-spacer" />
-                    <span class="workspace-item-name">{{ name }}</span>
-                </button>
-                <button
-                    v-if="ws.names.length > 1 && name !== ws.active"
-                    class="icon-btn danger workspace-item-delete"
-                    title="Delete workspace"
-                    @click="deleteWorkspace(name)">
-                    <i-lucide-trash2
-                        width="12"
-                        height="12" />
-                </button>
+                class="workspace-row"
+                :class="{ renaming: renaming === name }">
+                <template v-if="renaming === name">
+                    <input
+                        ref="renameInput"
+                        v-model="renameValue"
+                        class="workspace-add-input"
+                        :class="{ invalid: isRenameDuplicate }"
+                        type="text"
+                        placeholder="Workspace name"
+                        @keydown.enter.prevent="confirmRename()"
+                        @keydown.esc.stop="cancelRename()" />
+                    <button
+                        class="icon-btn workspace-item-rename"
+                        title="Cancel rename"
+                        @click="cancelRename()">
+                        <i-lucide-x
+                            width="12"
+                            height="12" />
+                    </button>
+                    <button
+                        class="icon-btn workspace-item-rename"
+                        title="Confirm rename"
+                        :disabled="!renameValue.trim() || isRenameDuplicate"
+                        @click="confirmRename()">
+                        <i-lucide-check
+                            width="12"
+                            height="12" />
+                    </button>
+                </template>
+                <template v-else>
+                    <button
+                        class="workspace-item"
+                        :class="{ active: name === ws.active }"
+                        :title="name"
+                        @click="switchTo(name)">
+                        <i-lucide-check
+                            v-if="name === ws.active"
+                            width="13"
+                            height="13" />
+                        <span
+                            v-else
+                            class="workspace-item-spacer" />
+                        <span class="workspace-item-name">{{ name }}</span>
+                    </button>
+                    <button
+                        v-if="ws.names.length > 1 && name !== ws.active"
+                        class="icon-btn workspace-item-rename"
+                        title="Rename workspace"
+                        @click="startRename(name)">
+                        <i-lucide-pencil
+                            width="12"
+                            height="12" />
+                    </button>
+                    <button
+                        v-if="ws.names.length > 1 && name !== ws.active"
+                        class="icon-btn danger workspace-item-delete"
+                        title="Delete workspace"
+                        @click="deleteWorkspace(name)">
+                        <i-lucide-trash2
+                            width="12"
+                            height="12" />
+                    </button>
+                </template>
+            </div>
+            <div
+                v-if="renaming && isRenameDuplicate"
+                class="workspace-add-error">
+                <i-lucide-alert-triangle
+                    width="12"
+                    height="12" />
+                Workspace name already exists
             </div>
             <div class="workspace-sep" />
             <div
