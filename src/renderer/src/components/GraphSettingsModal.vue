@@ -36,9 +36,7 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
+    <div class="modal-overlay">
         <div class="graph-settings-modal">
             <div class="rebase-modal-header">
                 <strong>Commit history settings</strong>

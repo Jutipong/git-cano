@@ -2693,7 +2693,7 @@ body {
     z-index: 80;
     display: grid;
     place-items: center;
-    background: color-mix(in srgb, var(--canvas) 55%, transparent);
+    background: color-mix(in srgb, var(--canvas) 50%, transparent);
     cursor: wait;
 }
 
@@ -3156,8 +3156,7 @@ body {
 }
 
 .modal-overlay {
-    background: color-mix(in srgb, var(--canvas) 72%, transparent);
-    backdrop-filter: blur(3px);
+    background: color-mix(in srgb, var(--canvas) 50%, transparent);
 }
 
 .error-dialog-overlay {
@@ -3167,8 +3166,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--canvas) 72%, transparent);
-    backdrop-filter: blur(3px);
+    background: color-mix(in srgb, var(--canvas) 50%, transparent);
 }
 
 .error-dialog {
@@ -3226,8 +3224,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--canvas) 72%, transparent);
-    backdrop-filter: blur(3px);
+    background: color-mix(in srgb, var(--canvas) 50%, transparent);
 }
 
 .confirm-dialog {
@@ -5100,8 +5097,7 @@ body {
     align-items: flex-start;
     justify-content: center;
     padding-top: 12vh;
-    background: color-mix(in srgb, var(--canvas) 72%, transparent);
-    backdrop-filter: blur(3px);
+    background: color-mix(in srgb, var(--canvas) 50%, transparent);
 }
 
 .palette {

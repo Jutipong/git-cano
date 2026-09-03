@@ -69,9 +69,7 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
+    <div class="modal-overlay">
         <div class="rebase-modal clone-modal">
             <div class="rebase-modal-header">
                 <strong>Clone repository</strong>

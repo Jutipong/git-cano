@@ -13,9 +13,7 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="emit('close')">
+    <div class="modal-overlay">
         <div class="rebase-modal shortcuts-modal">
             <div class="rebase-modal-header">
                 <strong>Keyboard shortcuts</strong>

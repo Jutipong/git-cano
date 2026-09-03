@@ -33,8 +33,7 @@
 <template>
     <div
         v-if="switchStore.current"
-        class="confirm-dialog-overlay"
-        @mousedown.self="switchStore.settle(null)">
+        class="confirm-dialog-overlay">
         <div class="confirm-dialog">
             <div class="confirm-dialog-header">
                 <i-lucide-git-branch

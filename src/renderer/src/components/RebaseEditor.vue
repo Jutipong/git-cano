@@ -104,9 +104,7 @@
 </script>
 
 <template>
-    <div
-        class="modal-overlay"
-        @mousedown.self="!running && !pausedMessage && emit('cancel')">
+    <div class="modal-overlay">
         <div class="rebase-modal">
             <div class="rebase-modal-header">
                 <strong>Interactive rebase onto</strong>

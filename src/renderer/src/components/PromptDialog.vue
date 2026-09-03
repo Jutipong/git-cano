@@ -74,8 +74,7 @@
 <template>
     <div
         v-if="promptStore.current"
-        class="confirm-dialog-overlay"
-        @mousedown.self="promptStore.settle(null)">
+        class="confirm-dialog-overlay">
         <div class="confirm-dialog">
             <div class="confirm-dialog-header">
                 <i-lucide-git-branch

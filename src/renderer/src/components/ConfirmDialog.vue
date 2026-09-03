@@ -28,8 +28,7 @@
 <template>
     <div
         v-if="confirmStore.current"
-        class="confirm-dialog-overlay"
-        @mousedown.self="confirmStore.settle(false)">
+        class="confirm-dialog-overlay">
         <div class="confirm-dialog">
             <div
                 class="confirm-dialog-header"
