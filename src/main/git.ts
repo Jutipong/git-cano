@@ -891,6 +891,37 @@ export async function checkout(ref: string): Promise<void> {
     await g.checkout(ref)
 }
 
+export async function checkoutWithOptions(ref: string, localChanges: LocalChangesMode): Promise<void> {
+    const { git: g } = getRepo()
+    if (localChanges === 'keep') {
+        await checkout(ref)
+        return
+    }
+    if (localChanges === 'discard') {
+        await discardAllChanges()
+        await checkout(ref)
+        return
+    }
+    // stash and reapply
+    const status = await g.status()
+    const dirty = status.files.length > 0
+    let stashed = false
+    if (dirty) {
+        await g.raw(['stash', 'push', '--include-untracked', '-m', `switch-branch: ${ref}`])
+        stashed = true
+    }
+    try {
+        await checkout(ref)
+    } catch (error) {
+        if (stashed) await g.raw(['stash', 'pop']).catch(() => {})
+        throw error
+    }
+    if (stashed) {
+        // On conflict git keeps the stash entry — leave it for the user to resolve.
+        await g.raw(['stash', 'pop']).catch(() => {})
+    }
+}
+
 export async function deleteBranch(name: string): Promise<void> {
     const { git: g } = getRepo()
     await g.deleteLocalBranch(name, true)

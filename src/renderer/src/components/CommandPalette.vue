@@ -11,6 +11,7 @@
     import X from '~icons/lucide/x'
 
     import { useRepoStore } from '../stores/repo'
+    import { resolveCheckoutMode } from '../utils/checkout'
 
     import type { AiCommitMode } from '../stores/ui'
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
@@ -73,12 +74,14 @@
         void action()
     }
 
-    function checkoutBranch(name: string) {
+    async function checkoutBranch(name: string) {
         close()
+        const mode = await resolveCheckoutMode(name)
+        if (!mode) return
         void (async () => {
             try {
                 await uiTransient.withBusy(async () => {
-                    await window.api.checkout(name)
+                    await window.api.checkout(name, mode)
                     await repoStore.refresh()
                 }, `Checking out ${name}…`)
                 notify(`Checked out ${name}`, 'success')

@@ -98,7 +98,7 @@ const api = {
     branchesCached: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] } | null> => call('branch:cached'),
     createBranch: (name: string, checkout: boolean, startPoint?: string, localChanges?: LocalChangesMode): Promise<void> =>
         call('branch:create', name, checkout, startPoint, localChanges),
-    checkout: (ref: string): Promise<void> => call('branch:checkout', ref),
+    checkout: (ref: string, localChanges?: LocalChangesMode): Promise<void> => call('branch:checkout', ref, localChanges),
     deleteBranch: (name: string): Promise<void> => call('branch:delete', name),
     deleteRemoteBranch: (ref: string): Promise<string> => call('branch:remoteDelete', ref),
     mergeCheckConflicts: (source: string, target: string): Promise<MergeCheck> => call('branch:mergeCheck', source, target),

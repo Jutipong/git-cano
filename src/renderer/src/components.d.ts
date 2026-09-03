@@ -103,6 +103,7 @@ declare module 'vue' {
     StashContextMenu: typeof import('./components/StashContextMenu.vue')['default']
     StashCreateModal: typeof import('./components/StashCreateModal.vue')['default']
     StashPanel: typeof import('./components/StashPanel.vue')['default']
+    SwitchDialog: typeof import('./components/SwitchDialog.vue')['default']
     TabBar: typeof import('./components/TabBar.vue')['default']
     TagContextMenu: typeof import('./components/TagContextMenu.vue')['default']
     TagCreateModal: typeof import('./components/TagCreateModal.vue')['default']

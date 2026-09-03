@@ -15,6 +15,7 @@
     import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
     import StashCreateModal from './components/StashCreateModal.vue'
+    import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
     import ToolsModal from './components/ToolsModal.vue'
@@ -515,6 +516,7 @@
         </div>
         <ConfirmDialog />
         <PromptDialog />
+        <SwitchDialog />
         <div class="toast-stack">
             <TransitionGroup name="toast">
                 <div

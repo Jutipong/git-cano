@@ -2589,6 +2589,22 @@ body {
     color: var(--text-muted);
 }
 
+.switch-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.switch-target {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 650;
+    color: var(--teal);
+}
+
 .busy-overlay {
     position: fixed;
     inset: 0;

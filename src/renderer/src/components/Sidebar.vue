@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
+    import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
     import CollapseAllButton from './CollapseAllButton.vue'
@@ -161,8 +162,10 @@
         ]
     }
 
-    function checkoutBranch(name: string) {
-        void run(() => window.api.checkout(name), `Checked out ${name}`)
+    async function checkoutBranch(name: string) {
+        const mode = await resolveCheckoutMode(name)
+        if (!mode) return
+        void run(() => window.api.checkout(name, mode), `Checked out ${name}`)
     }
     function localNameForRemote(name: string) {
         return name.replace(/^remotes\/[^/]+\//, '')
@@ -171,13 +174,15 @@
         const target = localNameForRemote(name)
         return local.value.some(b => b.name === target && b.current)
     }
-    function checkoutRemote(name: string) {
+    async function checkoutRemote(name: string) {
         if (isRemoteCurrent(name)) {
             notify(`Already on ${localNameForRemote(name)}`, 'error', { asToast: true })
             return
         }
         const target = localNameForRemote(name)
-        void run(() => window.api.checkout(target), `Checked out ${target}`)
+        const mode = await resolveCheckoutMode(target)
+        if (!mode) return
+        void run(() => window.api.checkout(target, mode), `Checked out ${target}`)
     }
 
     async function deleteBranch(name: string) {

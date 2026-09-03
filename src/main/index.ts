@@ -19,7 +19,7 @@ import {
     refreshGithubProfile,
 } from './auth'
 import {
-    checkout,
+    checkoutWithOptions,
     closeRepo,
     commit,
     createBranchWithOptions,
@@ -568,9 +568,9 @@ app.whenReady().then(() => {
         requireRepo()
         return createBranchWithOptions(name as string, co as boolean, (localChanges as LocalChangesMode) || 'keep', startPoint)
     })
-    handle('branch:checkout', (ref: string) => {
+    handle('branch:checkout', (ref: string, localChanges?: LocalChangesMode) => {
         requireRepo()
-        return checkout(ref as string)
+        return checkoutWithOptions(ref as string, (localChanges as LocalChangesMode) || 'keep')
     })
     handle('branch:delete', (name: string) => {
         requireRepo()

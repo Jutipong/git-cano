@@ -55,13 +55,16 @@ declare global {
   const reactive: typeof import('vue').reactive
   const ref: typeof import('vue').ref
   const renderDiffContent: typeof import('./utils/highlight').renderDiffContent
+  const resolveCheckoutMode: typeof import('./utils/checkout').resolveCheckoutMode
   const storeToRefs: typeof import('pinia').storeToRefs
+  const switchDialog: typeof import('./utils/switch').switchDialog
   const toRefs: typeof import('vue').toRefs
   const useAiStore: typeof import('./stores/ai').useAiStore
   const useAuthStore: typeof import('./stores/auth').useAuthStore
   const useConfirmStore: typeof import('./stores/confirm').useConfirmStore
   const usePromptStore: typeof import('./stores/prompt').usePromptStore
   const useRepoStore: typeof import('./stores/repo').useRepoStore
+  const useSwitchStore: typeof import('./stores/switch').useSwitchStore
   const useSyncStore: typeof import('./stores/sync').useSyncStore
   const useUiStore: typeof import('./stores/ui').useUiStore
   const useUiTransientStore: typeof import('./stores/uiTransient').useUiTransientStore
@@ -81,6 +84,9 @@ declare global {
   // @ts-ignore
   export type { RepoTab } from './stores/repo'
   import('./stores/repo')
+  // @ts-ignore
+  export type { SwitchRequest } from './stores/switch'
+  import('./stores/switch')
   // @ts-ignore
   export type { Theme, AiCommitMode, RepoTabColor, CommitColumn, DiffViewMode, FileViewMode, ThemeOption } from './stores/ui'
   import('./stores/ui')
