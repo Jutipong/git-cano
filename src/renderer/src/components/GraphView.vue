@@ -302,7 +302,7 @@
     }
 
     function avatarKey(commit: CommitNode): string {
-        return commit.authorEmail || commit.author
+        return commit.author || commit.authorEmail
     }
 
     function avatarInitial(commit: CommitNode): string {
