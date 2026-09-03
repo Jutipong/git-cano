@@ -5186,3 +5186,31 @@ body {
     border-top: 1px solid var(--line);
     font-size: 10.5px;
 }
+
+/* accent colors matching the equivalent UI buttons (placed after .active so the accent wins while highlighted) */
+.palette-item.accent-green .palette-ic {
+    color: var(--green);
+}
+
+.palette-item.accent-blue .palette-ic {
+    color: var(--blue);
+}
+
+.palette-item.accent-orange .palette-ic {
+    color: var(--orange);
+}
+
+.palette-item.accent-red .palette-ic {
+    color: var(--red);
+}
+
+/* AI chip uses the AI button's accent (orange) instead of the default teal */
+.palette-chip.ai {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 15%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 45%, var(--line-soft));
+}
+
+.palette-chip.ai:hover {
+    background: color-mix(in srgb, var(--orange) 25%, transparent);
+}

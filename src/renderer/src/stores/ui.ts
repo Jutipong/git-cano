@@ -88,6 +88,11 @@ export const useUiStore = defineStore(
         const showEntireFile = ref(DEFAULT_SHOW_ENTIRE_FILE)
         const aiCommitMode = ref<AiCommitMode>('off')
         const formatBeforeGenerate = ref(DEFAULT_FORMAT_BEFORE_GENERATE)
+        /**
+         * One-shot AI run requested from the command palette ('off' | 'commit' | 'commit-push') — FilePanel consumes and clears it. Not
+         * persisted.
+         */
+        const aiRunRequest = ref<AiCommitMode | null>(null)
         /** Push a newly created tag to origin (Create tag modal checkbox). */
         const tagPushToOrigin = ref(false)
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
@@ -186,6 +191,7 @@ export const useUiStore = defineStore(
             showEntireFile,
             aiCommitMode,
             formatBeforeGenerate,
+            aiRunRequest,
             tagPushToOrigin,
             refreshInterval,
             fontSize,

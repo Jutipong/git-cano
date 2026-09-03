@@ -343,6 +343,27 @@
         }
     }
 
+    // Command palette one-shot AI run: temporarily switch the AI mode, run the existing
+    // generateMessage() flow, then restore the user's own aiCommitMode setting.
+    watch(
+        () => ui.aiRunRequest,
+        async request => {
+            if (!request) return
+            ui.aiRunRequest = null
+            if (!canGenerate.value) {
+                notify('AI commit is unavailable right now', 'warning')
+                return
+            }
+            const previousMode = ui.aiCommitMode
+            ui.aiCommitMode = request
+            try {
+                await generateMessage()
+            } finally {
+                ui.aiCommitMode = previousMode
+            }
+        }
+    )
+
     const committing = computed(() => pending.value)
 
     function startResizeBox(event: MouseEvent) {
