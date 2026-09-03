@@ -91,22 +91,22 @@
         class="commit-menu"
         :style="menuStyle()">
         <button
-            class="commit-menu-item green"
+            class="commit-menu-item"
             @click="act('create-branch')">
             <GitBranchPlus
                 class="commit-menu-ic"
                 width="13"
                 height="13" />
-            Create branch here…
+            Create branch
         </button>
         <button
-            class="commit-menu-item purple"
+            class="commit-menu-item"
             @click="act('create-tag')">
             <Tag
                 class="commit-menu-ic"
                 width="13"
                 height="13" />
-            Create tag here…
+            Create tag
         </button>
         <div class="commit-menu-separator" />
         <button
@@ -120,7 +120,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item blue"
+            class="commit-menu-item"
             @click="act('checkout')">
             <CornerDownRight
                 class="commit-menu-ic"

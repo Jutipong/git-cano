@@ -221,7 +221,7 @@
     }
     async function createBranchHere(branch: LocalBranchMenuState['branch']) {
         const result = await promptDialog({
-            title: 'Create branch here…',
+            title: 'Create branch',
             message: `New branch at "${branch.name}"`,
             placeholder: 'branch name',
             confirmLabel: 'Create',
@@ -237,7 +237,7 @@
     }
     async function createTagHere(branch: LocalBranchMenuState['branch']) {
         const result = await promptDialog({
-            title: 'Create tag here…',
+            title: 'Create tag',
             message: `New tag at "${branch.name}"`,
             placeholder: 'tag name',
             confirmLabel: 'Create',

@@ -18,6 +18,7 @@
     import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
+    import ThinkSpinner from './components/ThinkSpinner.vue'
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAuthStore } from './stores/auth'
@@ -293,7 +294,7 @@
             .then(branches => branches.local.map(branch => branch.name))
             .catch(() => [] as string[])
         const result = await promptDialog({
-            title: 'Create branch here…',
+            title: 'Create branch',
             message: `New branch at ${commit.shortHash} — ${commit.subject}`,
             placeholder: 'branch name',
             confirmLabel: 'Create',
@@ -371,11 +372,7 @@
                     v-if="repoStore.loadingRepo"
                     class="busy-overlay">
                     <div class="busy-card">
-                        <i-lucide-loader-circle
-                            class="spinning"
-                            width="18"
-                            height="18" />
-                        <span>Loading repository…</span>
+                        <ThinkSpinner suffix="Loading repository…" />
                     </div>
                 </div>
                 <div class="app-main">
@@ -507,11 +504,7 @@
             v-if="uiTransient.busy"
             class="busy-overlay">
             <div class="busy-card">
-                <i-lucide-loader-circle
-                    class="spinning"
-                    width="18"
-                    height="18" />
-                <span>{{ uiTransient.busy }}</span>
+                <ThinkSpinner :suffix="uiTransient.busy" />
             </div>
         </div>
         <ConfirmDialog />

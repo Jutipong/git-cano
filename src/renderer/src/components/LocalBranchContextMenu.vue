@@ -87,7 +87,7 @@
                 class="local-branch-menu-ic"
                 width="13"
                 height="13" />
-            Create branch here
+            Create branch
         </button>
         <button
             class="local-branch-menu-item"
@@ -96,7 +96,7 @@
                 class="local-branch-menu-ic"
                 width="13"
                 height="13" />
-            Create tag here
+            Create tag
         </button>
         <div class="local-branch-menu-separator" />
         <button
