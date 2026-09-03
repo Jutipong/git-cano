@@ -3,11 +3,12 @@ export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon'
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 
 export const REPO_TAB_COLOR_OPTIONS = [
-    { value: 'red', label: 'Red', hex: '#ff5f57' },
+    { value: 'red', label: 'Red', hex: '#ff3b30' },
     { value: 'orange', label: 'Orange', hex: '#ff9f0a' },
     { value: 'yellow', label: 'Yellow', hex: '#ffd60a' },
     { value: 'green', label: 'Green', hex: '#32d74b' },
     { value: 'blue', label: 'Blue', hex: '#0a84ff' },
+    { value: 'pink', label: 'Pink', hex: '#ff2d92' },
     { value: 'purple', label: 'Purple', hex: '#bf5af2' },
 ] as const
 
