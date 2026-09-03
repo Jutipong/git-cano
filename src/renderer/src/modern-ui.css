@@ -3291,6 +3291,10 @@ body {
     color: var(--text);
 }
 
+.confirm-dialog-header.orange {
+    color: var(--orange);
+}
+
 .confirm-dialog-header strong {
     color: var(--text);
     font-size: 13px;
@@ -3660,6 +3664,18 @@ body {
     color: var(--red);
     background: color-mix(in srgb, var(--red) 24%, transparent);
     border-color: var(--red);
+}
+
+.btn.orange {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 14%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 45%, transparent);
+}
+
+.btn.orange:hover {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 24%, transparent);
+    border-color: var(--orange);
 }
 
 .toast-stack {

@@ -33,6 +33,7 @@ export const useSyncStore = defineStore('sync', () => {
             const ok = await confirmDialog({
                 message: 'Force push will overwrite the remote branch history.\nThis cannot be undone.',
                 confirmLabel: 'Force push',
+                confirmIcon: 'force-push',
                 danger: true,
             })
             if (!ok) return

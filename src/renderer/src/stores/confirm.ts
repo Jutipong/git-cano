@@ -3,7 +3,7 @@ export interface ConfirmOptions {
     message: string
     confirmLabel?: string
     danger?: boolean
-    confirmIcon?: 'reset' | 'delete'
+    confirmIcon?: 'reset' | 'delete' | 'force-push'
     /** Visual "from → to" diagram (e.g. merge/reset direction) rendered above the message. */
     flow?: { from: string; to: string; label?: string }
     /** Pre-computed check result shown as a status row (✓ ok / ⚠ warn / dim unknown). */

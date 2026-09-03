@@ -212,6 +212,7 @@
             const ok = await confirmDialog({
                 message: `Force push ${branch.name}?\nThis will overwrite remote history.`,
                 confirmLabel: 'Force push',
+                confirmIcon: 'force-push',
                 danger: true,
             })
             if (!ok) return

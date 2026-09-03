@@ -5,6 +5,7 @@
     const confirmBtn = useTemplateRef<HTMLButtonElement>('confirmBtn')
 
     const conflict = computed(() => confirmStore.current?.status?.kind === 'warn')
+    const forcePush = computed(() => confirmStore.current?.confirmIcon === 'force-push')
 
     function onKey(event: KeyboardEvent) {
         if (!confirmStore.current) return
@@ -30,7 +31,9 @@
         class="confirm-dialog-overlay"
         @mousedown.self="confirmStore.settle(false)">
         <div class="confirm-dialog">
-            <div class="confirm-dialog-header">
+            <div
+                class="confirm-dialog-header"
+                :class="{ orange: forcePush }">
                 <i-lucide-alert-triangle
                     v-if="confirmStore.current.danger"
                     width="17"
@@ -124,10 +127,14 @@
                 <button
                     ref="confirmBtn"
                     class="btn"
-                    :class="confirmStore.current.danger ? 'danger' : 'primary'"
+                    :class="forcePush ? 'orange' : confirmStore.current.danger ? 'danger' : 'primary'"
                     @click="confirmStore.settle(true)">
+                    <i-lucide-zap
+                        v-if="confirmStore.current.confirmIcon === 'force-push'"
+                        width="13"
+                        height="13" />
                     <i-lucide-rotate-ccw
-                        v-if="confirmStore.current.confirmIcon === 'reset'"
+                        v-else-if="confirmStore.current.confirmIcon === 'reset'"
                         width="13"
                         height="13" />
                     <i-lucide-trash2
