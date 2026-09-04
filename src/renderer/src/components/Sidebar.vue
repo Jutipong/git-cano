@@ -54,8 +54,8 @@
         const tab = repoStore.tabs[repoStore.activeTab]
         return tab ? (ui.repoTabColors[tab.path] ?? null) : null
     })
-    // Branch/tag data comes from the repo store — refresh() fetches it alongside the log,
-    // so the sidebar never spawns its own git calls (spawn cost dominates on Windows).
+    // Branch/tag data comes from the repo store — refresh() fetches local data alongside the log,
+    // while remote tag state is refreshed in the background.
     const local = computed(() => repoStore.branchList?.local ?? [])
     const remote = computed(() => repoStore.branchList?.remote ?? [])
     const tags = computed(() => repoStore.tagList)

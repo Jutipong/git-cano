@@ -106,6 +106,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     const pendingFocusHash = ref<string | null>(null)
     let tagLoadingRequests = 0
+    let remoteTagRequest = 0
 
     async function loadTags(): Promise<{ name: string; hash: string }[]> {
         tagLoadingRequests++
@@ -115,6 +116,20 @@ export const useRepoStore = defineStore('repo', () => {
         } finally {
             tagLoadingRequests--
             loadingTags.value = tagLoadingRequests > 0
+        }
+    }
+
+    async function loadRemoteTags(targetPath: string): Promise<void> {
+        const request = ++remoteTagRequest
+        try {
+            const names = await window.api.remoteTags()
+            if (request === remoteTagRequest && tabs.value[activeTab.value]?.path === targetPath) {
+                remoteTagNames.value = names
+            }
+        } catch {
+            if (request === remoteTagRequest && tabs.value[activeTab.value]?.path === targetPath) {
+                remoteTagNames.value = []
+            }
         }
     }
 
@@ -185,13 +200,12 @@ export const useRepoStore = defineStore('repo', () => {
         try {
             // preserve scroll depth: if more pages were appended via loadMore, refetch the full depth
             const limit = Math.max(logLimit.value, commits.value.length)
-            const [status, log, branches, state, tags, remoteTags, remote] = await Promise.all([
+            const [status, log, branches, state, tags, remote] = await Promise.all([
                 precomputedStatus ? Promise.resolve(precomputedStatus) : window.api.status(),
                 window.api.log(limit),
                 window.api.branches(),
                 window.api.repoState(),
                 loadTags(),
-                window.api.remoteTags(),
                 window.api.hasRemote(),
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
@@ -201,11 +215,12 @@ export const useRepoStore = defineStore('repo', () => {
             repoState.value = state
             branchList.value = branches
             tagList.value = tags
-            remoteTagNames.value = remoteTags
             hasRemote.value = remote
             loadedPath.value = status.path
             const index = tabs.value.findIndex(tab => tab.path === status.path)
             if (index >= 0) tabs.value[index].status = status
+            // Remote tag lookup is network-bound; do not hold repository switching on it.
+            void loadRemoteTags(status.path)
             return branches
         } catch (error) {
             // clear the loading overlay even on failure — the error dialog surfaces the problem
