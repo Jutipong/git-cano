@@ -304,8 +304,10 @@
         const path = props.file.path
         const content = manualOutput.value ?? resultContent.value
         try {
-            await uiTransient.withBusy(() => window.api.saveResolvedFile(path, content), 'Resolving…')
-            await props.refresh?.()
+            await uiTransient.withBusy(async () => {
+                await window.api.saveResolvedFile(path, content)
+                await props.refresh?.()
+            }, 'Resolving…')
             notify(`${path}: conflicts resolved`, 'success')
             // the overlay closes itself — the store watch clears selectedConflict once
             // the file no longer reports unmerged
@@ -318,8 +320,10 @@
         if (!props.file) return
         const path = props.file.path
         try {
-            await uiTransient.withBusy(() => window.api.markResolved([path]), 'Marking resolved…')
-            await props.refresh?.()
+            await uiTransient.withBusy(async () => {
+                await window.api.markResolved([path])
+                await props.refresh?.()
+            }, 'Marking resolved…')
             notify(`${path}: marked resolved`, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
@@ -330,8 +334,10 @@
         if (!props.file) return
         const path = props.file.path
         try {
-            await uiTransient.withBusy(() => window.api.conflictTakeSide(path, side), 'Resolving…')
-            await props.refresh?.()
+            await uiTransient.withBusy(async () => {
+                await window.api.conflictTakeSide(path, side)
+                await props.refresh?.()
+            }, 'Resolving…')
             notify(`${path}: kept ${side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel}`, 'success')
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
