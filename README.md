@@ -1,181 +1,123 @@
-# 🔀 Open Git
+# Open Git
 
-A lightweight open-source Git GUI — **basic features first**, with optional AI-generated
-commit messages (no PR integration).
+Open Git is a lightweight desktop Git client for Windows and macOS. It focuses
+on the everyday Git workflow: open repositories, review history, manage
+branches and tags, and commit changes without leaving the app.
 
-Built with **Electron + Vue 3 + TypeScript + Pinia + simple-git** (renderer uses plain HTML/CSS — no UI framework).
+Built with **Electron, Vue 3, TypeScript, Pinia, and simple-git**.
 
 ## Features
 
-### Repos & history
+### Repositories and workspaces
 
-- 📂 Open / Init / Clone repository (+ recent repos list, session restore)
-- 💼 **Workspaces**: group repositories into named workspaces, each remembering
-  its own open tabs & active repo (switch from the sidebar workspace button)
-- 🗂️ Multiple repositories open at once as tabs (capsule tab bar with a green `+`)
-  — right-click a tab to rename/close it or set a **custom tab color** via the
-  native color picker
-- 📊 Interactive commit graph across all branches (custom SVG DAG renderer)
-  with configurable columns (author / hash / date) and a custom date format
-  (gear icon in the graph toolbar)
-- 🔎 Search commits by message, author, hash, or ref (`⌘⇧F`) — search lives
-  in the graph toolbar
-- ⏱️ Auto-refresh every minute · instant refresh on window focus or external
-  repo changes · manual refresh with `⌘R`
-- ⚡ Fast refreshes: optional git worktree caching (fsmonitor + untracked cache,
-  toggled in Settings → General) and virtualized rendering for large diffs
+- Open, initialize, and clone repositories
+- Keep multiple repositories open in tabs
+- Create named workspaces, each with its own tabs and active repository
+- Restore recent repositories and sessions on startup
+- Open the active repository in Explorer/Finder, Terminal, or VS Code
 
-### Changes panel (right)
+### History and changes
 
-- 📝 Stage / unstage files individually or all at once
-- ✍️ Commit box with `⌘↵` shortcut and a soft title-length counter
-  (≤50 ideal / ≤72 hard cap per convention — warns, never blocks)
-- ↺ Discard working-directory changes
-- 🧾 Select any commit in the graph → the panel switches to that commit's
-  changed files with per-file `+/−` stats and the total in the header
-- 📋 Hash chip copies the full commit hash to the clipboard
-- 📄 Readonly message view showing title + body with an author · date chip
+- Interactive commit graph for branches, remotes, and tags
+- Search commits by message, author, hash, or ref
+- Review working-directory changes or files changed by a commit
+- Stage and unstage files or individual diff hunks
+- Commit, amend, discard changes, and copy commit hashes
+- Unified or side-by-side diffs with image and binary-file support
+- Blame and per-file history views
 
-### AI commit messages (optional)
+### Branches, tags, and remotes
 
-- 🤖 One-click AI commit-message generation from the Changes panel — configure a
-  provider (OpenCode Go or OpenRouter), token, and model in Settings → AI
-- 🎯 Three modes next to the generate button: **Generate only**, **auto commit**,
-  and **auto commit + push** (auto modes stage everything, then commit)
-- 🎚️ Context matches what will be committed: Generate only summarizes the
-  **staged** diff; auto-commit modes summarize **all** working-directory changes
-  (staged + unstaged + untracked)
-- ⚡ Requests run with reasoning-effort `minimal` (falls back to `low` → no
-  reasoning param for models that don't support it) so thinking models answer fast
-  instead of running out of output tokens
-- ↺ Optional auto-format before generating (formatter toggle in Settings → AI)
+- Create, checkout, rename, delete, merge, and rebase branches
+- Create, delete, and push tags
+- Add, edit, remove, and test remote URLs
+- Fetch, pull, and push with SSH key or GitHub token authentication
+- Manage stashes, worktrees, submodules, and Git bisect sessions
+- Resolve merge conflicts with ours/theirs choices or manual editing
 
-### Diff viewing
+### Optional AI commit messages
 
-- 🔍 Diff overlay opens as a floating card over the tab bar + sidebar + graph when
-  you click a file row (the Changes panel stays interactive for switching files)
-- ↔️ Unified & side-by-side modes (remembered between sessions)
-- 🖼️ Image diffs and binary-file detection
-- ⛶ Fullscreen toggle for distraction-free review
+- Supports OpenCode Go and OpenRouter
+- Generate a commit message from staged changes
+- Optional auto-commit and auto-commit-plus-push modes
+- Optional formatting before generation
 
-### Branches, remotes & advanced
+### Fast loading
 
-- 🌿 Branch management: create, checkout, rename, delete, merge, rebase
-- 🏷️ Tag management: create / delete / push tags, create tag from any commit
-  (with an optional push-to-origin right from the create dialog)
-- 🌐 Remote management UI: add / remove / edit URLs; fetch all, pull, push
-  (auto `--set-upstream` on first push) — sync buttons sit at the top of the sidebar,
-  settings & theme toggle at the bottom
-- 🔑 SSH key management in Settings → Remotes: generate key pairs, list/delete
-  keys in `~/.ssh`, copy public keys, and test keys against the repo's remote
-  (including custom hosts)
-- 🎛️ Hunk-level partial staging (stage/unstage individual diff hunks)
-- 🔎 Blame view & per-file history browser
-- 🧰 Stash management: create, apply, pop, drop (including untracked files)
-- ⏯️ Rebase `edit` & `split` commands with pause/resume and safe rollback
-- ⚗️ Git bisect assistant (start, good/bad/skip, finish)
-- 🌳 Worktree management + submodule listing/updating
-- ⚡ Merge conflict resolver: take ours / theirs, mark resolved, abort/continue —
-  with **per-line picks**, whole-block selection, "use block" pills, select-all,
-  and direct manual editing of the resolved output
-- 🔀 Rebase onto branch with conflict handling (continue/abort)
-- 🎛️ Interactive rebase todo editor: pick / reword / squash / fixup / drop,
-  reorder commits (right-click a branch or commit)
+- Local repository data loads before network-dependent data
+- Remote tags load in the background and do not block repository switching
+- The TAGS section shows a loading indicator while remote tag status is being checked
+- Switching workspaces keeps shared repositories open when possible
+- Optional `fsmonitor` and untracked-cache accelerators are available in Settings → General
 
-### Appearance & apps
+## Keyboard shortcuts
 
-- 🎨 Four themes: Dark, Dark Modern, Dark Neon, Light — plus UI font size and
-  display zoom settings (appearance settings are resettable to defaults)
-- 🔍 Zoom the whole app with `⌃/⌘ +`, `−`, `0`, or Ctrl/⌘ + mouse wheel
-- 📤 "Open in" menu: open the active repo in **Finder/Explorer**, **Terminal**,
-  or **VS Code**
-- 🏷️ App version shown in the sidebar
-- ⏳ Busy card with animated indicator while git operations run, plus loading
-  indicators on commit details and diff views
+macOS accepts both `⌘` and `Ctrl` for the common Ctrl-based shortcuts. Press
+`?` in the app to see the complete shortcut list.
 
-### Interactions
+| Action          | macOS            | Windows             |
+| --------------- | ---------------- | ------------------- |
+| Pull            | `Ctrl+L` or `⌘↓` | `Ctrl+L` or `Alt+↓` |
+| Push            | `Ctrl+P` or `⌘↑` | `Ctrl+P` or `Alt+↑` |
+| Fetch           | `Ctrl+F`         | `Ctrl+F`            |
+| Open repository | `Ctrl+O`         | `Ctrl+O`            |
+| Settings        | `Ctrl+,`         | `Ctrl+,`            |
+| Refresh         | `⌘R`             | `Ctrl+R`            |
+| Search commits  | `⌘⇧F`            | `Ctrl+Shift+F`      |
+| New tab         | `⌘⇧P`            | `Ctrl+Shift+P`      |
+| Commit          | `⌘↵`             | `Ctrl+↵`            |
+| Close or cancel | `Esc`            | `Esc`               |
 
-- 📋 Per-feature right-click context menus: commits, local & remote branches,
-  tags, stashes, files, and repo tabs (each with its own dedicated menu component)
-- 🤝 Drag & drop: commit → branch to reset, branch → branch to merge
-- 🖱️ Resizable sidebar, right pane, and summary box (sizes persist)
-- 💬 Toasts for feedback; errors open a modal dialog (ESC / ✕ / Close to dismiss)
+## Requirements
 
-## ⌨️ Keyboard shortcuts
+- Node.js
+- pnpm 10 or newer
+- Git available in `PATH`
 
-Shortcuts differ slightly per platform — macOS accepts both `⌘` and `Ctrl`.
-Press `?` inside the app (outside a text field) to open the shortcuts help modal.
-
-| Action                              | macOS              | Windows                 |
-| ----------------------------------- | ------------------ | ----------------------- |
-| Pull                                | `Ctrl+L` or `⌘↓`   | `Ctrl+L` or `Alt+↓`     |
-| Push                                | `Ctrl+P` or `⌘↑`   | `Ctrl+P` or `Alt+↑`     |
-| Fetch                               | `Ctrl+F`           | `Ctrl+F`                |
-| Open repo (new tab)                 | `Ctrl+O`           | `Ctrl+O`                |
-| Open settings                       | `Ctrl+,`           | `Ctrl+,`                |
-| Refresh repository                  | `⌘R`               | `Ctrl+R`                |
-| Search commits                      | `⌘⇧F`              | `Ctrl+Shift+F`          |
-| Open new tab                        | `⌘⇧P`              | `Ctrl+Shift+P`          |
-| Commit (from commit box)            | `⌘↵`               | `Ctrl+↵`                |
-| Show shortcuts modal                | `?`                | `?`                     |
-| Zoom app in / out / reset           | `⌘=` / `⌘-` / `⌘0` | `Ctrl+` `=` / `-` / `0` |
-| Zoom with mouse wheel               | `⌘ + wheel`        | `Ctrl + wheel`          |
-| Close diff / deselect / close modal | `Esc`              | `Esc`                   |
-
-## Build a macOS app (.dmg)
-
-```bash
-pnpm dist
-# → release/Open Git-<version>-arm64.dmg
-```
-
-## Run
-
-Requires [pnpm](https://pnpm.io) (v10+):
+## Development
 
 ```bash
 pnpm install
-pnpm approve-builds electron esbuild   # allow postinstall scripts (first time only)
-pnpm dev                               # development (hot reload)
-pnpm build                             # production build
-npx electron .                         # run the built app
+pnpm approve-builds electron esbuild   # first install only
+pnpm dev                                # development with hot reload
+```
+
+Useful checks and builds:
+
+```bash
+pnpm typecheck
+pnpm lint
+pnpm build                              # production build
+pnpm dist:win                           # Windows portable app
+pnpm dist:mac                           # macOS .dmg
+```
+
+Run the production build with:
+
+```bash
+npx electron .
 ```
 
 ## Project structure
 
-```
+```text
 src/
-├── main/           # Electron main process
-│   ├── index.ts    # Window + IPC handlers
-│   ├── git.ts      # All git logic (simple-git)
-│   └── opencode.ts # AI commit-message generation (OpenCode Go / OpenRouter APIs)
-├── preload/        # contextBridge API (window.api)
-├── shared/         # Shared types
-├── docs/           # Architecture notes (commit-graph.md)
-└── renderer/
-    ├── index.html
-    └── src/
-        ├── components/   # Vue SFCs, one per panel/modal
-        │   ├── Welcome.vue        # Open/Init/Clone screen
-        │   ├── TabBar.vue         # Repository tabs (capsule bar, colors)
-        │   ├── WorkspaceButton.vue # Workspace switcher (per-workspace sessions)
-        │   ├── Sidebar.vue        # Sync actions, workspaces, branches, stashes
-        │   ├── GraphView.vue      # Commit graph (SVG) + commit search
-        │   ├── FilePanel.vue      # Changes panel + commit box
-        │   ├── DiffView.vue       # Diff overlay viewer (virtualized)
-        │   ├── ConflictView.vue   # Merge conflict resolver
-        │   ├── ToolsModal.vue     # Settings (appearance/general/remotes/hook/AI)
-        │   ├── ShortcutsModal.vue # Keyboard shortcuts help (? key)
-        │   └── ...                # Modals & per-feature context menus
-        ├── stores/       # Pinia stores (repo, ui, workspace, sync, ai, transient feedback)
-        ├── utils/        # Shared helpers (formatting, shortcuts, dialogs)
-        │   └── shortcuts.ts # Single source of truth for keyboard shortcuts
-        ├── styles.css    # Global stylesheet (base)
-        └── modern-ui.css # Modern theme overrides (palette, radii, pills)
+├── main/              # Electron main process and Git operations
+├── preload/           # Secure window.api bridge
+├── shared/            # Shared TypeScript types and graph helpers
+└── renderer/src/
+    ├── components/    # Vue panels, views, and dialogs
+    ├── stores/        # Repository, workspace, UI, sync, and AI state
+    ├── utils/         # Formatting, shortcuts, dialogs, and helpers
+    ├── styles.css     # Base styles
+    └── modern-ui.css  # Modern UI overrides
 ```
 
 ## Notes
 
-- Requires system `git` in PATH.
-- The graph auto-refreshes every minute and instantly on focus/external changes.
-- Agent guidance lives in [AGENTS.md](AGENTS.md).
+- Open Git never sends Git operations directly from the renderer. Calls go
+  through `window.api` to the Electron main process.
+- Remote tag status depends on the repository's `origin` and network access.
+  It is intentionally loaded in the background so slow remotes do not block
+  the rest of the application.
+- See [AGENTS.md](AGENTS.md) for repository-specific development guidance.

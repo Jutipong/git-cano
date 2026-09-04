@@ -33,6 +33,14 @@ Key files:
 - `src/renderer/src/utils/shortcuts.ts` — single source of truth for keyboard shortcuts
 - `src/renderer/src/components/` — one Vue SFC per panel/modal
 
+## Repository loading and performance
+
+- `repo.ts` loads local repository data (status, history, branches, local tags, and remote existence) before marking the repo as loaded.
+- Remote tag status is network-bound and must stay outside the awaited refresh batch. `loadRemoteTags()` runs it in the background, keeps a loading state for the TAGS section, and ignores results from an inactive repo.
+- `listRemoteTags()` uses a separate `plainGit()` instance so the background network request does not block local Git commands. Do not add a cache or put this request back into the main refresh `Promise.all()` without a deliberate product decision.
+- Workspace switches close only repositories that are not present in the destination workspace, open target repositories concurrently, and pass the already-computed active-repo status into `selectTab()` to avoid a duplicate `git status`.
+- Keep the local loading indicators honest: local tags and remote tag status have separate loading states, and local tags should remain visible while remote status is loading.
+
 ## UI model
 
 - **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the `+` button is a flat
