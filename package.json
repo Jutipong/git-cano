@@ -25,6 +25,7 @@
     "devDependencies": {
         "@iconify-json/catppuccin": "^1.2.17",
         "@iconify-json/clarity": "^1.2.4",
+        "@iconify-json/codicon": "^1.2.72",
         "@iconify-json/fluent-emoji-flat": "^1.2.6",
         "@iconify-json/hugeicons": "^1.2.34",
         "@iconify-json/icon-park-outline": "^1.2.4",
