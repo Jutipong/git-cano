@@ -48,8 +48,10 @@
         busy.value = true
         error.value = ''
         try {
-            await uiTransient.withBusy(() => window.api.createStash(text), 'Creating stash…')
-            await repoStore.refresh()
+            await uiTransient.withBusy(async () => {
+                await window.api.createStash(text)
+                await repoStore.refresh()
+            }, 'Creating stash…')
             uiTransient.bumpStashList()
             notify('Changes stashed', 'success')
             emit('close')
