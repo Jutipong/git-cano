@@ -262,7 +262,7 @@ export const useRepoStore = defineStore('repo', () => {
         return `${s.branch}|${s.ahead}|${s.behind}|${s.files.map(f => `${f.path}${f.staged}${f.unstaged}`).join(',')}`
     }
 
-    async function selectTab(index: number) {
+    async function selectTab(index: number, precomputedStatus?: RepoStatus) {
         if (useUiTransientStore().busy) return
         const tab = tabs.value[index]
         if (!tab) return
@@ -291,7 +291,7 @@ export const useRepoStore = defineStore('repo', () => {
                 loadedPath.value = tab.path
             }
         }
-        await refresh(undefined, true)
+        await refresh(precomputedStatus, true)
     }
 
     async function closeTab(index: number) {
@@ -362,7 +362,7 @@ export const useRepoStore = defineStore('repo', () => {
             const restoredActive = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
             if (restoredActive >= 0) {
                 activeTab.value = restoredActive
-                await selectTab(restoredActive)
+                await selectTab(restoredActive, tabs.value[restoredActive]?.status)
             } else if (tabs.value.length > 0) {
                 await selectTab(0)
             }
@@ -409,7 +409,12 @@ export const useRepoStore = defineStore('repo', () => {
         restoringSession = true
         try {
             const currentPaths = tabs.value.map(tab => tab.path)
-            await Promise.all(currentPaths.map(path => window.api.closeRepo(path).catch(() => false)))
+            const saved = ws.getSession(name) ?? { paths: [], active: 0 }
+            const targetPaths = new Set(saved.paths)
+            // Keep repositories shared by both workspaces open; only close repos that are no longer needed.
+            await Promise.all(
+                currentPaths.filter(path => !targetPaths.has(path)).map(path => window.api.closeRepo(path).catch(() => false))
+            )
             tabs.value = []
             activeTab.value = 0
             commits.value = []
@@ -417,10 +422,9 @@ export const useRepoStore = defineStore('repo', () => {
             selectedConflict.value = null
             selectedCommit.value = null
             selectedStash.value = null
-            const saved = ws.getSession(name) ?? { paths: [], active: 0 }
             // Open concurrently (order preserved by Promise.all) — sequential spawning dominates
-            // the switch cost on Windows. addTab skips refresh/sync while restoringSession is set,
-            // so exactly one full refresh happens below.
+            // the switch cost on Windows. Shared repos reuse their existing git instance. addTab
+            // skips refresh/sync while restoringSession is set, so exactly one full refresh happens below.
             const statuses = await Promise.all(saved.paths.map(path => window.api.openPath(path).catch(() => null)))
             for (const status of statuses) {
                 if (status) addTab(status)
@@ -429,7 +433,7 @@ export const useRepoStore = defineStore('repo', () => {
             const restored = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
             if (restored >= 0) {
                 activeTab.value = restored
-                await selectTab(restored)
+                await selectTab(restored, tabs.value[restored]?.status)
             } else if (tabs.value.length > 0) {
                 await selectTab(0)
             }
