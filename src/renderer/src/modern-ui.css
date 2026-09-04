@@ -1566,6 +1566,7 @@ body {
     margin: 2px 6px;
     min-height: 30px;
     padding-left: 9px;
+    user-select: none;
 }
 
 .file-row {
