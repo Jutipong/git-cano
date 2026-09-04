@@ -44,18 +44,18 @@
             },
         ]
         // C#-only entries: shown when the repo has .NET solution/project files and the IDE is installed
-        if (targets.value?.rider) {
-            items.push({
-                label: 'Open in Rider',
-                icon: 'rider',
-                action: () => run(() => window.api.openInRider(props.path)),
-            })
-        }
         if (targets.value?.visualStudio) {
             items.push({
                 label: 'Open in Visual Studio',
                 icon: 'visualstudio',
                 action: () => run(() => window.api.openInVisualStudio(props.path)),
+            })
+        }
+        if (targets.value?.rider) {
+            items.push({
+                label: 'Open in Rider',
+                icon: 'rider',
+                action: () => run(() => window.api.openInRider(props.path)),
             })
         }
         return items

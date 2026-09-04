@@ -3639,7 +3639,7 @@ body {
 .toast-stack {
     position: fixed;
     z-index: 70;
-    top: 6px;
+    top: 60px;
     left: 50%;
     translate: -50% 0;
     display: flex;

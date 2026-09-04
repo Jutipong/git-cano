@@ -334,18 +334,27 @@ async function findVisualStudio(): Promise<string | null> {
     if (!fs.existsSync(vswhere)) return null
     try {
         const out = await runCapture(vswhere, [
-            '-latest',
+            '-all',
+            '-prerelease',
             '-products',
-            '*',
+            'Microsoft.VisualStudio.Product.Community',
+            'Microsoft.VisualStudio.Product.Professional',
+            'Microsoft.VisualStudio.Product.Enterprise',
             '-requires',
-            'Microsoft.VisualStudio.Workload.ManagedDesktop',
+            'Microsoft.VisualStudio.Component.CoreEditor',
+            '-format',
+            'value',
             '-property',
             'installationPath',
         ])
-        const installPath = out.trim().split(/\r?\n/)[0]
-        if (!installPath) return null
-        const devenv = path.join(installPath, 'Common7', 'IDE', 'devenv.exe')
-        return fs.existsSync(devenv) ? devenv : null
+        for (const installPath of out
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(Boolean)) {
+            const devenv = path.join(installPath, 'Common7', 'IDE', 'devenv.exe')
+            if (fs.existsSync(devenv)) return devenv
+        }
+        return null
     } catch {
         return null
     }
@@ -370,7 +379,7 @@ function openRider(dir: string): Promise<void> {
 
 async function openVisualStudio(dir: string): Promise<void> {
     const devenv = await findVisualStudio()
-    if (!devenv) return Promise.reject(new Error('Visual Studio not found — install it with the ".NET desktop development" workload'))
+    if (!devenv) return Promise.reject(new Error('Visual Studio not found — install Visual Studio Community, Professional, or Enterprise'))
     return runCmd(devenv, [csharpOpenTarget(dir)], dir)
 }
 
