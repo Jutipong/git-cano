@@ -387,18 +387,29 @@ async function openVisualStudio(dir: string): Promise<void> {
 }
 
 function findKiro(): string | null {
-    if (process.platform !== 'win32') return null
+    if (process.platform === 'win32') {
+        const candidates = [
+            process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Kiro', 'Kiro.exe') : '',
+            'C:\\Program Files\\Kiro\\Kiro.exe',
+        ].filter(Boolean)
+        return candidates.find(candidate => fs.existsSync(candidate)) ?? null
+    }
+    if (process.platform !== 'darwin') return null
+    // Kiro is a VS Code fork — its bundled CLI lives at bin/code inside the app bundle
     const candidates = [
-        process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Kiro', 'Kiro.exe') : '',
-        'C:\\Program Files\\Kiro\\Kiro.exe',
+        '/Applications/Kiro.app/Contents/Resources/app/bin/code',
+        path.join(process.env.HOME ?? '', 'Applications', 'Kiro.app', 'Contents', 'Resources', 'app', 'bin', 'code'),
     ].filter(Boolean)
     return candidates.find(candidate => fs.existsSync(candidate)) ?? null
 }
 
 function openKiro(dir: string): Promise<void> {
     const exe = findKiro()
-    if (!exe) return Promise.reject(new Error('Kiro not found — install it from kiro.dev'))
-    return runCmd(exe, [dir], dir)
+    if (exe) return runCmd(exe, [dir], dir)
+    if (process.platform === 'darwin') {
+        return runCmd('open', ['-a', 'Kiro', dir], dir)
+    }
+    return Promise.reject(new Error('Kiro not found — install it from kiro.dev'))
 }
 
 const LOG_LEVELS = new Set(['info', 'warn', 'error'])
