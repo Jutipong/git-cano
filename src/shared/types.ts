@@ -121,6 +121,8 @@ export interface MenuItem {
 export interface OpenInTargets {
     /** Repo contains .NET solution/project files */
     csharp: boolean
+    /** Path to Kiro.exe when Kiro IDE is installed */
+    kiro: string | null
     /** Path to rider64.exe when Rider is installed */
     rider: string | null
     /** Path to devenv.exe when Visual Studio with the managed-desktop workload is installed */

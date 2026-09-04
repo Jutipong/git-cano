@@ -51,6 +51,9 @@ importers:
       '@iconify-json/streamline-flex-color':
         specifier: ^1.2.2
         version: 1.2.2
+      '@iconify-json/thesvg-color':
+        specifier: ^1.2.6
+        version: 1.2.6
       '@types/node':
         specifier: ^26.4.0
         version: 26.4.0
@@ -558,6 +561,9 @@ packages:
 
   '@iconify-json/streamline-flex-color@1.2.2':
     resolution: {integrity: sha512-EphxHZHzxcR2B8AU7skOnq27cuOoZDzn69EzLysRkN+Nla7tyqF0eacsFCk70t2T9BhT3LBy9GgGeY3+Db2KPQ==}
+
+  '@iconify-json/thesvg-color@1.2.6':
+    resolution: {integrity: sha512-A8SCoUVPr6ce/LLb+f0Td64Rd1Z+bDpHByAs4u/9Lff8aAaFXyPRGKITzh5N1a6vyH4Iti4SVRtv/bw33tguhw==}
 
   '@iconify/types@2.0.0':
     resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
@@ -3038,6 +3044,10 @@ snapshots:
       '@iconify/types': 2.0.0
 
   '@iconify-json/streamline-flex-color@1.2.2':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/thesvg-color@1.2.6':
     dependencies:
       '@iconify/types': 2.0.0
 

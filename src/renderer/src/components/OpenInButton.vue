@@ -43,6 +43,14 @@
                 action: () => run(() => window.api.openInVSCode(props.path)),
             },
         ]
+        // Shown whenever Kiro IDE is installed on the machine
+        if (targets.value?.kiro) {
+            items.push({
+                label: 'Open in Kiro',
+                icon: 'kiro',
+                action: () => run(() => window.api.openInKiro(props.path)),
+            })
+        }
         // C#-only entries: shown when the repo has .NET solution/project files and the IDE is installed
         if (targets.value?.visualStudio) {
             items.push({

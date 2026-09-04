@@ -44,6 +44,7 @@ const api = {
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
+    openInKiro: (dir: string): Promise<void> => call('app:openInKiro', dir),
     getOpenInTargets: (dir: string): Promise<OpenInTargets> => call('app:getOpenInTargets', dir),
     openInRider: (dir: string): Promise<void> => call('app:openInRider', dir),
     openInVisualStudio: (dir: string): Promise<void> => call('app:openInVisualStudio', dir),

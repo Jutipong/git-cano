@@ -10,6 +10,7 @@
     import Pencil from '~icons/lucide/pencil'
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
+    import Kiro from '~icons/thesvg-color/kiro'
 
     import type { MenuItem } from '@shared/types'
     import type { FunctionalComponent } from 'vue'
@@ -35,6 +36,7 @@
         folder: Folder,
         terminal: SquareTerminal,
         vscode: VisualStudioCode,
+        kiro: Kiro,
         rider: Rider,
         visualstudio: VisualStudio,
         trash: Trash2,

@@ -253,6 +253,8 @@ function openVSCode(dir: string): Promise<void> {
 interface OpenInTargets {
     /** Repo contains .NET solution/project files */
     csharp: boolean
+    /** Path to Kiro.exe when Kiro IDE is installed */
+    kiro: string | null
     /** Path to rider64.exe when Rider is installed */
     rider: string | null
     /** Path to devenv.exe when Visual Studio with the managed-desktop workload is installed */
@@ -366,6 +368,7 @@ async function getOpenInTargets(dir: string): Promise<OpenInTargets> {
     const csharp = out.slns.length > 0 || out.projs.length > 0
     return {
         csharp,
+        kiro: findKiro(),
         rider: csharp ? findRider() : null,
         visualStudio: csharp ? await findVisualStudio() : null,
     }
@@ -381,6 +384,21 @@ async function openVisualStudio(dir: string): Promise<void> {
     const devenv = await findVisualStudio()
     if (!devenv) return Promise.reject(new Error('Visual Studio not found — install Visual Studio Community, Professional, or Enterprise'))
     return runCmd(devenv, [csharpOpenTarget(dir)], dir)
+}
+
+function findKiro(): string | null {
+    if (process.platform !== 'win32') return null
+    const candidates = [
+        process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Kiro', 'Kiro.exe') : '',
+        'C:\\Program Files\\Kiro\\Kiro.exe',
+    ].filter(Boolean)
+    return candidates.find(candidate => fs.existsSync(candidate)) ?? null
+}
+
+function openKiro(dir: string): Promise<void> {
+    const exe = findKiro()
+    if (!exe) return Promise.reject(new Error('Kiro not found — install it from kiro.dev'))
+    return runCmd(exe, [dir], dir)
 }
 
 const LOG_LEVELS = new Set(['info', 'warn', 'error'])
@@ -540,6 +558,7 @@ app.whenReady().then(() => {
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
     handle('app:getOpenInTargets', (dir: string) => getOpenInTargets(dir as string))
+    handle('app:openInKiro', (dir: string) => openKiro(dir as string))
     handle('app:openInRider', (dir: string) => openRider(dir as string))
     handle('app:openInVisualStudio', (dir: string) => openVisualStudio(dir as string))
     handle('app:getVersion', () => app.getVersion())
