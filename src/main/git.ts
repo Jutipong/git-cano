@@ -922,6 +922,60 @@ export async function checkoutWithOptions(ref: string, localChanges: LocalChange
     }
 }
 
+export async function checkoutRemoteWithOptions(ref: string, localChanges: LocalChangesMode): Promise<void> {
+    const { git: g } = getRepo()
+    const parts = ref.replace(/^remotes\//, '').split('/')
+    const remote = parts.shift()
+    const branch = parts.join('/')
+    if (!remote || !branch) throw new Error(`Invalid remote branch reference: ${ref}`)
+    const target = `${remote}/${branch}`
+    const localExists = await g.raw(['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]).then(
+        () => true,
+        () => false
+    )
+    const doCheckout = async () => {
+        if (localExists) {
+            await g.checkout(branch)
+            const upstream = await g.raw(['rev-parse', '--abbrev-ref', `${branch}@{upstream}`]).then(
+                out => out.trim(),
+                () => null
+            )
+            if (upstream !== target) {
+                await g.raw(['branch', '--set-upstream-to', target, branch])
+            }
+        } else {
+            await g.raw(['checkout', '-b', branch, '--track', target])
+        }
+    }
+    if (localChanges === 'keep') {
+        await doCheckout()
+        return
+    }
+    if (localChanges === 'discard') {
+        await discardAllChanges()
+        await doCheckout()
+        return
+    }
+    // stash and reapply
+    const status = await g.status()
+    const dirty = status.files.length > 0
+    let stashed = false
+    if (dirty) {
+        await g.raw(['stash', 'push', '--include-untracked', '-m', `switch-branch: ${branch}`])
+        stashed = true
+    }
+    try {
+        await doCheckout()
+    } catch (error) {
+        if (stashed) await g.raw(['stash', 'pop']).catch(() => {})
+        throw error
+    }
+    if (stashed) {
+        // On conflict git keeps the stash entry — leave it for the user to resolve.
+        await g.raw(['stash', 'pop']).catch(() => {})
+    }
+}
+
 export async function deleteBranch(name: string): Promise<void> {
     const { git: g } = getRepo()
     await g.deleteLocalBranch(name, true)

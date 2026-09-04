@@ -20,6 +20,7 @@ import {
 } from './auth'
 import {
     checkoutWithOptions,
+    checkoutRemoteWithOptions,
     closeRepo,
     commit,
     createBranchWithOptions,
@@ -571,6 +572,10 @@ app.whenReady().then(() => {
     handle('branch:checkout', (ref: string, localChanges?: LocalChangesMode) => {
         requireRepo()
         return checkoutWithOptions(ref as string, (localChanges as LocalChangesMode) || 'keep')
+    })
+    handle('branch:checkoutRemote', (ref: string, localChanges?: LocalChangesMode) => {
+        requireRepo()
+        return checkoutRemoteWithOptions(ref as string, (localChanges as LocalChangesMode) || 'keep')
     })
     handle('branch:delete', (name: string) => {
         requireRepo()

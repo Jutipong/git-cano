@@ -159,7 +159,7 @@
         const target = localNameForRemote(name)
         const mode = await resolveCheckoutMode(target)
         if (!mode) return
-        void run(() => window.api.checkout(target, mode), `Checked out ${target}`)
+        void run(() => window.api.checkoutRemote(name, mode), `Checked out ${target}`)
     }
 
     async function deleteBranch(name: string) {
