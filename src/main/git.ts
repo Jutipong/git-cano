@@ -595,14 +595,21 @@ function parseDiff(text: string, file?: string): DiffLine[] {
 
 export async function getCommitDetails(hash: string): Promise<CommitDetails> {
     const { git: g } = getRepo()
-    const [metadata, message, diffText, fileText, numstatText] = await Promise.all([
+    const [metadata, message] = await Promise.all([
         g.raw(['show', '-s', '--format=%H%x1f%an%x1f%ae%x1f%aI%x1f%P', hash]),
         g.raw(['show', '-s', '--format=%B', hash]),
-        g.raw(['show', '--no-color', '--format=', hash]),
-        g.raw(['diff-tree', '--root', '--no-commit-id', '--name-status', '-r', hash]),
-        g.raw(['diff-tree', '--root', '--no-commit-id', '--numstat', '-r', hash]),
     ])
     const [fullHash, author, email, date, parents = ''] = metadata.trim().split('\u001f')
+    const parent = parents.split(' ').filter(Boolean)[0]
+    const [diffText, fileText, numstatText] = await Promise.all([
+        parent ? g.raw(['diff', '--no-color', parent, hash]) : g.raw(['show', '--no-color', '--format=', hash]),
+        parent
+            ? g.raw(['diff-tree', '--no-commit-id', '--name-status', '-r', parent, hash])
+            : g.raw(['diff-tree', '--root', '--no-commit-id', '--name-status', '-r', hash]),
+        parent
+            ? g.raw(['diff-tree', '--no-commit-id', '--numstat', '-r', parent, hash])
+            : g.raw(['diff-tree', '--root', '--no-commit-id', '--numstat', '-r', hash]),
+    ])
 
     const statMap = new Map<string, { additions: number; deletions: number }>()
     for (const line of numstatText.split('\n')) {
@@ -1313,7 +1320,10 @@ export async function getCommitFileDiff(hash: string, file: string, context?: nu
     const { path: p, git: g } = getRepo()
     let text = ''
     try {
-        text = await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
+        const parents = (await g.raw(['show', '-s', '--format=%P', hash])).trim().split(/\s+/).filter(Boolean)
+        text = parents.length
+            ? await g.raw(['diff', parents[0], hash, `--unified=${context ?? 3}`, '--no-color', '--', file])
+            : await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
     } catch {}
     if (text.trim() || text.includes('Binary files')) return parseDiff(text)
 
