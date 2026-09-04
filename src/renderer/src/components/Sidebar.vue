@@ -59,6 +59,7 @@
     const local = computed(() => repoStore.branchList?.local ?? [])
     const remote = computed(() => repoStore.branchList?.remote ?? [])
     const tags = computed(() => repoStore.tagList)
+    const loadingTags = computed(() => repoStore.loadingTags)
     const localExpanded = computed({
         get: () => ui.sidebarSections.local,
         set: value => {
@@ -572,7 +573,12 @@
             <div class="section-body">
                 <template v-if="tagsExpanded || searching">
                     <div
-                        v-if="tags.length === 0"
+                        v-if="loadingTags"
+                        class="sidebar-empty">
+                        <ThinkSpinner suffix="Loading tags…" />
+                    </div>
+                    <div
+                        v-else-if="tags.length === 0"
                         class="sidebar-empty">
                         No tags yet
                     </div>

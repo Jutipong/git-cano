@@ -60,6 +60,7 @@ export const useRepoStore = defineStore('repo', () => {
     const branchList = ref<{ local: BranchInfo[]; remote: BranchInfo[] } | null>(null)
     /** Latest tag data for the active repo — fetched alongside branches in refresh() so the sidebar reads from the store. */
     const tagList = ref<{ name: string; hash: string }[]>([])
+    const loadingTags = ref(false)
     const remoteTagNames = ref<string[]>([])
     const hasRemote = ref(false)
     const logLimit = ref(PAGE_SIZE)
@@ -104,6 +105,18 @@ export const useRepoStore = defineStore('repo', () => {
     const toolsTab = ref<'appearance' | 'general' | 'auth' | 'hook' | 'ai'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
+    let tagLoadingRequests = 0
+
+    async function loadTags(): Promise<{ name: string; hash: string }[]> {
+        tagLoadingRequests++
+        loadingTags.value = true
+        try {
+            return await window.api.tags()
+        } finally {
+            tagLoadingRequests--
+            loadingTags.value = tagLoadingRequests > 0
+        }
+    }
 
     const repo = computed<RepoStatus | null>(() => tabs.value[activeTab.value]?.status ?? null)
     /** True while the active tab still shows another repo's data (switch/new tab not refreshed yet). */
@@ -163,6 +176,7 @@ export const useRepoStore = defineStore('repo', () => {
         const targetPath = tabs.value[activeTab.value]?.path
         if (switching) {
             refreshingRepo.value = true
+            loadingTags.value = true
             // tags have no cached paint (unlike branches) — clear them so the sidebar never shows the previous repo's tags
             tagList.value = []
             remoteTagNames.value = []
@@ -176,7 +190,7 @@ export const useRepoStore = defineStore('repo', () => {
                 window.api.log(limit),
                 window.api.branches(),
                 window.api.repoState(),
-                window.api.tags(),
+                loadTags(),
                 window.api.remoteTags(),
                 window.api.hasRemote(),
             ])
@@ -247,6 +261,10 @@ export const useRepoStore = defineStore('repo', () => {
         // Stale-while-revalidate: paint the cached log and branch list for this repo instantly
         // (no git spawn), then refresh() over it with fresh data.
         if (loadedPath.value !== tab.path) {
+            loadingTags.value = true
+            tagList.value = []
+            remoteTagNames.value = []
+            hasRemote.value = false
             const [cachedLog, cachedBranches] = await Promise.all([
                 window.api.logCached(logLimit.value).catch(() => null),
                 window.api.branchesCached().catch(() => null),
@@ -464,6 +482,7 @@ export const useRepoStore = defineStore('repo', () => {
         commits,
         branchList,
         tagList,
+        loadingTags,
         remoteTagNames,
         hasRemote,
         refreshingRepo,
