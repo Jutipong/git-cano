@@ -40,9 +40,6 @@ let activeRepoPath: string | null = null
 const logCache = new Map<string, { limit: number; commits: CommitNode[] }>()
 /** Last computed branch list per repo path — same stale-while-revalidate purpose as logCache (branches change slowly). */
 const branchCache = new Map<string, { local: BranchInfo[]; remote: BranchInfo[] }>()
-/** Remote tags are network data; keep successful results briefly so switching back does not repeat ls-remote immediately. */
-const remoteTagCache = new Map<string, { names: string[]; at: number }>()
-const REMOTE_TAG_CACHE_MS = 30_000
 
 /**
  * Simple-git (>=3.24) blocks env vars / config it considers unsafe unless the matching `unsafe.*` flag is enabled. This app intentionally
@@ -1112,9 +1109,7 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
 }
 
 export async function fetchAll(): Promise<string> {
-    const { path: p } = getRepo()
     await withAuthEnv(git => git.fetch(['--all', '--tags', '--force']))
-    remoteTagCache.delete(p)
     return 'Fetch completed'
 }
 
@@ -1129,9 +1124,7 @@ export async function push(force = false): Promise<string> {
 }
 
 export async function pull(rebase = false): Promise<string> {
-    const { path: p } = getRepo()
     const res = await withAuthEnv(git => git.pull([rebase ? '--rebase' : '--no-rebase']))
-    remoteTagCache.delete(p)
     return `Pulled (${res.summary.changes} changes)`
 }
 
@@ -1154,10 +1147,9 @@ export async function pushBranch(name: string, force = false): Promise<string> {
 }
 
 export async function pullBranch(name: string): Promise<string> {
-    const { path: p, git: g } = getRepo()
+    const { git: g } = getRepo()
     if ((await g.status()).current === name) {
         const res = await withAuthEnv(git => git.pull(['--no-rebase']))
-        remoteTagCache.delete(p)
         return `Pulled (${res.summary.changes} changes)`
     }
     let upstream = ''
@@ -1168,7 +1160,6 @@ export async function pullBranch(name: string): Promise<string> {
     const slash = upstream.indexOf('/')
     if (slash <= 0) throw new Error(`Invalid upstream for "${name}": ${upstream}`)
     await withAuthEnv(git => git.fetch([upstream.slice(0, slash), upstream.slice(slash + 1)]))
-    remoteTagCache.delete(p)
     const oldTip = (await g.raw(['rev-parse', name])).trim()
     const fetched = (await g.raw(['rev-parse', 'FETCH_HEAD'])).trim()
     const base = (await g.raw(['merge-base', name, 'FETCH_HEAD'])).trim()
@@ -1447,24 +1438,17 @@ export async function deleteTag(name: string): Promise<void> {
 }
 
 export async function pushTags(): Promise<string> {
-    const { path: p } = getRepo()
     await withAuthEnv(git => git.push(['origin', '--tags']))
-    remoteTagCache.delete(p)
     return 'Tags pushed'
 }
 
 export async function pushTag(name: string): Promise<string> {
-    const { path: p } = getRepo()
     await withAuthEnv(git => git.push(['origin', `refs/tags/${name.trim()}`]))
-    remoteTagCache.delete(p)
     return `Tag ${name.trim()} pushed`
 }
 
 export async function listRemoteTags(): Promise<string[]> {
     const { path: p } = getRepo()
-    const cached = remoteTagCache.get(p)
-    if (cached && Date.now() - cached.at < REMOTE_TAG_CACHE_MS) return cached.names
-
     // Use a separate git instance so this network request cannot block local status/log operations.
     const remoteGit = plainGit(p)
     remoteGit.env({ ...baseEnv(), ...authGitEnv() })
@@ -1476,18 +1460,14 @@ export async function listRemoteTags(): Promise<string[]> {
             if (!ref.startsWith('refs/tags/')) continue
             names.add(ref.slice('refs/tags/'.length).replace(/\^\{\}$/, ''))
         }
-        const result = [...names]
-        remoteTagCache.set(p, { names: result, at: Date.now() })
-        return result
+        return [...names]
     } catch {
         return []
     }
 }
 
 export async function deleteRemoteTag(name: string): Promise<string> {
-    const { path: p } = getRepo()
     await withAuthEnv(git => git.push(['origin', `:refs/tags/${name.trim()}`]))
-    remoteTagCache.delete(p)
     return `Remote tag ${name.trim()} deleted`
 }
 

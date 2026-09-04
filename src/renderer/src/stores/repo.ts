@@ -107,6 +107,7 @@ export const useRepoStore = defineStore('repo', () => {
     const pendingFocusHash = ref<string | null>(null)
     let tagLoadingRequests = 0
     let remoteTagRequest = 0
+    const loadingRemoteTags = ref(false)
 
     async function loadTags(): Promise<{ name: string; hash: string }[]> {
         tagLoadingRequests++
@@ -121,6 +122,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     async function loadRemoteTags(targetPath: string): Promise<void> {
         const request = ++remoteTagRequest
+        loadingRemoteTags.value = true
         try {
             const names = await window.api.remoteTags()
             if (request === remoteTagRequest && tabs.value[activeTab.value]?.path === targetPath) {
@@ -130,6 +132,8 @@ export const useRepoStore = defineStore('repo', () => {
             if (request === remoteTagRequest && tabs.value[activeTab.value]?.path === targetPath) {
                 remoteTagNames.value = []
             }
+        } finally {
+            if (request === remoteTagRequest) loadingRemoteTags.value = false
         }
     }
 
@@ -192,6 +196,8 @@ export const useRepoStore = defineStore('repo', () => {
         if (switching) {
             refreshingRepo.value = true
             loadingTags.value = true
+            remoteTagRequest++
+            loadingRemoteTags.value = false
             // tags have no cached paint (unlike branches) — clear them so the sidebar never shows the previous repo's tags
             tagList.value = []
             remoteTagNames.value = []
@@ -502,6 +508,7 @@ export const useRepoStore = defineStore('repo', () => {
         branchList,
         tagList,
         loadingTags,
+        loadingRemoteTags,
         remoteTagNames,
         hasRemote,
         refreshingRepo,

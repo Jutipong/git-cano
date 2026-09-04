@@ -60,6 +60,7 @@
     const remote = computed(() => repoStore.branchList?.remote ?? [])
     const tags = computed(() => repoStore.tagList)
     const loadingTags = computed(() => repoStore.loadingTags)
+    const loadingRemoteTags = computed(() => repoStore.loadingRemoteTags)
     const localExpanded = computed({
         get: () => ui.sidebarSections.local,
         set: value => {
@@ -577,41 +578,48 @@
                         class="sidebar-empty">
                         <ThinkSpinner suffix="Loading tags…" />
                     </div>
-                    <div
-                        v-else-if="tags.length === 0"
-                        class="sidebar-empty">
-                        No tags yet
-                    </div>
-                    <div
-                        v-for="tag in tagsFiltered"
-                        :key="tag.name"
-                        class="branch-row tag-row"
-                        :class="{ active: activeTag === tag.name }"
-                        :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
-                        @click="focusTag(tag)"
-                        @contextmenu.prevent="openTagMenu(tag, $event)">
-                        <i-lucide-tag
-                            width="13"
-                            height="13" />
-                        <ThinkSpinner
-                            v-if="pendingRemoteTag === tag.name"
-                            compact
-                            class="tag-remote-ic"
-                            title="Working…" />
-                        <i-lucide-cloud
-                            v-else-if="remoteTagNames.includes(tag.name)"
-                            class="tag-remote-ic"
-                            title="On remote"
-                            width="14"
-                            height="14" />
-                        <i-lucide-cloud-off
-                            v-else-if="hasRemote"
-                            class="tag-remote-ic off"
-                            title="Not pushed to remote"
-                            width="14"
-                            height="14" />
-                        <span class="branch-name">{{ tag.name }}</span>
-                    </div>
+                    <template v-else>
+                        <div
+                            v-if="loadingRemoteTags"
+                            class="sidebar-empty">
+                            <ThinkSpinner suffix="Loading remote tags…" />
+                        </div>
+                        <div
+                            v-if="tags.length === 0 && !loadingRemoteTags"
+                            class="sidebar-empty">
+                            No tags yet
+                        </div>
+                        <div
+                            v-for="tag in tagsFiltered"
+                            :key="tag.name"
+                            class="branch-row tag-row"
+                            :class="{ active: activeTag === tag.name }"
+                            :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
+                            @click="focusTag(tag)"
+                            @contextmenu.prevent="openTagMenu(tag, $event)">
+                            <i-lucide-tag
+                                width="13"
+                                height="13" />
+                            <ThinkSpinner
+                                v-if="pendingRemoteTag === tag.name"
+                                compact
+                                class="tag-remote-ic"
+                                title="Working…" />
+                            <i-lucide-cloud
+                                v-else-if="remoteTagNames.includes(tag.name)"
+                                class="tag-remote-ic"
+                                title="On remote"
+                                width="14"
+                                height="14" />
+                            <i-lucide-cloud-off
+                                v-else-if="hasRemote"
+                                class="tag-remote-ic off"
+                                title="Not pushed to remote"
+                                width="14"
+                                height="14" />
+                            <span class="branch-name">{{ tag.name }}</span>
+                        </div>
+                    </template>
                 </template>
             </div>
         </div>
