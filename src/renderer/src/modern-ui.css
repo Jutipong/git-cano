@@ -2649,11 +2649,6 @@ body {
     user-select: none;
 }
 
-.prompt-option input {
-    accent-color: var(--teal);
-    cursor: pointer;
-}
-
 .prompt-local-changes {
     display: flex;
     flex-direction: column;
@@ -5302,4 +5297,69 @@ body {
 .cbx19 input[type='checkbox']:checked + .check-box::before {
     height: calc(var(--cbx-size) * 1.2);
     animation: cbx19-top-check 0.4s ease 0s forwards;
+}
+
+/* ===== Round radio (AppRadio.vue) — colors follow project theme ===== */
+
+.cbx18 {
+    --cbx18-size: 18px;
+    --cbx18-color: var(--teal);
+}
+
+/* keep the native input in the DOM (focusable) but invisible */
+.cbx18 input[type='radio'] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cbx18 input[type='radio']:focus-visible + .round-box {
+    outline: 2px solid var(--cbx18-color);
+    outline-offset: 2px;
+}
+
+.cbx18 .round-box {
+    flex: 0 0 auto;
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    width: var(--cbx18-size);
+    height: var(--cbx18-size);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+}
+
+.cbx18 input[type='radio']:checked + .round-box {
+    border-color: var(--cbx18-color);
+    background: var(--cbx18-color);
+}
+
+/* check mark positions follow the 28px reference via ratios (8/28, 9/28, 12/28, 6/28) */
+.cbx18 .round-box:after {
+    box-sizing: border-box;
+    border: 2px solid #fff;
+    border-top: none;
+    border-right: none;
+    content: '';
+    height: calc(var(--cbx18-size) * 0.214);
+    left: calc(var(--cbx18-size) * 0.286);
+    opacity: 0;
+    position: absolute;
+    top: calc(var(--cbx18-size) * 0.321);
+    transform: rotate(-45deg);
+    width: calc(var(--cbx18-size) * 0.429);
+}
+
+.cbx18 input[type='radio']:checked + .round-box:after {
+    opacity: 1;
+}
+
+.cbx18 input[type='radio']:disabled + .round-box {
+    opacity: 0.55;
+    cursor: not-allowed;
 }

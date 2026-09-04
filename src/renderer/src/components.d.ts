@@ -12,6 +12,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppCheckbox: typeof import('./components/AppCheckbox.vue')['default']
+    AppRadio: typeof import('./components/AppRadio.vue')['default']
     BlameModal: typeof import('./components/BlameModal.vue')['default']
     CloneRepoModal: typeof import('./components/CloneRepoModal.vue')['default']
     CloseXIcon: typeof import('./components/CloseXIcon.vue')['default']

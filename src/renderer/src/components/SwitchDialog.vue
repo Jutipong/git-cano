@@ -53,17 +53,14 @@
                 </div>
                 <div class="prompt-local-changes">
                     <span class="prompt-local-label">Local changes:</span>
-                    <label
+                    <AppRadio
                         v-for="opt in LOCAL_CHANGE_OPTIONS"
                         :key="opt.value"
+                        v-model="localChanges"
+                        name="switch-local-changes"
                         class="prompt-option">
-                        <input
-                            v-model="localChanges"
-                            type="radio"
-                            name="switch-local-changes"
-                            :value="opt.value" />
                         {{ opt.label }}
-                    </label>
+                    </AppRadio>
                 </div>
             </div>
             <div class="confirm-dialog-actions">
