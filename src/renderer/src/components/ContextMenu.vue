@@ -1,11 +1,11 @@
 <script setup lang="ts">
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
+    import FolderCompact from '~icons/codicon/folder-compact'
     import SquareTerminal from '~icons/hugeicons/square-terminal'
     import Rider from '~icons/logos/rider'
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
-    import Folder from '~icons/lucide/folder'
     import GitBranch from '~icons/lucide/git-branch'
     import Pencil from '~icons/lucide/pencil'
     import Trash2 from '~icons/lucide/trash2'
@@ -33,7 +33,7 @@
         zap: Zap,
         pencil: Pencil,
         copy: Copy,
-        folder: Folder,
+        folder: FolderCompact,
         terminal: SquareTerminal,
         vscode: VisualStudioCode,
         kiro: Kiro,
