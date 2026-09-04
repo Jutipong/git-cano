@@ -1,17 +1,32 @@
 <script setup lang="ts">
     import ContextMenu, { type MenuState } from './ContextMenu.vue'
 
-    import type { MenuItem } from '@shared/types'
+    import type { MenuItem, OpenInTargets } from '@shared/types'
 
     const props = defineProps<{ path: string }>()
 
     const openInMenu = ref<MenuState | null>(null)
+    const targets = ref<OpenInTargets | null>(null)
+
+    watch(
+        () => props.path,
+        repoPath => {
+            targets.value = null
+            window.api
+                .getOpenInTargets(repoPath)
+                .then(result => {
+                    if (props.path === repoPath) targets.value = result
+                })
+                .catch(() => {})
+        },
+        { immediate: true }
+    )
 
     function buildItems(): MenuItem[] {
         const run = (fn: () => Promise<unknown>) => {
             fn().catch((error: unknown) => useUiTransientStore().notify(String(error).replace(/^Error:\s*/, ''), 'error'))
         }
-        return [
+        const items: MenuItem[] = [
             {
                 label: 'Open in Folder',
                 icon: 'folder',
@@ -28,6 +43,22 @@
                 action: () => run(() => window.api.openInVSCode(props.path)),
             },
         ]
+        // C#-only entries: shown when the repo has .NET solution/project files and the IDE is installed
+        if (targets.value?.rider) {
+            items.push({
+                label: 'Open in Rider',
+                icon: 'rider',
+                action: () => run(() => window.api.openInRider(props.path)),
+            })
+        }
+        if (targets.value?.visualStudio) {
+            items.push({
+                label: 'Open in Visual Studio',
+                icon: 'visualstudio',
+                action: () => run(() => window.api.openInVisualStudio(props.path)),
+            })
+        }
+        return items
     }
 
     function toggleOpenIn(event: MouseEvent) {

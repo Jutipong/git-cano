@@ -61,8 +61,6 @@ declare module 'vue' {
     ILucideLayers: typeof import('~icons/lucide/layers')['default']
     ILucideList: typeof import('~icons/lucide/list')['default']
     ILucideListTree: typeof import('~icons/lucide/list-tree')['default']
-    ILucideLoader2: typeof import('~icons/lucide/loader2')['default']
-    ILucideLoaderCircle: typeof import('~icons/lucide/loader-circle')['default']
     ILucideLock: typeof import('~icons/lucide/lock')['default']
     ILucideMaximize: typeof import('~icons/lucide/maximize')['default']
     ILucideMinimize: typeof import('~icons/lucide/minimize')['default']

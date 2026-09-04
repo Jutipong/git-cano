@@ -23,6 +23,7 @@ import type {
     SshTestResult,
     StashEntry,
     LocalChangesMode,
+    OpenInTargets,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -43,6 +44,9 @@ const api = {
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
+    getOpenInTargets: (dir: string): Promise<OpenInTargets> => call('app:getOpenInTargets', dir),
+    openInRider: (dir: string): Promise<void> => call('app:openInRider', dir),
+    openInVisualStudio: (dir: string): Promise<void> => call('app:openInVisualStudio', dir),
     getVersion: (): Promise<string> => call('app:getVersion'),
     getStatusAccelerators: (): Promise<boolean> => call('app:getStatusAccelerators'),
     setStatusAccelerators: (enabled: boolean): Promise<boolean> => call('app:setStatusAccelerators', enabled),

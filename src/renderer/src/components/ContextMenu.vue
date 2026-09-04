@@ -1,13 +1,15 @@
 <script setup lang="ts">
+    import VisualStudio from '~icons/catppuccin/visual-studio'
+    import VisualStudioCode from '~icons/catppuccin/vscode'
+    import SquareTerminal from '~icons/hugeicons/square-terminal'
+    import Rider from '~icons/logos/rider'
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
     import Folder from '~icons/lucide/folder'
     import GitBranch from '~icons/lucide/git-branch'
     import Pencil from '~icons/lucide/pencil'
-    import SquareTerminal from '~icons/lucide/square-terminal'
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
-    import VisualStudioCode from '~icons/simple-icons/visualstudiocode'
 
     import type { MenuItem } from '@shared/types'
     import type { FunctionalComponent } from 'vue'
@@ -33,6 +35,8 @@
         folder: Folder,
         terminal: SquareTerminal,
         vscode: VisualStudioCode,
+        rider: Rider,
+        visualstudio: VisualStudio,
         trash: Trash2,
     }
 

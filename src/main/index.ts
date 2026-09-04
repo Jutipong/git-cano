@@ -250,6 +250,130 @@ function openVSCode(dir: string): Promise<void> {
     )
 }
 
+interface OpenInTargets {
+    /** Repo contains .NET solution/project files */
+    csharp: boolean
+    /** Path to rider64.exe when Rider is installed */
+    rider: string | null
+    /** Path to devenv.exe when Visual Studio with the managed-desktop workload is installed */
+    visualStudio: string | null
+}
+
+function runCapture(cmd: string, args: string[]): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] })
+        let out = ''
+        child.stdout.on('data', (chunk: Buffer) => {
+            out += chunk.toString()
+        })
+        child.on('error', err => reject(new Error(`Failed to launch "${cmd}": ${err.message}`)))
+        child.on('exit', code => {
+            if (code === 0) resolve(out)
+            else reject(new Error(`"${cmd}" exited with code ${code}`))
+        })
+    })
+}
+
+const CS_SOLUTION_EXTS = new Set(['.sln', '.slnx'])
+const CS_PROJECT_EXTS = new Set(['.csproj', '.fsproj', '.vbproj'])
+const CS_SKIP_DIRS = new Set(['.git', '.vs', 'bin', 'obj', 'node_modules'])
+
+function collectCsEntries(dir: string, depth: number, out: { slns: string[]; projs: string[] }): void {
+    let entries: fs.Dirent[]
+    try {
+        entries = fs.readdirSync(dir, { withFileTypes: true })
+    } catch {
+        return
+    }
+    for (const entry of entries) {
+        if (entry.isFile()) {
+            const ext = path.extname(entry.name).toLowerCase()
+            const full = path.join(dir, entry.name)
+            if (CS_SOLUTION_EXTS.has(ext)) out.slns.push(full)
+            else if (CS_PROJECT_EXTS.has(ext)) out.projs.push(full)
+        } else if (entry.isDirectory() && depth > 0 && !CS_SKIP_DIRS.has(entry.name)) {
+            collectCsEntries(path.join(dir, entry.name), depth - 1, out)
+        }
+    }
+}
+
+/** Returns the single .sln when there is exactly one, otherwise the repo folder. */
+function csharpOpenTarget(dir: string): string {
+    const out = { slns: [] as string[], projs: [] as string[] }
+    collectCsEntries(dir, 3, out)
+    return out.slns.length === 1 ? out.slns[0] : dir
+}
+
+function findRider(): string | null {
+    if (process.platform !== 'win32') return null
+    const binNames = ['rider64.exe', 'rider.exe']
+    const candidates: string[] = []
+    if (process.env.LOCALAPPDATA) {
+        // JetBrains Toolbox layout: apps\Rider\ch-0\<version>\bin\rider64.exe
+        const ch0 = path.join(process.env.LOCALAPPDATA, 'JetBrains', 'Toolbox', 'apps', 'Rider', 'ch-0')
+        if (fs.existsSync(ch0)) {
+            for (const version of fs.readdirSync(ch0)) {
+                for (const bin of binNames) candidates.push(path.join(ch0, version, 'bin', bin))
+            }
+        }
+    }
+    const jbBase = path.join(process.env['ProgramFiles'] ?? 'C:\\Program Files', 'JetBrains')
+    if (fs.existsSync(jbBase)) {
+        for (const entry of fs.readdirSync(jbBase)) {
+            if (/^JetBrains Rider/i.test(entry)) {
+                for (const bin of binNames) candidates.push(path.join(jbBase, entry, 'bin', bin))
+            }
+        }
+    }
+    return candidates.find(candidate => fs.existsSync(candidate)) ?? null
+}
+
+async function findVisualStudio(): Promise<string | null> {
+    if (process.platform !== 'win32') return null
+    const vswhere = path.join('C:', 'Program Files (x86)', 'Microsoft Visual Studio', 'Installer', 'vswhere.exe')
+    if (!fs.existsSync(vswhere)) return null
+    try {
+        const out = await runCapture(vswhere, [
+            '-latest',
+            '-products',
+            '*',
+            '-requires',
+            'Microsoft.VisualStudio.Workload.ManagedDesktop',
+            '-property',
+            'installationPath',
+        ])
+        const installPath = out.trim().split(/\r?\n/)[0]
+        if (!installPath) return null
+        const devenv = path.join(installPath, 'Common7', 'IDE', 'devenv.exe')
+        return fs.existsSync(devenv) ? devenv : null
+    } catch {
+        return null
+    }
+}
+
+async function getOpenInTargets(dir: string): Promise<OpenInTargets> {
+    const out = { slns: [] as string[], projs: [] as string[] }
+    collectCsEntries(dir, 3, out)
+    const csharp = out.slns.length > 0 || out.projs.length > 0
+    return {
+        csharp,
+        rider: csharp ? findRider() : null,
+        visualStudio: csharp ? await findVisualStudio() : null,
+    }
+}
+
+function openRider(dir: string): Promise<void> {
+    const exe = findRider()
+    if (!exe) return Promise.reject(new Error('Rider not found — install it via JetBrains Toolbox or the standalone installer'))
+    return runCmd(exe, [csharpOpenTarget(dir)], dir)
+}
+
+async function openVisualStudio(dir: string): Promise<void> {
+    const devenv = await findVisualStudio()
+    if (!devenv) return Promise.reject(new Error('Visual Studio not found — install it with the ".NET desktop development" workload'))
+    return runCmd(devenv, [csharpOpenTarget(dir)], dir)
+}
+
 const LOG_LEVELS = new Set(['info', 'warn', 'error'])
 ipcMain.on('app:log', (_e, level: string, message: unknown) => {
     const safeLevel = LOG_LEVELS.has(level) ? (level as 'info' | 'warn' | 'error') : 'info'
@@ -406,6 +530,9 @@ app.whenReady().then(() => {
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
+    handle('app:getOpenInTargets', (dir: string) => getOpenInTargets(dir as string))
+    handle('app:openInRider', (dir: string) => openRider(dir as string))
+    handle('app:openInVisualStudio', (dir: string) => openVisualStudio(dir as string))
     handle('app:getVersion', () => app.getVersion())
     handle('repo:log', (_limit?: number) => {
         requireRepo()

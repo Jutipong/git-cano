@@ -145,7 +145,7 @@
         void run(() => window.api.checkout(name, mode), `Checked out ${name}`)
     }
     function localNameForRemote(name: string) {
-        return name.replace(/^remotes\/[^/]+\//, '')
+        return name.replace(/^(?:remotes\/)?[^/]+\//, '')
     }
     function isRemoteCurrent(name: string) {
         const target = localNameForRemote(name)
@@ -367,7 +367,7 @@
         }
     }
     function stripRemote(name: string) {
-        return name.replace(/^remotes\//, '')
+        return name.replace(/^(?:remotes\/)?[^/]+\//, '')
     }
 </script>
 
