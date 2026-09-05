@@ -338,7 +338,8 @@ body {
 }
 
 .tab-actions:not(.search-open) > .tab-actions-sep {
-    display: none;
+    display: block;
+    align-self: center;
 }
 
 .tab-actions:not(.search-open) > .workspace-wrap {
@@ -467,6 +468,10 @@ body {
     color: var(--green);
     background: color-mix(in srgb, var(--green) 15%, transparent);
     border-color: transparent;
+}
+
+.tab-sync-actions .action-stash {
+    margin-left: 6px;
 }
 
 .tab-sync-actions .action-stash:hover:not(:disabled) {
@@ -679,7 +684,8 @@ body {
     border-color: transparent;
 }
 
-.tab-new:hover {
+.tab-new:hover,
+.tab-actions .tab-new.open {
     color: var(--green);
     border-color: transparent;
     background: color-mix(in srgb, var(--green) 15%, transparent);

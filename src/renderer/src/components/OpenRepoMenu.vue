@@ -15,8 +15,11 @@
 
     const open = ref(false)
 
-    function toggle() {
+    function toggle(event?: MouseEvent) {
         open.value = !open.value
+        // drop the focus ring after a pointer click — the open state below
+        // already shows the menu is active (keyboard focus is unaffected)
+        if (event?.detail) (event.currentTarget as HTMLElement | null)?.blur()
     }
 
     async function openLocal() {
@@ -59,8 +62,9 @@
         <button
             v-if="!props.label"
             class="icon-btn tab-new"
+            :class="{ open }"
             title="Open from local or clone a repository"
-            @click="toggle()">
+            @click="toggle($event)">
             <i-lucide-plus
                 width="15"
                 height="15" />
