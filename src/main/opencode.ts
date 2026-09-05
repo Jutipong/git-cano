@@ -1,7 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-import { toGoModel } from '@shared/models'
+import { isFreeZenId, toGoModel } from '@shared/models'
 import { app } from 'electron'
 
 import { formatRepoIfConfigured, getChangesContext } from './git'
@@ -78,8 +78,11 @@ export function saveConfig(cfg: AiConfig): void {
 }
 
 function familyOf(modelId: string): Family {
-    if (/^(minimax|qwen)/i.test(modelId)) return 'messages'
-    if (/^(grok|gpt-|muse)/i.test(modelId)) return 'responses'
+    // Catalog ids may carry a provider prefix (e.g. "openai/gpt-4o") — the family
+    // depends on the bare model name only.
+    const bare = modelId.includes('/') ? modelId.slice(modelId.lastIndexOf('/') + 1) : modelId
+    if (/^(minimax|qwen)/i.test(bare)) return 'messages'
+    if (/^(grok|gpt-|muse)/i.test(bare)) return 'responses'
     return 'chat'
 }
 
@@ -160,9 +163,13 @@ function extractContent(family: Family, json: unknown): string {
         const data = json as { content?: { text?: unknown }[] }
         return Array.isArray(data.content) ? data.content.map(part => (typeof part.text === 'string' ? part.text : '')).join('') : ''
     }
-    const data = json as { output_text?: unknown; output?: Array<{ content?: Array<{ text?: unknown }> }> }
+    const data = json as { output_text?: unknown; output?: Array<{ type?: string; content?: Array<{ text?: unknown }> }> }
     if (typeof data.output_text === 'string') return data.output_text
-    const message = data.output?.find(item => Array.isArray(item.content))
+    const items = Array.isArray(data.output) ? data.output : []
+    // Prefer the assistant message item — the first content-bearing item can be a
+    // reasoning summary on thinking models, which must never become the commit message.
+    const message =
+        items.find(item => item?.type === 'message' && Array.isArray(item.content)) ?? items.find(item => Array.isArray(item.content))
     return Array.isArray(message?.content) ? message.content.map(part => (typeof part.text === 'string' ? part.text : '')).join('') : ''
 }
 
@@ -180,73 +187,107 @@ function isLengthCutoff(family: Family, json: unknown): boolean {
     return data.status === 'incomplete' && data.incomplete_details?.reason === 'max_output_tokens'
 }
 
+/** AbortControllers for in-flight model calls, keyed by repo path (or 'default'). Lets the renderer cancel a slow generation. */
+const inflight = new Map<string, AbortController>()
+
+export function cancelModelCall(key = 'default'): boolean {
+    const controller = inflight.get(key)
+    if (!controller) return false
+    controller.abort()
+    return true
+}
+
 async function callModel(
     provider: AiProvider,
     token: string,
     modelId: string,
     systemPrompt: string,
     userPrompt: string,
-    opts: { maxTokens?: number; timeoutMs?: number; allowEmpty?: boolean } = {}
+    opts: { maxTokens?: number; timeoutMs?: number; allowEmpty?: boolean; cancelKey?: string } = {}
 ): Promise<string> {
-    const { maxTokens = 1024, timeoutMs = 60_000, allowEmpty = false } = opts
+    const { timeoutMs = 60_000, allowEmpty = false } = opts
+    let budget = opts.maxTokens ?? 1024
     const family = provider === 'openrouter' ? 'chat' : familyOf(modelId)
     const baseUrl = provider === 'openrouter' ? OPENROUTER_BASE_URL : BASE_URL
     const endpoint = provider === 'openrouter' ? `${baseUrl}/chat/completions` : endpointOf(family)
+    log('debug', 'ai', `${provider} ${modelId} → ${family} ${endpoint} (budget ${budget})`)
 
-    for (let i = 0; i < EFFORT_FALLBACK.length; i++) {
-        const effort = EFFORT_FALLBACK[i]
-        const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), timeoutMs)
-        let res: Response
-        try {
-            // Sequential by design: each retry depends on the previous failure.
-            // oxlint-disable-next-line no-await-in-loop
-            res = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'content-type': 'application/json',
-                    authorization: `Bearer ${token}`,
-                    ...(family === 'messages' ? { 'x-api-key': token } : {}),
-                    ...(provider === 'openrouter' ? { 'HTTP-Referer': 'https://github.com/jutipong/open-git', 'X-Title': 'Open Git' } : {}),
-                },
-                body: JSON.stringify(buildBody(family, provider, modelId, systemPrompt, userPrompt, maxTokens, effort)),
-                signal: controller.signal,
-            })
-        } catch (err) {
-            throw new Error(
-                err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err)
-            )
-        } finally {
-            clearTimeout(timer)
-        }
-
-        const text =
-            // oxlint-disable-next-line no-await-in-loop
-            await res.text().catch(() => '')
-        // Endpoint/model rejected the effort param (e.g. unknown 'minimal') — retry lower.
-        if (!res.ok && res.status === 400 && /effort|reasoning/i.test(text) && i < EFFORT_FALLBACK.length - 1) continue
-        if (!res.ok) throw new Error(extractErrorDetail(text, res.status))
-        let json: unknown
-        try {
-            json = JSON.parse(text)
-        } catch {
-            throw new Error('Invalid response from the model API')
-        }
-        const content = extractContent(family, json).trim()
-        if (!content && !allowEmpty) {
-            // Thinking models can burn the whole budget on reasoning even at 'minimal' —
-            // downgrade the effort and retry before surfacing the length error.
-            if (isLengthCutoff(family, json) && i < EFFORT_FALLBACK.length - 1) continue
-            if (isLengthCutoff(family, json)) {
-                throw new Error(
-                    'Model ran out of output tokens before replying (finish_reason=length) — increase the token budget or try a non-thinking model'
-                )
-            }
-            throw new Error(`Model returned an empty response (${text.slice(0, 200)})`)
-        }
-        return content
+    let canceler: AbortController | undefined
+    if (opts.cancelKey) {
+        canceler = new AbortController()
+        inflight.set(opts.cancelKey, canceler)
     }
-    throw new Error('Model request failed after exhausting reasoning-effort fallbacks')
+    try {
+        let budgetDoubled = false
+        for (let i = 0; i < EFFORT_FALLBACK.length; i++) {
+            const effort = EFFORT_FALLBACK[i]
+            const timeout = new AbortController()
+            const timer = setTimeout(() => timeout.abort(), timeoutMs)
+            const signal = canceler ? AbortSignal.any([timeout.signal, canceler.signal]) : timeout.signal
+            let res: Response
+            try {
+                // Sequential by design: each retry depends on the previous failure.
+                // oxlint-disable-next-line no-await-in-loop
+                res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json',
+                        authorization: `Bearer ${token}`,
+                        ...(provider === 'openrouter'
+                            ? { 'HTTP-Referer': 'https://github.com/jutipong/open-git', 'X-Title': 'Open Git' }
+                            : {}),
+                    },
+                    body: JSON.stringify(buildBody(family, provider, modelId, systemPrompt, userPrompt, budget, effort)),
+                    signal,
+                })
+            } catch (err) {
+                if (canceler?.signal.aborted) throw new Error('Generation cancelled')
+                throw new Error(
+                    err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err)
+                )
+            } finally {
+                clearTimeout(timer)
+            }
+
+            const text =
+                // oxlint-disable-next-line no-await-in-loop
+                await res.text().catch(() => '')
+            // Endpoint/model rejected the effort param (e.g. unknown 'minimal') — retry lower.
+            if (!res.ok && res.status === 400 && /effort|reasoning/i.test(text) && i < EFFORT_FALLBACK.length - 1) continue
+            if (!res.ok) throw new Error(extractErrorDetail(text, res.status))
+            let json: unknown
+            try {
+                json = JSON.parse(text)
+            } catch {
+                throw new Error('Invalid response from the model API')
+            }
+            const content = extractContent(family, json).trim()
+            if (!content && !allowEmpty) {
+                if (isLengthCutoff(family, json)) {
+                    // Thinking models can burn the whole budget on reasoning even at 'minimal' —
+                    // downgrade the effort first, then try once with a doubled budget.
+                    if (i < EFFORT_FALLBACK.length - 1) continue
+                    if (!budgetDoubled && budget < 2048) {
+                        budgetDoubled = true
+                        budget = Math.min(budget * 2, 2048)
+                        log('debug', 'ai', `length cutoff with reasoning off — retrying with budget ${budget}`)
+                        i--
+                        continue
+                    }
+                    throw new Error(
+                        `Model ran out of output tokens before replying (finish_reason=length) — tried up to ${budget} tokens; try a non-thinking model`
+                    )
+                }
+                // Raw body goes to the log file only — the dialog gets a clean message.
+                log('warn', 'ai', `empty response from ${modelId}: ${text.slice(0, 200).replace(/\s+/g, ' ')}`)
+                throw new Error('Model returned an empty response — try again or switch to a non-thinking model')
+            }
+            return content
+        }
+        throw new Error('Model request failed after exhausting reasoning-effort fallbacks')
+    } finally {
+        if (opts.cancelKey && canceler && inflight.get(opts.cancelKey) === canceler) inflight.delete(opts.cancelKey)
+    }
 }
 
 export async function testConnection(provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> {
@@ -254,7 +295,9 @@ export async function testConnection(provider: AiProvider, token: string, modelI
     const cleanModel = String(modelId ?? '').trim()
     if (!cleanToken || !cleanModel) return { ok: false, message: 'Enter both a token and a model-id first' }
     try {
-        await callModel(provider, cleanToken, cleanModel, '', 'ping', { maxTokens: 64, timeoutMs: 30_000, allowEmpty: true })
+        // Production-like conditions (real budget, empty not allowed) so a passing
+        // test means real generation is likely to work too.
+        await callModel(provider, cleanToken, cleanModel, '', 'ping', { maxTokens: 128, timeoutMs: 30_000 })
         log('info', 'ai', `test ok (${cleanModel})`)
         return { ok: true, message: 'Connected — token & model are valid' }
     } catch (err) {
@@ -282,7 +325,9 @@ Style rules:
 function truncateForPrompt(text: string): string {
     const MAX = 16_000
     if (text.length <= MAX) return text
-    return `${text.slice(0, MAX)}\n… (diff truncated)`
+    // Cut on a line boundary so the model never sees a half-line of diff.
+    const cut = text.lastIndexOf('\n', MAX)
+    return `${text.slice(0, cut > 0 ? cut : MAX)}\n… (diff truncated)`
 }
 
 function stripFences(text: string): string {
@@ -292,32 +337,46 @@ function stripFences(text: string): string {
         .trim()
 }
 
-export async function generateCommitMessage(formatFirst = false, scope: AiContextScope = 'staged'): Promise<string> {
-    if (formatFirst) await formatRepoIfConfigured()
+/** Strip the wrappers models like to add (fences, one layer of surrounding quotes) without touching the message itself. */
+function cleanModelMessage(text: string): string {
+    const stripped = stripFences(text).trim()
+    const quoted = /^([`'"])([\s\S]*)\1$/.exec(stripped)
+    return (quoted ? quoted[2].trim() : stripped).slice(0, 2500)
+}
+
+export async function generateCommitMessage(formatFirst = false, scope: AiContextScope = 'staged', dir?: string): Promise<string> {
     const cfg = getConfig()
     if (cfg.provider === 'none') throw new Error('AI is disabled — select a provider in Settings first')
-    const active = cfg.provider === 'openrouter' ? cfg.openrouter : cfg.opencodeGo
-    if (!active.token || !active.modelId)
+    const selected = cfg.provider === 'openrouter' ? cfg.openrouter : cfg.opencodeGo
+    const token = selected.token.trim()
+    const modelId = selected.modelId.trim()
+    if (!token || !modelId)
         throw new Error(
             `No AI configured — set your ${cfg.provider === 'openrouter' ? 'OpenRouter API key' : 'OpenCode token'} and model-id in Settings first`
         )
-    const changes = await getChangesContext(scope)
+    // The formatter only touches the worktree, so for the 'staged' scope its output
+    // could never reach the message (Generate Only must not touch the index either) —
+    // skip it instead of pointlessly dirtying the worktree.
+    if (formatFirst && scope === 'all') await formatRepoIfConfigured(dir)
+    const changes = await getChangesContext(scope, dir)
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
     const extra = cfg.commitInstructions.trim().slice(0, 2000)
     const system = extra
         ? `${COMMIT_SYSTEM_PROMPT}\n\nAdditional user instructions (follow them unless they conflict with the format above):\n${extra}`
         : COMMIT_SYSTEM_PROMPT
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
-    const content = await callModel(cfg.provider, active.token, active.modelId, system, prompt, {
+    const content = await callModel(cfg.provider, token, modelId, system, prompt, {
         maxTokens: 512,
         timeoutMs: 30_000,
+        cancelKey: dir ?? 'default',
     })
-    return stripFences(content).slice(0, 2500)
+    return cleanModelMessage(content)
 }
 
 /** Last successfully fetched list (persisted per provider) — offline fallback so the picker is never empty. */
-function lastKnownModels(): GoModel[] {
-    return getConfig().opencodeGo.models.filter(model => model && typeof model.id === 'string')
+function lastKnownModels(provider: AiProvider): GoModel[] {
+    const list = provider === 'openrouter' ? getConfig().openrouter.models : getConfig().opencodeGo.models
+    return list.filter(model => model && typeof model.id === 'string')
 }
 
 export async function listModels(provider: AiProvider, token: string): Promise<GoModel[]> {
@@ -329,7 +388,7 @@ export async function listModels(provider: AiProvider, token: string): Promise<G
         const json = (await res.json().catch(() => null)) as {
             data?: { id?: unknown; name?: unknown; pricing?: { prompt?: unknown; completion?: unknown } }[]
         } | null
-        if (!Array.isArray(json?.data)) return []
+        if (!Array.isArray(json?.data)) return lastKnownModels('openrouter')
         return json.data
             .filter(model => typeof model.id === 'string')
             .map(model => {
@@ -365,15 +424,15 @@ export async function listModels(provider: AiProvider, token: string): Promise<G
         const seen = new Set(goIds)
         const merged = [...goIds]
         for (const id of zenIds) {
-            if (!seen.has(id) && (id === 'big-pickle' || id.endsWith('-free'))) {
+            if (!seen.has(id) && isFreeZenId(id)) {
                 seen.add(id)
                 merged.push(id)
             }
         }
-        if (merged.length === 0) return lastKnownModels()
+        if (merged.length === 0) return lastKnownModels('opencode-go')
         return merged.map(toGoModel)
     } catch {
-        return lastKnownModels()
+        return lastKnownModels('opencode-go')
     } finally {
         clearTimeout(timer)
     }

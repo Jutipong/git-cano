@@ -1033,6 +1033,8 @@
                         <p class="tools-section-hint">
                             When enabled, the repository's format command runs first if it has an
                             <code>.oxfmtrc.json</code>; otherwise the message is generated as-is.
+                            Formatting worktree files cannot affect a staged-only message, so it
+                            applies to the Auto Commit modes and is skipped for Generate Only.
                         </p>
                     </div>
                 </template>

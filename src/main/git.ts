@@ -96,6 +96,17 @@ async function withAuthEnv<T>(op: (git: SimpleGit) => Promise<T>): Promise<T> {
     }
 }
 
+/** Path-pinned variant of withAuthEnv — see getRepoFor for why pinned flows need it. */
+async function withAuthEnvFor<T>(dir: string, op: (git: SimpleGit) => Promise<T>): Promise<T> {
+    const { git } = getRepoFor(dir)
+    git.env({ ...baseEnv(), ...authGitEnv() })
+    try {
+        return await op(git)
+    } finally {
+        git.env(baseEnv())
+    }
+}
+
 /** One-off git instance for standalone commands (init/clone) outside repo sessions. */
 export function plainGit(dir = ''): SimpleGit {
     const git = simpleGit(dir, SAFE_UNSAFE_OPTIONS)
@@ -134,6 +145,19 @@ export function getRepo(): { path: string; git: SimpleGit } {
     const instance = repoInstances.get(activeRepoPath)
     if (!instance) throw new Error('Active repository is not registered')
     return { path: activeRepoPath, git: instance }
+}
+
+/**
+ * Repo-scoped lookup that does NOT follow the global active repo. Long async flows
+ * (e.g. AI commit-message generation + auto-commit) must pin the repo path at the
+ * start and resolve every step through here — otherwise a tab switch mid-flight
+ * would stage/commit/push the newly activated repo instead of the intended one.
+ */
+export function getRepoFor(dir: string): { path: string; git: SimpleGit } {
+    if (!dir || typeof dir !== 'string') throw new Error('A repository path is required')
+    const instance = repoInstances.get(dir)
+    if (!instance) throw new Error(`Repository "${dir}" is not open`)
+    return { path: dir, git: instance }
 }
 
 /**
@@ -499,8 +523,8 @@ export async function stage(paths: string[]): Promise<void> {
     await g.add(paths)
 }
 
-export async function stageAll(): Promise<void> {
-    const { git: g } = getRepo()
+export async function stageAll(dir?: string): Promise<void> {
+    const { git: g } = dir ? getRepoFor(dir) : getRepo()
     await g.add('-A')
 }
 
@@ -1157,13 +1181,15 @@ export async function fetchAll(): Promise<string> {
     return 'Fetch completed'
 }
 
-export async function push(force = false): Promise<string> {
-    const { git: g } = getRepo()
+export async function push(force = false, dir?: string): Promise<string> {
+    const { git: g } = dir ? getRepoFor(dir) : getRepo()
+    const authedPush = (args: string[]) =>
+        dir ? withAuthEnvFor(dir, git => git.push(args)) : withAuthEnv(git => git.push(args))
     const status = await g.status()
     const branch = status.current
     const tracking = status.tracking
-    if (tracking) await withAuthEnv(git => git.push(force ? ['--force-with-lease'] : []))
-    else await withAuthEnv(git => git.push(['--set-upstream', 'origin', branch as string, ...(force ? ['--force-with-lease'] : [])]))
+    if (tracking) await authedPush(force ? ['--force-with-lease'] : [])
+    else await authedPush(['--set-upstream', 'origin', branch as string, ...(force ? ['--force-with-lease'] : [])])
     return force ? 'Force-pushed successfully' : 'Pushed successfully'
 }
 
@@ -1433,8 +1459,8 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
         })
 }
 
-export async function commitMessage(message: string, amend: boolean): Promise<string> {
-    const { git: g } = getRepo()
+export async function commitMessage(message: string, amend: boolean, dir?: string): Promise<string> {
+    const { git: g } = dir ? getRepoFor(dir) : getRepo()
     if (amend && !message.trim()) throw new Error('Enter a message to amend with')
     const res = amend ? await g.commit(message, undefined, { '--amend': null }) : await g.commit(message)
     return res.commit
@@ -1599,8 +1625,8 @@ export async function getRawPatch(file: string, staged: boolean): Promise<string
     }
 }
 
-export async function getChangesContext(scope: AiContextScope = 'staged'): Promise<string> {
-    const { path: p, git: g } = getRepo()
+export async function getChangesContext(scope: AiContextScope = 'staged', dir?: string): Promise<string> {
+    const { path: p, git: g } = dir ? getRepoFor(dir) : getRepo()
     const parts: string[] = []
 
     let stagedFiles: string[] = []
@@ -1641,8 +1667,11 @@ export async function getChangesContext(scope: AiContextScope = 'staged'): Promi
             const block = files
                 .map(file => {
                     try {
-                        const content = fs.readFileSync(path.join(p, file), 'utf8').slice(0, 2000)
-                        return `--- ${file} (new) ---\n${content}`
+                        const abs = path.join(p, file)
+                        if (fs.statSync(abs).size > 256 * 1024) return `--- ${file} (new, large file — content omitted) ---`
+                        const buf = fs.readFileSync(abs)
+                        if (buf.subarray(0, 8000).includes(0)) return `--- ${file} (new, binary file — content omitted) ---`
+                        return `--- ${file} (new) ---\n${buf.toString('utf8').slice(0, 2000)}`
                     } catch {
                         return `--- ${file} (new) ---`
                     }
@@ -1655,8 +1684,8 @@ export async function getChangesContext(scope: AiContextScope = 'staged'): Promi
 }
 
 /** Runs the repository's formatter before AI commit-message generation. Does nothing when the repo has no `.oxfmtrc.json`. */
-export function formatRepoIfConfigured(): Promise<void> {
-    const repoRoot = getRepo().path
+export function formatRepoIfConfigured(dir?: string): Promise<void> {
+    const repoRoot = dir ? getRepoFor(dir).path : getRepo().path
     if (!fs.existsSync(path.join(repoRoot, '.oxfmtrc.json'))) return Promise.resolve()
     return runRepoFormat(repoRoot)
 }

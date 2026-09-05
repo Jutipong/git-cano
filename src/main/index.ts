@@ -124,7 +124,7 @@ import {
     baseEnv,
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
-import { generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
+import { cancelModelCall, generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
 
 import type { LocalChangesMode, MergeMode } from '@shared/types'
 
@@ -704,9 +704,9 @@ app.whenReady().then(() => {
         requireRepo()
         return stage(paths as string[])
     })
-    handle('file:stageAll', () => {
+    handle('file:stageAll', (_dir?: string) => {
         requireRepo()
-        return stageAll()
+        return stageAll(typeof _dir === 'string' && _dir ? _dir : undefined)
     })
     handle('file:unstage', (paths: string[]) => {
         requireRepo()
@@ -782,9 +782,9 @@ app.whenReady().then(() => {
         requireRepo()
         return fetchAll()
     })
-    handle('remote:push', (force: boolean) => {
+    handle('remote:push', (force: boolean, _dir?: string) => {
         requireRepo()
-        return push(Boolean(force))
+        return push(Boolean(force), typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
     handle('remote:pull', (rebase: boolean) => {
         requireRepo()
@@ -803,9 +803,9 @@ app.whenReady().then(() => {
         requireRepo()
         return abortPausedRebase()
     })
-    handle('commit:message', (message: string, amend: boolean) => {
+    handle('commit:message', (message: string, amend: boolean, _dir?: string) => {
         requireRepo()
-        return commitMessage(message as string, amend as boolean)
+        return commitMessage(message as string, amend as boolean, typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
     handle('commit:lastMessage', () => {
         requireRepo()
@@ -978,12 +978,19 @@ app.whenReady().then(() => {
     handleSensitive('ai:test', (provider: string, token: string, modelId: string) =>
         testConnection(provider as 'opencode-go' | 'openrouter', token as string, modelId as string)
     )
-    handleSensitive('ai:generateCommitMessage', (shouldFormat: boolean, scope: string) => {
+    handleSensitive('ai:generateCommitMessage', (shouldFormat: boolean, scope: string, _dir?: string) => {
         requireRepo()
-        return generateCommitMessage(Boolean(shouldFormat), scope === 'all' ? 'all' : 'staged')
+        return generateCommitMessage(
+            Boolean(shouldFormat),
+            scope === 'all' ? 'all' : 'staged',
+            typeof _dir === 'string' && _dir ? (_dir as string) : undefined
+        )
     })
     handleSensitive('ai:listModels', (provider: string, token: string) =>
         listModels(provider as 'opencode-go' | 'openrouter', token as string)
+    )
+    handleSensitive('ai:cancelGenerate', (_dir?: string) =>
+        cancelModelCall(typeof _dir === 'string' && _dir ? (_dir as string) : 'default')
     )
 
     handleSensitive('auth:getConfig', () => getAuthConfig())

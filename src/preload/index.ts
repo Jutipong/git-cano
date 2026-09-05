@@ -90,7 +90,7 @@ const api = {
     diffMeta: (file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> => call('file:diffMeta', file, staged),
     imageVersion: (file: string, source: 'workdir' | 'index' | 'head'): Promise<string | null> => call('file:image', file, source),
     stage: (paths: string[]): Promise<void> => call('file:stage', paths),
-    stageAll: (): Promise<void> => call('file:stageAll'),
+    stageAll: (repoPath?: string): Promise<void> => call('file:stageAll', repoPath),
     unstage: (paths: string[]): Promise<void> => call('file:unstage', paths),
     unstageAll: (): Promise<void> => call('file:unstageAll'),
     discardFile: (p: string): Promise<void> => call('file:discard', p),
@@ -98,7 +98,7 @@ const api = {
     discardUntracked: (): Promise<void> => call('file:discardUntracked'),
 
     commit: (msg: string): Promise<string> => call('commit:create', msg),
-    commitWithAmend: (msg: string, amend: boolean): Promise<string> => call('commit:message', msg, amend),
+    commitWithAmend: (msg: string, amend: boolean, repoPath?: string): Promise<string> => call('commit:message', msg, amend, repoPath),
     lastCommitMessage: (): Promise<string> => call('commit:lastMessage'),
 
     branches: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> => call('branch:list'),
@@ -115,7 +115,7 @@ const api = {
     pullBranch: (name: string): Promise<string> => call('branch:pull', name),
 
     fetch: (): Promise<string> => call('remote:fetch'),
-    push: (force = false): Promise<string> => call('remote:push', Boolean(force)),
+    push: (force = false, repoPath?: string): Promise<string> => call('remote:push', Boolean(force), repoPath),
     pull: (rebase = false): Promise<string> => call('remote:pull', Boolean(rebase)),
     hasRemote: (): Promise<boolean> => call('remote:has'),
 
@@ -180,9 +180,10 @@ const api = {
         getConfig: (): Promise<AiConfig> => call('ai:getConfig'),
         saveConfig: (cfg: AiConfig): Promise<void> => call('ai:saveConfig', cfg),
         test: (provider: AiProvider, token: string, modelId: string): Promise<AiTestResult> => call('ai:test', provider, token, modelId),
-        generateCommitMessage: (formatFirst: boolean, scope: AiContextScope = 'staged'): Promise<string> =>
-            call('ai:generateCommitMessage', formatFirst, scope),
+        generateCommitMessage: (formatFirst: boolean, scope: AiContextScope = 'staged', repoPath?: string): Promise<string> =>
+            call('ai:generateCommitMessage', formatFirst, scope, repoPath),
         listModels: (provider: AiProvider, token: string): Promise<GoModel[]> => call('ai:listModels', provider, token),
+        cancelGenerate: (repoPath?: string): Promise<boolean> => call('ai:cancelGenerate', repoPath),
     },
 
     auth: {

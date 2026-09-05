@@ -171,6 +171,15 @@
     )
     const menu = ref<FileMenuState | null>(null)
     const generating = ref(false)
+    const generatingRepo = ref<string | null>(null)
+
+    async function cancelGenerate() {
+        try {
+            await window.api.ai.cancelGenerate(generatingRepo.value ?? undefined)
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
 
     const collapsedDirs = reactive(new Set<string>())
     function toggleDir(path: string) {
@@ -307,38 +316,68 @@
         if (ok) message.value = ''
     }
 
-    const canGenerate = computed(() => isWorkdir.value && props.files.length > 0 && ai.configured && !pending.value && !generating.value)
+    const canGenerate = computed(
+        () =>
+            isWorkdir.value &&
+            props.files.length > 0 &&
+            ai.configured &&
+            !pending.value &&
+            !generating.value &&
+            // A merge/rebase conflict has no committable state — the panel shows the
+            // conflict actions instead, and the palette path shares this gate.
+            !inConflictFlow.value
+    )
 
     const showAiGroup = computed(() => ai.configured)
 
     async function generateMessage() {
         if (generating.value) return
         aiMenuOpen.value = false
+        // Pin the repo for the whole flow: generation takes seconds (formatter +
+        // model round-trip), and every follow-up step must target this repo even if
+        // the user switches tabs meanwhile — never the newly activated one.
+        const repoPath = repoStore.repo?.path
+        if (!repoPath) {
+            notify('No repository opened', 'warning')
+            return
+        }
         generating.value = true
+        generatingRepo.value = repoPath
         try {
+            const scope = ui.aiCommitMode === 'off' ? 'staged' : 'all'
             const generated = (
                 await uiTransient.withBusy(
-                    () => window.api.ai.generateCommitMessage(ui.formatBeforeGenerate, ui.aiCommitMode === 'off' ? 'staged' : 'all'),
+                    () => window.api.ai.generateCommitMessage(ui.formatBeforeGenerate, scope, repoPath),
                     'Generating commit message…'
                 )
             ).trim()
+            // Switched tabs mid-flight: the message describes the pinned repo, so it
+            // must not land in another repo's box — and auto-commit must not run at all.
+            if (repoStore.repo?.path !== repoPath) {
+                notify('Repository changed during generation — message discarded', 'warning')
+                return
+            }
             message.value = generated
             if (generated && ui.aiCommitMode !== 'off') {
                 const mode = ui.aiCommitMode
                 const ok = await run(
                     async () => {
-                        await window.api.stageAll()
-                        await window.api.commitWithAmend(generated, false)
-                        if (mode === 'commit-push') await window.api.push()
+                        await window.api.stageAll(repoPath)
+                        await window.api.commitWithAmend(generated, false, repoPath)
+                        if (mode === 'commit-push') await window.api.push(false, repoPath)
                     },
                     mode === 'commit-push' ? 'Committed and pushed successfully' : 'Committed successfully'
                 )
                 if (ok) message.value = ''
             }
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            const msg = String(error).replace(/^Error:\s*/, '')
+            // Cancellation is intentional — a warning toast, never the error dialog.
+            if (/cancel/i.test(msg)) notify('Generation cancelled', 'warning')
+            else notify(msg, 'error')
         } finally {
             generating.value = false
+            generatingRepo.value = null
         }
     }
 
@@ -1160,18 +1199,20 @@
                         v-if="showAiGroup"
                         ref="aiMenuRoot"
                         class="cb-ai-group cb-group-item"
-                        :class="[`cb-ai-mode-${ui.aiCommitMode}`, { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate }]">
+                        :class="[`cb-ai-mode-${ui.aiCommitMode}`, { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate && !generating }]">
                         <button
                             class="btn small cb-ai-btn"
-                            :disabled="!canGenerate"
+                            :disabled="!canGenerate && !generating"
                             :title="
-                                ui.aiCommitMode === 'commit-push'
-                                    ? 'Generate a commit message, commit and push'
-                                    : ui.aiCommitMode === 'commit'
-                                      ? 'Generate a commit message and commit automatically'
-                                      : 'Generate a commit message from the current changes'
+                                generating
+                                    ? 'Cancel generation'
+                                    : ui.aiCommitMode === 'commit-push'
+                                      ? 'Generate a commit message, commit and push'
+                                      : ui.aiCommitMode === 'commit'
+                                        ? 'Generate a commit message and commit automatically'
+                                        : 'Generate a commit message from the current changes'
                             "
-                            @click="generateMessage()">
+                            @click="generating ? cancelGenerate() : generateMessage()">
                             <ThinkSpinner
                                 v-if="generating"
                                 compact />

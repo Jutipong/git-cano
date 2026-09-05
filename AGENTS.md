@@ -115,6 +115,44 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
       (Generate only) and `'all'` for auto commit / auto commit + push, because those
       modes run `stageAll()` before committing — the message must match what gets committed.
     - Default at every layer is `'staged'`; never change that silently.
+- **Repo pinning**: the AI flow (`generate → stageAll → commit → push`) is slow, so
+  `FilePanel.vue` pins `repoStore.repo.path` at the start and passes it through every
+  IPC call (`ai:generateCommitMessage`, `file:stageAll`, `commit:message`,
+  `remote:push`). The main process resolves those via `getRepoFor(dir)` — never the
+  mutable global active repo — so a tab switch mid-flight can't stage/commit/push the
+  wrong repo. If the tab changed while generating, the renderer discards the message
+  (it describes the old repo) with a warning instead of filling the new repo's box.
+  New repo-scoped git operations must follow this pattern (optional `dir` param →
+  `getRepoFor`), not `getRepo()`.
+- **Availability gate**: `canGenerate` in `FilePanel.vue` is false during merge/rebase
+  conflict flows (the panel shows conflict actions then) — the command-palette one-shot
+  path shares this gate.
+- **Cancellation**: while generating, the AI button doubles as Cancel. The renderer
+  calls `ai:cancelGenerate` (keyed by pinned repo path); the main process aborts the
+  in-flight `fetch` via a per-key `AbortController` (`cancelModelCall`). A cancelled
+  run surfaces a warning toast, never the error dialog.
+- **Provider families**: `familyOf()` matches on the bare model id (any `provider/`
+  prefix is stripped). All three families authenticate with `Bearer` only.
+  `callModel()` logs the chosen family/endpoint at debug level (never the token).
+  `extractContent()` for `responses` prefers the `type: 'message'` output item so a
+  reasoning summary can't become the commit message.
+- **Budgets**: commit generation uses 512 output tokens; on a persistent length cutoff
+  (after the `minimal → low → none` effort fallbacks) it retries once with a doubled
+  budget (cap 2048). `testConnection()` uses production-like conditions (128 tokens,
+  empty replies rejected) so a pass means real generation likely works.
+- **Context hygiene** (`getChangesContext()`): untracked previews skip binary files
+  (NUL-byte probe) and files >256KB with an `(content omitted)` marker; prompt
+  truncation (`truncateForPrompt()`) cuts on a line boundary. Empty model replies are
+  logged raw to the log file but shown to the user as a clean message.
+  `cleanModelMessage()` strips fences plus one layer of surrounding quotes/backticks.
+- **Model catalogs**: offline fallback is per-provider (`lastKnownModels(provider)` —
+  OpenRouter falls back to its own persisted list, not `[]`). Free-Zen detection lives
+  only in `isFreeZenId()` (`shared/models.ts`) — never re-implement the suffix check.
+- **Format-before-generate** (`formatRepoIfConfigured()`): the formatter only touches
+  the worktree, so it runs only for scope `'all'` (auto commit modes, where a later
+  `stageAll()` picks the formatted result up). For `'staged'` (Generate Only) it is
+  skipped — formatting would dirty the worktree without ever reaching the message,
+  and Generate Only must not touch the index.
 - `COMMIT_SYSTEM_PROMPT` enforces one-line Conventional Commits output; keep it terse.
 
 ## Feedback: toasts & error dialog
