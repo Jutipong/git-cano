@@ -11,6 +11,8 @@ import type { AiConfig, AiContextScope, AiProvider, AiProviderConfig, AiTestResu
 
 const BASE_URL = 'https://opencode.ai/zen/go/v1'
 const GO_MODELS_URL = `${BASE_URL}/models`
+/** Pay-as-you-go Zen catalog — same id-only shape; free lineup is discovered here live. */
+const ZEN_MODELS_URL = 'https://opencode.ai/zen/v1/models'
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 const OPENROUTER_MODELS_URL = `${OPENROUTER_BASE_URL}/models`
 const CONFIG_FILE = 'opencode.json'
@@ -313,40 +315,10 @@ export async function generateCommitMessage(formatFirst = false, scope: AiContex
     return stripFences(content).slice(0, 2500)
 }
 
-const FALLBACK_MODELS = [
-    'minimax-m3',
-    'minimax-m2.7',
-    'minimax-m2.5',
-    'kimi-k3',
-    'kimi-k2.7-code',
-    'kimi-k2.6',
-    'kimi-k2.5',
-    'longcat-2.0',
-    'glm-5.3-flash',
-    'glm-5.3',
-    'glm-5.2',
-    'glm-5.1',
-    'glm-5',
-    'deepseek-v4-pro',
-    'deepseek-v4-flash',
-    'deepseek-v4-flash-vision-exp',
-    'qwen3.8-max',
-    'qwen3.8-flash',
-    'qwen3.7-max',
-    'qwen3.7-plus',
-    'qwen3.6-plus',
-    'qwen3.5-plus',
-    'mimo-v2.5-pro',
-    'mimo-v2.5',
-    'mimo-v2-pro',
-    'mimo-v2-omni',
-    'hy3',
-    'hy3-preview',
-    'gpt-5.6-luna',
-    'grok-4.6',
-    'grok-4.5',
-    'muse-spark-1.2-contributor',
-]
+/** Last successfully fetched list (persisted per provider) — offline fallback so the picker is never empty. */
+function lastKnownModels(): GoModel[] {
+    return getConfig().opencodeGo.models.filter(model => model && typeof model.id === 'string')
+}
 
 export async function listModels(provider: AiProvider, token: string): Promise<GoModel[]> {
     if (provider === 'openrouter') {
@@ -354,25 +326,49 @@ export async function listModels(provider: AiProvider, token: string): Promise<G
         if (!cleanToken) throw new Error('Enter an OpenRouter API key first')
         const res = await fetch(OPENROUTER_MODELS_URL, { headers: { authorization: `Bearer ${cleanToken}` } })
         if (!res.ok) throw new Error(extractErrorDetail(await res.text().catch(() => ''), res.status))
-        const json = (await res.json().catch(() => null)) as { data?: { id?: unknown; name?: unknown }[] } | null
+        const json = (await res.json().catch(() => null)) as {
+            data?: { id?: unknown; name?: unknown; pricing?: { prompt?: unknown; completion?: unknown } }[]
+        } | null
         if (!Array.isArray(json?.data)) return []
         return json.data
             .filter(model => typeof model.id === 'string')
-            .map(model => ({ id: model.id as string, name: typeof model.name === 'string' ? model.name : (model.id as string) }))
+            .map(model => {
+                const id = model.id as string
+                const pricing = model.pricing
+                const free = id.endsWith(':free') || (pricing?.prompt === '0' && pricing?.completion === '0')
+                return {
+                    id,
+                    name: typeof model.name === 'string' ? model.name : id,
+                    ...(free ? { free: true as const } : {}),
+                }
+            })
     }
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10_000)
     try {
-        const res = await fetch(GO_MODELS_URL, { signal: controller.signal })
-        if (!res.ok) return FALLBACK_MODELS.map(toGoModel)
-        const json = (await res.json().catch(() => null)) as { data?: { id?: unknown }[] } | null
-        if (!Array.isArray(json?.data) || json.data.length === 0) return FALLBACK_MODELS.map(toGoModel)
-        return json.data
-            .map(model => (typeof model.id === 'string' ? model.id : ''))
-            .filter(Boolean)
-            .map(toGoModel)
+        const fetchIds = async (url: string): Promise<string[]> => {
+            const res = await fetch(url, { signal: controller.signal })
+            if (!res.ok) return []
+            const json = (await res.json().catch(() => null)) as { data?: { id?: unknown }[] } | null
+            if (!Array.isArray(json?.data)) return []
+            return json.data.map(model => (typeof model.id === 'string' ? model.id : '')).filter(Boolean)
+        }
+        // Subscription catalog first; the free lineup is discovered live from the
+        // Zen catalog (same provider family — everything is stored under this
+        // provider only, never mixed into other providers).
+        const [goIds, zenIds] = await Promise.all([fetchIds(GO_MODELS_URL), fetchIds(ZEN_MODELS_URL)])
+        const seen = new Set(goIds)
+        const merged = [...goIds]
+        for (const id of zenIds) {
+            if (!seen.has(id) && (id === 'big-pickle' || id.endsWith('-free'))) {
+                seen.add(id)
+                merged.push(id)
+            }
+        }
+        if (merged.length === 0) return lastKnownModels()
+        return merged.map(toGoModel)
     } catch {
-        return FALLBACK_MODELS.map(toGoModel)
+        return lastKnownModels()
     } finally {
         clearTimeout(timer)
     }

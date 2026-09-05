@@ -4628,6 +4628,24 @@ body {
     white-space: nowrap;
 }
 
+.ai-model-name {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ai-model-free {
+    flex: 0 0 auto;
+    padding: 1px 7px;
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+    border-radius: 999px;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 600;
+}
+
 .ai-model-empty {
     display: block;
     padding: 8px 9px;

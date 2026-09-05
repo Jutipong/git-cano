@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { modelName } from '@shared/models'
-
     import { confirmDialog } from '../utils/confirm'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
@@ -99,7 +97,7 @@
         const models = ai.provider === 'openrouter' ? ai.config.openrouter.models : ai.config.opencodeGo.models
         const selectedModel = models.find(model => model.id === ai.modelId)
         const providerName = ai.provider === 'openrouter' ? 'OpenRouter' : 'OpenCode Go'
-        return `${providerName}: ${selectedModel?.name ?? modelName(ai.modelId)}`
+        return `${providerName}: ${selectedModel?.name ?? ai.modelId}`
     })
     const AI_MODE_OPTIONS: { value: AiCommitMode; label: string }[] = [
         { value: 'off', label: 'Generate Only' },

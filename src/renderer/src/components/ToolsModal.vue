@@ -240,10 +240,14 @@
         aiTestResult.value = null
         try {
             const result = await window.api.ai.test(selectedProvider.value, aiToken.value.trim(), aiModel.value.trim())
-            aiTestResult.value = result
-            if (result.ok) await ai.save(currentConfig())
+            if (result.ok) {
+                aiTestResult.value = result
+                await ai.save(currentConfig())
+            } else {
+                notify(result.message, 'error')
+            }
         } catch (error) {
-            aiTestResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
         } finally {
             aiTesting.value = false
         }
@@ -1126,7 +1130,14 @@
                                         type="button"
                                         class="ai-model-option"
                                         @mousedown.prevent="selectModel(m)">
-                                        <span>{{ m.name }}</span>
+                                        <span class="ai-model-name"
+                                            >{{ m.name
+                                            }}<em
+                                                v-if="m.free"
+                                                class="ai-model-free"
+                                                >Free</em
+                                            ></span
+                                        >
                                         <small>{{ m.id }}</small>
                                     </button>
                                     <span
@@ -1209,7 +1220,14 @@
                                         type="button"
                                         class="ai-model-option"
                                         @mousedown.prevent="selectModel(m)">
-                                        <span>{{ m.name }}</span>
+                                        <span class="ai-model-name"
+                                            >{{ m.name
+                                            }}<em
+                                                v-if="m.free"
+                                                class="ai-model-free"
+                                                >Free</em
+                                            ></span
+                                        >
                                         <small>{{ m.id }}</small>
                                     </button>
                                     <span
@@ -1270,9 +1288,8 @@
                                 {{ aiTesting ? 'Testing…' : 'Test connect' }}
                             </button>
                             <span
-                                v-if="aiTestResult"
-                                class="ai-test-result"
-                                :class="aiTestResult.ok ? 'ok' : 'err'"
+                                v-if="aiTestResult?.ok"
+                                class="ai-test-result ok"
                                 >{{ aiTestResult.message }}</span
                             >
                         </template>
