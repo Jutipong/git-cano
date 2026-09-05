@@ -13,6 +13,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
     { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
+    { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
     { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },
 ]
 

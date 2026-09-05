@@ -225,6 +225,14 @@ body {
     background: var(--surface-1);
     border-color: var(--line-soft);
     border-radius: 999px;
+    transition:
+        width 0.18s ease,
+        border-color 0.15s ease;
+}
+
+.commit-search:focus-within {
+    width: 260px;
+    border-color: color-mix(in srgb, var(--teal) 55%, transparent);
 }
 
 .commit-search {

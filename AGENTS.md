@@ -85,8 +85,9 @@ Key files:
   from it. When adding a shortcut, add the entry to `SHORTCUTS` (with `mac`/`win` keys)
   and wire the handler in `App.vue`; macOS accepts both `⌘` and `Ctrl` for the
   Ctrl-based combos.
-- Current set: Pull `Ctrl+L`/`⌘↓`, Push `Ctrl+P`/`⌘↑`, Fetch `Ctrl+F`, Open repo
-  `Ctrl+O`, Settings `Ctrl+,`, Refresh `⌘R`, Search commits `⌘⇧F`, New tab `⌘⇧P`,
+- Current set: Pull `Ctrl+L`/`⌘↓`, Push `Ctrl+P`/`⌘↑`, Open repo
+  `Ctrl+O`, Settings `Ctrl+,`, Refresh `⌘R`, Search commits `Ctrl+F` (commit history;
+  diff search when a diff is open), New tab `⌘⇧P`,
   Shortcuts modal `?` (outside text inputs), commit via `⌘↵` on the summary textarea,
   app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel, `Esc` to close diff/deselect.
 - Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom,

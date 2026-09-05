@@ -222,6 +222,20 @@
                 repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
                 return
             }
+            // Focus commit-history search — Ctrl+F (a diff overlay owns Ctrl+F while open)
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                !event.shiftKey &&
+                event.key.toLowerCase() === 'f' &&
+                !selectedFile.value &&
+                !selectedConflict.value
+            ) {
+                event.preventDefault()
+                const target = document.querySelector<HTMLInputElement>('.commit-search input')
+                target?.focus()
+                target?.select()
+                return
+            }
         }
 
         onBeforeUnmount(() => {
