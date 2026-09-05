@@ -85,7 +85,7 @@
 
     const ai = useAiStore()
     const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
-        { value: 'none', label: 'No' },
+        { value: 'none', label: 'None' },
         { value: 'opencode-go', label: 'OpenCode Go' },
         { value: 'openrouter', label: 'OpenRouter' },
     ]
@@ -689,8 +689,8 @@
                             Keyboard shortcuts…
                         </button>
                         <span class="setting-hint">
-                            Pull, push, fetch, open repository and open settings all have shortcuts. Press <kbd>?</kbd> anywhere to see the
-                            full list.
+                            The command palette, open repository, settings and search all have shortcuts. Press <kbd>?</kbd> anywhere to see
+                            the full list.
                         </span>
                     </div>
 
@@ -1123,7 +1123,7 @@
                                     @input="onModelInput"
                                     @focus="modelDropdownOpen = true"
                                     @blur="closeModelDropdown"
-                                    @keydown.escape="modelDropdownOpen = false" />
+                                    @keydown.escape.stop="modelDropdownOpen = false" />
                                 <div
                                     v-if="modelDropdownOpen"
                                     class="ai-model-options"
@@ -1216,7 +1216,7 @@
                                     @input="onModelInput"
                                     @focus="modelDropdownOpen = true"
                                     @blur="closeModelDropdown"
-                                    @keydown.escape="modelDropdownOpen = false" />
+                                    @keydown.escape.stop="modelDropdownOpen = false" />
                                 <div
                                     v-if="modelDropdownOpen"
                                     class="ai-model-options"
