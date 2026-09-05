@@ -4265,6 +4265,23 @@ body {
     left: 44px;
 }
 
+/* Full-file viewer (ALL FILES on an unchanged file): plain code with a single
+   line-number column, and a single pane even in split mode (the left "previous"
+   pane is hidden). Snapshot ctx lines carry oldNo == newNo, so either side works. */
+.diff-view.full-file .diff-body:not(.split) .diff-line .ln:nth-of-type(1) {
+    display: none;
+}
+.diff-view.full-file .diff-body:not(.split) .diff-line .ln:nth-of-type(2) {
+    left: 0;
+}
+.diff-view.full-file .split-pane.left {
+    display: none;
+}
+.diff-view.full-file .split-pane.right {
+    flex-basis: 100%;
+    max-width: 100%;
+}
+
 .diff-body::-webkit-scrollbar {
     width: 0;
     height: 10px;

@@ -302,6 +302,19 @@ export async function getDiffMeta(file: string, staged: boolean): Promise<DiffMe
     try {
         const numstat = await g.raw(['diff', ...(staged ? ['--cached'] : []), '--numstat', '--no-color', '--', file])
         const line = numstat.trim().split('\n')[0]
+        if (!line) {
+            // Empty numstat = no changes (ALL FILES mode can open unchanged files).
+            // Probe the content getDiff() will display instead of mislabeling it binary.
+            if (staged) {
+                try {
+                    const blob = await gitBinaryBuffer(p, ['cat-file', '-p', `:${file}`])
+                    return { binary: blob.subarray(0, 8000).includes(0), image }
+                } catch {
+                    return { binary: false, image }
+                }
+            }
+            return { binary: isBinaryFile(p, file), image }
+        }
         const binary = !line || line.startsWith('-\t-\t') || line.startsWith('-	-	')
         return { binary, image }
     } catch {
@@ -583,7 +596,10 @@ export async function getDiff(file: string, staged: boolean, context?: number): 
     try {
         text = await g.raw(args)
     } catch {}
-    return parseDiff(text, file)
+    if (text.trim() || text.includes('Binary files')) return parseDiff(text, file)
+    // Empty diff = unchanged file (opened from ALL FILES mode) — show the full content
+    // like Fork/GitKraken's file tree instead of an empty diff.
+    return fullFileLines(p, file, staged)
 }
 
 async function isUntracked(g: SimpleGit, file: string): Promise<boolean> {
@@ -616,6 +632,44 @@ function getUntrackedDiff(repoPath: string, file: string): DiffLine[] {
     const lines: DiffLine[] = [{ type: 'meta', oldNo: null, newNo: null, text: `diff --git a/${file} b/${file}` }]
     lines.push({ type: 'hunk', oldNo: null, newNo: null, text: `@@ -0,0 +1,${lineTexts.length} @@` })
     lineTexts.forEach((text, i) => lines.push({ type: 'add', oldNo: null, newNo: i + 1, text: `+${text}` }))
+    return lines
+}
+
+/**
+ * Full-content fallback for unchanged files (ALL FILES mode): renders the blob as context lines so the viewer shows code like
+ * Fork/GitKraken instead of an empty diff. `staged` selects the index blob, otherwise the working-tree file.
+ */
+async function fullFileLines(repoPath: string, file: string, staged: boolean): Promise<DiffLine[]> {
+    let buf: Buffer | null = null
+    if (staged) {
+        try {
+            buf = await gitBinaryBuffer(repoPath, ['cat-file', '-p', `:${file}`])
+        } catch {
+            buf = null
+        }
+    } else {
+        try {
+            buf = await fs.promises.readFile(path.join(repoPath, file))
+        } catch {
+            buf = null
+        }
+    }
+    if (!buf) return []
+    if (buf.subarray(0, 8000).includes(0)) {
+        return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
+    }
+    return snapshotToCtxLines(file, buf.toString('utf8'))
+}
+
+/** Shared blob → context-lines rendering used by the commit/stash/workdir snapshot fallbacks. */
+function snapshotToCtxLines(file: string, content: string): DiffLine[] {
+    const snapshotLines = content.split('\n')
+    if (snapshotLines[snapshotLines.length - 1] === '') snapshotLines.pop()
+    const lines: DiffLine[] = [{ type: 'meta', oldNo: null, newNo: null, text: `snapshot ${file}` }]
+    lines.push({ type: 'hunk', oldNo: null, newNo: null, text: `@@ -1,${snapshotLines.length} +1,${snapshotLines.length} @@` })
+    snapshotLines.forEach((line, index) => {
+        lines.push({ type: 'ctx', oldNo: index + 1, newNo: index + 1, text: ` ${line}` })
+    })
     return lines
 }
 
@@ -793,6 +847,17 @@ export async function getStashFileDiff(hash: string, file: string, context?: num
     } catch {}
     if (text.trim() || text.includes('Binary files')) return parseDiff(text)
 
+    // Empty diff: unchanged files (opened from ALL FILES mode) render the stash-tree blob
+    // as context; untracked files kept in the 3rd parent keep their added-lines rendering.
+    try {
+        const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
+        if (snapshot.subarray(0, 8000).includes(0)) {
+            return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
+        }
+        return snapshotToCtxLines(file, snapshot.toString('utf8'))
+    } catch {
+        // not in the stash tree — fall through to the 3rd-parent check below
+    }
     // empty tracked diff + untracked file kept in the stash's 3rd parent
     let snapshot: Buffer
     try {
@@ -1398,14 +1463,7 @@ export async function getCommitFileDiff(hash: string, file: string, context?: nu
         return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
     }
     const content = snapshot.toString('utf8')
-    const snapshotLines = content.split('\n')
-    if (snapshotLines[snapshotLines.length - 1] === '') snapshotLines.pop()
-    const lines: DiffLine[] = [{ type: 'meta', oldNo: null, newNo: null, text: `snapshot ${file}` }]
-    lines.push({ type: 'hunk', oldNo: null, newNo: null, text: `@@ -1,${snapshotLines.length} +1,${snapshotLines.length} @@` })
-    snapshotLines.forEach((line, index) => {
-        lines.push({ type: 'ctx', oldNo: index + 1, newNo: index + 1, text: ` ${line}` })
-    })
-    return lines
+    return snapshotToCtxLines(file, content)
 }
 
 export async function getCommitFileMeta(hash: string, file: string): Promise<DiffMeta> {

@@ -141,6 +141,17 @@
 
     const displayName = computed(() => props.file?.path.split('/').pop() ?? '')
 
+    /**
+     * Snapshot fallback (ALL FILES on an unchanged file, in workdir/commit/stash): the main process rendered the full blob as context lines
+     * instead of a diff. Detected by the `snapshot <file>` marker the fallbacks emit — real diffs start with `diff --git`, so this is
+     * unambiguous. A viewer, not a diff.
+     */
+    const fullFileView = computed(() => {
+        if (loading.value || meta.value?.binary || meta.value?.image) return false
+        const first = lines.value[0]
+        return !!first && first.type === 'meta' && first.text.startsWith('snapshot ')
+    })
+
     interface SideBySideRow {
         left?: DiffLine
         right?: DiffLine
@@ -717,10 +728,16 @@
     <div
         v-else
         class="diff-view"
-        :class="{ fullscreen: isFullscreen }">
+        :class="{ fullscreen: isFullscreen, 'full-file': fullFileView }">
         <div class="diff-header">
             <strong :title="file.path">{{ displayName }}</strong>
             <span class="diff-source">· {{ sourceLabel }}</span>
+            <span
+                v-if="fullFileView"
+                class="chip"
+                title="Unchanged file — showing full content"
+                >full file</span
+            >
             <span
                 v-if="loading"
                 class="muted"
@@ -983,7 +1000,7 @@
                         <!-- eslint-disable-next-line vue/no-v-html -->
                         <pre v-html="htmlFor(v.line, v.i)" />
                         <button
-                            v-if="!commitHash && !stashHash && v.line.type === 'hunk' && refresh && !meta?.binary"
+                            v-if="!commitHash && !stashHash && v.line.type === 'hunk' && refresh && !meta?.binary && !fullFileView"
                             class="detail-action hunk-action"
                             :title="file.staged ? 'Unstage this hunk' : 'Stage just this hunk'"
                             @click="actOnHunk(hunkHeaderIndexes.indexOf(v.i))">
@@ -1002,7 +1019,7 @@
             </div>
 
             <div
-                v-show="minimapVisible"
+                v-show="minimapVisible && !fullFileView"
                 ref="minimapEl"
                 class="diff-minimap"
                 title="Minimap — click or drag to navigate"
