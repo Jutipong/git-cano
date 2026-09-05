@@ -1,4 +1,4 @@
-export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon'
+export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal'
 
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 
@@ -65,6 +65,7 @@ const themeOptions: ThemeOption[] = [
     { value: 'dark', label: 'Dark', description: 'Deep navy with vivid blue accents', icon: 'moon' },
     { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon' },
     { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon' },
+    { value: 'terminal', label: 'Terminal', description: 'Dark CLI agent with mint accents', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
 ]
 
@@ -74,7 +75,13 @@ export const useUiStore = defineStore(
         const theme = ref<Theme>(DEFAULT_THEME)
         watchEffect(() => {
             const savedTheme = theme.value as string
-            if (savedTheme !== 'dark' && savedTheme !== 'light' && savedTheme !== 'dark-modern' && savedTheme !== 'dark-neon')
+            if (
+                savedTheme !== 'dark' &&
+                savedTheme !== 'light' &&
+                savedTheme !== 'dark-modern' &&
+                savedTheme !== 'dark-neon' &&
+                savedTheme !== 'terminal'
+            )
                 theme.value = DEFAULT_THEME
         })
         const sidebarWidth = ref(280)

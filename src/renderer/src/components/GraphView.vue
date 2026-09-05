@@ -36,6 +36,9 @@
     // one hue each, ordered so neighbours (and the wrap-around) stay far apart —
     // near-duplicates were pruned because adjacent lanes looked identical
     const COLORS = ['#58E06B', '#E879F9', '#FF8A3D', '#29A8FF', '#FF6B6B', '#B790FF', '#FFD60A', '#22E0D0']
+    /** Muted lane palette used while the terminal theme is active — toned to fit the theme but still distinct per lane. */
+    const TERMINAL_FIRST_LANE_COLOR = '#CA74A0'
+    const TERMINAL_COLORS = ['#6CC280', '#C284D5', '#D08E65', '#50A0D9', '#D07B80', '#A592D9', '#D0BC46', '#4CC2BD']
     const laneW = 32
     const rowH = 28
     /* breathing room between the graph panel's left edge and the first lane */
@@ -136,8 +139,14 @@
         emit('select-commit', commit)
     }
 
+    function lanePalette(): string[] {
+        return ui.theme === 'terminal' ? TERMINAL_COLORS : COLORS
+    }
+
     function nodeColor(commit: CommitNode) {
-        return commit.lane === 0 ? FIRST_LANE_COLOR : COLORS[(commit.lane - 1) % COLORS.length]
+        if (commit.lane === 0) return ui.theme === 'terminal' ? TERMINAL_FIRST_LANE_COLOR : FIRST_LANE_COLOR
+        const palette = lanePalette()
+        return palette[(commit.lane - 1) % palette.length]
     }
     function isMergeEdge(commit: CommitNode, parent: string) {
         return commit.parents.indexOf(parent) > 0
@@ -293,7 +302,8 @@
         return h
     }
     function nameColor(name: string): string {
-        return COLORS[hashString(name) % COLORS.length]
+        const palette = lanePalette()
+        return palette[hashString(name) % palette.length]
     }
 
     /* row tick: lane color, slightly darkened */
