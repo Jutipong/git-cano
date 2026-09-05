@@ -3437,6 +3437,18 @@ body {
     color: var(--orange);
 }
 
+/* destructive flows (hard reset): the same wire/chip language, toned red */
+
+.confirm-flow-chip.target.danger {
+    color: var(--red);
+    border-color: color-mix(in srgb, var(--red) 55%, transparent);
+    background: color-mix(in srgb, var(--red) 10%, var(--surface-1));
+}
+
+.confirm-flow-chip.target.danger svg {
+    color: var(--red);
+}
+
 .confirm-flow-wire {
     position: relative;
     display: flex;
@@ -3481,6 +3493,15 @@ body {
 
 .confirm-flow-wire.can-merge .confirm-flow-arrow {
     border-color: var(--green);
+}
+
+.confirm-flow-wire.danger .confirm-flow-lane {
+    stroke: var(--red);
+    opacity: 1;
+}
+
+.confirm-flow-wire.danger .confirm-flow-arrow {
+    border-color: var(--red);
 }
 
 .confirm-flow-wire.conflict .confirm-flow-lane {

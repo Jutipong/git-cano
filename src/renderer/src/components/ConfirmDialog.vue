@@ -55,7 +55,11 @@
                     </span>
                     <span
                         class="confirm-flow-wire"
-                        :class="{ conflict, 'can-merge': !conflict }">
+                        :class="{
+                            conflict,
+                            danger: confirmStore.current.danger && !conflict,
+                            'can-merge': !conflict && !confirmStore.current.danger,
+                        }">
                         <svg
                             viewBox="0 0 100 2"
                             preserveAspectRatio="none"
@@ -93,7 +97,7 @@
                     </span>
                     <span
                         class="confirm-flow-chip target"
-                        :class="{ conflict }">
+                        :class="{ conflict, danger: confirmStore.current.danger && !conflict }">
                         <i-lucide-git-branch
                             width="12"
                             height="12" />
