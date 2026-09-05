@@ -1109,6 +1109,9 @@
                         </label>
                         <label class="ai-field">
                             <span>Model ID</span>
+                            <p class="tools-section-hint ai-model-source">
+                                {{ modelOptions.length }} models from the OpenCode Go catalog — press Get models to refresh.
+                            </p>
                             <div class="ai-model-picker">
                                 <input
                                     ref="modelInput"
@@ -1199,6 +1202,9 @@
                         </label>
                         <label class="ai-field">
                             <span>Model</span>
+                            <p class="tools-section-hint ai-model-source">
+                                {{ modelOptions.length }} models from the OpenRouter catalog — press Get models to refresh.
+                            </p>
                             <div class="ai-model-picker">
                                 <input
                                     ref="modelInput"

@@ -347,11 +347,16 @@ export async function listModels(provider: AiProvider, token: string): Promise<G
     const timer = setTimeout(() => controller.abort(), 10_000)
     try {
         const fetchIds = async (url: string): Promise<string[]> => {
-            const res = await fetch(url, { signal: controller.signal })
-            if (!res.ok) return []
-            const json = (await res.json().catch(() => null)) as { data?: { id?: unknown }[] } | null
-            if (!Array.isArray(json?.data)) return []
-            return json.data.map(model => (typeof model.id === 'string' ? model.id : '')).filter(Boolean)
+            try {
+                const res = await fetch(url, { signal: controller.signal })
+                if (!res.ok) return []
+                const json = (await res.json().catch(() => null)) as { data?: { id?: unknown }[] } | null
+                if (!Array.isArray(json?.data)) return []
+                return json.data.map(model => (typeof model.id === 'string' ? model.id : '')).filter(Boolean)
+            } catch {
+                // One catalog failing must not discard the other.
+                return []
+            }
         }
         // Subscription catalog first; the free lineup is discovered live from the
         // Zen catalog (same provider family — everything is stored under this
