@@ -34,6 +34,8 @@ import {
     getDiff,
     getLog,
     getLogPage,
+    getSoloLog,
+    getSoloLogPage,
     getCachedLog,
     getCachedBranches,
     getStatusAccelerators,
@@ -584,6 +586,14 @@ app.whenReady().then(() => {
     handle('repo:logPage', (_offset?: number, _limit?: number) => {
         requireRepo()
         return getLogPage(typeof _offset === 'number' ? _offset : 0, typeof _limit === 'number' ? _limit : 500)
+    })
+    handle('repo:logSolo', (branch?: string, _limit?: number) => {
+        requireRepo()
+        return getSoloLog(branch as string, typeof _limit === 'number' ? _limit : 500)
+    })
+    handle('repo:logSoloPage', (branch?: string, _offset?: number, _limit?: number) => {
+        requireRepo()
+        return getSoloLogPage(branch as string, typeof _offset === 'number' ? _offset : 0, typeof _limit === 'number' ? _limit : 500)
     })
     handle('file:diff', (file: string, staged: boolean, context?: number) => {
         requireRepo()

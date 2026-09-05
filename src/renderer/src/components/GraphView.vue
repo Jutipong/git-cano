@@ -5,6 +5,7 @@
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { formatDatePattern, formatShortDate } from '../utils/format'
+    import CloseXIcon from './CloseXIcon.vue'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
@@ -417,6 +418,21 @@
                 <span class="commit-count"
                     >{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span
                 >
+                <span
+                    v-if="repoStore.soloBranch"
+                    class="solo-chip"
+                    :title="`Showing only ${repoStore.soloBranch}`">
+                    <i-lucide-crosshair
+                        width="11"
+                        height="11" />
+                    Solo: {{ repoStore.soloBranch }}
+                    <button
+                        class="icon-btn danger commit-close-btn solo-clear"
+                        title="Unsolo (show all branches)"
+                        @click="repoStore.setSolo(null)">
+                        <CloseXIcon />
+                    </button>
+                </span>
                 <ThinkSpinner
                     v-if="repoStore.refreshingRepo"
                     compact

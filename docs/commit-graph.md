@@ -16,6 +16,10 @@ git log --all  (src/main/git.ts)
    → render: SVG canvas (lane/เส้น/จุด) + HTML rows (ข้อความ/chip)
 ```
 
+> **Solo mode**: เมื่อ solo branch ใด (`repoStore.soloBranch`) จะดึงด้วย
+> `git log <branch>` ผ่าน `getSoloLog()`/`getSoloLogPage()` แทน — format เดียวกัน
+> (`parseLog` + `assignLanes`) กราฟจึงวาดเฉพาะ commits ที่ reachable จาก branch นั้น
+
 - **ไฟล์หลัก**: `src/renderer/src/components/GraphView.vue`
 - **สไตล์**: `styles.css` (base) + `modern-ui.css` (override ลุค/ฟิลหลัง)
 - **สี/รูปแบบโทน**: วาดด้วย SVG `<canvas>` กับ `<g>`; ข้อความและ chip เป็น HTML

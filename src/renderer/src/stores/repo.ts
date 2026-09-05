@@ -105,6 +105,8 @@ export const useRepoStore = defineStore('repo', () => {
     const toolsTab = ref<'appearance' | 'general' | 'auth' | 'hook' | 'ai'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
+    /** Branch soloed in the graph (GitKraken-style focus) — view-only filter, never persisted. */
+    const soloBranch = ref<string | null>(null)
     let tagLoadingRequests = 0
     let remoteTagRequest = 0
     const loadingRemoteTags = ref(false)
@@ -179,6 +181,9 @@ export const useRepoStore = defineStore('repo', () => {
         }
         tabs.value.push({ path: status.path, name: status.name, status })
         activeTab.value = tabs.value.length - 1
+        // Solo is per-repo view state — a newly opened repo always starts with the full graph,
+        // even if it happens to have a branch with the same name as the previous solo.
+        soloBranch.value = null
         syncSession()
         // The status is fresh but the graph still holds the previous repo's data — load it.
         // The just-computed status is passed through so refresh() doesn't spawn git status again
@@ -206,9 +211,20 @@ export const useRepoStore = defineStore('repo', () => {
         try {
             // preserve scroll depth: if more pages were appended via loadMore, refetch the full depth
             const limit = Math.max(logLimit.value, commits.value.length)
+            const solo = soloBranch.value
+            const logPromise = (async () => {
+                if (!solo) return window.api.log(limit)
+                try {
+                    return await window.api.logSolo(solo, limit)
+                } catch {
+                    // branch is gone (deleted upstream) — fall back to the full graph
+                    soloBranch.value = null
+                    return window.api.log(limit)
+                }
+            })()
             const [status, log, branches, state, tags, remote] = await Promise.all([
                 precomputedStatus ? Promise.resolve(precomputedStatus) : window.api.status(),
-                window.api.log(limit),
+                logPromise,
                 window.api.branches(),
                 window.api.repoState(),
                 loadTags(),
@@ -277,6 +293,7 @@ export const useRepoStore = defineStore('repo', () => {
         selectedConflict.value = null
         selectedCommit.value = null
         selectedStash.value = null
+        soloBranch.value = null
         syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
         // Stale-while-revalidate: paint the cached log and branch list for this repo instantly
@@ -312,6 +329,7 @@ export const useRepoStore = defineStore('repo', () => {
             commits.value = []
             selectedCommit.value = null
             selectedStash.value = null
+            soloBranch.value = null
         }
         syncSession()
         if (wasActive && remaining.length > 0) {
@@ -385,7 +403,20 @@ export const useRepoStore = defineStore('repo', () => {
         if (loadingMore || !hasMore.value || switchingWorkspace.value || useUiTransientStore().busy) return
         loadingMore = true
         try {
-            const page = await window.api.logPage(commits.value.length, PAGE_SIZE)
+            const solo = soloBranch.value
+            let page
+            if (solo) {
+                try {
+                    page = await window.api.logSoloPage(solo, commits.value.length, PAGE_SIZE)
+                } catch {
+                    // branch is gone (deleted upstream) — fall back to the full graph
+                    soloBranch.value = null
+                    await refresh()
+                    return
+                }
+            } else {
+                page = await window.api.logPage(commits.value.length, PAGE_SIZE)
+            }
             if (!page.length) {
                 hasMore.value = false
                 return
@@ -404,6 +435,17 @@ export const useRepoStore = defineStore('repo', () => {
         } finally {
             loadingMore = false
         }
+    }
+
+    async function setSolo(branch: string | null) {
+        if (useUiTransientStore().busy) return
+        const next = branch?.trim() ? branch.trim() : null
+        if (next === soloBranch.value) return
+        soloBranch.value = next
+        selectedCommit.value = null
+        selectedFile.value = null
+        pendingFocusHash.value = null
+        await refresh()
     }
 
     async function switchWorkspace(name: string) {
@@ -428,6 +470,7 @@ export const useRepoStore = defineStore('repo', () => {
             selectedConflict.value = null
             selectedCommit.value = null
             selectedStash.value = null
+            soloBranch.value = null
             // Open concurrently (order preserved by Promise.all) — sequential spawning dominates
             // the switch cost on Windows. Shared repos reuse their existing git instance. addTab
             // skips refresh/sync while restoringSession is set, so exactly one full refresh happens below.
@@ -519,6 +562,8 @@ export const useRepoStore = defineStore('repo', () => {
         selectedCommit,
         selectedStash,
         pendingFocusHash,
+        soloBranch,
+        setSolo,
         commitFiles,
         loadingCommitDetails,
         commitMessage,

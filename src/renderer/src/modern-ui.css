@@ -1629,6 +1629,69 @@ body {
     background: var(--surface-hover);
 }
 
+/* soloed branch: keep the row highlighted; the exit icon sits at the right edge */
+.branch-row.soloed {
+    background: color-mix(in srgb, var(--teal) 12%, var(--surface-1));
+}
+
+.branch-row.soloed .track-badge,
+.branch-row.soloed .row-actions {
+    margin-left: 0;
+}
+
+.solo-exit {
+    margin-left: auto;
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+}
+
+.solo-exit:hover {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 24%, transparent);
+}
+
+/* soloed row: freeze the layout on hover — the badge swap rule would hide the
+   ↑/↓ badge with nothing to swap in (delete is hidden while soloed), which
+   makes the exit icon jump */
+.branch-row.soloed:hover:has(.row-actions) .track-badge {
+    display: inline-flex;
+}
+
+.branch-row.soloed:hover .row-actions {
+    display: none;
+}
+
+/* non-soloed rows while solo is active: not selectable until unsolo */
+.branch-row.dimmed {
+    opacity: 0.45;
+    cursor: default;
+}
+
+/* solo chip in the graph header */
+.solo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 280px;
+    padding: 3px 4px 3px 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teal) 40%, transparent);
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+}
+
+.solo-chip .solo-clear {
+    width: 18px;
+    height: 18px;
+    margin-left: 0;
+}
+
 .sidebar-bottom {
     margin: auto 6px 0;
     padding: 8px 4px;

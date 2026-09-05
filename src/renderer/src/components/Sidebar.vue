@@ -106,10 +106,16 @@
     const pendingRemoteTag = ref<string | null>(null)
 
     function focusBranch(branch: { name: string; commitHash?: string }) {
+        // While soloing, selection is locked to the soloed branch — silently ignore other rows.
+        if (repoStore.soloBranch && repoStore.soloBranch !== branch.name) return
         const hash =
             branch.commitHash ??
             repoStore.commits.find(commit => commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`))?.hash
         if (hash) repoStore.pendingFocusHash = hash
+    }
+
+    function toggleSolo(name: string) {
+        void repoStore.setSolo(repoStore.soloBranch === name ? null : name)
     }
 
     async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
@@ -125,23 +131,34 @@
     }
 
     function buildRemoteBranchMenu(branch: { name: string; current: boolean }): MenuItem[] {
-        return [
+        const soloed = repoStore.soloBranch === branch.name
+        const items: MenuItem[] = [
+            {
+                label: soloed ? 'Unsolo' : 'Solo in graph',
+                action: () => toggleSolo(branch.name),
+            },
             {
                 label: `Checkout ${localNameForRemote(branch.name)}`,
                 icon: 'git-branch',
+                separatorBefore: true,
                 action: () => void checkoutRemote(branch.name),
             },
-            {
+        ]
+        // MenuItem has no disabled state — omit delete while soloing (deleteRemoteBranch guards it too)
+        if (!repoStore.soloBranch) {
+            items.push({
                 label: `Delete ${stripRemote(branch.name)}`,
                 icon: 'trash',
                 danger: true,
                 separatorBefore: true,
                 action: () => void deleteRemoteBranch(branch.name),
-            },
-        ]
+            })
+        }
+        return items
     }
 
     async function checkoutBranch(name: string) {
+        if (repoStore.soloBranch && repoStore.soloBranch !== name) return
         const mode = await resolveCheckoutMode(name)
         if (!mode) return
         void run(() => window.api.checkout(name, mode), `Checked out ${name}`)
@@ -154,6 +171,7 @@
         return local.value.some(b => b.name === target && b.current)
     }
     async function checkoutRemote(name: string) {
+        if (repoStore.soloBranch && repoStore.soloBranch !== name) return
         if (isRemoteCurrent(name)) {
             notify(`Already on ${localNameForRemote(name)}`, 'error', { asToast: true })
             return
@@ -165,6 +183,10 @@
     }
 
     async function deleteBranch(name: string) {
+        if (repoStore.soloBranch) {
+            notify('Unsolo before deleting branches', 'error', { asToast: true })
+            return
+        }
         const ok = await confirmDialog({
             message: `Delete branch: ${name}`,
             confirmLabel: 'Delete',
@@ -174,6 +196,10 @@
         void run(() => window.api.deleteBranch(name), `Deleted ${name}`)
     }
     async function deleteRemoteBranch(ref: string) {
+        if (repoStore.soloBranch) {
+            notify('Unsolo before deleting branches', 'error', { asToast: true })
+            return
+        }
         const label = stripRemote(ref)
         const ok = await confirmDialog({
             message: `Delete remote branch: ${label}`,
@@ -304,7 +330,15 @@
         repoStore.pendingFocusHash = tag.hash
     }
     function openLocalBranchContextMenu(branch: { name: string; current: boolean; commitHash?: string }, event: MouseEvent) {
-        localBranchMenu.value = { x: event.clientX, y: event.clientY, branch, hasRemote: hasRemote.value, currentBranch: props.repo.branch }
+        localBranchMenu.value = {
+            x: event.clientX,
+            y: event.clientY,
+            branch,
+            hasRemote: hasRemote.value,
+            currentBranch: props.repo.branch,
+            soloed: repoStore.soloBranch === branch.name,
+            soloActive: !!repoStore.soloBranch,
+        }
     }
     function openRemoteBranchContextMenu(branch: { name: string; current: boolean }, event: MouseEvent) {
         menu.value = { x: event.clientX, y: event.clientY, items: buildRemoteBranchMenu(branch) }
@@ -429,7 +463,12 @@
                         v-for="branch in localFiltered"
                         :key="branch.name"
                         class="branch-row"
-                        :class="{ current: branch.current, 'drop-target': dropTarget === branch.name }"
+                        :class="{
+                            current: branch.current,
+                            'drop-target': dropTarget === branch.name,
+                            soloed: repoStore.soloBranch === branch.name,
+                            dimmed: !!repoStore.soloBranch && repoStore.soloBranch !== branch.name,
+                        }"
                         draggable="true"
                         @click="focusBranch(branch)"
                         @dblclick="!branch.current && checkoutBranch(branch.name)"
@@ -475,10 +514,20 @@
                                 >↓{{ branch.behind }}</span
                             >
                         </span>
+                        <button
+                            v-if="repoStore.soloBranch === branch.name"
+                            class="icon-btn solo-exit"
+                            title="Unsolo (show all branches)"
+                            @click.stop="repoStore.setSolo(null)">
+                            <i-lucide-crosshair
+                                width="14"
+                                height="14" />
+                        </button>
                         <span
                             v-if="!branch.current"
                             class="row-actions">
                             <button
+                                v-if="!repoStore.soloBranch"
                                 class="icon-btn danger"
                                 title="Delete branch"
                                 @click.stop="deleteBranch(branch.name)">
@@ -523,7 +572,11 @@
                         v-for="branch in remoteFiltered"
                         :key="branch.name"
                         class="branch-row remote"
-                        :class="{ current: isRemoteCurrent(branch.name) }"
+                        :class="{
+                            current: isRemoteCurrent(branch.name),
+                            soloed: repoStore.soloBranch === branch.name,
+                            dimmed: !!repoStore.soloBranch && repoStore.soloBranch !== branch.name,
+                        }"
                         @click="focusBranch(branch)"
                         @dblclick="checkoutRemote(branch.name)"
                         @contextmenu.prevent="openRemoteBranchContextMenu(branch, $event)"
@@ -536,8 +589,18 @@
                             width="14"
                             height="14" />
                         <span class="branch-name">{{ stripRemote(branch.name) }}</span>
+                        <button
+                            v-if="repoStore.soloBranch === branch.name"
+                            class="icon-btn solo-exit"
+                            title="Unsolo (show all branches)"
+                            @click.stop="repoStore.setSolo(null)">
+                            <i-lucide-crosshair
+                                width="14"
+                                height="14" />
+                        </button>
                         <span class="row-actions">
                             <button
+                                v-if="!repoStore.soloBranch"
                                 class="icon-btn danger"
                                 title="Delete remote branch"
                                 @click.stop="deleteRemoteBranch(branch.name)">
@@ -711,6 +774,7 @@
             @delete="deleteLocalBranch"
             @create-branch-here="createBranchHere"
             @create-tag-here="createTagHere"
+            @solo="branch => toggleSolo(branch.name)"
             @copy-name="copyBranchName" />
         <TagContextMenu
             :menu="tagMenu"

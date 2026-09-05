@@ -33,6 +33,7 @@ the background so a slow remote never blocks the UI.
 ### 📊 History & Changes
 
 - Interactive commit graph (custom SVG DAG renderer)
+- **Solo a branch** (GitKraken-style) — focus the graph on one branch, unsolo to restore
 - Search commits by message, author, hash, or ref
 - Stage/unstage files — or individual diff hunks
 - Commit & amend with a soft title-length counter

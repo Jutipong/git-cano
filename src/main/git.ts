@@ -457,6 +457,43 @@ export async function getLogPage(offset: number, limit: number): Promise<CommitN
     return parseLog(await g.raw(logArgs(limit, Math.max(0, offset))))
 }
 
+function soloLogArgs(branch: string, limit: number, skip?: number): string[] {
+    return [
+        'log',
+        branch,
+        `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join('\x1f')}\x1e`,
+        '--date=iso',
+        `--max-count=${limit}`,
+        ...(skip ? [`--skip=${skip}`] : []),
+        '--',
+    ]
+}
+
+function requireRevision(rev: string): string {
+    const trimmed = rev.trim()
+    if (!trimmed || /[\0\r\n]/.test(trimmed)) throw new Error('A branch is required')
+    return trimmed
+}
+
+/** Commits reachable from a single branch — powers branch Solo in the graph. */
+export async function getSoloLog(branch: string, limit = 500): Promise<CommitNode[]> {
+    const rev = requireRevision(branch)
+    const { git: g } = getRepo()
+    await g.raw(['rev-parse', '--verify', rev])
+    const commits = parseLog(await g.raw(soloLogArgs(rev, limit)))
+    assignLanes(commits)
+    return commits
+}
+
+export async function getSoloLogPage(branch: string, offset: number, limit: number): Promise<CommitNode[]> {
+    const rev = requireRevision(branch)
+    const { git: g } = getRepo()
+    await g.raw(['rev-parse', '--verify', rev])
+    const commits = parseLog(await g.raw(soloLogArgs(rev, limit, Math.max(0, offset))))
+    assignLanes(commits)
+    return commits
+}
+
 export async function stage(paths: string[]): Promise<void> {
     const { git: g } = getRepo()
     await g.add(paths)

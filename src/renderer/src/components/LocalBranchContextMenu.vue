@@ -2,6 +2,7 @@
     import ArrowDown from '~icons/lucide/arrow-down'
     import ArrowUp from '~icons/lucide/arrow-up'
     import Copy from '~icons/lucide/copy'
+    import Crosshair from '~icons/lucide/crosshair'
     import GitBranch from '~icons/lucide/git-branch'
     import GitCommitVertical from '~icons/lucide/git-commit-vertical'
     import ListRestart from '~icons/lucide/list-restart'
@@ -15,6 +16,9 @@
         branch: { name: string; current: boolean; detached?: boolean; commitHash?: string; ahead?: number; behind?: number }
         hasRemote: boolean
         currentBranch?: string
+        soloed?: boolean
+        /** Any solo active — deletes are locked until unsolo */
+        soloActive?: boolean
     }
 
     const props = defineProps<{ menu: LocalBranchMenuState | null }>()
@@ -28,6 +32,7 @@
         (e: 'delete', branch: LocalBranchMenuState['branch']): void
         (e: 'createBranchHere', branch: LocalBranchMenuState['branch']): void
         (e: 'createTagHere', branch: LocalBranchMenuState['branch']): void
+        (e: 'solo', branch: LocalBranchMenuState['branch']): void
         (e: 'copyName', branch: LocalBranchMenuState['branch']): void
     }>()
     const root = ref<HTMLElement | null>(null)
@@ -49,7 +54,17 @@
     })
 
     function act(
-        kind: 'push' | 'pull' | 'pullRebase' | 'forcePush' | 'rebaseOnto' | 'delete' | 'createBranchHere' | 'createTagHere' | 'copyName'
+        kind:
+            | 'push'
+            | 'pull'
+            | 'pullRebase'
+            | 'forcePush'
+            | 'rebaseOnto'
+            | 'delete'
+            | 'createBranchHere'
+            | 'createTagHere'
+            | 'copyName'
+            | 'solo'
     ) {
         const branch = props.menu?.branch
         if (!branch) return
@@ -62,6 +77,7 @@
         else if (kind === 'delete') emit('delete', branch)
         else if (kind === 'createBranchHere') emit('createBranchHere', branch)
         else if (kind === 'createTagHere') emit('createTagHere', branch)
+        else if (kind === 'solo') emit('solo', branch)
         else emit('copyName', branch)
     }
 
@@ -69,7 +85,7 @@
         if (!props.menu) return {}
         return {
             left: `${Math.min(props.menu.x, window.innerWidth - 220)}px`,
-            top: `${Math.min(props.menu.y, window.innerHeight - 9 * 34)}px`,
+            top: `${Math.min(props.menu.y, window.innerHeight - 10 * 34)}px`,
         }
     }
 </script>
@@ -97,6 +113,16 @@
                 width="13"
                 height="13" />
             Create tag
+        </button>
+        <button
+            class="local-branch-menu-item"
+            :disabled="menu.branch.detached"
+            @click="act('solo')">
+            <Crosshair
+                class="local-branch-menu-ic"
+                width="13"
+                height="13" />
+            {{ menu.soloed ? 'Unsolo' : 'Solo in graph' }}
         </button>
         <div class="local-branch-menu-separator" />
         <button
@@ -154,7 +180,8 @@
         <div class="local-branch-menu-separator" />
         <button
             class="local-branch-menu-item danger"
-            :disabled="menu.branch.current || menu.branch.detached"
+            :disabled="menu.branch.current || menu.branch.detached || menu.soloActive"
+            :title="menu.soloActive ? 'Unsolo before deleting' : ''"
             @click="act('delete')">
             <Trash2
                 class="local-branch-menu-ic"
