@@ -4769,11 +4769,39 @@ body {
 }
 
 .conflict-pane.ours .pane-head {
-    box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--blue) 55%, transparent);
+    box-shadow: inset 0 -3px 0 0 color-mix(in srgb, var(--blue) 70%, transparent);
 }
 
 .conflict-pane.theirs .pane-head {
-    box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--yellow) 65%, transparent);
+    box-shadow: inset 0 -3px 0 0 color-mix(in srgb, var(--yellow) 75%, transparent);
+}
+
+.conflict-pane.ours .pane-title {
+    padding: 2px 9px;
+    color: var(--blue);
+    background: color-mix(in srgb, var(--blue) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--blue) 45%, transparent);
+    border-radius: 999px;
+}
+
+.conflict-pane.theirs .pane-title {
+    padding: 2px 9px;
+    color: var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--yellow) 45%, transparent);
+    border-radius: 999px;
+}
+
+.conflict-output .pane-head .pane-title {
+    padding: 2px 9px;
+    color: var(--purple);
+    background: color-mix(in srgb, var(--purple) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--purple) 45%, transparent);
+    border-radius: 999px;
+}
+
+.conflict-output .pane-head .conflict-chip {
+    margin-left: auto;
 }
 
 .conflict-pane .pane-label,
@@ -4813,64 +4841,81 @@ body {
 }
 
 .conflict-pane.ours .diff-line.hl {
-    background: color-mix(in srgb, var(--blue) 16%, transparent);
+    background: color-mix(in srgb, var(--blue) 21%, transparent);
 }
 
 .conflict-pane.theirs .diff-line.hl {
-    background: color-mix(in srgb, var(--yellow) 18%, transparent);
+    background: color-mix(in srgb, var(--yellow) 23%, transparent);
 }
 
 .conflict-pane .diff-line.hl.current {
-    box-shadow: inset 3px 0 0 0 var(--conflict-text);
-    background: color-mix(in srgb, var(--blue) 26%, transparent);
+    box-shadow: inset 3px 0 0 0 var(--blue);
+    background: color-mix(in srgb, var(--blue) 31%, transparent);
 }
 
 .conflict-pane.theirs .diff-line.hl.current {
-    background: color-mix(in srgb, var(--yellow) 30%, transparent);
+    box-shadow: inset 3px 0 0 0 var(--yellow);
+    background: color-mix(in srgb, var(--yellow) 34%, transparent);
 }
 
 /* GitKraken-style rounded outline framing each conflicted block (side-colored) */
 
 .conflict-pane .diff-line.hl.blk-top {
-    border-top: 1.5px solid color-mix(in srgb, var(--blue) 70%, transparent);
+    padding-top: 26px;
+    border-top: 2px solid color-mix(in srgb, var(--blue) 85%, transparent);
     border-top-left-radius: 8px;
     border-top-right-radius: 8px;
 }
 
 .conflict-pane.theirs .diff-line.hl.blk-top {
-    border-top-color: color-mix(in srgb, var(--yellow) 80%, transparent);
+    border-top-color: color-mix(in srgb, var(--yellow) 90%, transparent);
 }
 
 .conflict-pane .diff-line.hl.blk-bottom {
-    border-bottom: 1.5px solid color-mix(in srgb, var(--blue) 70%, transparent);
+    border-bottom: 2px solid color-mix(in srgb, var(--blue) 85%, transparent);
     border-bottom-left-radius: 8px;
     border-bottom-right-radius: 8px;
 }
 
 .conflict-pane.theirs .diff-line.hl.blk-bottom {
-    border-bottom-color: color-mix(in srgb, var(--yellow) 80%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--yellow) 90%, transparent);
 }
 
-/* "Use <side>" pill on the top edge of a block — one click picks the whole side */
+/* "Use <side>" banner bar on the top edge of a block — one click picks the whole side */
 
 .block-use-btn {
     position: absolute;
-    top: -21px;
-    left: 62px;
+    top: 2px;
+    right: 8px;
+    left: 8px;
     z-index: 1;
-    padding: 2px 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 22px;
+    padding: 0 10px;
+    overflow: hidden;
     color: var(--green);
-    background: color-mix(in srgb, var(--green) 16%, var(--surface-2));
-    border: 1px solid color-mix(in srgb, var(--green) 65%, var(--line));
-    border-radius: 999px;
+    background: color-mix(in srgb, var(--green) 14%, var(--surface-2));
+    border: 1px solid color-mix(in srgb, var(--green) 55%, var(--line));
+    border-radius: 6px;
     font-size: 10px;
     font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     cursor: pointer;
 }
 
 .block-use-btn:hover {
     color: var(--text);
-    border-color: var(--text-muted);
+    background: color-mix(in srgb, var(--green) 22%, var(--surface-2));
+    border-color: var(--green);
+}
+
+.block-use-btn.active {
+    color: #fff;
+    background: color-mix(in srgb, var(--green) 75%, #000);
+    border-color: transparent;
 }
 
 .conflict-pane.ours .block-use-btn:hover {
@@ -4898,6 +4943,28 @@ body {
     align-items: center;
     justify-content: center;
     width: 18px;
+}
+
+/* per-line checkboxes stay out of the way until the row matters — visible on hover,
+   on the navigated-to block, or once picked (still focusable for keyboard users) */
+
+.conflict-pane .diff-line .ck,
+.conflict-pane .diff-line .ck-all {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.12s ease;
+}
+
+.conflict-pane .diff-line:hover .ck,
+.conflict-pane .diff-line:hover .ck-all,
+.conflict-pane .diff-line:focus-within .ck,
+.conflict-pane .diff-line:focus-within .ck-all,
+.conflict-pane .diff-line.current .ck,
+.conflict-pane .diff-line.current .ck-all,
+.conflict-pane .diff-line:has(.conflict-check.picked) .ck,
+.conflict-pane .diff-line:has(.conflict-check.picked) .ck-all {
+    opacity: 1;
+    visibility: visible;
 }
 
 .conflict-check {
@@ -4970,65 +5037,99 @@ body {
     box-shadow: inset 0 -2px 0 0 color-mix(in srgb, var(--purple) 60%, transparent);
 }
 
-/* output actions group [reset | edit | save] in the OUTPUT pane head */
+/* footer action bar [reset | edit | progress | save] under the OUTPUT pane */
 
-.output-head-actions {
-    gap: 3px;
-    margin-left: auto;
+.conflict-footer {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 12px;
+    background: var(--surface-0);
+    border-top: 1px solid var(--line-soft);
 }
 
-.output-head-actions .output-mini-btn {
+.footer-btn {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    height: 20px;
-    padding: 0 8px;
-    color: var(--text-muted);
-    background: transparent;
-    border: 0;
+    gap: 5px;
+    height: 28px;
+    padding: 0 13px;
+    border: 1px solid var(--line);
     border-radius: 999px;
-    font-size: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 11px;
     font-weight: 700;
-    cursor: pointer;
     white-space: nowrap;
+    cursor: pointer;
 }
 
-.output-head-actions .output-mini-btn:hover {
+.footer-btn:hover:not(:disabled) {
     color: var(--text);
     background: var(--surface-hover);
 }
 
-.output-head-actions .output-mini-btn:disabled {
+.footer-btn:disabled {
     opacity: 0.4;
     cursor: default;
     pointer-events: none;
 }
 
-.output-head-actions .output-edit-btn {
+.footer-btn.footer-edit {
     color: var(--green);
+    border-color: color-mix(in srgb, var(--green) 45%, transparent);
 }
 
-.output-head-actions .output-edit-btn:hover {
+.footer-btn.footer-edit:hover:not(:disabled) {
     color: var(--green);
     background: color-mix(in srgb, var(--green) 12%, transparent);
 }
 
-.output-head-actions .output-reset-btn {
+.footer-btn.footer-reset {
     color: var(--orange);
+    border-color: transparent;
 }
 
-.output-head-actions .output-reset-btn:hover {
+.footer-btn.footer-reset:hover:not(:disabled) {
     color: var(--orange);
     background: color-mix(in srgb, var(--orange) 12%, transparent);
 }
 
-.output-head-actions .output-save-btn {
-    color: var(--teal);
+.footer-btn.footer-save {
+    color: #fff;
+    background: color-mix(in srgb, var(--teal) 82%, #000);
+    border-color: transparent;
 }
 
-.output-head-actions .output-save-btn:hover {
-    color: var(--teal);
-    background: color-mix(in srgb, var(--teal) 12%, transparent);
+.footer-btn.footer-save:hover:not(:disabled) {
+    background: var(--teal);
+}
+
+.conflict-progress {
+    flex: 1;
+    min-width: 40px;
+    height: 4px;
+    overflow: hidden;
+    background: var(--surface-2);
+    border-radius: 999px;
+}
+
+.conflict-progress-fill {
+    height: 100%;
+    background: var(--green);
+    border-radius: 999px;
+    transition: width 0.2s ease;
+}
+
+.footer-count {
+    flex: none;
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
 }
 
 .output-edit {
@@ -5055,16 +5156,75 @@ body {
 }
 
 .output-line.out-hl {
-    background: color-mix(in srgb, var(--purple) 14%, transparent);
+    background: color-mix(in srgb, var(--purple) 16%, transparent);
 }
 
 .output-line.out-hl.out-current {
     box-shadow: inset 3px 0 0 0 var(--purple);
-    background: color-mix(in srgb, var(--purple) 24%, transparent);
+    background: color-mix(in srgb, var(--purple) 26%, transparent);
 }
 
-.output-line.unresolved {
-    background: color-mix(in srgb, var(--red) 14%, transparent);
+/* unresolved-block placeholder card (fixed 64px — must match OUTPUT_GAP_H) */
+
+.out-gap {
+    display: flex;
+    box-sizing: border-box;
+    align-items: center;
+    gap: 8px;
+    height: 64px;
+    min-width: max-content;
+    padding: 0 12px;
+    background: color-mix(in srgb, var(--orange) 10%, transparent);
+    border-top: 1px dashed color-mix(in srgb, var(--orange) 55%, transparent);
+    border-bottom: 1px dashed color-mix(in srgb, var(--orange) 55%, transparent);
+    cursor: pointer;
+}
+
+.out-gap.out-current {
+    box-shadow: inset 3px 0 0 0 var(--orange);
+    background: color-mix(in srgb, var(--orange) 17%, transparent);
+}
+
+.out-gap-label {
+    flex: none;
+    color: var(--orange);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.out-gap-sub {
+    flex: none;
+    color: var(--text-muted);
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.out-gap-actions {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+}
+
+.out-gap-btn {
+    height: 24px;
+    padding: 0 12px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.out-gap-btn:hover {
+    color: #fff;
+    background: color-mix(in srgb, var(--green) 75%, #000);
+    border-color: transparent;
 }
 
 .output-line .ln {

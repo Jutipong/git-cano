@@ -666,12 +666,12 @@
                                 class="conflict-row-actions">
                                 <button
                                     class="detail-action accent"
-                                    title="I resolved this file outside the app — stage it as resolved"
+                                    title="Mark this file as resolved (for files fixed outside the app)"
                                     @click.stop="markResolved(unifiedWorkdirFile(row.file!))">
                                     <i-lucide-check
                                         width="12"
                                         height="12" />
-                                    Resolved
+                                    Resolve
                                 </button>
                             </div>
                             <template v-else>
@@ -759,12 +759,12 @@
                         <div class="conflict-row-actions">
                             <button
                                 class="detail-action accent"
-                                title="I resolved this file outside the app — stage it as resolved"
+                                title="Mark this file as resolved (for files fixed outside the app)"
                                 @click.stop="markResolved(file)">
                                 <i-lucide-check
                                     width="12"
                                     height="12" />
-                                Resolved
+                                Resolve
                             </button>
                         </div>
                     </div>

@@ -51,9 +51,13 @@
     // ---- virtualization state (declared before loadConflict — the immediate watch runs during setup) ----
 
     // Conflict rows: 20px base line-height (.diff-line pre / .ln in styles.css); the block-outline
-    // borders add 1.5px on block edges (modern-ui.css .blk-top / .blk-bottom).
+    // borders add 2px on block edges (modern-ui.css .blk-top / .blk-bottom) and the first row
+    // of every block reserves 26px on top for the full-width "Use side" banner bar.
     const CONFLICT_ROW_H = 20
-    const CONFLICT_BORDER_H = 1.5
+    const CONFLICT_BORDER_H = 2
+    const BLOCK_BANNER_H = 26
+    /** Unresolved-block placeholder card height in the output pane (must match .out-gap height). */
+    const OUTPUT_GAP_H = 64
     const OVERSCAN_PX = 400
 
     /** Per-line highlight caches for the two version panes, keyed by the stable DiffLine objects. */
@@ -162,6 +166,7 @@
             const parsed = parseBlocks(worktree.value, repoStore.theirsLabel)
             annotateMatches(parsed)
             blocks.value = parsed
+            currentBlock.value = parsed.length ? 0 : -1
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         } finally {
@@ -177,6 +182,25 @@
     )
     /** Save allowed only when every block is picked (manual edit always allowed — output is typed directly). */
     const canSave = computed(() => manualOutput.value !== null || unresolvedCount.value === 0)
+    const resolvedCount = computed(() => blocks.value.length - unresolvedCount.value)
+    const progressPct = computed(() => (blocks.value.length ? Math.round((resolvedCount.value / blocks.value.length) * 100) : 100))
+    /** Header counter — always 1-based now that the first block is auto-selected on load. */
+    const navLabel = computed(() => {
+        if (!blocks.value.length) return '0 / 0'
+        return `${currentBlock.value + 1} / ${blocks.value.length}`
+    })
+    const navTitle = computed(() => {
+        if (!blocks.value.length) return 'No conflicts'
+        return `Conflict ${currentBlock.value + 1} of ${blocks.value.length} — ${resolvedCount.value} resolved`
+    })
+
+    /** Banner-bar label for a whole side (includes the line count so the pick is predictable). */
+    function blockUseLabel(side: Side, blockIndex: number): string {
+        const block = blocks.value[blockIndex]
+        const name = side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel
+        const n = block?.[side].length ?? 0
+        return `Use ${name} · ${n} line${n === 1 ? '' : 's'}`
+    }
 
     /**
      * The output file assembled from the picked lines (per block: ours first, then theirs); fully unresolved blocks keep their raw markers
@@ -226,12 +250,12 @@
     // Looked up lazily per rendered row (virtualized) instead of rebuilding an O(n) array per toggle.
     const outputHtmlCache = new Map<string, string>()
     function outputHtmlFor(idx: number): string {
-        const line = resultLines.value[idx]
-        if (!line) return ''
-        const key = `${props.file?.path ?? ''}\u0000${line.text}`
+        const row = outputDisplay.value[idx]
+        if (!row || row.kind !== 'line') return ''
+        const key = `${props.file?.path ?? ''}\u0000${row.text}`
         let html = outputHtmlCache.get(key)
         if (html === undefined) {
-            html = highlightLine(line.text, props.file?.path ?? '')
+            html = highlightLine(row.text, props.file?.path ?? '')
             outputHtmlCache.set(key, html)
         }
         return html
@@ -281,6 +305,23 @@
         const block = blocks.value[blockIndex]
         if (!block) return false
         return (side === 'ours' ? block.pickOursLines : block.pickTheirsLines)[lineIndex] ?? false
+    }
+
+    /** Force-take a whole side of one block (used by the output placeholder — never un-takes). */
+    function takeBlockSide(side: Side, blockIndex: number) {
+        const block = blocks.value[blockIndex]
+        if (!block) return
+        ;(side === 'ours' ? block.pickOursLines : block.pickTheirsLines).fill(true)
+        setCurrent(blockIndex)
+    }
+
+    /** Take both sides of one block (ours lines first, then theirs — same order as the output). */
+    function takeBoth(blockIndex: number) {
+        const block = blocks.value[blockIndex]
+        if (!block) return
+        block.pickOursLines.fill(true)
+        block.pickTheirsLines.fill(true)
+        setCurrent(blockIndex)
     }
 
     /** True when this side is fully picked in every block (whole-file select-all state). */
@@ -387,11 +428,12 @@
                 }
                 if (from < start.length) start[from] = true
             }
-            // Row heights for virtualization: base line-height plus the block-outline borders.
+            // Row heights for virtualization: base line-height plus the block-outline borders
+            // and the full-width "Use side" banner bar on the first row of each block.
             const heights = new Float64Array(lines.length)
             for (let i = 0; i < lines.length; i++) {
                 let h = CONFLICT_ROW_H
-                if (edge[i] === 'top' || edge[i] === 'only') h += CONFLICT_BORDER_H
+                if (edge[i] === 'top' || edge[i] === 'only') h += CONFLICT_BORDER_H + (start[i] ? BLOCK_BANNER_H : 0)
                 if (edge[i] === 'bottom' || edge[i] === 'only') h += CONFLICT_BORDER_H
                 heights[i] = h
             }
@@ -430,12 +472,63 @@
         const headH = el ? paneHeadOffset(el) : 0
         return windowFor(paneMeta.value.theirs.prefix, paneScrollTop.value.theirs - headH, paneViewportH.value, OVERSCAN_PX, 600)
     })
-    const outputPrefix = computed(() => buildPrefix(new Float64Array(resultLines.value.length).fill(CONFLICT_ROW_H)))
+    /**
+     * Display rows for the output pane. Resolved blocks and common context render as code lines; fully unresolved blocks collapse their raw
+     * `<<<<<<< / ======= / >>>>>>>` markers into a single placeholder card with quick-take actions (the underlying resultContent keeps the
+     * raw markers so saving stays impossible until resolved).
+     */
+    interface OutputDisplayLine {
+        kind: 'line'
+        text: string
+        block: number
+    }
+    interface OutputDisplayGap {
+        kind: 'gap'
+        block: number
+        oursN: number
+        theirsN: number
+    }
+    type OutputDisplayRow = OutputDisplayLine | OutputDisplayGap
+    const outputDisplay = computed<OutputDisplayRow[]>(() => {
+        const lines = worktree.value.split('\n')
+        const out: OutputDisplayRow[] = []
+        let blockIdx = 0
+        let i = 0
+        while (i < lines.length) {
+            if (!MARK_OURS.test(lines[i])) {
+                out.push({ kind: 'line', text: lines[i], block: -1 })
+                i++
+                continue
+            }
+            const idx = blockIdx++
+            const block = blocks.value[idx]
+            while (i < lines.length && !MARK_THEIRS.test(lines[i])) i++
+            if (i < lines.length) i++ // skip >>>>>>> line
+            const picked = !!block && (block.pickOursLines.some(Boolean) || block.pickTheirsLines.some(Boolean))
+            if (block && picked) {
+                block.ours.forEach((text, li) => {
+                    if (block.pickOursLines[li]) out.push({ kind: 'line', text, block: idx })
+                })
+                block.theirs.forEach((text, li) => {
+                    if (block.pickTheirsLines[li]) out.push({ kind: 'line', text, block: idx })
+                })
+            } else {
+                out.push({ kind: 'gap', block: idx, oursN: block?.ours.length ?? 0, theirsN: block?.theirs.length ?? 0 })
+            }
+        }
+        return out
+    })
+    const outputPrefix = computed(() => {
+        const heights = new Float64Array(outputDisplay.value.length)
+        for (let r = 0; r < outputDisplay.value.length; r++)
+            heights[r] = outputDisplay.value[r]!.kind === 'gap' ? OUTPUT_GAP_H : CONFLICT_ROW_H
+        return buildPrefix(heights)
+    })
     const outputWindow = computed(() => windowFor(outputPrefix.value, outputScrollTop.value, outputViewportH.value, OVERSCAN_PX, 400))
     const outputRows = computed(() =>
-        resultLines.value
+        outputDisplay.value
             .slice(outputWindow.value.start, outputWindow.value.end)
-            .map((line, off) => ({ line, idx: outputWindow.value.start + off }))
+            .map((row, off) => ({ row, idx: outputWindow.value.start + off }))
     )
 
     function sliceRows(side: Side, win: { start: number; end: number; padTop: number; padBottom: number }) {
@@ -578,7 +671,7 @@
             el.scrollTop = top
             paneScrollTop.value[side] = top
         }
-        const firstOut = resultLines.value.findIndex(line => line.block === blockIndex)
+        const firstOut = outputDisplay.value.findIndex(row => row.block === blockIndex)
         const out = outputEl.value
         if (out && firstOut >= 0 && manualOutput.value === null && firstOut < outputPrefix.value.length - 1) {
             const top = Math.max(0, outputPrefix.value[firstOut]! - out.clientHeight / 3)
@@ -645,7 +738,11 @@
                             width="15"
                             height="15" />
                     </button>
-                    <span class="chip diff-nav-counter">{{ blocks.length ? currentBlock + 1 : 0 }}/{{ blocks.length }}</span>
+                    <span
+                        class="chip diff-nav-counter"
+                        :title="navTitle"
+                        >{{ navLabel }}</span
+                    >
                     <button
                         class="icon-btn"
                         :disabled="!blocks.length"
@@ -790,9 +887,10 @@
                                 <button
                                     v-if="pane.meta.start[row.idx]"
                                     class="block-use-btn"
+                                    :class="{ active: isPicked(pane.side, pane.meta.block[row.idx]) }"
                                     :title="`Use every ${pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel} line of this conflict`"
                                     @click.stop="togglePick(pane.side, pane.meta.block[row.idx])">
-                                    Use {{ pane.side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel }}
+                                    {{ blockUseLabel(pane.side, pane.meta.block[row.idx]) }}
                                 </button>
                                 <span class="ck-all">
                                     <button
@@ -853,45 +951,11 @@
                             class="pane-label"
                             >merged result</span
                         >
-                        <div class="segmented output-head-actions">
-                            <button
-                                class="output-mini-btn output-reset-btn"
-                                title="Discard manual edits — let the picks drive the output again"
-                                @click="discardManualEdit()">
-                                <i-lucide-rotate-ccw
-                                    width="12"
-                                    height="12" />
-                                Reset
-                            </button>
-                            <span class="segmented-divider" />
-                            <button
-                                class="output-mini-btn output-edit-btn"
-                                :disabled="manualOutput !== null"
-                                title="Edit the output by hand"
-                                @click="startManualEdit()">
-                                <i-lucide-pencil
-                                    width="12"
-                                    height="12" />
-                                Edit Manual
-                            </button>
-                            <span class="segmented-divider" />
-                            <span
-                                class="chip conflict-chip"
-                                :class="{ ok: !unresolvedCount }">
-                                {{ unresolvedCount ? `${unresolvedCount} unresolved` : 'all picked' }}
-                            </span>
-                            <span class="segmented-divider" />
-                            <button
-                                class="output-mini-btn output-save-btn"
-                                :disabled="!canSave"
-                                :title="canSave ? 'Write the resolved file and stage it' : 'Pick at least one side for every conflict'"
-                                @click="saveResolved()">
-                                <i-lucide-save
-                                    width="12"
-                                    height="12" />
-                                Save
-                            </button>
-                        </div>
+                        <span
+                            class="chip conflict-chip"
+                            :class="{ ok: !unresolvedCount }">
+                            {{ unresolvedCount ? `${unresolvedCount} unresolved` : 'all picked' }}
+                        </span>
                     </div>
                     <textarea
                         v-if="manualOutput !== null"
@@ -908,23 +972,92 @@
                         <div
                             class="diff-spacer"
                             :style="{ height: `${outputWindow.padTop}px` }" />
-                        <div
+                        <template
                             v-for="row in outputRows"
-                            :key="row.idx"
-                            class="diff-line ctx output-line"
-                            :class="{
-                                'out-hl': row.line.block >= 0,
-                                'out-current': row.line.block >= 0 && row.line.block === currentBlock,
-                                unresolved: row.line.block >= 0 && !isPicked('ours', row.line.block) && !isPicked('theirs', row.line.block),
-                            }">
-                            <span class="ln">{{ row.idx + 1 }}</span>
-                            <!-- eslint-disable-next-line vue/no-v-html -->
-                            <pre v-html="outputHtmlFor(row.idx)" />
-                        </div>
+                            :key="row.idx">
+                            <div
+                                v-if="row.row.kind === 'gap'"
+                                class="out-gap"
+                                :class="{ 'out-current': row.row.block === currentBlock }"
+                                @click="setCurrent(row.row.block)">
+                                <span class="out-gap-label">Unresolved conflict {{ row.row.block + 1 }} — pick a side</span>
+                                <span class="out-gap-sub">{{ row.row.oursN + row.row.theirsN }} lines hidden</span>
+                                <span class="out-gap-actions">
+                                    <button
+                                        class="out-gap-btn"
+                                        :title="`Take every ${repoStore.oursLabel} line of conflict ${row.row.block + 1}`"
+                                        @click.stop="takeBlockSide('ours', row.row.block)">
+                                        {{ repoStore.oursLabel }}
+                                    </button>
+                                    <button
+                                        class="out-gap-btn"
+                                        title="Take both sides (ours first, then theirs)"
+                                        @click.stop="takeBoth(row.row.block)">
+                                        Both
+                                    </button>
+                                    <button
+                                        class="out-gap-btn"
+                                        :title="`Take every ${repoStore.theirsLabel} line of conflict ${row.row.block + 1}`"
+                                        @click.stop="takeBlockSide('theirs', row.row.block)">
+                                        {{ repoStore.theirsLabel }}
+                                    </button>
+                                </span>
+                            </div>
+                            <div
+                                v-else
+                                class="diff-line ctx output-line"
+                                :class="{
+                                    'out-hl': row.row.block >= 0,
+                                    'out-current': row.row.block >= 0 && row.row.block === currentBlock,
+                                }">
+                                <span class="ln">{{ row.idx + 1 }}</span>
+                                <!-- eslint-disable-next-line vue/no-v-html -->
+                                <pre v-html="outputHtmlFor(row.idx)" />
+                            </div>
+                        </template>
                         <div
                             class="diff-spacer"
                             :style="{ height: `${outputWindow.padBottom}px` }" />
                     </div>
+                </div>
+
+                <div class="conflict-footer">
+                    <button
+                        class="footer-btn footer-reset"
+                        title="Discard manual edits — let the picks drive the output again"
+                        @click="discardManualEdit()">
+                        <i-lucide-rotate-ccw
+                            width="12"
+                            height="12" />
+                        Reset
+                    </button>
+                    <button
+                        class="footer-btn footer-edit"
+                        :disabled="manualOutput !== null"
+                        title="Edit the output by hand"
+                        @click="startManualEdit()">
+                        <i-lucide-pencil
+                            width="12"
+                            height="12" />
+                        Edit manual
+                    </button>
+                    <div
+                        class="conflict-progress"
+                        :title="`${resolvedCount} of ${blocks.length} conflicts resolved`">
+                        <div
+                            class="conflict-progress-fill"
+                            :style="{ width: `${progressPct}%` }" />
+                    </div>
+                    <span class="footer-count">{{ resolvedCount }}/{{ blocks.length }} resolved</span>
+                    <button
+                        class="footer-btn footer-save"
+                        :disabled="!canSave"
+                        :title="canSave ? 'Write the resolved file and stage it' : 'Pick at least one side for every conflict'">
+                        <i-lucide-save
+                            width="12"
+                            height="12" />
+                        Save &amp; resolve
+                    </button>
                 </div>
             </template>
         </div>
