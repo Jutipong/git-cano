@@ -148,10 +148,9 @@ export function getRepo(): { path: string; git: SimpleGit } {
 }
 
 /**
- * Repo-scoped lookup that does NOT follow the global active repo. Long async flows
- * (e.g. AI commit-message generation + auto-commit) must pin the repo path at the
- * start and resolve every step through here — otherwise a tab switch mid-flight
- * would stage/commit/push the newly activated repo instead of the intended one.
+ * Repo-scoped lookup that does NOT follow the global active repo. Long async flows (e.g. AI commit-message generation + auto-commit) must
+ * pin the repo path at the start and resolve every step through here — otherwise a tab switch mid-flight would stage/commit/push the newly
+ * activated repo instead of the intended one.
  */
 export function getRepoFor(dir: string): { path: string; git: SimpleGit } {
     if (!dir || typeof dir !== 'string') throw new Error('A repository path is required')
@@ -1183,8 +1182,7 @@ export async function fetchAll(): Promise<string> {
 
 export async function push(force = false, dir?: string): Promise<string> {
     const { git: g } = dir ? getRepoFor(dir) : getRepo()
-    const authedPush = (args: string[]) =>
-        dir ? withAuthEnvFor(dir, git => git.push(args)) : withAuthEnv(git => git.push(args))
+    const authedPush = (args: string[]) => (dir ? withAuthEnvFor(dir, git => git.push(args)) : withAuthEnv(git => git.push(args)))
     const status = await g.status()
     const branch = status.current
     const tracking = status.tracking

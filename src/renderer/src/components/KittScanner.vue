@@ -1,22 +1,16 @@
 <script setup lang="ts">
-    // Segmented "blocks" loader, ported from opencode CLI's Knight Rider spinner:
-    // https://github.com/anomalyco/opencode (packages/tui/src/ui/spinner.ts, MIT).
-    // A window of bright segments sweeps left↔right across a dim track and
-    // dissolves back into the track while the head rests at an edge
-    // (asymmetric timing: longer rest at the left edge).
+    // Text "moving scanner" loader, e.g. [░░░░░████░░░░░░░░].
+    // A green block glides left↔right with a fading comet trail
+    // streaming behind it (trail follows the direction of travel).
     import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-    const SEGMENTS = 16
-    const TRAIL_STEPS = 6
-    const HOLD_START = 30
-    const HOLD_END = 9
-    const TICK_MS = 40
-
-    // Alpha falloff from deriveTrailColors: head 1.0, bloom 0.9, then 0.65^(i-1)
-    const TRAIL_ALPHA = Array.from({ length: TRAIL_STEPS }, (_, i) => (i === 0 ? 1 : i === 1 ? 0.9 : 0.65 ** (i - 1)))
+    const TRACK_LEN = 16
+    const BLOCK = 4
+    const TICK_MS = 70
 
     const frame = ref(0)
-    const totalFrames = SEGMENTS + HOLD_END + (SEGMENTS - 1) + HOLD_START
+    const maxPos = TRACK_LEN - BLOCK
+    const totalFrames = maxPos * 2
     let timer: ReturnType<typeof setInterval> | null = null
 
     onMounted(() => {
@@ -29,39 +23,27 @@
         if (timer) clearInterval(timer)
     })
 
-    const cells = computed(() => {
-        const fi = frame.value
-        const forwardFrames = SEGMENTS
-        const backwardFrames = SEGMENTS - 1
-        let activePos: number
-        let isForward: boolean
-        let holding = false
-        let holdFrame = 0
+    interface Cell {
+        char: string
+        cls: string
+    }
 
-        if (fi < forwardFrames) {
-            activePos = fi
-            isForward = true
-        } else if (fi < forwardFrames + HOLD_END) {
-            activePos = SEGMENTS - 1
-            isForward = true
-            holding = true
-            holdFrame = fi - forwardFrames
-        } else if (fi < forwardFrames + HOLD_END + backwardFrames) {
-            activePos = SEGMENTS - 2 - (fi - forwardFrames - HOLD_END)
-            isForward = false
-        } else {
-            activePos = 0
-            isForward = false
-            holding = true
-            holdFrame = fi - forwardFrames - HOLD_END - backwardFrames
-        }
-
-        return Array.from({ length: SEGMENTS }, (_, i) => {
-            // Directional distance: positive = trailing behind the head
-            const dist = isForward ? activePos - i : i - activePos
-            // While holding, the color index keeps shifting so the window dissolves
-            const index = holding ? dist + holdFrame : dist >= 0 && dist < TRAIL_STEPS ? dist : -1
-            return index >= 0 && index < TRAIL_STEPS ? { active: true, opacity: TRAIL_ALPHA[index] } : { active: false, opacity: 1 }
+    const cells = computed<Cell[]>(() => {
+        const cycle = frame.value % totalFrames
+        const forward = cycle <= maxPos
+        const pos = forward ? cycle : totalFrames - cycle
+        return Array.from({ length: TRACK_LEN }, (_, i) => {
+            if (i >= pos && i < pos + BLOCK) return { char: '█', cls: 'bright' }
+            // Trail streams behind the head: left side when moving right,
+            // right side when moving left.
+            if (forward) {
+                if (i === pos - 1) return { char: '▓', cls: 'trail' }
+                if (i === pos - 2) return { char: '▒', cls: 'faint' }
+            } else {
+                if (i === pos + BLOCK) return { char: '▓', cls: 'trail' }
+                if (i === pos + BLOCK + 1) return { char: '▒', cls: 'faint' }
+            }
+            return { char: '░', cls: 'dim' }
         })
     })
 </script>
@@ -73,27 +55,54 @@
         <span
             v-for="(cell, i) in cells"
             :key="i"
-            class="kitt-seg"
-            :class="{ active: cell.active }"
-            :style="cell.active ? { opacity: cell.opacity } : undefined" />
+            class="kitt-cell"
+            :class="`kitt-${cell.cls}`"
+            >{{ cell.char }}</span
+        >
     </div>
 </template>
 
 <style scoped>
     .kitt-scanner {
-        display: flex;
-        gap: 2px;
-        width: 180px;
-        height: 8px;
+        display: inline-flex;
+        align-items: center;
+        font-family: var(--font-mono, monospace);
+        font-size: 15px;
+        line-height: 1;
+        white-space: pre;
+        user-select: none;
+        animation: kitt-in 0.3s ease;
     }
 
-    .kitt-seg {
-        flex: 1;
-        border-radius: 2px;
-        background: var(--surface-2);
+    @keyframes kitt-in {
+        from {
+            opacity: 0;
+        }
     }
 
-    .kitt-seg.active {
-        background: var(--teal);
+    .kitt-cell {
+        display: inline-block;
+        width: 1ch;
+        text-align: center;
+    }
+
+    .kitt-dim {
+        color: var(--text-muted);
+        opacity: 0.35;
+    }
+
+    .kitt-faint {
+        color: var(--green);
+        opacity: 0.4;
+    }
+
+    .kitt-trail {
+        color: var(--green);
+        opacity: 0.7;
+    }
+
+    .kitt-bright {
+        color: var(--green);
+        text-shadow: 0 0 6px color-mix(in srgb, var(--green) 45%, transparent);
     }
 </style>

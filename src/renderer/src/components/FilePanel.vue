@@ -1199,7 +1199,10 @@
                         v-if="showAiGroup"
                         ref="aiMenuRoot"
                         class="cb-ai-group cb-group-item"
-                        :class="[`cb-ai-mode-${ui.aiCommitMode}`, { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate && !generating }]">
+                        :class="[
+                            `cb-ai-mode-${ui.aiCommitMode}`,
+                            { 'cb-ai-open': aiMenuOpen, 'cb-ai-disabled': !canGenerate && !generating },
+                        ]">
                         <button
                             class="btn small cb-ai-btn"
                             :disabled="!canGenerate && !generating"

@@ -243,7 +243,11 @@ async function callModel(
             } catch (err) {
                 if (canceler?.signal.aborted) throw new Error('Generation cancelled')
                 throw new Error(
-                    err instanceof Error && err.name === 'AbortError' ? 'Request timed out' : err instanceof Error ? err.message : String(err)
+                    err instanceof Error && err.name === 'AbortError'
+                        ? 'Request timed out'
+                        : err instanceof Error
+                          ? err.message
+                          : String(err)
                 )
             } finally {
                 clearTimeout(timer)
