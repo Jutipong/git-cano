@@ -755,7 +755,9 @@
                             class="diff-search-input"
                             type="text"
                             placeholder="Find in diff…"
-                            @keydown.enter.prevent="goToMatch(1)" />
+                            title="First Esc leaves the search box, second Esc closes the diff"
+                            @keydown.enter.prevent="goToMatch(1)"
+                            @keydown.escape.stop="searchInput?.blur()" />
                         <button
                             v-if="searchQuery"
                             type="button"
