@@ -33,7 +33,9 @@
     }>()
 
     const FIRST_LANE_COLOR = '#F55FA0'
-    const COLORS = ['#58E06B', '#B790FF', '#FF8A3D', '#29A8FF', '#22E0D0', '#FFD60A', '#FF4D9E', '#8CFF4D', '#4DD2FF', '#E8FF4D']
+    // one hue each, ordered so neighbours (and the wrap-around) stay far apart —
+    // near-duplicates were pruned because adjacent lanes looked identical
+    const COLORS = ['#58E06B', '#E879F9', '#FF8A3D', '#29A8FF', '#FF6B6B', '#B790FF', '#FFD60A', '#22E0D0']
     const laneW = 32
     const rowH = 28
     /* breathing room between the graph panel's left edge and the first lane */
