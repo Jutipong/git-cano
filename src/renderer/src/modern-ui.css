@@ -3056,6 +3056,28 @@ body {
     background: transparent;
 }
 
+.local-branch-menu-item.accent {
+    color: var(--teal);
+}
+
+.local-branch-menu-item.accent:hover {
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
+.local-branch-menu-item.accent:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+/* generic context menu accent (e.g. remote-branch Solo) — mirrors .danger */
+.context-menu-item.accent {
+    color: var(--teal);
+}
+
+.context-menu-item.accent:hover {
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
 .local-branch-menu-ic {
     flex: 0 0 auto;
     margin-right: 7px;

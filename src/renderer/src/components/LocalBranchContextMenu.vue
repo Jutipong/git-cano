@@ -114,15 +114,16 @@
                 height="13" />
             Create tag
         </button>
+        <div class="local-branch-menu-separator" />
         <button
-            class="local-branch-menu-item"
+            class="local-branch-menu-item accent"
             :disabled="menu.branch.detached"
             @click="act('solo')">
             <Crosshair
                 class="local-branch-menu-ic"
                 width="13"
                 height="13" />
-            {{ menu.soloed ? 'Unsolo' : 'Solo in graph' }}
+            {{ menu.soloed ? 'Unsolo' : 'Solo' }}
         </button>
         <div class="local-branch-menu-separator" />
         <button

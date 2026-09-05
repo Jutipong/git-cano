@@ -42,12 +42,14 @@ export function getConfig(): AiConfig {
             provider,
             opencodeGo: clean(raw.opencodeGo ?? (hasLegacyConfig ? raw : undefined)),
             openrouter: clean(raw.openrouter),
+            commitInstructions: typeof raw.commitInstructions === 'string' ? raw.commitInstructions : '',
         }
     } catch {
         return {
             provider: 'opencode-go',
             opencodeGo: { token: '', modelId: '', models: [] },
             openrouter: { token: '', modelId: '', models: [] },
+            commitInstructions: '',
         }
     }
 }
@@ -64,6 +66,7 @@ export function saveConfig(cfg: AiConfig): void {
         provider: cfg.provider === 'openrouter' ? 'openrouter' : cfg.provider === 'none' ? 'none' : 'opencode-go',
         opencodeGo: cleanProvider(cfg.opencodeGo),
         openrouter: cleanProvider(cfg.openrouter),
+        commitInstructions: typeof cfg.commitInstructions === 'string' ? cfg.commitInstructions.slice(0, 2000) : '',
     }
     const file = configPath()
     fs.writeFileSync(file, JSON.stringify(clean, null, 2))
@@ -161,6 +164,20 @@ function extractContent(family: Family, json: unknown): string {
     return Array.isArray(message?.content) ? message.content.map(part => (typeof part.text === 'string' ? part.text : '')).join('') : ''
 }
 
+/** True when the model burned the whole output budget on thinking/reasoning (or a rambling answer) and left nothing usable. */
+function isLengthCutoff(family: Family, json: unknown): boolean {
+    if (family === 'chat') {
+        const data = json as { choices?: { finish_reason?: string }[] }
+        return data.choices?.[0]?.finish_reason === 'length'
+    }
+    if (family === 'messages') {
+        const data = json as { stop_reason?: string }
+        return data.stop_reason === 'max_tokens'
+    }
+    const data = json as { status?: string; incomplete_details?: { reason?: string } }
+    return data.status === 'incomplete' && data.incomplete_details?.reason === 'max_output_tokens'
+}
+
 async function callModel(
     provider: AiProvider,
     token: string,
@@ -215,8 +232,10 @@ async function callModel(
         }
         const content = extractContent(family, json).trim()
         if (!content && !allowEmpty) {
-            const finish = (json as { choices?: { finish_reason?: string }[] }).choices?.[0]?.finish_reason
-            if (finish === 'length') {
+            // Thinking models can burn the whole budget on reasoning even at 'minimal' —
+            // downgrade the effort and retry before surfacing the length error.
+            if (isLengthCutoff(family, json) && i < EFFORT_FALLBACK.length - 1) continue
+            if (isLengthCutoff(family, json)) {
                 throw new Error(
                     'Model ran out of output tokens before replying (finish_reason=length) — increase the token budget or try a non-thinking model'
                 )
@@ -255,7 +274,8 @@ Style rules:
 - Plain, simple wording a teammate skims in 2 seconds. No jargon, no file lists, no issue IDs, no wordiness.
 - Breaking change → "!" before the colon (e.g. "feat!: ...").
 - Describe only what the diff actually shows; never invent changes.
-- No markdown fences, no quotes. Respond in English.`
+- No markdown fences, no quotes. Respond in English.
+- Output the message directly without showing your reasoning.`
 
 function truncateForPrompt(text: string): string {
     const MAX = 16_000
@@ -281,9 +301,13 @@ export async function generateCommitMessage(formatFirst = false, scope: AiContex
         )
     const changes = await getChangesContext(scope)
     if (!changes.trim()) throw new Error('No uncommitted changes to summarize')
+    const extra = cfg.commitInstructions.trim().slice(0, 2000)
+    const system = extra
+        ? `${COMMIT_SYSTEM_PROMPT}\n\nAdditional user instructions (follow them unless they conflict with the format above):\n${extra}`
+        : COMMIT_SYSTEM_PROMPT
     const prompt = `Write a single commit message for these uncommitted changes:\n\n${truncateForPrompt(changes)}`
-    const content = await callModel(cfg.provider, active.token, active.modelId, COMMIT_SYSTEM_PROMPT, prompt, {
-        maxTokens: 200,
+    const content = await callModel(cfg.provider, active.token, active.modelId, system, prompt, {
+        maxTokens: 512,
         timeoutMs: 30_000,
     })
     return stripFences(content).slice(0, 2500)

@@ -134,7 +134,8 @@
         const soloed = repoStore.soloBranch === branch.name
         const items: MenuItem[] = [
             {
-                label: soloed ? 'Unsolo' : 'Solo in graph',
+                label: soloed ? 'Unsolo' : 'Solo',
+                accent: true,
                 action: () => toggleSolo(branch.name),
             },
             {

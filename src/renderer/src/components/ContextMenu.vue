@@ -82,7 +82,7 @@
                 class="context-menu-separator" />
             <button
                 class="context-menu-item"
-                :class="{ danger: item.danger }"
+                :class="{ danger: item.danger, accent: item.accent }"
                 @click="
                     () => {
                         emit('close')

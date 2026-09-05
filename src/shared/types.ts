@@ -114,6 +114,8 @@ export interface MenuItem {
     label: string
     action?: () => void
     danger?: boolean
+    /** Teal accent (e.g. Solo) — mirrors danger, generic styling only */
+    accent?: boolean
     icon?: string
     separatorBefore?: boolean
 }
@@ -183,6 +185,8 @@ export interface AiConfig {
     provider: AiProvider
     opencodeGo: AiProviderConfig
     openrouter: AiProviderConfig
+    /** Extra user instructions appended to the commit-message system prompt (VS Code-style). */
+    commitInstructions: string
 }
 
 export interface AiTestResult {

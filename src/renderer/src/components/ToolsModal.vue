@@ -90,6 +90,7 @@
         { value: 'openrouter', label: 'OpenRouter' },
     ]
     const selectedProvider = ref<AiProvider>('opencode-go')
+    const commitInstructions = ref('')
     const providerDrafts = reactive<Record<Exclude<AiProvider, 'none'>, AiProviderConfig>>({
         'opencode-go': { token: '', modelId: '', models: [] },
         openrouter: { token: '', modelId: '', models: [] },
@@ -175,6 +176,7 @@
         try {
             await ai.load()
             selectedProvider.value = ai.config.provider
+            commitInstructions.value = ai.config.commitInstructions ?? ''
             Object.assign(providerDrafts['opencode-go'], ai.config.opencodeGo)
             Object.assign(providerDrafts.openrouter, ai.config.openrouter)
             modelOptions.value = selectedProvider.value === 'none' ? [] : [...providerDrafts[selectedProvider.value].models]
@@ -193,6 +195,7 @@
     function currentConfig(): AiConfig {
         return {
             provider: selectedProvider.value,
+            commitInstructions: commitInstructions.value.trim().slice(0, 2000),
             opencodeGo: {
                 ...providerDrafts['opencode-go'],
                 models: providerDrafts['opencode-go'].models.map(model => ({ ...model })),
@@ -1230,6 +1233,26 @@
                         <p class="tools-section-hint">
                             AI features are disabled. Select a provider above to enable commit-message generation.
                         </p>
+                    </div>
+                    <div
+                        v-if="selectedProvider !== 'none'"
+                        class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-sparkles
+                                width="13"
+                                height="13" />
+                            Custom instructions
+                        </strong>
+                        <label class="ai-field">
+                            <span>Extra rules for generated commit messages</span>
+                            <textarea
+                                v-model="commitInstructions"
+                                rows="3"
+                                maxlength="2000"
+                                placeholder="e.g. Always include a scope like (api) or (ui). Use Thai for the description."
+                                autocomplete="off" />
+                        </label>
+                        <p class="tools-section-hint">Appended to the built-in style rules on every generation.</p>
                     </div>
                     <div class="tools-actions">
                         <template v-if="selectedProvider !== 'none'">

@@ -5,6 +5,7 @@ export const useAiStore = defineStore('ai', () => {
         provider: 'opencode-go',
         opencodeGo: { token: '', modelId: '', models: [] },
         openrouter: { token: '', modelId: '', models: [] },
+        commitInstructions: '',
     })
     const provider = computed(() => config.value.provider)
     const activeConfig = computed(() => (provider.value === 'opencode-go' ? config.value.opencodeGo : config.value.openrouter))
