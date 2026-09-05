@@ -740,6 +740,7 @@
                     </button>
                     <span
                         class="chip diff-nav-counter"
+                        :class="{ empty: !blocks.length }"
                         :title="navTitle"
                         >{{ navLabel }}</span
                     >

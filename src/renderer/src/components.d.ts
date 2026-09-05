@@ -46,6 +46,7 @@ declare module 'vue' {
     ILucideColumns2: typeof import('~icons/lucide/columns2')['default']
     ILucideCopy: typeof import('~icons/lucide/copy')['default']
     ILucideCrosshair: typeof import('~icons/lucide/crosshair')['default']
+    ILucideDiff: typeof import('~icons/lucide/diff')['default']
     ILucideDownload: typeof import('~icons/lucide/download')['default']
     ILucideExternalLink: typeof import('~icons/lucide/external-link')['default']
     ILucideFileDiff: typeof import('~icons/lucide/file-diff')['default']

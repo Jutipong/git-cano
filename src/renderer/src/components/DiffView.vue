@@ -775,7 +775,11 @@
                                 width="15"
                                 height="15" />
                         </button>
-                        <span class="chip diff-nav-counter">{{ matchCount ? currentMatch + 1 : 0 }}/{{ matchCount }}</span>
+                        <span
+                            class="chip diff-nav-counter"
+                            :class="{ empty: !matchCount }"
+                            >{{ matchCount ? currentMatch + 1 : 0 }}/{{ matchCount }}</span
+                        >
                         <button
                             class="icon-btn"
                             :disabled="!matchCount"
@@ -787,7 +791,9 @@
                         </button>
                     </div>
                 </div>
-                <div class="diff-nav">
+                <div
+                    class="diff-nav"
+                    title="Navigate between changes">
                     <button
                         class="icon-btn"
                         :disabled="!changeCount"
@@ -797,7 +803,11 @@
                             width="15"
                             height="15" />
                     </button>
-                    <span class="chip diff-nav-counter">{{ changeCount ? currentChange + 1 : 0 }}/{{ changeCount }}</span>
+                    <span
+                        class="chip diff-nav-counter"
+                        :class="{ empty: !changeCount }"
+                        >{{ changeCount ? currentChange + 1 : 0 }}/{{ changeCount }}</span
+                    >
                     <button
                         class="icon-btn"
                         :disabled="!changeCount"
