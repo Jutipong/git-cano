@@ -80,16 +80,19 @@ Key files:
 
 ## Keyboard shortcuts
 
-- All shortcuts live in `src/renderer/src/utils/shortcuts.ts` (`SHORTCUTS` array) — the
-  global `keydown` handler in `App.vue` and the `ShortcutsModal.vue` help table both read
-  from it. When adding a shortcut, add the entry to `SHORTCUTS` (with `mac`/`win` keys)
-  and wire the handler in `App.vue`; macOS accepts both `⌘` and `Ctrl` for the
-  Ctrl-based combos.
-- Current set: Pull `Ctrl+L`/`⌘↓`, Push `Ctrl+P`/`⌘↑`, Open repo
-  `Ctrl+O`, Settings `Ctrl+,`, Refresh `⌘R`, Search commits `Ctrl+F` (commit history;
-  diff search when a diff is open), New tab `⌘⇧P`,
-  Shortcuts modal `?` (outside text inputs), commit via `⌘↵` on the summary textarea,
-  app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel, `Esc` to close diff/deselect.
+- `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
+  `ShortcutsModal.vue` — every entry there must have a real handler. The global
+  `keydown` handler in `App.vue` owns the app-level combos; `DiffView.vue` owns
+  find-in-diff (`Ctrl/⌘+F` while a diff is open, `Enter` in its search box for next
+  match). When adding a shortcut, add the entry to `SHORTCUTS` (with `mac`/`win`
+  keys) and wire the handler. Note: only combos explicitly coded with `metaKey`
+  work with `⌘` — `App.vue` checks `ctrlKey` only (except search), so do not claim
+  blanket `⌘` support.
+- Current set: Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Settings
+  `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit history; diff search
+  when a diff is open), Shortcuts modal `?` (outside text inputs), commit via
+  `⌘↵`/`Ctrl+↵` on the summary textarea, confirm dialogs `Enter`/`Esc`, app zoom
+  `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel, `Esc` to close diff/deselect.
 - Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom,
   which is intentionally handled above the gate in `App.vue`.
 
