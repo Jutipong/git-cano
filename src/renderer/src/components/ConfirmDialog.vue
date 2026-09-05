@@ -32,9 +32,13 @@
         <div class="confirm-dialog">
             <div
                 class="confirm-dialog-header"
-                :class="{ orange: forcePush }">
+                :class="{ orange: forcePush, flow: confirmStore.current.flow && !confirmStore.current.danger, conflict }">
+                <i-lucide-git-merge
+                    v-if="confirmStore.current.flow && !confirmStore.current.danger"
+                    width="16"
+                    height="16" />
                 <i-lucide-alert-triangle
-                    v-if="confirmStore.current.danger"
+                    v-else-if="confirmStore.current.danger"
                     width="17"
                     height="17" />
                 <strong>{{ confirmStore.current.title ?? 'Confirm' }}</strong>
@@ -77,16 +81,15 @@
                             v-if="!conflict"
                             class="confirm-flow-arrow"
                             aria-hidden="true" />
-                        <svg
+                        <span
                             v-else
-                            class="confirm-flow-clash"
-                            viewBox="0 0 28 16"
+                            class="confirm-flow-warn"
+                            title="Blocked — needs a manual resolve"
                             aria-hidden="true">
-                            <path d="M1 8 H 9" />
-                            <path d="M9 4 L 13 8 L 9 12" />
-                            <path d="M27 8 H 19" />
-                            <path d="M19 4 L 15 8 L 19 12" />
-                        </svg>
+                            <i-lucide-alert-triangle
+                                width="11"
+                                height="11" />
+                        </span>
                     </span>
                     <span
                         class="confirm-flow-chip target"

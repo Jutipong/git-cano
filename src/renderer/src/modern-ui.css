@@ -3348,6 +3348,21 @@ body {
     color: var(--orange);
 }
 
+/* merge-style dialogs (flow, not danger): neutral title, tinted branch icon */
+
+.confirm-dialog-header.flow {
+    color: var(--text);
+}
+
+.confirm-dialog-header.flow > svg:first-child {
+    flex: none;
+    color: var(--blue);
+}
+
+.confirm-dialog-header.flow.conflict > svg:first-child {
+    color: var(--orange);
+}
+
 .confirm-dialog-header strong {
     color: var(--text);
     font-size: 13px;
@@ -3479,20 +3494,21 @@ body {
     opacity: 0.45;
 }
 
-.confirm-flow-wire .confirm-flow-clash {
+/* warning badge straddling the broken wire — replaces the old opposing-arrows glyph */
+
+.confirm-flow-wire .confirm-flow-warn {
     position: absolute;
     left: 50%;
-    width: 28px;
-    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: var(--orange);
+    background: var(--surface-1);
+    border: 1.5px solid color-mix(in srgb, var(--orange) 65%, transparent);
+    border-radius: 999px;
     transform: translateX(-50%);
-}
-
-.confirm-flow-clash path {
-    fill: none;
-    stroke: var(--orange);
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
 }
 
 .confirm-status {
@@ -3509,12 +3525,59 @@ body {
     flex: none;
 }
 
+/* merge preflight result renders as one joined card: status head + message body.
+   (Only dialogs passing a status hit these selectors — plain confirms keep the bare <pre>.) */
+
+.confirm-status-warn,
 .confirm-status-ok {
-    color: var(--green);
+    padding: 9px 11px;
+    margin-bottom: 0;
+    font-weight: 600;
+    border: 1px solid;
+    border-bottom: 0;
+    border-radius: 10px 10px 0 0;
 }
 
 .confirm-status-warn {
     color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 9%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 38%, transparent);
+}
+
+.confirm-status-ok {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 8%, transparent);
+    border-color: color-mix(in srgb, var(--green) 35%, transparent);
+}
+
+.confirm-status-warn + pre,
+.confirm-status-ok + pre {
+    padding: 0 11px 9px 32px;
+    border: 1px solid;
+    border-top: 0;
+    border-radius: 0 0 10px 10px;
+}
+
+.confirm-status-warn + pre {
+    background: color-mix(in srgb, var(--orange) 9%, transparent);
+    border-color: color-mix(in srgb, var(--orange) 38%, transparent);
+}
+
+.confirm-status-ok + pre {
+    background: color-mix(in srgb, var(--green) 8%, transparent);
+    border-color: color-mix(in srgb, var(--green) 35%, transparent);
+}
+
+/* a merge that will conflict confirms in orange instead of the default primary */
+
+.confirm-dialog:has(.confirm-flow-wire.conflict) .btn.primary {
+    color: #fff;
+    background: color-mix(in srgb, var(--orange) 82%, #000);
+    border-color: transparent;
+}
+
+.confirm-dialog:has(.confirm-flow-wire.conflict) .btn.primary:hover {
+    background: var(--orange);
 }
 
 .confirm-status-unknown {

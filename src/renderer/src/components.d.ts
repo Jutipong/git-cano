@@ -57,6 +57,7 @@ declare module 'vue' {
     ILucideFolderPlus: typeof import('~icons/lucide/folder-plus')['default']
     ILucideFolderTree: typeof import('~icons/lucide/folder-tree')['default']
     ILucideGitBranch: typeof import('~icons/lucide/git-branch')['default']
+    ILucideGitMerge: typeof import('~icons/lucide/git-merge')['default']
     ILucideGlobe2: typeof import('~icons/lucide/globe2')['default']
     ILucideInfo: typeof import('~icons/lucide/info')['default']
     ILucideKeyboard: typeof import('~icons/lucide/keyboard')['default']
