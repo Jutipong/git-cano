@@ -1,6 +1,6 @@
 <script setup lang="ts">
     // Text "moving scanner" loader, e.g. [░░░░░████░░░░░░░░].
-    // A green block glides left↔right with a fading comet trail
+    // A blue block glides left↔right with a fading comet trail
     // streaming behind it (trail follows the direction of travel).
     import { computed, onMounted, onUnmounted, ref } from 'vue'
 
@@ -92,17 +92,17 @@
     }
 
     .kitt-faint {
-        color: var(--green);
+        color: var(--teal);
         opacity: 0.4;
     }
 
     .kitt-trail {
-        color: var(--green);
+        color: var(--teal);
         opacity: 0.7;
     }
 
     .kitt-bright {
-        color: var(--green);
-        text-shadow: 0 0 6px color-mix(in srgb, var(--green) 45%, transparent);
+        color: var(--teal);
+        text-shadow: 0 0 6px color-mix(in srgb, var(--teal) 45%, transparent);
     }
 </style>
