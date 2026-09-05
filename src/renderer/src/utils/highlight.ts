@@ -48,10 +48,6 @@ const KEYWORDS_JS = [
     'readonly',
     'as',
     'satisfies',
-    'null',
-    'undefined',
-    'true',
-    'false',
     'declare',
     'namespace',
 ]
@@ -81,10 +77,6 @@ const KEYWORDS_PY = [
     'or',
     'not',
     'is',
-    'None',
-    'True',
-    'False',
-    'self',
 ]
 const KEYWORDS_SH = [
     'if',
@@ -105,11 +97,183 @@ const KEYWORDS_SH = [
     'export',
     'source',
 ]
+const KEYWORDS_GO = [
+    'package',
+    'import',
+    'func',
+    'return',
+    'if',
+    'else',
+    'for',
+    'range',
+    'switch',
+    'case',
+    'default',
+    'break',
+    'continue',
+    'struct',
+    'interface',
+    'type',
+    'map',
+    'chan',
+    'const',
+    'var',
+    'go',
+    'defer',
+    'select',
+    'goto',
+    'fallthrough',
+    'iota',
+]
+const KEYWORDS_RUST = [
+    'fn',
+    'return',
+    'if',
+    'else',
+    'for',
+    'while',
+    'loop',
+    'in',
+    'match',
+    'break',
+    'continue',
+    'struct',
+    'enum',
+    'impl',
+    'trait',
+    'type',
+    'where',
+    'use',
+    'mod',
+    'pub',
+    'crate',
+    'mut',
+    'const',
+    'static',
+    'let',
+    'move',
+    'ref',
+    'dyn',
+    'async',
+    'await',
+    'unsafe',
+    'extern',
+    'as',
+    'try',
+    'yield',
+    'union',
+    'macro_rules',
+]
+const KEYWORDS_JAVA = [
+    'package',
+    'import',
+    'class',
+    'interface',
+    'enum',
+    'extends',
+    'implements',
+    'return',
+    'if',
+    'else',
+    'for',
+    'while',
+    'do',
+    'switch',
+    'case',
+    'default',
+    'break',
+    'continue',
+    'new',
+    'try',
+    'catch',
+    'finally',
+    'throw',
+    'throws',
+    'synchronized',
+    'volatile',
+    'transient',
+    'static',
+    'final',
+    'abstract',
+    'public',
+    'private',
+    'protected',
+    'native',
+    'strictfp',
+    'assert',
+    'instanceof',
+    'var',
+    'record',
+    'sealed',
+    'permits',
+    'void',
+    'int',
+    'long',
+    'short',
+    'byte',
+    'char',
+    'float',
+    'double',
+    'boolean',
+]
+
+// Simple Dark `constant` / `variable.language` scope — purple #BD93F9, not keywords.
+const CONSTANT_WORDS = new Set(['true', 'false', 'null', 'undefined', 'NaN', 'Infinity', 'None', 'True', 'False', 'nil', 'NULL'])
+
+// Simple Dark `support.*` scope — cyan #8BE9FD (builtin functions).
+const SUPPORT_PY = new Set([
+    'print',
+    'len',
+    'range',
+    'str',
+    'int',
+    'float',
+    'bool',
+    'list',
+    'dict',
+    'set',
+    'tuple',
+    'open',
+    'enumerate',
+    'zip',
+    'min',
+    'max',
+    'sum',
+    'abs',
+    'repr',
+    'type',
+    'isinstance',
+    'hasattr',
+    'getattr',
+    'setattr',
+    'callable',
+    'iter',
+    'next',
+    'object',
+])
+const SUPPORT_GO = new Set([
+    'new',
+    'make',
+    'len',
+    'cap',
+    'append',
+    'copy',
+    'delete',
+    'panic',
+    'recover',
+    'print',
+    'println',
+    'close',
+    'clear',
+    'min',
+    'max',
+])
+const SUPPORT_EMPTY = new Set<string>()
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;' }
 const escapeHtml = (text: string) => text.replace(/[&<>]/g, ch => ESCAPES[ch])
 
-type Mode = 'generic' | 'css' | 'json' | 'python' | 'shell' | 'vue'
+type Mode = 'generic' | 'css' | 'json' | 'python' | 'shell' | 'vue' | 'go' | 'rust' | 'java'
 
 function modeFor(filename: string): Mode {
     const ext = filename.slice(filename.lastIndexOf('.') + 1).toLowerCase()
@@ -117,6 +281,9 @@ function modeFor(filename: string): Mode {
     if (ext === 'vue') return 'vue'
     if (['json', 'jsonc', 'json5'].includes(ext)) return 'json'
     if (ext === 'py') return 'python'
+    if (ext === 'go') return 'go'
+    if (ext === 'rs') return 'rust'
+    if (ext === 'java') return 'java'
     if (['sh', 'bash', 'zsh'].includes(ext) || !filename.includes('.')) return 'shell'
     return 'generic'
 }
@@ -124,7 +291,16 @@ function modeFor(filename: string): Mode {
 function keywordsFor(mode: Mode): Set<string> {
     if (mode === 'python') return new Set(KEYWORDS_PY)
     if (mode === 'shell') return new Set(KEYWORDS_SH)
+    if (mode === 'go') return new Set(KEYWORDS_GO)
+    if (mode === 'rust') return new Set(KEYWORDS_RUST)
+    if (mode === 'java') return new Set(KEYWORDS_JAVA)
     return new Set(KEYWORDS_JS)
+}
+
+function supportsFor(mode: Mode): Set<string> {
+    if (mode === 'python') return SUPPORT_PY
+    if (mode === 'go') return SUPPORT_GO
+    return SUPPORT_EMPTY
 }
 
 interface TokState {
@@ -132,6 +308,7 @@ interface TokState {
     htmlComment: boolean
     htmlString: boolean
     backtick: boolean
+    paramDepth: number
 }
 
 type Section = 'template' | 'script' | 'style' | 'json' | 'other'
@@ -173,16 +350,108 @@ function findStringEnd(text: string, start: number): number {
     return -1
 }
 
-function genericWord(word: string, code: string, end: number, keywords: Set<string>): string {
+function genericWord(word: string, code: string, end: number, keywords: Set<string>, supports: Set<string>): string {
     const escaped = escapeHtml(word)
     if (keywords.has(word)) return `<span class="tok-keyword">${escaped}</span>`
-    if (word === 'this' || word === 'super') return `<span class="tok-number">${escaped}</span>`
+    if (word === 'this' || word === 'super' || word === 'self' || word === 'Self' || CONSTANT_WORDS.has(word))
+        return `<span class="tok-number">${escaped}</span>`
+    if (supports.has(word)) return `<span class="tok-support">${escaped}</span>`
+    // PascalCase / ALL_CAPS before call-check: constructors and type references are
+    // Simple Dark `entity.name.type` (blue), not functions.
+    if (/^[A-Z][\w$]*$/.test(word)) return `<span class="tok-type">${escaped}</span>`
     if (/^\s*\(/.test(code.slice(end))) return `<span class="tok-function">${escaped}</span>`
-    if (/^[A-Z][A-Z0-9_]*$/.test(word)) return `<span class="tok-type">${escaped}</span>`
     return escaped
 }
 
-function renderScript(content: string, state: TokState, keywords: Set<string>, hashComments: boolean): string {
+/** String-aware forward match for the `)` closing the `(` at openIdx; -1 if none on this line. */
+function matchParen(text: string, openIdx: number): number {
+    let depth = 0
+    let quote: string | null = null
+    for (let k = openIdx; k < text.length; k++) {
+        const c = text[k]!
+        if (quote) {
+            if (c === '\\') {
+                k++
+                continue
+            }
+            if (c === quote) quote = null
+            continue
+        }
+        if (c === '"' || c === "'" || c === '`') {
+            quote = c
+            continue
+        }
+        if (c === '(') depth++
+        else if (c === ')') {
+            depth--
+            if (depth === 0) return k
+        }
+    }
+    return -1
+}
+
+/**
+ * True when the `(` at openIdx opens a _definition_ parameter list: `function f(` / `func f(` / `fn f(` / `def f(` / `= (` / `= async (` /
+ * `(a, b) =>`. Call-site parens (`foo(`, `if (`, `x = f(`) return false so arguments keep base color, matching Simple Dark where only
+ * `variable.parameter` is orange.
+ */
+function isDefParen(text: string, openIdx: number): boolean {
+    const before = text.slice(0, openIdx)
+    if (/\b(?:function|def|func|fn)(?![\w$])\s*[\w$]*\s*$/.test(before)) return true
+    if (/(?:^|[^=!<>|&?])=\s*(?:async\s+)?$/.test(before)) return true
+    const close = matchParen(text, openIdx)
+    if (close !== -1 && /^\s*=>/.test(text.slice(close + 1))) return true
+    return false
+}
+
+function renderTemplate(raw: string, keywords: Set<string>, supports: Set<string>, hashComments: boolean): string {
+    let out = ''
+    let idx = 0
+    while (idx < raw.length) {
+        const start = raw.indexOf('${', idx)
+        if (start === -1) {
+            out += `<span class="tok-string">${escapeHtml(raw.slice(idx))}</span>`
+            break
+        }
+        if (start > idx) out += `<span class="tok-string">${escapeHtml(raw.slice(idx, start))}</span>`
+        let depth = 1
+        let k = start + 2
+        let quote: string | null = null
+        while (k < raw.length && depth > 0) {
+            const c = raw[k]!
+            if (quote) {
+                if (c === '\\') {
+                    k += 2
+                    continue
+                }
+                if (c === quote) quote = null
+                k++
+                continue
+            }
+            if (c === '"' || c === "'" || c === '`') {
+                quote = c
+                k++
+                continue
+            }
+            if (c === '{') depth++
+            else if (c === '}') depth--
+            k++
+        }
+        const closed = depth === 0
+        const inner = raw.slice(start + 2, closed ? k - 1 : raw.length)
+        const tmp: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false, paramDepth: 0 }
+        out += `\${${renderScript(inner, tmp, keywords, supports, hashComments)}${closed ? '}' : ''}`
+        idx = k
+    }
+    return out
+}
+
+const NUMBER_PATTERN = /0[xX][0-9a-fA-F_]+n?|0[bB][01_]+n?|0[oO][0-7_]+n?|\d[\d_]*(?:\.\d[\d_]*)?(?:[eE][+-]?\d[\d_]*)?n?/
+const REGEX_PATTERN = /\/(?:[^\\/\n[]|\\.|\[[^\]\n]*])+\/[gimsuy]*/
+const REGEX_PREV = /[=(:,[!&|?{};]/
+const REGEX_PREV_KEYWORD = /\b(?:return|typeof|instanceof|in|of|new|delete|void|throw|case|do|else|yield|await)\b\s*$/
+
+function renderScript(content: string, state: TokState, keywords: Set<string>, supports: Set<string>, hashComments: boolean): string {
     let out = ''
     let rest = content
     if (state.blockComment) {
@@ -202,9 +471,13 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
 
     let i = 0
     let plain = ''
+    let paramDepth = state.paramDepth || 0
     const flush = () => {
         out += escapeHtml(plain)
         plain = ''
+    }
+    const syncParams = () => {
+        state.paramDepth = paramDepth
     }
     while (i < rest.length) {
         const ch = rest[i]!
@@ -212,6 +485,7 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
         if ((hashComments && ch === '#' && two !== '#{') || two === '//') {
             flush()
             out += `<span class="tok-comment">${escapeHtml(rest.slice(i))}</span>`
+            syncParams()
             break
         }
         if (two === '/*') {
@@ -220,6 +494,7 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
             if (end === -1) {
                 out += `<span class="tok-comment">${escapeHtml(rest.slice(i))}</span>`
                 state.blockComment = true
+                syncParams()
                 break
             }
             out += `<span class="tok-comment">${escapeHtml(rest.slice(i, end + 2))}</span>`
@@ -232,15 +507,36 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
             if (end === -1) {
                 out += `<span class="tok-string">${escapeHtml(rest.slice(i))}</span>`
                 if (ch === '`') state.backtick = true
+                syncParams()
                 break
             }
-            out += `<span class="tok-string">${escapeHtml(rest.slice(i, end + 1))}</span>`
+            const raw = rest.slice(i, end + 1)
+            // Template literal: string green outside, real code colors inside ${...}.
+            out +=
+                ch === '`' && raw.includes('${')
+                    ? renderTemplate(raw, keywords, supports, hashComments)
+                    : `<span class="tok-string">${escapeHtml(raw)}</span>`
             i = end + 1
             continue
         }
+        // Regex literal (Simple Dark `string.regexp`, green): only where a value is
+        // expected, so `a / b` division stays plain.
+        if (ch === '/' && two !== '//' && two !== '/*') {
+            const prev = rest.slice(0, i).replace(/\s+$/, '')
+            const prevCh = prev.slice(-1)
+            if (!prevCh || REGEX_PREV.test(prevCh) || REGEX_PREV_KEYWORD.test(prev)) {
+                const m = REGEX_PATTERN.exec(rest.slice(i))
+                if (m && m[0].length > 2) {
+                    flush()
+                    out += `<span class="tok-function">${escapeHtml(m[0])}</span>`
+                    i += m[0].length
+                    continue
+                }
+            }
+        }
         if (/[0-9]/.test(ch) && !(i > 0 && IDENT.test(rest[i - 1]!))) {
             flush()
-            const m = /\d+(?:\.\d+)?/.exec(rest.slice(i))!
+            const m = NUMBER_PATTERN.exec(rest.slice(i))!
             out += `<span class="tok-number">${escapeHtml(m[0])}</span>`
             i += m[0].length
             continue
@@ -250,14 +546,44 @@ function renderScript(content: string, state: TokState, keywords: Set<string>, h
             while (j < rest.length && IDENT.test(rest[j]!)) j++
             const word = rest.slice(i, j)
             flush()
-            out += genericWord(word, rest, j, keywords)
+            // Definition parameters (Simple Dark `variable.parameter`, orange).
+            // Type names, constants and `this`/`super` keep their own colors.
+            if (
+                paramDepth > 0 &&
+                !keywords.has(word) &&
+                !supports.has(word) &&
+                !CONSTANT_WORDS.has(word) &&
+                word !== 'this' &&
+                word !== 'super' &&
+                word !== 'self' &&
+                word !== 'Self' &&
+                !/^[A-Z]/.test(word)
+            ) {
+                out += `<span class="tok-param">${escapeHtml(word)}</span>`
+            } else {
+                out += genericWord(word, rest, j, keywords, supports)
+            }
             i = j
+            continue
+        }
+        if (ch === '(') {
+            if (paramDepth === 0 && isDefParen(rest, i)) paramDepth = 1
+            else if (paramDepth > 0) paramDepth++
+            plain += ch
+            i++
+            continue
+        }
+        if (ch === ')' && paramDepth > 0) {
+            paramDepth--
+            plain += ch
+            i++
             continue
         }
         plain += ch
         i++
     }
     flush()
+    syncParams()
     return out
 }
 
@@ -426,7 +752,14 @@ function highlightJson(code: string): string {
     return out
 }
 
-function renderSegment(content: string, section: Section, state: TokState, keywords: Set<string>, hashComments: boolean): string {
+function renderSegment(
+    content: string,
+    section: Section,
+    state: TokState,
+    keywords: Set<string>,
+    supports: Set<string>,
+    hashComments: boolean
+): string {
     if (!content) return ''
     switch (section) {
         case 'template':
@@ -436,7 +769,7 @@ function renderSegment(content: string, section: Section, state: TokState, keywo
         case 'json':
             return highlightJson(content)
         case 'script':
-            return renderScript(content, state, keywords, hashComments)
+            return renderScript(content, state, keywords, supports, hashComments)
         default:
             return escapeHtml(content)
     }
@@ -444,15 +777,16 @@ function renderSegment(content: string, section: Section, state: TokState, keywo
 
 export function highlightLine(code: string, filename: string): string {
     const mode = modeFor(filename)
-    const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
+    const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false, paramDepth: 0 }
     const section = sectionFor(filename)
-    return renderSegment(code, section, state, keywordsFor(mode), mode === 'python' || mode === 'shell')
+    return renderSegment(code, section, state, keywordsFor(mode), supportsFor(mode), mode === 'python' || mode === 'shell')
 }
 
 export interface LineRenderContext {
     section: Section
     state: TokState
     keywords: Set<string>
+    supports: Set<string>
     hashComments: boolean
 }
 
@@ -465,8 +799,9 @@ export function computeLineStates(lines: DiffLine[], filename: string): LineRend
     const mode = modeFor(filename)
     const isSfc = mode === 'vue'
     const keywords = keywordsFor(mode)
+    const supports = supportsFor(mode)
     const hashComments = mode === 'python' || mode === 'shell'
-    const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false }
+    const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false, paramDepth: 0 }
     let section = sectionFor(filename)
     let tagged = !isSfc
     const contexts: LineRenderContext[] = []
@@ -490,9 +825,9 @@ export function computeLineStates(lines: DiffLine[], filename: string): LineRend
                     section = initialSection
                 }
             }
-            renderSegment(content, initialSection, state, keywords, hashComments)
+            renderSegment(content, initialSection, state, keywords, supports, hashComments)
         }
-        contexts.push({ section: initialSection, state: initialState, keywords, hashComments })
+        contexts.push({ section: initialSection, state: initialState, keywords, supports, hashComments })
     }
     return contexts
 }
@@ -504,7 +839,9 @@ export function highlightLineAt(
     render: (line: DiffLine, highlight: (content: string) => string) => string
 ): string {
     if (line.type === 'hunk' || line.type === 'meta') return escapeHtml(line.text)
-    return render(line, seg => renderSegment(seg, context.section, { ...context.state }, context.keywords, context.hashComments))
+    return render(line, seg =>
+        renderSegment(seg, context.section, { ...context.state }, context.keywords, context.supports, context.hashComments)
+    )
 }
 
 export function highlightDiffLines(

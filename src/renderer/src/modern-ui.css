@@ -1403,9 +1403,16 @@ body {
 .diff-line.add mark.search-hit,
 .diff-line.del mark.search-hit,
 .diff-line mark.search-hit {
-    background: color-mix(in srgb, var(--teal) 55%, transparent);
+    background: color-mix(in srgb, var(--orange) 55%, transparent);
     color: var(--text);
     border-radius: 2px;
+    outline: 1px solid color-mix(in srgb, var(--orange) 80%, transparent);
+}
+
+/* Current match's line: full-strength highlight so it stands out from the other matches. */
+.diff-line.search-current mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 85%, transparent);
+    outline: 1px solid var(--orange);
 }
 
 .diff-line {
@@ -2189,7 +2196,8 @@ body {
 .search-hit {
     padding: 0 1px;
     color: inherit;
-    background: color-mix(in srgb, var(--teal) 32%, transparent);
+    background: color-mix(in srgb, var(--orange) 45%, transparent);
+    outline: 1px solid color-mix(in srgb, var(--orange) 65%, transparent);
     border-radius: 3px;
 }
 
