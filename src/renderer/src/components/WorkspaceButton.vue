@@ -21,6 +21,9 @@
     const renaming = ref('')
     const renameValue = ref('')
     const renameInput = ref<HTMLInputElement | null>(null)
+    const draggingName = ref<string | null>(null)
+    const dropKey = ref<string | null>(null)
+    const dropSide = ref<'before' | 'after' | null>(null)
 
     const isDuplicate = computed(() => {
         const trimmed = newName.value.trim()
@@ -47,6 +50,7 @@
         if (!open.value) {
             resetAdd()
             cancelRename()
+            clearDrag()
         }
     }
 
@@ -136,6 +140,59 @@
         open.value = false
         resetAdd()
         cancelRename()
+        clearDrag()
+    }
+
+    function clearDrag() {
+        draggingName.value = null
+        dropKey.value = null
+        dropSide.value = null
+    }
+
+    function onDragStart(name: string, e: DragEvent) {
+        if (renaming.value || switching.value) {
+            e.preventDefault()
+            return
+        }
+        draggingName.value = name
+        dropKey.value = null
+        dropSide.value = null
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move'
+            e.dataTransfer.setData('text/plain', name)
+        }
+    }
+
+    function onDragOver(name: string, index: number, e: DragEvent) {
+        e.preventDefault()
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+        const fromName = draggingName.value
+        if (!fromName || renaming.value) return
+        const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+        const side = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after'
+        dropKey.value = name
+        dropSide.value = side
+        const from = ws.names.indexOf(fromName)
+        if (from < 0) return
+        const insertion = side === 'before' ? index : index + 1
+        const to = insertion - (from < insertion ? 1 : 0)
+        if (to !== from && to >= 0 && to < ws.names.length) ws.reorder(from, to)
+    }
+
+    function onDragLeave(name: string) {
+        if (dropKey.value === name) {
+            dropKey.value = null
+            dropSide.value = null
+        }
+    }
+
+    function onDrop(e: DragEvent) {
+        e.preventDefault()
+        clearDrag()
+    }
+
+    function onDragEnd() {
+        clearDrag()
     }
 
     onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
@@ -165,10 +222,21 @@
             v-if="open"
             class="workspace-pop">
             <div
-                v-for="name in ws.names"
+                v-for="(name, index) in ws.names"
                 :key="name"
                 class="workspace-row"
-                :class="{ renaming: renaming === name }">
+                :class="{
+                    renaming: renaming === name,
+                    dragging: draggingName === name,
+                    'drop-before': dropKey === name && dropSide === 'before' && draggingName !== name,
+                    'drop-after': dropKey === name && dropSide === 'after' && draggingName !== name,
+                }"
+                :draggable="!renaming && !switching"
+                @dragstart="onDragStart(name, $event)"
+                @dragover="onDragOver(name, index, $event)"
+                @dragleave="onDragLeave(name)"
+                @drop="onDrop($event)"
+                @dragend="onDragEnd">
                 <template v-if="renaming === name">
                     <input
                         ref="renameInput"

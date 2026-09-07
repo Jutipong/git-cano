@@ -73,11 +73,17 @@ export const useWorkspaceStore = defineStore(
             sessions.value = { ...sessions.value, [name]: session }
         }
 
+        function reorder(from: number, to: number) {
+            if (from === to || from < 0 || to < 0 || from >= names.value.length || to >= names.value.length) return
+            const [moved] = names.value.splice(from, 1)
+            names.value.splice(to, 0, moved)
+        }
+
         function getSession(name: string): WorkspaceSession | null {
             return sessions.value[name] ?? null
         }
 
-        return { names, active, sessions, add, remove, rename, select, setSession, getSession }
+        return { names, active, sessions, add, remove, rename, select, setSession, getSession, reorder }
     },
     {
         persist: {
