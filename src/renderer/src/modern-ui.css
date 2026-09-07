@@ -148,56 +148,56 @@
 }
 
 :root[data-theme='terminal'] {
-    --canvas: #0a0c10;
-    --surface-0: #0f1318;
-    --surface-1: #13181e;
-    --surface-2: #181e26;
-    --surface-3: #1e2530;
-    --surface-hover: #1f2934;
-    --surface-selected: #243041;
-    --line: #2a333e;
-    --line-soft: rgba(76, 195, 138, 0.3);
-    --text: #e6edf3;
-    --text-secondary: #b8c2cd;
-    --text-muted: #8b96a3;
-    --teal: #4cc38a;
-    --teal-dark: #35a46f;
-    --blue: #7aa2f7;
-    --green: #3fb950;
-    --orange: #d29922;
-    --red: #f85149;
-    --purple: #bc8cff;
-    --pink: #ff7eb6;
-    --yellow: #e3b341;
-    --diff-bg: #13181e;
-    --diff-inline-bg: #243041;
-    --toast-bg: #13181e;
-    --toast-border: #232b34;
-    --conflict-bg: #243041;
-    --conflict-border: #4cc38a;
-    --conflict-text: #e3b341;
-    --shadow: rgba(0, 0, 0, 0.7);
+    --canvas: #252b42;
+    --surface-0: #272d46;
+    --surface-1: #2b324c;
+    --surface-2: #313956;
+    --surface-3: #384162;
+    --surface-hover: #343d5e;
+    --surface-selected: #3c466e;
+    --line: #434d73;
+    --line-soft: rgba(138, 170, 240, 0.24);
+    --text: #aeb7d2;
+    --text-secondary: #949cbd;
+    --text-muted: #767f9d;
+    --teal: #849fe6;
+    --teal-dark: #6a86cc;
+    --blue: #96b2ec;
+    --green: #a3c188;
+    --orange: #d9967a;
+    --red: #df899b;
+    --purple: #bba8ea;
+    --pink: #eaa0ba;
+    --yellow: #d2b384;
+    --diff-bg: #272d46;
+    --diff-inline-bg: #3c466e;
+    --toast-bg: #2b324c;
+    --toast-border: #434d73;
+    --conflict-bg: #3c466e;
+    --conflict-border: #849fe6;
+    --conflict-text: #d2b384;
+    --shadow: rgba(0, 0, 0, 0.55);
     --radius-card: 4px;
     --radius-pill: 2px;
     --font-ui: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
 }
 
 :root[data-theme='terminal'] mark {
-    background: #1d3b2e;
+    background: #384364;
 }
 
 /* ===== Terminal chrome — full TUI treatment (terminal theme only) ===== */
 
 /* dotted-grid backdrop instead of the teal glow */
 :root[data-theme='terminal'] .app {
-    background: radial-gradient(circle, rgba(76, 195, 138, 0.09) 1px, transparent 1.4px), var(--canvas);
+    background: radial-gradient(circle, rgba(138, 170, 240, 0.08) 1px, transparent 1.4px), var(--canvas);
     background-size:
         22px 22px,
         auto;
 }
 
 :root[data-theme='terminal'] .app-empty {
-    background: radial-gradient(circle, rgba(76, 195, 138, 0.09) 1px, transparent 1.4px), var(--canvas);
+    background: radial-gradient(circle, rgba(138, 170, 240, 0.08) 1px, transparent 1.4px), var(--canvas);
     background-size:
         22px 22px,
         auto;
@@ -235,7 +235,7 @@
 }
 
 :root[data-theme='terminal'] ::selection {
-    background: rgba(76, 195, 138, 0.35);
+    background: rgba(138, 170, 240, 0.3);
 }
 
 /* ---- raw pass: flat, instant, stark (no depth, no fades) ---- */
@@ -4582,7 +4582,7 @@ body {
 }
 
 :root[data-theme='terminal'] .diff-body::-webkit-scrollbar-thumb {
-    background: #232b34;
+    background: #343d5e;
 }
 
 .diff-body::-webkit-scrollbar-track,

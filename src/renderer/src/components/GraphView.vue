@@ -37,8 +37,8 @@
     // near-duplicates were pruned because adjacent lanes looked identical
     const COLORS = ['#58E06B', '#E879F9', '#FF8A3D', '#29A8FF', '#FF6B6B', '#B790FF', '#FFD60A', '#22E0D0']
     /** Muted lane palette used while the terminal theme is active — toned to fit the theme but still distinct per lane. */
-    const TERMINAL_FIRST_LANE_COLOR = '#CA74A0'
-    const TERMINAL_COLORS = ['#6CC280', '#C284D5', '#D08E65', '#50A0D9', '#D07B80', '#A592D9', '#D0BC46', '#4CC2BD']
+    const TERMINAL_FIRST_LANE_COLOR = '#DF899B'
+    const TERMINAL_COLORS = ['#A3C188', '#BBA8EA', '#D9967A', '#85ADE2', '#D2B384', '#96B2EC', '#85C8BE', '#BCC3DA']
     const laneW = 32
     const rowH = 28
     /* breathing room between the graph panel's left edge and the first lane */

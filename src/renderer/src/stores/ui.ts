@@ -65,7 +65,7 @@ const themeOptions: ThemeOption[] = [
     { value: 'dark', label: 'Dark', description: 'Deep navy with vivid blue accents', icon: 'moon' },
     { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon' },
     { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon' },
-    { value: 'terminal', label: 'Terminal', description: 'Dark CLI agent with mint accents', icon: 'moon' },
+    { value: 'terminal', label: 'Terminal', description: 'Dusty navy TUI with blue accents', icon: 'moon' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
 ]
 
