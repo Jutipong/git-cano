@@ -34,46 +34,69 @@
 }
 
 :root[data-theme='light'] {
-    --canvas: #e9e6df;
-    --surface-0: #efede7;
-    --surface-1: #f4f2ec;
-    --surface-2: #e4e1d9;
-    --surface-3: #dcd8ce;
-    --surface-hover: #e3dfd5;
-    --surface-selected: #dcd8ce;
-    --line: #d8d3c6;
-    --line-soft: rgba(60, 55, 45, 0.16);
-    --text: #2f3538;
-    --text-secondary: #5a6167;
-    --text-muted: #7d838a;
-    --teal: #0a66ff;
-    --teal-dark: #0050d0;
-    --blue: #0b74de;
-    --green: #128a43;
-    --orange: #c2410c;
-    --red: #d91f2d;
-    --purple: #7c3aed;
-    --pink: #db2777;
-    --yellow: #a16207;
-    --diff-bg: #f4f2ec;
-    --diff-inline-bg: #e4e1d9;
-    --toast-bg: #f4f2ec;
-    --toast-border: #d8d3c6;
-    --conflict-bg: #f6edd3;
-    --conflict-border: #dcc88f;
-    --conflict-text: #7a5c10;
-    --shadow: rgba(60, 55, 45, 0.12);
+    --canvas: #cbc7be;
+    --surface-0: #cfccc3;
+    --surface-1: #d5d1c8;
+    --surface-2: #c0bcb1;
+    --surface-3: #b3afa4;
+    --surface-hover: #b9b4a8;
+    --surface-selected: #b3afa4;
+    --line: #a29e92;
+    --line-soft: rgba(50, 45, 35, 0.22);
+    --text: #232a2e;
+    --text-secondary: #454d52;
+    --text-muted: #646b71;
+    --teal: #004fd8;
+    --teal-dark: #003fae;
+    --blue: #0a5fc2;
+    --green: #0b6e33;
+    --orange: #a8350a;
+    --red: #b31220;
+    --purple: #5f24c9;
+    --pink: #b3125f;
+    --yellow: #7a5a00;
+    --diff-bg: #d5d1c8;
+    --diff-inline-bg: #c0bcb1;
+    --toast-bg: #d5d1c8;
+    --toast-border: #a29e92;
+    --conflict-bg: #d3c9a4;
+    --conflict-border: #b39b5e;
+    --conflict-text: #5f4a08;
+    --shadow: rgba(50, 45, 35, 0.2);
     --radius-card: 12px;
     --radius-pill: 999px;
 }
 
-/* ===== Light theme — eye-strain tuning (warm gray base + vivid accents) ===== */
-/* softer backdrop glow on bright paper */
-:root[data-theme='light'] .app {
-    background: radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--teal) 4%, transparent), transparent 42%), var(--canvas);
-}
+/* ===== Light theme — eye-strain tuning (dim warm gray + vivid accents) ===== */
+/* flat backdrop: no glow hotspot on dim paper */
+:root[data-theme='light'] .app,
 :root[data-theme='light'] .app-empty {
-    background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--teal) 4%, transparent), transparent 44%), var(--canvas);
+    background: var(--canvas);
+}
+/* dark-on-light syntax tokens (base set targets dark backgrounds) */
+:root[data-theme='light'] .tok-comment {
+    color: #596066;
+}
+:root[data-theme='light'] .tok-string {
+    color: #116329;
+}
+:root[data-theme='light'] .tok-number {
+    color: #6e30c9;
+}
+:root[data-theme='light'] .tok-keyword {
+    color: #b3125f;
+}
+:root[data-theme='light'] .tok-function {
+    color: #0b6e33;
+}
+:root[data-theme='light'] .tok-param {
+    color: #a8350a;
+}
+:root[data-theme='light'] .tok-type {
+    color: #0b5fc2;
+}
+:root[data-theme='light'] .tok-support {
+    color: #0b6e99;
 }
 /* gentler row highlight on bright paper */
 :root[data-theme='light'] .graph-row:hover::after,
@@ -4701,7 +4724,7 @@ body {
 }
 
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
-    background: #cfc9bb;
+    background: #a29e92;
 }
 
 :root[data-theme='dark-modern'] .diff-body::-webkit-scrollbar-thumb {
