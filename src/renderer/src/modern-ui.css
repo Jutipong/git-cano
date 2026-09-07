@@ -34,37 +34,71 @@
 }
 
 :root[data-theme='light'] {
-    --canvas: #faf5e8;
-    --surface-0: #f8f1e3;
-    --surface-1: #faf5e8;
-    --surface-2: #f0e8d8;
-    --surface-3: #f3ecde;
-    --surface-hover: #ebe4d5;
-    --surface-selected: #ebe4d5;
-    --line: #ebe4d5;
-    --line-soft: rgba(60, 64, 67, 0.14);
-    --text: #3c4043;
-    --text-secondary: #5f6368;
-    --text-muted: #80868b;
-    --teal: #155dbd;
-    --teal-dark: #005393;
-    --blue: #1967d2;
-    --green: #00753b;
-    --orange: #bc5000;
-    --red: #b71c1c;
-    --purple: #8020d0;
-    --pink: #c21875;
-    --yellow: #9a7d0a;
-    --diff-bg: #faf5e8;
-    --diff-inline-bg: #f0e8d8;
-    --toast-bg: #faf5e8;
-    --toast-border: #ebe4d5;
-    --conflict-bg: #fbf3dc;
-    --conflict-border: #e0cf9a;
+    --canvas: #e9e6df;
+    --surface-0: #efede7;
+    --surface-1: #f4f2ec;
+    --surface-2: #e4e1d9;
+    --surface-3: #dcd8ce;
+    --surface-hover: #e3dfd5;
+    --surface-selected: #dcd8ce;
+    --line: #d8d3c6;
+    --line-soft: rgba(60, 55, 45, 0.16);
+    --text: #2f3538;
+    --text-secondary: #5a6167;
+    --text-muted: #7d838a;
+    --teal: #0a66ff;
+    --teal-dark: #0050d0;
+    --blue: #0b74de;
+    --green: #128a43;
+    --orange: #c2410c;
+    --red: #d91f2d;
+    --purple: #7c3aed;
+    --pink: #db2777;
+    --yellow: #a16207;
+    --diff-bg: #f4f2ec;
+    --diff-inline-bg: #e4e1d9;
+    --toast-bg: #f4f2ec;
+    --toast-border: #d8d3c6;
+    --conflict-bg: #f6edd3;
+    --conflict-border: #dcc88f;
     --conflict-text: #7a5c10;
-    --shadow: rgba(90, 80, 50, 0.18);
+    --shadow: rgba(60, 55, 45, 0.12);
     --radius-card: 12px;
     --radius-pill: 999px;
+}
+
+/* ===== Light theme — eye-strain tuning (warm gray base + vivid accents) ===== */
+/* softer backdrop glow on bright paper */
+:root[data-theme='light'] .app {
+    background: radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--teal) 4%, transparent), transparent 42%), var(--canvas);
+}
+:root[data-theme='light'] .app-empty {
+    background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--teal) 4%, transparent), transparent 44%), var(--canvas);
+}
+/* gentler row highlight on bright paper */
+:root[data-theme='light'] .graph-row:hover::after,
+:root[data-theme='light'] .graph-row.selected::after {
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 10%, transparent);
+}
+/* muted word-level diff marks on bright paper */
+:root[data-theme='light'] .diff-line.add mark {
+    background: color-mix(in srgb, var(--green) 22%, transparent);
+}
+:root[data-theme='light'] .diff-line.del mark {
+    background: color-mix(in srgb, var(--red) 22%, transparent);
+}
+/* softer search hits on bright paper */
+:root[data-theme='light'] .search-hit {
+    background: color-mix(in srgb, var(--orange) 30%, transparent);
+    outline-color: color-mix(in srgb, var(--orange) 50%, transparent);
+}
+:root[data-theme='light'] :is(.diff-line.add, .diff-line.del) mark.search-hit,
+:root[data-theme='light'] .diff-line mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 40%, transparent);
+    outline-color: color-mix(in srgb, var(--orange) 60%, transparent);
+}
+:root[data-theme='light'] .diff-line.search-current mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 60%, transparent);
 }
 
 :root[data-theme='dark'] mark {
@@ -4667,7 +4701,7 @@ body {
 }
 
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {
-    background: #ebe4d5;
+    background: #cfc9bb;
 }
 
 :root[data-theme='dark-modern'] .diff-body::-webkit-scrollbar-thumb {
