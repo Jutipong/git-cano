@@ -10,6 +10,7 @@
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
+    import canoIcon from '../assets/cano.svg'
 
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { MenuItem, RepoStatus } from '@shared/types'
@@ -413,6 +414,11 @@
         class="sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
         <div class="sidebar-toolbar">
+            <img
+                :src="canoIcon"
+                alt="Git Cano"
+                title="Git Cano"
+                class="sidebar-brand-icon" />
             <div class="section-search">
                 <i-lucide-search
                     width="12"
