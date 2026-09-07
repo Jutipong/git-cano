@@ -12,7 +12,12 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm dev` — development with hot reload
 - `pnpm lint` — oxlint + vue-tsc; run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
-- `pnpm build` / `pnpm dist` — production build / macOS .dmg
+- `pnpm build` — production build (`out/`)
+- `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows portable `.exe` → `release/`
+- Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
+  icons `build/icons/cano.png` + per-OS `cano.icns` / `cano.ico`, `asar: true` with maximum
+  compression. `files` ships `out/**/*` + `package.json` only (excludes `out/tsbuild`,
+  `*.map`, `*.md`, `LICENSE*`). New platform assets must follow the same png/icns/ico triple.
 
 ## Architecture
 
@@ -49,11 +54,20 @@ Key files:
   (`WorkspaceButton.vue`, one persisted repo-tab session per workspace), branch/tag
   sections, then the STASHES section; bottom actions are Settings and the theme toggle
   only (no stash button there — stash creation lives in the STASHES section).
+  Brand icon `assets/cano.svg` sits at the top of the toolbar (`.sidebar-brand-icon`);
+  the same asset drives the splash (`.splash-logo-image`) and no-repo empty state
+  (`.app-empty-logo`) in `App.vue`. `Welcome.vue` was deleted — do not reintroduce it.
+- **Workspaces reorder**: `workspace.ts` owns `reorder(from, to)` (bounds-guarded splice).
+  `WorkspaceButton.vue` rows are `draggable`; reorder happens live on `dragover`
+  (insertion = before/after by pointer Y within the row), `dragstart` is blocked while
+  renaming/switching, and `draggingName` clears on drop/dragend/popover-close. There are
+  deliberately no drop indicators — do not add them back without a product decision.
 - **Context menus are per-feature SFCs**: `CommitContextMenu.vue` (graph commits),
   `LocalBranchContextMenu.vue` (local branches), `TagContextMenu.vue`,
   `StashContextMenu.vue`, `RepoTabContextMenu.vue`, `FileContextMenu.vue`. The shared
   `ContextMenu.vue` is only for generic dropdown menus (e.g. remote branches in the
-  sidebar and the `OpenInButton.vue` "Open in Folder/Terminal/VS Code" menu).
+  sidebar and the `OpenInButton.vue` short-label menu: Folder / Terminal / VS Code,
+  plus Kiro / Visual Studio / Rider when installed).
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
@@ -71,7 +85,15 @@ Key files:
   follow the same pattern (`ref` + `persist.pick` + mousedown drag handler).
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
-  `12px` radius; rows/buttons use pill (`999px`) shapes.
+  `12px` radius; rows/buttons use pill (`999px`) shapes — except the `terminal` theme, which
+  intentionally uses square corners (`--radius-card/pill: 0`), bracket titles, scanlines baked
+  into the backdrop (not an overlay layer), and a `12px` background grid. Terminal palette is
+  dusty navy with blue accents (see the `terminal` `ThemeOption` description in `ui.ts`);
+  its graph lanes live in `GraphView.vue` (`TERMINAL_COLORS` + `TERMINAL_FIRST_LANE_COLOR`,
+  8 entries, must stay mutually distinct). Dark palettes use `color-mix` for tints; light is a
+  warm-gray base — keep both legible on low-clarity Windows displays.
+- **Settings (`ToolsModal.vue`) has no Zoom control** — zoom lives only in the `App.vue`
+  global handler (`⌘/Ctrl + − 0`, Ctrl/⌘+wheel). Do not re-add Zoom chips.
 - **Close (✕) buttons** always use the `.icon-btn danger commit-close-btn` style (red ring +
   tinted background, hover intensifies — see `.commit-close-btn` in `styles.css`). Reuse that
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.

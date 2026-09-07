@@ -40,9 +40,9 @@ pnpm dev
 | --- | ----------------------------------------------------------------------- |
 | 📁  | Open, initialize & clone repositories                                   |
 | 🗂️  | Multiple repos open at once as tabs                                     |
-| 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo |
+| 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder |
 | 💾  | Session & recent-repo restore on startup                                |
-| 🔗  | "Open in" → Explorer/Finder, Terminal, VS Code                          |
+| 🔗  | "Open in" → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) |
 
 ### 📊 History & Changes
 
@@ -75,6 +75,12 @@ pnpm dev
 - 📝 Generate from **staged** changes, or auto-commit / auto-commit + push
 - ⚡ `minimal` reasoning effort = fast responses
 - 🎨 Optional auto-format before generating
+
+### 🎨 Themes & branding
+
+- 🌑 Dark / Dark Modern / Dark Neon, 💻 Terminal TUI (square corners, scanlines, dusty-navy palette), ☀️ Light
+- 🖌️ Commit-graph lane colors adapt per theme
+- 🛶 Cano logo in the sidebar toolbar, splash screen & empty state
 
 ### 🐇 Feels fast
 
@@ -142,4 +148,5 @@ src/
 ## 📝 Good to know
 
 - 🌙 Remote tag status needs `origin` + network — it loads in the background on purpose.
+- 📦 Releases ship as macOS `.dmg` (arm64) → `release/` via `pnpm dist:mac`, and Windows portable `git-cano-<version>-portable.exe` via `pnpm dist:win` (asar + maximum compression).
 - 🤖 Building with AI? Read [AGENTS.md](AGENTS.md) first!

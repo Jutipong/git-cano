@@ -9,6 +9,19 @@ release/
 # Logs
 *.log
 
+# Env / secrets (GitHub token, AI provider keys) — never commit these
+.env
+.env.*
+!.env.example
+*.local
+
+# Vite default output (we build to out/ + release/)
+dist/
+
+# Test coverage (no runner yet, future-proof)
+coverage/
+.nyc_output/
+
 # OS / editor
 .DS_Store
 .idea/
