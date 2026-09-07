@@ -149,14 +149,14 @@
 
 :root[data-theme='terminal'] {
     --canvas: #252b42;
-    --surface-0: #272d46;
-    --surface-1: #2b324c;
-    --surface-2: #313956;
-    --surface-3: #384162;
+    --surface-0: #252b42;
+    --surface-1: #2a3049;
+    --surface-2: #2a3049;
+    --surface-3: #313956;
     --surface-hover: #343d5e;
     --surface-selected: #3c466e;
-    --line: #434d73;
-    --line-soft: rgba(95, 143, 255, 0.32);
+    --line: #4a557e;
+    --line-soft: rgba(95, 143, 255, 0.4);
     --text: #aeb7d2;
     --text-secondary: #949cbd;
     --text-muted: #767f9d;
@@ -177,8 +177,8 @@
     --conflict-border: #5f8fff;
     --conflict-text: #f0b429;
     --shadow: rgba(0, 0, 0, 0.55);
-    --radius-card: 4px;
-    --radius-pill: 2px;
+    --radius-card: 0px;
+    --radius-pill: 0px;
     --font-ui: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
 }
 
@@ -190,22 +190,43 @@
 
 /* dotted-grid backdrop instead of the teal glow */
 :root[data-theme='terminal'] .app {
-    background: radial-gradient(circle, rgba(138, 170, 240, 0.08) 1px, transparent 1.4px), var(--canvas);
+    background: radial-gradient(circle, rgba(138, 170, 240, 0.14) 1px, transparent 1.4px), var(--canvas);
     background-size:
-        22px 22px,
+        18px 18px,
         auto;
 }
 
 :root[data-theme='terminal'] .app-empty {
-    background: radial-gradient(circle, rgba(138, 170, 240, 0.08) 1px, transparent 1.4px), var(--canvas);
+    background: radial-gradient(circle, rgba(138, 170, 240, 0.14) 1px, transparent 1.4px), var(--canvas);
     background-size:
-        22px 22px,
+        18px 18px,
         auto;
 }
 
-/* prompt prefix on sidebar section titles */
+/* bracketed TUI section titles */
 :root[data-theme='terminal'] .sidebar-section h3::before {
-    content: '❯';
+    content: '[';
+    margin-right: 2px;
+    color: var(--teal);
+}
+
+:root[data-theme='terminal'] .sidebar-section h3::after {
+    content: ']';
+    margin-left: 6px;
+    color: var(--teal);
+}
+
+:root[data-theme='terminal'] :is(.sidebar-section h3, .tools-section-title) {
+    text-transform: uppercase;
+}
+
+:root[data-theme='terminal'] .tools-section-title::before {
+    content: '[ ';
+    color: var(--teal);
+}
+
+:root[data-theme='terminal'] .tools-section-title::after {
+    content: ' ]';
     color: var(--teal);
 }
 
@@ -253,8 +274,23 @@
 }
 
 /* flat chunky scrollbars */
+:root[data-theme='terminal'] ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
 :root[data-theme='terminal'] ::-webkit-scrollbar-thumb {
-    border-radius: 2px;
+    background: var(--line);
+    border: 2px solid var(--canvas);
+    border-radius: 0;
+}
+
+:root[data-theme='terminal'] ::-webkit-scrollbar-thumb:hover {
+    background: var(--teal);
+}
+
+:root[data-theme='terminal'] .sidebar > .sidebar-section > .section-body {
+    scrollbar-color: var(--line) transparent;
 }
 
 :root[data-theme='terminal'] ::-webkit-scrollbar-track,
@@ -264,6 +300,73 @@
 
 :root[data-theme='terminal'] .node-ring {
     border-radius: 50%;
+}
+
+/* ===== TUI surfaces (terminal theme only) ===== */
+
+/* square corners everywhere — explicit circles like .node-ring keep theirs */
+:root[data-theme='terminal'] :is(*, *::before, *::after) {
+    border-radius: 0;
+}
+
+/* full-bleed rows so inverse selection spans the pane like a terminal cursor */
+:root[data-theme='terminal'] :is(.branch-row, .file-row, .stash-row) {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+/* inverse-video selection — solid accent block, dark text */
+:root[data-theme='terminal'] :is(.branch-row.current, .file-row.selected, .stash-row.selected, .history-row.selected) {
+    color: #141a2e;
+    background: var(--teal);
+    border-left-color: transparent;
+}
+
+:root[data-theme='terminal']
+    :is(.branch-row.current, .file-row.selected, .stash-row.selected, .history-row.selected)
+    :is(span, div, svg, button) {
+    color: inherit;
+}
+
+/* graph: lane art stays vivid, subject area goes inverse */
+:root[data-theme='terminal'] .graph-row.selected::after {
+    inset: 0 0 0 var(--graph-w, 64px);
+    background: var(--teal);
+    border-radius: 0;
+    opacity: 1;
+}
+
+:root[data-theme='terminal']
+    .graph-row.selected
+    :is(.subject-line, .subject-text, .commit-author, .commit-hash, .commit-date, .msg-toggle) {
+    color: #141a2e;
+}
+
+/* double-frame TUI panes/dialogs — outline paints a second frame without moving layout */
+:root[data-theme='terminal'] :is(
+    .sidebar,
+    .center-column,
+    .right-pane,
+    .tab-group,
+    .tab-actions,
+    .tab-sync-actions,
+    .diff-overlay,
+    .modal-overlay > div,
+    .confirm-dialog,
+    .error-dialog
+) {
+    outline: 1px solid var(--line);
+    outline-offset: 2px;
+}
+
+/* subtle CRT scanlines over everything (non-interactive) */
+:root[data-theme='terminal'] :is(.app, .app-empty)::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.16) 0 1px, transparent 1px 2px);
 }
 
 body {

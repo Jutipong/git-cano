@@ -148,14 +148,14 @@
 
 :root[data-theme='terminal'] {
     --canvas: #252b42;
-    --surface-0: #272d46;
-    --surface-1: #2b324c;
-    --surface-2: #313956;
-    --surface-3: #384162;
+    --surface-0: #252b42;
+    --surface-1: #2a3049;
+    --surface-2: #2a3049;
+    --surface-3: #313956;
     --surface-hover: #343d5e;
     --surface-selected: #3c466e;
-    --line: #434d73;
-    --line-soft: rgba(95, 143, 255, 0.32);
+    --line: #4a557e;
+    --line-soft: rgba(95, 143, 255, 0.4);
     --text: #aeb7d2;
     --text-secondary: #949cbd;
     --text-muted: #767f9d;
@@ -178,8 +178,8 @@
     --conflict-theirs-bg: #3a3550;
     --conflict-base-bg: #282e47;
     --shadow: rgba(0, 0, 0, 0.55);
-    --radius-card: 4px;
-    --radius-pill: 2px;
+    --radius-card: 0px;
+    --radius-pill: 0px;
 }
 
 * {
