@@ -312,19 +312,19 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 72px;
-    height: 72px;
-    border-radius: 50%;
-    color: var(--teal);
-    background: color-mix(in srgb, var(--teal) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--teal) 25%, transparent);
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
     margin-bottom: 2px;
-    animation: splash-breathe 2.4s ease-in-out infinite;
+    animation: none;
 }
 
 .app-empty-logo {
-    width: 52px;
-    height: 52px;
+    width: 72px;
+    height: 72px;
     object-fit: contain;
     border-radius: 14px;
 }
@@ -4179,18 +4179,18 @@ body {
 .splash-logo {
     display: grid;
     place-items: center;
-    width: 74px;
-    height: 74px;
-    color: var(--teal);
-    background: var(--surface-2);
-    border: 1px solid var(--line-soft);
-    border-radius: 50%;
-    animation: splash-breathe 2.4s ease-in-out infinite;
+    width: auto;
+    height: auto;
+    color: inherit;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    animation: none;
 }
 
 .splash-logo-image {
-    width: 58px;
-    height: 58px;
+    width: 72px;
+    height: 72px;
     object-fit: contain;
     border-radius: 16px;
 }
