@@ -159,7 +159,7 @@
     --line-soft: rgba(95, 143, 255, 0.4);
     --text: #aeb7d2;
     --text-secondary: #949cbd;
-    --text-muted: #767f9d;
+    --text-muted: #939cba;
     --teal: #5f8fff;
     --teal-dark: #4d7ddb;
     --blue: #45c8ff;
@@ -188,25 +188,21 @@
 
 /* ===== Terminal chrome — full TUI treatment (terminal theme only) ===== */
 
-/* CRT backdrop: scanlines + dot-grid baked BEHIND content so text stays sharp */
+/* CRT backdrop: dot-grid baked BEHIND content so text stays sharp (no scanlines — they turn to noise on low-clarity screens) */
 :root[data-theme='terminal'] .app {
     background:
-        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 2px),
-        radial-gradient(circle, rgba(138, 170, 240, 0.4) 1px, transparent 1.4px),
+        radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px),
         var(--canvas);
     background-size:
-        auto,
         12px 12px,
         auto;
 }
 
 :root[data-theme='terminal'] .app-empty {
     background:
-        repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0 1px, transparent 1px 2px),
-        radial-gradient(circle, rgba(138, 170, 240, 0.4) 1px, transparent 1.4px),
+        radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px),
         var(--canvas);
     background-size:
-        auto,
         12px 12px,
         auto;
 }
