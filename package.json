@@ -60,10 +60,15 @@
             "output": "release"
         },
         "icon": "build/icons/cano.png",
+        "asar": true,
+        "compression": "maximum",
         "files": [
             "out/**/*",
-            "node_modules/**/*",
-            "package.json"
+            "package.json",
+            "!out/tsbuild/**",
+            "!**/*.map",
+            "!**/*.md",
+            "!**/LICENSE*"
         ],
         "mac": {
             "icon": "build/icons/cano.icns",
