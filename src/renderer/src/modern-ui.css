@@ -2,33 +2,33 @@
 :root[data-theme='dark'] {
     --canvas: #101014;
     --surface-0: #14141a;
-    --surface-1: #191920;
-    --surface-2: #1e1e26;
-    --surface-3: #242430;
-    --surface-hover: #2a2a38;
-    --surface-selected: #2e2e44;
-    --line: #333346;
-    --line-soft: rgba(41, 168, 255, 0.25);
-    --text: #ececf4;
-    --text-secondary: #a8a8bc;
-    --text-muted: #9090a6;
+    --surface-1: #1b1b24;
+    --surface-2: #21212e;
+    --surface-3: #272734;
+    --surface-hover: #2d2d40;
+    --surface-selected: #30304a;
+    --line: #2b2b3a;
+    --line-soft: rgba(41, 168, 255, 0.15);
+    --text: #e8e8f0;
+    --text-secondary: #b6b6c9;
+    --text-muted: #85859b;
     --teal: #29a8ff;
-    --teal-dark: #0091ff;
+    --teal-dark: #0087e0;
     --blue: #66d9ff;
-    --green: #58e06b;
+    --green: #4ed665;
     --orange: #ffa028;
-    --red: #ff4d5e;
+    --red: #f45868;
     --purple: #9d7bff;
     --pink: #ff6fae;
     --yellow: #ffd60a;
-    --diff-bg: #191920;
-    --diff-inline-bg: #2e2e44;
-    --toast-bg: #191920;
-    --toast-border: #333346;
-    --conflict-bg: #2e2e44;
+    --diff-bg: #1b1b24;
+    --diff-inline-bg: #30304a;
+    --toast-bg: #1b1b24;
+    --toast-border: #2b2b3a;
+    --conflict-bg: #30304a;
     --conflict-border: #29a8ff;
     --conflict-text: #ffd60a;
-    --shadow: rgba(0, 0, 0, 0.7);
+    --shadow: rgba(0, 0, 0, 0.5);
     --radius-card: 12px;
     --radius-pill: 999px;
 }
@@ -2146,7 +2146,7 @@ body {
 }
 
 .graph-row.drop-target {
-    --row-tint: rgba(67, 201, 182, 0.12);
+    --row-tint: color-mix(in srgb, var(--teal) 12%, transparent);
 }
 
 .graph-row::after {
@@ -2170,7 +2170,7 @@ body {
 
 .graph-row:hover::after,
 .graph-row.selected::after {
-    background: color-mix(in srgb, var(--row-color, var(--teal)) 16%, transparent);
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 14%, transparent);
 }
 
 .edge-glow {
@@ -2311,7 +2311,7 @@ body {
 
 .search-hit {
     padding: 0 1px;
-    color: inherit;
+    color: var(--text);
     background: color-mix(in srgb, var(--orange) 45%, transparent);
     outline: 1px solid color-mix(in srgb, var(--orange) 65%, transparent);
     border-radius: 3px;

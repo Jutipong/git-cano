@@ -5,35 +5,35 @@
 
     --canvas: #101014;
     --surface-0: #14141a;
-    --surface-1: #191920;
-    --surface-2: #1e1e26;
-    --surface-3: #242430;
-    --surface-hover: #2a2a38;
-    --surface-selected: #2e2e44;
-    --line: #333346;
-    --line-soft: rgba(41, 168, 255, 0.25);
-    --text: #ececf4;
-    --text-secondary: #a8a8bc;
-    --text-muted: #9090a6;
+    --surface-1: #1b1b24;
+    --surface-2: #21212e;
+    --surface-3: #272734;
+    --surface-hover: #2d2d40;
+    --surface-selected: #30304a;
+    --line: #2b2b3a;
+    --line-soft: rgba(41, 168, 255, 0.15);
+    --text: #e8e8f0;
+    --text-secondary: #b6b6c9;
+    --text-muted: #85859b;
     --teal: #29a8ff;
-    --teal-dark: #0091ff;
+    --teal-dark: #0087e0;
     --blue: #66d9ff;
-    --green: #58e06b;
+    --green: #4ed665;
     --orange: #ffa028;
-    --red: #ff4d5e;
+    --red: #f45868;
     --purple: #9d7bff;
     --yellow: #ffd60a;
-    --diff-bg: #191920;
-    --diff-inline-bg: #2e2e44;
-    --toast-bg: #191920;
-    --toast-border: #333346;
-    --conflict-bg: #2e2e44;
+    --diff-bg: #1b1b24;
+    --diff-inline-bg: #30304a;
+    --toast-bg: #1b1b24;
+    --toast-border: #2b2b3a;
+    --conflict-bg: #30304a;
     --conflict-border: #29a8ff;
     --conflict-text: #ffd60a;
     --conflict-ours-bg: #1d2b1d;
     --conflict-theirs-bg: #2b2014;
     --conflict-base-bg: #1c1c24;
-    --shadow: rgba(0, 0, 0, 0.7);
+    --shadow: rgba(0, 0, 0, 0.5);
     --radius-card: 12px;
     --radius-pill: 999px;
 }
@@ -317,7 +317,7 @@ button {
     font-size: 11px;
 }
 .link-btn:hover {
-    color: #75e0ce;
+    color: var(--blue);
     text-decoration: underline;
 }
 kbd {
@@ -1333,7 +1333,7 @@ kbd {
     width: 35px;
     flex: 0 0 35px;
     padding-right: 7px;
-    color: #596476;
+    color: var(--text-muted);
     font-size: 10px;
     line-height: 20px;
     text-align: right;
@@ -1366,19 +1366,19 @@ kbd {
     line-height: 20px;
 }
 .diff-line.add {
-    background: rgba(100, 217, 149, 0.12);
+    background: color-mix(in srgb, var(--green) 12%, transparent);
 }
 .diff-line.add pre {
     color: var(--green);
 }
 .diff-line.del {
-    background: rgba(239, 120, 128, 0.12);
+    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 .diff-line.del pre {
     color: var(--red);
 }
 .diff-line.hunk {
-    background: rgba(108, 168, 255, 0.08);
+    background: color-mix(in srgb, var(--blue) 10%, transparent);
 }
 .diff-line.hunk pre {
     padding-left: 18px;
