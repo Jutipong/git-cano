@@ -2,7 +2,7 @@
     import Moon from '~icons/lucide/moon'
     import Sun from '~icons/lucide/sun'
 
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, ZOOM_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -79,7 +79,6 @@
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
-    const DISPLAY_ZOOM_OPTIONS = ZOOM_OPTIONS.map(value => ({ value, label: `${value}%` }))
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
 
@@ -557,18 +556,6 @@
                                 class="setting-chip"
                                 :class="{ active: ui.fontSize === option.value }"
                                 @click="ui.fontSize = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                        <span class="setting-label">Zoom</span>
-                        <div class="setting-choice-row">
-                            <button
-                                v-for="option in DISPLAY_ZOOM_OPTIONS"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.zoom === option.value }"
-                                @click="ui.zoom = option.value">
                                 {{ option.label }}
                             </button>
                         </div>

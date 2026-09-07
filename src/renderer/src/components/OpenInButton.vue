@@ -28,17 +28,17 @@
         }
         const items: MenuItem[] = [
             {
-                label: 'Open in Folder',
+                label: 'Folder',
                 icon: 'folder',
                 action: () => run(() => window.api.openInFolder(props.path)),
             },
             {
-                label: 'Open in Terminal',
+                label: 'Terminal',
                 icon: 'terminal',
                 action: () => run(() => window.api.openTerminal(props.path)),
             },
             {
-                label: 'Open in VS Code',
+                label: 'VS Code',
                 icon: 'vscode',
                 action: () => run(() => window.api.openInVSCode(props.path)),
             },
@@ -46,7 +46,7 @@
         // Shown whenever Kiro IDE is installed on the machine
         if (targets.value?.kiro) {
             items.push({
-                label: 'Open in Kiro',
+                label: 'Kiro',
                 icon: 'kiro',
                 action: () => run(() => window.api.openInKiro(props.path)),
             })
@@ -54,14 +54,14 @@
         // C#-only entries: shown when the repo has .NET solution/project files and the IDE is installed
         if (targets.value?.visualStudio) {
             items.push({
-                label: 'Open in Visual Studio',
+                label: 'Visual Studio',
                 icon: 'visualstudio',
                 action: () => run(() => window.api.openInVisualStudio(props.path)),
             })
         }
         if (targets.value?.rider) {
             items.push({
-                label: 'Open in Rider',
+                label: 'Rider',
                 icon: 'rider',
                 action: () => run(() => window.api.openInRider(props.path)),
             })

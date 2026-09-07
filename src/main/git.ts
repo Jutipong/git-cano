@@ -1213,7 +1213,7 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
         return `Fast-forwarded ${target} to ${source}`
     }
 
-    const tmp = path.join(os.tmpdir(), `open-git-merge-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
+    const tmp = path.join(os.tmpdir(), `git-cano-merge-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     let worktreeFailed: unknown = null
     try {
         await g.raw(['worktree', 'add', tmp, target])
@@ -1795,7 +1795,7 @@ function runFormatCommand(cmd: string, args: string[], cwd: string): Promise<voi
 }
 
 function writeTempPatch(patch: string): string {
-    const tmp = path.join(path.dirname(getRepo().path), '.git', `open-git-patch-${Date.now()}.patch`)
+    const tmp = path.join(path.dirname(getRepo().path), '.git', `git-cano-patch-${Date.now()}.patch`)
     fs.writeFileSync(tmp, patch.endsWith('\n') ? patch : `${patch}\n`)
     return tmp
 }
@@ -1893,7 +1893,7 @@ export async function getBlame(file: string): Promise<BlameLine[]> {
     return result
 }
 
-const BACKUP_FILE = 'open-git-rebase-backup'
+const BACKUP_FILE = 'git-cano-rebase-backup'
 
 function backupPath(): string {
     const { path: p } = getRepo()

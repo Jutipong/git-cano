@@ -1,8 +1,8 @@
 {
-    "name": "open-git",
-    "version": "0.9.7-beta",
-    "description": "Open Git - a lightweight Git GUI with basic features",
-    "author": "Open Git contributors",
+    "name": "git-cano",
+    "version": "0.9.8-beta",
+    "description": "git-cano - a lightweight Git GUI with basic features",
+    "author": "git-cano contributors",
     "type": "module",
     "main": "out/main/index.js",
     "scripts": {
@@ -54,8 +54,8 @@
         "esbuild@0.28.2": true
     },
     "build": {
-        "appId": "com.jutipong.open-git",
-        "productName": "Open Git",
+        "appId": "com.jutipong.git-cano",
+        "productName": "Git Cano",
         "directories": {
             "output": "release"
         },
@@ -87,7 +87,7 @@
             ]
         },
         "portable": {
-            "artifactName": "Open-Git-${version}-portable.exe"
+            "artifactName": "git-cano-${version}-portable.exe"
         }
     }
 }

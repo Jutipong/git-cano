@@ -140,7 +140,7 @@ function createWindow(): void {
         height: 900,
         minWidth: 1000,
         minHeight: 600,
-        title: 'Open Git',
+        title: 'Git Cano',
         backgroundColor: '#1e2227',
         webPreferences: {
             preload: path.join(__dirname, '../preload/index.mjs'),
@@ -489,7 +489,7 @@ function setupMenu(): void {
 }
 
 app.whenReady().then(() => {
-    log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.OPEN_GIT_LOG_LEVEL ?? 'auto'})`)
+    log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.GIT_CANO_LOG_LEVEL ?? 'auto'})`)
     setupMenu()
     setStatusAccelerators(readAppSettings().statusAccelerators === true)
     handle('app:getStatusAccelerators', () => getStatusAccelerators())

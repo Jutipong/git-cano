@@ -46,7 +46,7 @@
 
 <template>
     <div class="welcome">
-        <h1>🔀 Open Git</h1>
+        <h1>🔀 Git Cano</h1>
         <p class="tagline">A lightweight Git GUI — basic features only</p>
 
         <div class="welcome-actions">

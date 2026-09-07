@@ -742,7 +742,7 @@
                 <span
                     v-if="appVersion"
                     class="app-version"
-                    title="Open Git version"
+                    title="Git Cano version"
                     >Version: {{ appVersion }}</span
                 >
                 <span

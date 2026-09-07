@@ -127,7 +127,7 @@ export function generateSshKey(name: string, comment: string, passphrase?: strin
         '-f',
         privatePath,
         '-C',
-        comment.trim() || 'open-git',
+        comment.trim() || 'git-cano',
         '-N',
         typeof passphrase === 'string' && passphrase ? passphrase : '',
     ]
@@ -183,7 +183,7 @@ export async function verifyGithubToken(token: string): Promise<GithubUser> {
     const clean = token.trim()
     if (!clean) throw new Error('Enter a token first')
     const res = await fetch(GITHUB_API_USER, {
-        headers: { authorization: `Bearer ${clean}`, 'user-agent': 'open-git', accept: 'application/vnd.github+json' },
+        headers: { authorization: `Bearer ${clean}`, 'user-agent': 'git-cano', accept: 'application/vnd.github+json' },
     })
     if (!res.ok) {
         throw new Error(res.status === 401 ? 'Invalid token (401 Unauthorized)' : `GitHub request failed (HTTP ${res.status})`)
@@ -240,7 +240,7 @@ function persistGithubProfile(user: GithubUser): void {
 async function downloadAvatar(user: GithubUser): Promise<void> {
     if (!user.avatarUrl) return
     try {
-        const res = await fetch(user.avatarUrl, { headers: { 'user-agent': 'open-git' } })
+        const res = await fetch(user.avatarUrl, { headers: { 'user-agent': 'git-cano' } })
         if (!res.ok) return
         const buf = Buffer.from(await res.arrayBuffer())
         if (buf.length > 0 && buf.length <= 10 * 1024 * 1024) fs.writeFileSync(githubAvatarPath(), buf)

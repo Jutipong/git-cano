@@ -4,7 +4,7 @@ Guidance for AI agents working in this repository.
 
 ## What this is
 
-Open Git — an Electron + Vue 3 + TypeScript desktop Git GUI built on simple-git.
+git-cano — an Electron + Vue 3 + TypeScript desktop Git GUI built on simple-git.
 Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 
 ## Commands

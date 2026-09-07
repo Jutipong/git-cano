@@ -598,7 +598,7 @@
                             width="34"
                             height="34" />
                     </div>
-                    <strong class="splash-title">Open Git</strong>
+                    <strong class="splash-title">Git Cano</strong>
                     <KittScanner />
                     <span class="splash-muted">{{ splashText }}</span>
                 </div>

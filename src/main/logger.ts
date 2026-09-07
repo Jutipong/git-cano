@@ -11,7 +11,7 @@ const MAX_STRING = 200
 const MAX_FILE_BYTES = 5 * 1024 * 1024
 
 function threshold(): number {
-    const fromEnv = LEVELS[process.env.OPEN_GIT_LOG_LEVEL as Level]
+    const fromEnv = LEVELS[process.env.GIT_CANO_LOG_LEVEL as Level]
     if (fromEnv !== undefined) return fromEnv
     return process.env.NODE_ENV === 'development' ? LEVELS.debug : LEVELS.info
 }
@@ -20,7 +20,7 @@ let filePath: string | null = null
 
 function logfile(): string {
     if (!filePath) {
-        filePath = path.join(app.getPath('userData'), 'logs', 'open-git.log')
+        filePath = path.join(app.getPath('userData'), 'logs', 'git-cano.log')
     }
     return filePath
 }

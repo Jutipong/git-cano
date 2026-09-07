@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🔀 Open Git
+# 🔀 git-cano
 
 ### Everyday Git, without the clutter ✨
 
