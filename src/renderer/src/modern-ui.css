@@ -322,6 +322,13 @@ body {
     animation: splash-breathe 2.4s ease-in-out infinite;
 }
 
+.app-empty-logo {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    border-radius: 14px;
+}
+
 .app-empty strong {
     color: var(--text);
     font-size: 15px;
@@ -4172,6 +4179,13 @@ body {
     border: 1px solid var(--line-soft);
     border-radius: 50%;
     animation: splash-breathe 2.4s ease-in-out infinite;
+}
+
+.splash-logo-image {
+    width: 58px;
+    height: 58px;
+    object-fit: contain;
+    border-radius: 16px;
 }
 
 .splash-title {

@@ -112,7 +112,6 @@ declare module 'vue' {
     TagCreateModal: typeof import('./components/TagCreateModal.vue')['default']
     ThinkSpinner: typeof import('./components/ThinkSpinner.vue')['default']
     ToolsModal: typeof import('./components/ToolsModal.vue')['default']
-    Welcome: typeof import('./components/Welcome.vue')['default']
     WorkspaceButton: typeof import('./components/WorkspaceButton.vue')['default']
   }
 }

@@ -30,6 +30,7 @@
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
+    import canoIcon from './assets/cano.svg'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -436,9 +437,10 @@
             v-if="!repo"
             class="app-empty">
             <span class="app-empty-icon">
-                <i-lucide-folder-git2
-                    width="34"
-                    height="34" />
+                <img
+                    :src="canoIcon"
+                    alt="Git Cano"
+                    class="app-empty-logo" />
             </span>
             <strong>No repository opened</strong>
             <div
@@ -594,9 +596,10 @@
                 class="splash-screen">
                 <div class="splash-card">
                     <div class="splash-logo">
-                        <i-lucide-folder-git2
-                            width="34"
-                            height="34" />
+                        <img
+                            :src="canoIcon"
+                            alt="Git Cano"
+                            class="splash-logo-image" />
                     </div>
                     <strong class="splash-title">Git Cano</strong>
                     <KittScanner />

@@ -59,12 +59,14 @@
         "directories": {
             "output": "release"
         },
+        "icon": "build/icons/cano.png",
         "files": [
             "out/**/*",
             "node_modules/**/*",
             "package.json"
         ],
         "mac": {
+            "icon": "build/icons/cano.icns",
             "target": [
                 {
                     "target": "dmg",
@@ -77,6 +79,7 @@
             "identity": null
         },
         "win": {
+            "icon": "build/icons/cano.ico",
             "target": [
                 {
                     "target": "portable",
