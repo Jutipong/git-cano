@@ -111,6 +111,28 @@
         const to = Math.min(visibleCommits.value.length, end + 5)
         return visibleCommits.value.slice(from, to).map((commit, offset) => ({ commit, index: from + offset }))
     })
+    /**
+     * Edges whose row span intersects the visible window (+ overscan). Judged by span, not by both
+     * endpoints being on screen, so long lane lines stay drawn while both ends are scrolled off.
+     */
+    const EDGE_OVERSCAN = 5
+    const renderEdges = computed(() => {
+        const [start, end] = visibleRange.value
+        const lo = start - EDGE_OVERSCAN
+        const hi = end + EDGE_OVERSCAN
+        const edges: { commit: CommitNode; parent: string; childIndex: number; parentIndex: number }[] = []
+        const rows = visibleCommits.value
+        for (let childIndex = 0; childIndex < rows.length; childIndex++) {
+            const commit = rows[childIndex]!
+            for (const parent of commit.parents) {
+                const parentIndex = rowIndex.value.get(parent)
+                if (parentIndex === undefined || parentIndex <= childIndex) continue
+                if (childIndex > hi || parentIndex < lo) continue
+                edges.push({ commit, parent, childIndex, parentIndex })
+            }
+        }
+        return edges
+    })
 
     let loadMoreArmed = true
     function onScroll() {
@@ -548,32 +570,20 @@
                             :fill="tickColor(commit)" />
                     </template>
                     <template
-                        v-for="{ commit, index } in graphWindow"
-                        :key="commit.hash">
-                        <template
-                            v-for="parent in commit.parents"
-                            :key="`${commit.hash}:${parent}`">
-                            <template
-                                v-if="
-                                    rowIndex.get(parent) !== undefined &&
-                                    rowIndex.get(parent)! > index &&
-                                    index <= visibleRange[1] + 5 &&
-                                    rowIndex.get(parent)! >= visibleRange[0] - 5
-                                ">
-                                <path
-                                    class="edge-glow"
-                                    :class="{ merge: isMergeEdge(commit, parent) }"
-                                    :d="edgePath(commit, parent, index, rowIndex.get(parent)!)"
-                                    :stroke="edgeColor(commit, parent)"
-                                    fill="none" />
-                                <path
-                                    class="edge-core"
-                                    :class="{ merge: isMergeEdge(commit, parent) }"
-                                    :d="edgePath(commit, parent, index, rowIndex.get(parent)!)"
-                                    :stroke="edgeColor(commit, parent)"
-                                    fill="none" />
-                            </template>
-                        </template>
+                        v-for="{ commit, parent, childIndex, parentIndex } in renderEdges"
+                        :key="`${commit.hash}:${parent}`">
+                        <path
+                            class="edge-glow"
+                            :class="{ merge: isMergeEdge(commit, parent) }"
+                            :d="edgePath(commit, parent, childIndex, parentIndex)"
+                            :stroke="edgeColor(commit, parent)"
+                            fill="none" />
+                        <path
+                            class="edge-core"
+                            :class="{ merge: isMergeEdge(commit, parent) }"
+                            :d="edgePath(commit, parent, childIndex, parentIndex)"
+                            :stroke="edgeColor(commit, parent)"
+                            fill="none" />
                     </template>
                 </svg>
                 <div
