@@ -39,6 +39,8 @@
     /** Muted lane palette used while the terminal theme is active — toned to fit the theme but still distinct per lane. */
     const TERMINAL_FIRST_LANE_COLOR = '#FF5F7A'
     const TERMINAL_COLORS = ['#4FD06A', '#C07FF5', '#FF9E57', '#45C8FF', '#F0B429', '#6B9BFF', '#2FD6B5', '#F75FD0']
+    /* Vivid avatar colors: deliberately spaced apart and without yellow. */
+    const AVATAR_COLORS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
     const laneW = 32
     const rowH = 28
     /* breathing room between the graph panel's left edge and the first lane */
@@ -305,6 +307,38 @@
         const palette = lanePalette()
         return palette[hashString(name) % palette.length]
     }
+    const avatarAssignments = new Map<string, number>()
+    watch(
+        () => repoStore.repo?.path,
+        () => avatarAssignments.clear()
+    )
+
+    function circularDistance(a: number, b: number): number {
+        const distance = Math.abs(a - b)
+        return Math.min(distance, AVATAR_COLORS.length - distance)
+    }
+
+    /* Give visible authors different palette slots instead of letting hashes pick similar hues. */
+    function avatarColor(name: string): string {
+        const existing = avatarAssignments.get(name)
+        if (existing !== undefined) return AVATAR_COLORS[existing]
+
+        const preferred = hashString(name) % AVATAR_COLORS.length
+        const used = [...avatarAssignments.values()]
+        let selected = preferred
+        if (used.length > 0 && used.length < AVATAR_COLORS.length) {
+            selected = AVATAR_COLORS.map((_, index) => index)
+                .filter(index => !used.includes(index))
+                .sort((a, b) => {
+                    const separationA = Math.min(...used.map(index => circularDistance(a, index)))
+                    const separationB = Math.min(...used.map(index => circularDistance(b, index)))
+                    if (separationA !== separationB) return separationB - separationA
+                    return circularDistance(a, preferred) - circularDistance(b, preferred)
+                })[0]
+        }
+        avatarAssignments.set(name, selected)
+        return AVATAR_COLORS[selected]
+    }
 
     /* row tick: lane color, slightly darkened */
     function tickColor(commit: CommitNode): string {
@@ -324,7 +358,7 @@
     }
 
     function avatarStyle(commit: CommitNode) {
-        const color = nameColor(avatarKey(commit))
+        const color = avatarColor(avatarKey(commit))
         return {
             left: `${nodeX(commit)}px`,
             '--avatar-color': color,
