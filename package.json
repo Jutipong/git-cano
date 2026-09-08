@@ -1,6 +1,6 @@
 {
     "name": "git-cano",
-    "version": "0.14.0-beta",
+    "version": "0.15.0-beta",
     "description": "git-cano - a lightweight Git GUI with basic features",
     "author": "git-cano contributors",
     "type": "module",

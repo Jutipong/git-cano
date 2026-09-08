@@ -51,7 +51,7 @@ pnpm dev
 | 🌌  | Interactive commit graph (custom SVG renderer)              |
 | 🏷️  | Hover a commit node — branch/tag chips, author avatar, email & time |
 | 💬  | Full-message popover — subject emphasized with author/date/hash header |
-| 🔝  | To-top button — jump back to the newest commits after deep scrolling |
+| 🔝  | To-top button — jump back to the top after deep scrolling (commit graph & diff view) |
 | 🟢  | Selecting a commit flips the right panel to **Committed History** — green-tinted header & title, clearly distinct from working-dir Changes |
 | 🎯  | **Solo a branch** — focus on one branch, unsolo to restore; files the soloed branch never touched fade in Changes |
 | 🔍  | Search by message, author, hash, or ref                     |

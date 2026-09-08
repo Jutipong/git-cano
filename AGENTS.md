@@ -105,7 +105,15 @@ Key files:
   visible window (+5 rows overscan) — NOT only when both endpoints are on screen.
   Endpoint-based culling made long lane lines vanish mid-scroll; do not reintroduce it.
   The floating to-top button (`.to-top-btn`, styles in `styles.css`) appears after ~20
-  rows of scroll and smooth-scrolls back to the top.
+  rows of scroll in both the graph and the DiffView overlay (mounted in `.diff-main`
+  with `right: 30px` to clear the minimap strip — `position: relative` on `.diff-main`
+  in `modern-ui.css` is what anchors it). Both scroll back with the same rAF ease-out
+  (160ms, cancels an in-flight animation, jumps instantly under 120px): GraphView's
+  `animateScrollTo` mirrors DiffView's `animateBodyScrollTo` — keep them in sync.
+  While a diff overlay covers the graph (DiffView / ConflictView / FileHistoryModal /
+  BlameModal), App.vue passes `hide-to-top` to GraphView so the graph button hides:
+  the overlay leaves a ~14px sliver on the right edge where it would otherwise peek
+  out beside the diff's own button.
 - **Node hover tooltip** (`.avatar-tip`, 500ms delay, styles in `modern-ui.css`):
   shows ref chips on top (reusing `sortedRefs()` / `refKind()` / `chipColor()` so chips
   look identical to the row ones), then author with an avatar dot, email, and date.
