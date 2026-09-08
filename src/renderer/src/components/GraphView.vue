@@ -32,13 +32,12 @@
         (e: 'reset-hard', commit: CommitNode): void
     }>()
 
-    const FIRST_LANE_COLOR = '#F55FA0'
-    // one hue each, ordered so neighbours (and the wrap-around) stay far apart —
-    // near-duplicates were pruned because adjacent lanes looked identical
-    const COLORS = ['#58E06B', '#E879F9', '#FF8A3D', '#29A8FF', '#FF6B6B', '#B790FF', '#FFD60A', '#22E0D0']
-    /** Muted lane palette used while the terminal theme is active — toned to fit the theme but still distinct per lane. */
-    const TERMINAL_FIRST_LANE_COLOR = '#FF5F7A'
-    const TERMINAL_COLORS = ['#4FD06A', '#C07FF5', '#FF9E57', '#45C8FF', '#F0B429', '#6B9BFF', '#2FD6B5', '#F75FD0']
+    const FIRST_LANE_COLOR = '#F05272'
+    /* Shared hue families: lanes/chips are calmer, avatars are the vivid accent. */
+    const COLORS = ['#5CDA72', '#E276E6', '#F08A46', '#45B0E6', '#EE6871', '#9B82E0', '#31D0B3', '#D36DDD']
+    /** Slightly toned palette for the terminal theme. */
+    const TERMINAL_FIRST_LANE_COLOR = '#F06C82'
+    const TERMINAL_COLORS = ['#69D987', '#C58AE0', '#ED9A64', '#68C4E9', '#88A9E6', '#9E91E3', '#55D6B9', '#DF91C3']
     /* Vivid avatar colors: deliberately spaced apart and without yellow. */
     const AVATAR_COLORS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
     const laneW = 32
