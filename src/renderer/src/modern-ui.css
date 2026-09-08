@@ -4525,6 +4525,32 @@ body {
     overflow-wrap: anywhere;
 }
 
+.toast-action {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 13px;
+    color: #fff;
+    background: color-mix(in srgb, var(--toast-accent, var(--teal)) 62%, #0b0f14);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background 0.15s ease,
+        transform 0.15s ease;
+}
+
+.toast-action:hover {
+    background: color-mix(in srgb, var(--toast-accent, var(--teal)) 78%, #0b0f14);
+}
+
+.toast-action:active {
+    transform: scale(0.96);
+}
+
 .toast-close {
     position: relative;
     display: inline-grid;

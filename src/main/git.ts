@@ -28,6 +28,7 @@ import type {
     RepoState,
     RepoStatus,
     StashEntry,
+    UndoPreview,
     WorktreeInfo,
     AiContextScope,
     ConflictVersions,
@@ -201,6 +202,8 @@ export function closeRepo(dir?: string): void {
     const target = dir ?? activeRepoPath
     if (!target) return
     repoInstances.delete(target)
+    // Drop its undo journal too — hashes from a previous life at the same path must not resurface.
+    undoStacks.delete(target)
     // Keep the log cache for closed repos — it only costs a few hundred in-memory commits and
     // makes reopening (tab or workspace switch) paint instantly; selectTab always re-validates.
     unwatchRepo(target)
@@ -792,8 +795,22 @@ export async function applyStash(index: number, pop: boolean): Promise<void> {
 }
 
 export async function dropStash(index: number): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    // Capture the entry before dropping — `git stash store` can recreate it for Undo.
+    const doomed = await listStashes()
+        .then(entries => entries.find(entry => entry.index === index))
+        .catch(() => undefined)
     await g.raw(['stash', 'drop', `stash@{${index}}`])
+    if (doomed) {
+        pushUndo({
+            label: 'stash delete',
+            doneMessage: 'Stash restored',
+            repoPath: p,
+            kind: 'dropStash',
+            stashHash: doomed.hash,
+            stashMessage: doomed.message,
+        })
+    }
 }
 
 function parseNumstatMap(text: string): Map<string, { additions: number; deletions: number }> {
@@ -1513,8 +1530,24 @@ export async function cherryPickAbort(): Promise<void> {
 }
 
 export async function resetTo(target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    const headBefore = await g
+        .revparse(['HEAD'])
+        .then(out => out.trim())
+        .catch(() => null)
     await g.raw(['reset', `--${mode}`, target])
+    // Only fully recoverable modes are journaled: a hard reset's discarded workdir content is
+    // gone for good (reflog restores just the pointer), so hard resets offer no Undo at all.
+    if (mode !== 'hard' && headBefore) {
+        pushUndo({
+            label: `reset (${mode})`,
+            doneMessage: 'Reset undone',
+            repoPath: p,
+            kind: 'reset',
+            headBefore,
+            resetMode: mode,
+        })
+    }
 }
 
 export async function renameBranch(oldName: string, newName: string): Promise<void> {
@@ -1596,15 +1629,101 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
 }
 
 export async function commitMessage(message: string, amend: boolean, dir?: string): Promise<string> {
-    const { git: g } = dir ? getRepoFor(dir) : getRepo()
+    const { path: p, git: g } = dir ? getRepoFor(dir) : getRepo()
     if (amend && !message.trim()) throw new Error('Enter a message to amend with')
+    // Unborn HEAD (first-ever commit) has nothing to restore — skip the journal then.
+    const headBefore = await g
+        .revparse(['HEAD'])
+        .then(out => out.trim())
+        .catch(() => null)
     const res = amend ? await g.commit(message, undefined, { '--amend': null }) : await g.commit(message)
+    if (headBefore) {
+        pushUndo({
+            label: amend ? 'amend' : 'commit',
+            doneMessage: amend ? 'Amend undone' : 'Commit undone',
+            repoPath: p,
+            kind: 'commit',
+            headBefore,
+        })
+    }
     return res.commit
 }
 
 export async function getLastCommitMessage(): Promise<string> {
     const { git: g } = getRepo()
     return (await g.raw(['log', '-1', '--format=%B'])).trim()
+}
+
+/**
+ * Undo journal for risky operations (commit/amend/reset/drop-stash). Each entry remembers the
+ * pre-op state explicitly; the reflog is only the backstop — git never GCs the objects promptly,
+ * so restoring a remembered ref is always safe. Keyed by repo path (never the mutable active
+ * repo) so a tab switch mid-flight can't undo the wrong repository. The toast window is the UI
+ * gate; the journal itself is just capped.
+ */
+type UndoKind = 'commit' | 'reset' | 'dropStash'
+
+interface UndoEntry {
+    id: number
+    label: string
+    doneMessage: string
+    repoPath: string
+    kind: UndoKind
+    headBefore?: string
+    resetMode?: 'soft' | 'mixed' | 'hard'
+    stashHash?: string
+    stashMessage?: string
+}
+
+const undoStacks = new Map<string, UndoEntry[]>()
+let nextUndoId = 0
+const UNDO_STACK_LIMIT = 10
+
+function pushUndo(entry: Omit<UndoEntry, 'id'>): void {
+    const stack = undoStacks.get(entry.repoPath) ?? []
+    stack.push({ ...entry, id: ++nextUndoId })
+    while (stack.length > UNDO_STACK_LIMIT) stack.shift()
+    undoStacks.set(entry.repoPath, stack)
+}
+
+function undoStackFor(dir?: string): { repoPath: string; stack: UndoEntry[] } | null {
+    let repoPath: string
+    try {
+        repoPath = dir ? getRepoFor(dir).path : getRepo().path
+    } catch {
+        return null
+    }
+    return { repoPath, stack: undoStacks.get(repoPath) ?? [] }
+}
+
+/** Latest undoable action for a repo, without consuming it. */
+export function peekUndo(dir?: string): UndoPreview | null {
+    const found = undoStackFor(dir)
+    const top = found?.stack.at(-1)
+    return top ? { id: top.id, label: top.label } : null
+}
+
+/**
+ * Undoes the latest journal entry, but only when `id` still matches the top — a stale toast
+ * (another operation landed meanwhile) fails loudly instead of undoing the wrong action.
+ */
+export async function undoById(id: number, dir?: string): Promise<string> {
+    const found = undoStackFor(dir)
+    const top = found?.stack.at(-1)
+    if (!found || !top || top.id !== id) throw new Error('Nothing to undo — the action expired')
+    found.stack.pop()
+    const { git: g } = getRepoFor(top.repoPath)
+    switch (top.kind) {
+        case 'commit':
+            await g.raw(['reset', '--soft', top.headBefore as string])
+            return top.doneMessage
+        case 'reset':
+            await g.raw(['reset', `--${top.resetMode as string}`, top.headBefore as string])
+            return top.doneMessage
+        case 'dropStash':
+            await g.raw(['stash', 'store', '-m', top.stashMessage as string, top.stashHash as string])
+            return top.doneMessage
+    }
 }
 
 export interface TagRef {

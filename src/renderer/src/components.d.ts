@@ -86,6 +86,7 @@ declare module 'vue' {
     ILucideSparkles: typeof import('~icons/lucide/sparkles')['default']
     ILucideTag: typeof import('~icons/lucide/tag')['default']
     ILucideTrash2: typeof import('~icons/lucide/trash2')['default']
+    ILucideUndo2: typeof import('~icons/lucide/undo2')['default']
     ILucideUnfoldVertical: typeof import('~icons/lucide/unfold-vertical')['default']
     ILucideUserRound: typeof import('~icons/lucide/user-round')['default']
     ILucideUsers: typeof import('~icons/lucide/users')['default']

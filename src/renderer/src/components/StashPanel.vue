@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { confirmDialog } from '../utils/confirm'
     import { formatDateTime } from '../utils/format'
+    import { notifyUndoable } from '../utils/undo'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
@@ -61,12 +62,12 @@
         repoStore.selectedStash = stash
     }
 
-    async function run(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
+    async function run(fn: () => Promise<unknown>, ok: string | null, busyLabel = 'Working…') {
         try {
             await uiTransient.withBusy(fn, busyLabel)
             await load()
             await props.refresh()
-            notify(ok, 'success')
+            if (ok) notify(ok, 'success')
             return true
         } catch (error) {
             notify(String(error).replace(/^Error:\s*/, ''))
@@ -81,8 +82,9 @@
             danger: true,
         })
         if (!ok) return
-        if (await run(() => window.api.dropStash(stash.index), 'Stash deleted', 'Dropping stash…')) {
+        if (await run(() => window.api.dropStash(stash.index), null, 'Dropping stash…')) {
             repoStore.selectedStash = null
+            void notifyUndoable(props.repoPath, 'Stash deleted')
         }
     }
 

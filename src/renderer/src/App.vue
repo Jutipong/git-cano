@@ -27,6 +27,7 @@
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
+    import { notifyUndoable } from './utils/undo'
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -348,7 +349,15 @@
             danger: mode === 'hard',
         })
         if (!ok) return
-        void run(`Reset to ${commit.shortHash} (${mode})`, () => window.api.resetTo(commit.hash, mode), `Resetting to ${commit.shortHash}…`)
+        try {
+            await uiTransient.withBusy(async () => {
+                await window.api.resetTo(commit.hash, mode)
+                await repoStore.refresh()
+            }, `Resetting to ${commit.shortHash}…`)
+            void notifyUndoable(repoStore.repo?.path, `Reset to ${commit.shortHash} (${mode})`)
+        } catch (error) {
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
     }
 
     function closeCommitView() {
@@ -559,6 +568,15 @@
                         </template>
                     </span>
                     <span class="toast-message">{{ t.message }}</span>
+                    <button
+                        v-if="t.action"
+                        class="toast-action"
+                        @click="uiTransient.runToastAction(t.id)">
+                        <i-lucide-undo-2
+                            width="13"
+                            height="13" />
+                        {{ t.action.label }}
+                    </button>
                     <button
                         class="toast-close"
                         title="Dismiss"

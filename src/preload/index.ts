@@ -23,6 +23,7 @@ import type {
     SshKeyInfo,
     SshTestResult,
     StashEntry,
+    UndoPreview,
     LocalChangesMode,
     OpenInTargets,
     RepoState,
@@ -105,6 +106,8 @@ const api = {
     commit: (msg: string): Promise<string> => call('commit:create', msg),
     commitWithAmend: (msg: string, amend: boolean, repoPath?: string): Promise<string> => call('commit:message', msg, amend, repoPath),
     lastCommitMessage: (): Promise<string> => call('commit:lastMessage'),
+    undoPeek: (repoPath?: string): Promise<UndoPreview | null> => call('git:undoPeek', repoPath ?? null),
+    undoById: (id: number, repoPath?: string): Promise<string> => call('git:undo', id, repoPath ?? null),
 
     branches: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] }> => call('branch:list'),
     branchesCached: (): Promise<{ local: BranchInfo[]; remote: BranchInfo[] } | null> => call('branch:cached'),

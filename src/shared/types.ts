@@ -90,6 +90,12 @@ export interface StashEntry {
     date: string
 }
 
+/** Peek at the latest undoable action without consuming it (drives the Undo toast button). */
+export interface UndoPreview {
+    id: number
+    label: string
+}
+
 export interface RepoState {
     merging: boolean
     rebasing: boolean

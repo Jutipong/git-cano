@@ -93,6 +93,8 @@ import {
     unstage,
     unstageAll,
     commitMessage,
+    undoById,
+    peekUndo,
     getLastCommitMessage,
     listTags,
     createTag,
@@ -830,6 +832,14 @@ app.whenReady().then(() => {
     handle('commit:lastMessage', () => {
         requireRepo()
         return getLastCommitMessage()
+    })
+    handle('git:undoPeek', (_dir?: string) => {
+        requireRepo()
+        return peekUndo(typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
+    })
+    handle('git:undo', (id: number, _dir?: string) => {
+        requireRepo()
+        return undoById(id as number, typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
     handle('tag:list', () => {
         requireRepo()

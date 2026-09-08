@@ -1,7 +1,16 @@
 export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'fetch' | 'pull' | 'push' | 'stash'
 
+export interface ToastAction {
+    label: string
+    act: () => void
+}
+
 export interface NotifyOptions {
     asToast?: boolean
+    /** Per-toast lifetime in ms (default TOAST_DURATION) — drives both expiry and the progress ring. */
+    durationMs?: number
+    /** Optional action button (e.g. Undo) rendered inside the toast. */
+    action?: ToastAction
 }
 
 interface ToastMessage {
@@ -10,12 +19,16 @@ interface ToastMessage {
     type: ToastKind
     progress: number
     deadline: number
+    durationMs: number
+    action: ToastAction | null
 }
 
 let toastTicker: ReturnType<typeof setInterval> | null = null
 let nextToastId = 0
 
 export const TOAST_DURATION = 10000
+/** Undo toasts linger longer so the action stays reachable. */
+export const UNDO_TOAST_DURATION = 15000
 const TOAST_TICK_MS = 50
 
 function inferToastKind(message: string): ToastKind {
@@ -59,7 +72,7 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         toastTicker = setInterval(() => {
             const now = Date.now()
             toasts.value = toasts.value.filter(t => {
-                t.progress = Math.max(0, (t.deadline - now) / TOAST_DURATION)
+                t.progress = Math.max(0, (t.deadline - now) / t.durationMs)
                 return t.progress > 0
             })
             if (!toasts.value.length) stopToastTicker()
@@ -70,18 +83,28 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         toasts.value = toasts.value.filter(t => t.id !== id)
     }
 
+    function runToastAction(id: number) {
+        const found = toasts.value.find(t => t.id === id)
+        if (!found?.action) return
+        dismissToast(id)
+        found.action.act()
+    }
+
     function notify(message: string, type?: ToastKind, opts?: NotifyOptions) {
         const kind = type ?? inferToastKind(message)
         if (kind === 'error' && !opts?.asToast) {
             errorDialog.value = message
             return
         }
+        const durationMs = opts?.durationMs ?? TOAST_DURATION
         toasts.value.push({
             id: ++nextToastId,
             message,
             type: kind,
             progress: 1,
-            deadline: Date.now() + TOAST_DURATION,
+            deadline: Date.now() + durationMs,
+            durationMs,
+            action: opts?.action ?? null,
         })
         ensureToastTicker()
     }
@@ -109,6 +132,7 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         bumpStashList,
         notify,
         dismissToast,
+        runToastAction,
         closeErrorDialog,
         withBusy,
     }

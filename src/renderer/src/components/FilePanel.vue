@@ -2,6 +2,7 @@
     import { confirmDialog } from '../utils/confirm'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
+    import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
     import CollapseAllButton from './CollapseAllButton.vue'
     import FileContextMenu, { type FileMenuState } from './FileContextMenu.vue'
@@ -332,10 +333,14 @@
                 await window.api.commitWithAmend(text, false)
                 if (push) await window.api.push()
             },
-            push ? 'Committed and pushed successfully' : 'Committed successfully',
+            null,
             push ? 'Committing and pushing…' : 'Committing…'
         )
-        if (ok) message.value = ''
+        if (!ok) return
+        message.value = ''
+        if (push) notify('Committed and pushed successfully', 'success')
+        // A pushed commit already lives on the remote — local undo would desync, so no Undo offered.
+        else void notifyUndoable(repoStore.repo?.path, 'Committed successfully')
     }
 
     const canGenerate = computed(
@@ -388,9 +393,12 @@
                         await window.api.commitWithAmend(generated, false, repoPath)
                         if (mode === 'commit-push') await window.api.push(false, repoPath)
                     },
-                    mode === 'commit-push' ? 'Committed and pushed successfully' : 'Committed successfully'
+                    null
                 )
-                if (ok) message.value = ''
+                if (!ok) return
+                message.value = ''
+                if (mode === 'commit-push') notify('Committed and pushed successfully', 'success')
+                else void notifyUndoable(repoPath, 'Committed successfully')
             }
         } catch (error) {
             const msg = String(error).replace(/^Error:\s*/, '')

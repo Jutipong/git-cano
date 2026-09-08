@@ -23,6 +23,7 @@ declare global {
   const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
   const SHORTCUTS: typeof import('./utils/shortcuts').SHORTCUTS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
+  const UNDO_TOAST_DURATION: typeof import('./stores/uiTransient').UNDO_TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
   const buildPrefix: typeof import('./utils/virtual').buildPrefix
   const buildTree: typeof import('./utils/fileTree').buildTree
@@ -47,9 +48,11 @@ declare global {
   const isMac: typeof import('./utils/shortcuts').isMac
   const isWhitespaceOnlyChange: typeof import('./utils/highlight').isWhitespaceOnlyChange
   const keysFor: typeof import('./utils/shortcuts').keysFor
+  const notifyUndoable: typeof import('./utils/undo').notifyUndoable
   const onBeforeUnmount: typeof import('vue').onBeforeUnmount
   const onMounted: typeof import('vue').onMounted
   const onUnmounted: typeof import('vue').onUnmounted
+  const performUndo: typeof import('./utils/undo').performUndo
   const promptDialog: typeof import('./utils/prompt').promptDialog
   const provide: typeof import('vue').provide
   const reactive: typeof import('vue').reactive
@@ -91,7 +94,7 @@ declare global {
   export type { Theme, AiCommitMode, RepoTabColor, CommitColumn, DiffViewMode, FileViewMode, ThemeOption } from './stores/ui'
   import('./stores/ui')
   // @ts-ignore
-  export type { ToastKind, NotifyOptions } from './stores/uiTransient'
+  export type { ToastKind, ToastAction, NotifyOptions } from './stores/uiTransient'
   import('./stores/uiTransient')
   // @ts-ignore
   export type { WorkspaceSession } from './stores/workspace'

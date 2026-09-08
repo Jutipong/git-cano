@@ -233,6 +233,14 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   AI commit-message generation failures in `FilePanel.vue` use `notify(msg, 'error')`.
 - Toasts carry kinds (`success | error | warning | info | fetch | pull | push | stash`); the
   `push`/`pull`/`fetch`/`stash` kinds are action-accent colors for the sidebar sync card.
+- **Undo toasts** (`utils/undo.ts` → `notifyUndoable`): commit/amend, soft/mixed reset, and
+  stash delete journal their pre-op state in `main/git.ts` (per-repo stacks, cap 10, cleared on
+  `closeRepo`) and offer a 15s Undo button (`.toast-action` in `App.vue`, per-toast
+  `durationMs` — the 10s global default stays). Undo resolves through an id-guarded
+  `git:undo` IPC call so a stale toast can't undo a newer action. Rules: journal only fully
+  recoverable ops — hard reset and anything already pushed are excluded (no entry = no
+  button, plain toast); undo paths must `bumpStashList()` because `StashPanel` loads outside
+  `refresh()`.
 
 ## Conventions
 

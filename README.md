@@ -56,7 +56,7 @@ pnpm dev
 | 🎯  | **Solo a branch** — focus on one branch, unsolo to restore; files the soloed branch never touched fade in Changes |
 | 🔍  | Search by message, author, hash, or ref                     |
 | 🧺  | Stage/unstage files — or single diff hunks                  |
-| ✅  | Commit & amend with a friendly title-length counter         |
+| ✅  | Commit & amend with a friendly title-length counter — risky actions (commit, reset, stash delete) offer timed Undo |
 | ↔️  | Unified / side-by-side diffs, image diffs, binary detection |
 | 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens) |
 
