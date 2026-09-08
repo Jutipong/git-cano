@@ -58,7 +58,7 @@ pnpm dev
 | 🧺  | Stage/unstage files — or single diff hunks                  |
 | ✅  | Commit & amend with a friendly title-length counter         |
 | ↔️  | Unified / side-by-side diffs, image diffs, binary detection |
-| 🕵️  | Blame view & per-file history                               |
+| 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens) |
 
 ### 🌿 Branches, Tags & Remotes
 

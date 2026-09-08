@@ -82,6 +82,17 @@ Key files:
   direct child of `.app` — **not** inside `.app-body` — because `.app-body` has
   `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
   close (✕).
+- **Blame lens** (`.blame-lens-tip`, 450ms delay, styles in `modern-ui.css`, toggle in the
+  DiffView header persisted via `ui.blameLens`, default off): hovering a gutter shows per-line
+  authorship without opening `BlameModal.vue`. Blame is lazy (first hover only, cached per
+  file+revision, never on diff load) and two-sided — added/context lines map `newNo` into the
+  viewed tree (worktree / commit / stash), deleted lines map `oldNo` into the old side
+  (`<rev>^`, `HEAD` for workdir; skipped entirely when the diff has no deletions). Lens state
+  must stay declared **above** `loadDiff()`: the immediate file watcher runs it during setup,
+  and anything touched there but declared below throws a TDZ ReferenceError that blanks the
+  whole overlay. `getBlame()` parses `summary` plus the final line number from the porcelain
+  sha header (`<orig> <final>` — there is no bare line-number line); do not regress this or
+  `BlameModal.vue` shows 0 on every row again.
 - **Commit graph virtualization** (`GraphView.vue`): SVG edges are collected in the
   `renderEdges` computed and drawn whenever the child→parent row span intersects the
   visible window (+5 rows overscan) — NOT only when both endpoints are on screen.

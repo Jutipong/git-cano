@@ -6,6 +6,7 @@ import type {
     AiProvider,
     AiTestResult,
     AuthConfig,
+    BlameLine,
     BranchInfo,
     CommitDetails,
     CommitFile,
@@ -153,8 +154,7 @@ const api = {
         call('patch:stageHunks', file, stagedView, hunks, reverse),
 
     fileHistory: (file: string): Promise<CommitNode[]> => call('file:history', file),
-    blame: (file: string): Promise<{ hash: string; author: string; date: string; lineNumber: number; content: string }[]> =>
-        call('file:blame', file),
+    blame: (file: string, rev?: string): Promise<BlameLine[]> => call('file:blame', file, rev ?? null),
 
     bisectStart: (bad: string, good?: string): Promise<void> => call('bisect:start', bad, good),
     bisectMark: (kind: 'good' | 'bad' | 'skip'): Promise<void> => call('bisect:mark', kind),

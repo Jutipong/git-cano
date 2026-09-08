@@ -168,6 +168,8 @@ export interface BlameLine {
     date: string
     lineNumber: number
     content: string
+    /** Commit subject (`summary` in porcelain) — absent for uncommitted lines. */
+    summary?: string
 }
 
 /** 'none' disables all AI features. */

@@ -889,9 +889,9 @@ app.whenReady().then(() => {
         requireRepo()
         return getFileHistory(file as string)
     })
-    handle('file:blame', (file: string) => {
+    handle('file:blame', (file: string, rev?: string) => {
         requireRepo()
-        return getBlame(file as string)
+        return getBlame(file as string, typeof rev === 'string' && rev.trim() ? rev : undefined)
     })
     handle('bisect:start', (bad: string, good?: string) => {
         requireRepo()

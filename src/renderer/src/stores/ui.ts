@@ -98,6 +98,8 @@ export const useUiStore = defineStore(
         const diffViewMode = ref<DiffViewMode>(DEFAULT_DIFF_VIEW_MODE)
         if (diffViewMode.value === ('hunk' as DiffViewMode)) diffViewMode.value = DEFAULT_DIFF_VIEW_MODE
         const showEntireFile = ref(DEFAULT_SHOW_ENTIRE_FILE)
+        /** Hover gutter for per-line blame (lens tooltip) in DiffView. Off by default (opt-in). */
+        const blameLens = ref(false)
         const aiCommitMode = ref<AiCommitMode>('off')
         const formatBeforeGenerate = ref(DEFAULT_FORMAT_BEFORE_GENERATE)
         /**
@@ -201,6 +203,7 @@ export const useUiStore = defineStore(
             fileFilterMode,
             diffViewMode,
             showEntireFile,
+            blameLens,
             aiCommitMode,
             formatBeforeGenerate,
             aiRunRequest,
@@ -235,6 +238,7 @@ export const useUiStore = defineStore(
                 'fileFilterMode',
                 'diffViewMode',
                 'showEntireFile',
+                'blameLens',
                 'aiCommitMode',
                 'formatBeforeGenerate',
                 'tagPushToOrigin',

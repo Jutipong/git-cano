@@ -1934,9 +1934,10 @@ export async function getFileHistory(file: string, limit = 200): Promise<CommitN
         })
 }
 
-export async function getBlame(file: string): Promise<BlameLine[]> {
+export async function getBlame(file: string, rev?: string): Promise<BlameLine[]> {
     const { git: g } = getRepo()
-    const text = await g.raw(['blame', '--line-porcelain', '--', file])
+    const at = rev?.trim()
+    const text = await g.raw(at ? ['blame', '--line-porcelain', at, '--', file] : ['blame', '--line-porcelain', '--', file])
     const result: BlameLine[] = []
     const current: Partial<BlameLine> = {}
     for (const line of text.split('\n')) {
@@ -1947,15 +1948,23 @@ export async function getBlame(file: string): Promise<BlameLine[]> {
                 date: current.date ?? '',
                 lineNumber: current.lineNumber ?? 0,
                 content: line.slice(1),
+                ...(current.summary ? { summary: current.summary } : {}),
             })
             continue
         }
         const spaceAt = line.indexOf(' ')
         const key = spaceAt === -1 ? line : line.slice(0, spaceAt)
         const value = spaceAt === -1 ? '' : line.slice(spaceAt + 1)
-        if (/^[0-9a-f]{40}$/.test(key)) current.hash = key
-        else if (key === 'author') current.author = value
+        if (/^[0-9a-f]{40}$/.test(key)) {
+            // A new commit block starts — reset the per-commit fields (summary repeats only on first sighting).
+            // The header carries `<orig> <final> [<count>]`: `final` is the line number in the blamed file.
+            current.hash = key
+            current.summary = undefined
+            const finalNo = parseInt(value.split(' ')[1], 10)
+            if (Number.isFinite(finalNo)) current.lineNumber = finalNo
+        } else if (key === 'author') current.author = value
         else if (key === 'author-time') current.date = new Date(parseInt(value, 10) * 1000).toISOString()
+        else if (key === 'summary' && current.summary === undefined) current.summary = value
         else if (/^\d+$/.test(key)) current.lineNumber = parseInt(key, 10)
     }
     return result

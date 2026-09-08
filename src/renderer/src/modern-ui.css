@@ -2571,6 +2571,37 @@ body {
     font-size: 11px;
 }
 
+/* Blame lens tooltip in DiffView — same card language as .avatar-tip */
+.blame-lens-tip {
+    position: fixed;
+    z-index: 95;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 320px;
+    padding: 10px 12px;
+    background: var(--surface-3, var(--surface-2));
+    border: 1px solid var(--line-soft);
+    border-radius: 10px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+    color: var(--text);
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.blame-lens-subject {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.diff-body .ln {
+    cursor: help;
+}
+
 .ref-chip {
     gap: 4px;
     padding: 2px 7px;

@@ -9,11 +9,12 @@
         highlightLineAt,
         type LineRenderContext,
     } from '../utils/highlight'
+    import { formatDatePattern } from '../utils/format'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
-    import type { DiffLine } from '@shared/types'
+    import type { BlameLine, DiffLine } from '@shared/types'
 
     interface Props {
         file: { path: string; staged: boolean } | null
@@ -55,6 +56,21 @@
     // Per-line highlight cache, keyed by the stable DiffLine objects of the current load.
     let htmlCache = new Map<DiffLine, string>()
 
+    /* Blame-lens state lives above loadDiff: the immediate file watcher runs loadDiff() during setup,
+       before anything declared further down is initialized (TDZ). */
+    const LENS_DELAY_MS = 450
+    const ZERO_HASH = '0000000000000000000000000000000000000000'
+    const LENS_AVATARS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
+
+    const lens = ref<LensData | null>(null)
+    const lensEl = ref<HTMLElement | null>(null)
+    let lensTimer: number | undefined
+    let blameKey = ''
+    let blameFlight: Promise<void> | null = null
+    const blameNew = ref(new Map<number, BlameLine>())
+    const blameOld = ref(new Map<number, BlameLine>())
+    const blameNewFailed = ref(false)
+
     const searchQuery = ref('')
     const searchInput = ref<HTMLInputElement | null>(null)
     const currentMatch = ref(0)
@@ -67,6 +83,9 @@
         rawPatch.value = ''
         currentChange.value = 0
         htmlCache = new Map()
+        hideLens()
+        blameKey = ''
+        blameFlight = null
         const f = props.file
         if (!f) return
         loading.value = true
@@ -132,6 +151,143 @@
             currentChange.value = 0
         }
     )
+
+    /* ---- Blame lens: hover a line number for per-line authorship (no BlameModal needed) ---- */
+    interface LensTarget {
+        type: DiffLine['type']
+        oldNo: number | null
+        newNo: number | null
+    }
+    interface LensData {
+        /** Null = line has no revision to blame (uncommitted). */
+        entry: BlameLine | null
+        lineNo: number
+        x: number
+        y: number
+    }
+
+    function lensTargetOf(line: DiffLine | undefined): LensTarget | null {
+        if (!line || line.type === 'hunk' || line.type === 'meta') return null
+        return { type: line.type, oldNo: line.oldNo, newNo: line.newNo }
+    }
+
+    /**
+     * Lazily blame both sides of the viewed revision (new side for added/context lines, old side for
+     * deleted ones). Workdir blames the worktree (uncommitted lines surface as zero-hash), commit/stash
+     * views blame their trees. Cached per file+revision; the old side is skipped for addition-only diffs.
+     */
+    async function ensureLensBlame(): Promise<void> {
+        const f = props.file
+        if (!f || meta.value?.binary || meta.value?.image) return
+        const newRev = props.stashHash ?? props.commitHash ?? null
+        const oldRev = props.stashHash ? `${props.stashHash}^` : props.commitHash ? `${props.commitHash}^` : 'HEAD'
+        const key = `${f.path}|${newRev ?? 'worktree'}|${oldRev}`
+        if (key === blameKey) return
+        if (blameFlight) {
+            await blameFlight.catch(() => {})
+            if (key === blameKey) return
+        }
+        blameKey = key
+        blameNew.value = new Map()
+        blameOld.value = new Map()
+        blameNewFailed.value = false
+        const needOld = lines.value.some(line => line.type === 'del')
+        const flight = (async () => {
+            const [fresh, aged] = await Promise.all([
+                window.api.blame(f.path, newRev ?? undefined).catch(() => null),
+                needOld ? window.api.blame(f.path, oldRev).catch(() => null) : Promise.resolve(null),
+            ])
+            if (blameKey !== key) return
+            if (fresh) blameNew.value = new Map(fresh.map(b => [b.lineNumber, b]))
+            else blameNewFailed.value = true
+            if (aged) blameOld.value = new Map(aged.map(b => [b.lineNumber, b]))
+        })()
+        blameFlight = flight
+        try {
+            await flight
+        } finally {
+            if (blameFlight === flight) blameFlight = null
+        }
+    }
+
+    function resolveLens(target: LensTarget): { entry: BlameLine; lineNo: number } | { uncommitted: true; lineNo: number } | null {
+        if (target.type === 'del') {
+            if (target.oldNo === null || target.oldNo === undefined) return null
+            const entry = blameOld.value.get(target.oldNo)
+            return entry ? { entry, lineNo: target.oldNo } : null
+        }
+        if (target.newNo === null || target.newNo === undefined) return null
+        const entry = blameNew.value.get(target.newNo)
+        if (entry) return { entry, lineNo: target.newNo }
+        // Untracked file (or failed blame): added workdir lines have no revision to blame.
+        if (blameNewFailed.value && target.type === 'add' && !props.commitHash && !props.stashHash) {
+            return { uncommitted: true, lineNo: target.newNo }
+        }
+        return null
+    }
+
+    function openLens(target: LensTarget, x: number, y: number) {
+        const found = resolveLens(target)
+        if (!found) {
+            lens.value = null
+            return
+        }
+        lens.value = { entry: 'entry' in found ? found.entry : null, lineNo: found.lineNo, x: x + 14, y: y + 16 }
+        nextTick(() => {
+            const el = lensEl.value
+            if (!el || !lens.value) return
+            lens.value = {
+                ...lens.value,
+                x: Math.max(8, Math.min(x + 14, window.innerWidth - el.offsetWidth - 8)),
+                y: Math.max(8, Math.min(y + 16, window.innerHeight - el.offsetHeight - 8)),
+            }
+        })
+    }
+
+    function scheduleLens(line: DiffLine | undefined, event: MouseEvent) {
+        if (!ui.blameLens) return
+        const target = lensTargetOf(line)
+        if (!target) return
+        window.clearTimeout(lensTimer)
+        const { clientX, clientY } = event
+        const ctx = `${props.file?.path}|${props.commitHash}|${props.stashHash}`
+        lensTimer = window.setTimeout(() => {
+            // File switched mid-hover — the numbers belong to another file.
+            if (ctx !== `${props.file?.path}|${props.commitHash}|${props.stashHash}`) return
+            void ensureLensBlame()
+                .catch(() => {})
+                .then(() => openLens(target, clientX, clientY))
+        }, LENS_DELAY_MS)
+    }
+
+    function showLensNow(line: DiffLine | undefined, event: MouseEvent) {
+        if (!ui.blameLens) return
+        const target = lensTargetOf(line)
+        if (!target) return
+        window.clearTimeout(lensTimer)
+        const { clientX, clientY } = event
+        const ctx = `${props.file?.path}|${props.commitHash}|${props.stashHash}`
+        void ensureLensBlame()
+            .catch(() => {})
+            .then(() => {
+                // File switched mid-tap — the numbers belong to another file.
+                if (ctx !== `${props.file?.path}|${props.commitHash}|${props.stashHash}`) return
+                openLens(target, clientX, clientY)
+            })
+    }
+
+    function hideLens() {
+        window.clearTimeout(lensTimer)
+        lens.value = null
+    }
+
+    function lensAvatarColor(name: string): string {
+        let h = 0
+        for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0
+        return LENS_AVATARS[h % LENS_AVATARS.length]
+    }
+
+    const lensDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
 
     const sourceLabel = computed(() => {
         if (props.stashHash) return `${props.stashHash.slice(0, 7)} · stash`
@@ -643,6 +799,7 @@
     }
 
     function onBodyScroll() {
+        hideLens()
         const body = diffBody.value
         if (body) scrollTop.value = body.scrollTop
         updateViewport()
@@ -672,6 +829,7 @@
     }
 
     onBeforeUnmount(() => {
+        window.clearTimeout(lensTimer)
         if (scrollAnimation) cancelAnimationFrame(scrollAnimation)
         resizeObserver?.disconnect()
         resizeObserver = null
@@ -841,6 +999,16 @@
                     </button>
                     <span class="segmented-divider" />
                     <button
+                        class="segmented-btn"
+                        :class="{ active: ui.blameLens }"
+                        title="Blame lens — hover a line number for authorship"
+                        @click="ui.blameLens = !ui.blameLens">
+                        <i-lucide-history
+                            width="15"
+                            height="15" />
+                    </button>
+                    <span class="segmented-divider" />
+                    <button
                         class="segmented-btn entire-file"
                         :class="{ active: ui.showEntireFile }"
                         :title="ui.showEntireFile ? 'Show diff only' : 'Show entire file'"
@@ -949,8 +1117,14 @@
                                         { 'search-current': searchIndexMap.get(v.row.left) === currentMatch },
                                     ]"
                                     :data-change="v.row.change"
-                                    :data-search="searchIndexMap.get(v.row.left)">
-                                    <span class="ln">{{ v.row.left?.oldNo ?? '' }}</span>
+                                    :data-search="searchIndexMap.get(v.row.left)"
+                                    @mouseenter="event => scheduleLens(v.row.left, event)"
+                                    @mouseleave="hideLens">
+                                    <span
+                                        class="ln"
+                                        @click.stop="event => showLensNow(v.row.left, event)"
+                                        >{{ v.row.left?.oldNo ?? '' }}</span
+                                    >
                                     <pre
                                         v-if="v.row.left"
                                         v-html="htmlFor(v.row.left, v.i)" />
@@ -984,8 +1158,14 @@
                                         { 'search-current': searchIndexMap.get(v.row.right) === currentMatch },
                                     ]"
                                     :data-change="v.row.change"
-                                    :data-search="searchIndexMap.get(v.row.right)">
-                                    <span class="ln">{{ v.row.right?.newNo ?? '' }}</span>
+                                    :data-search="searchIndexMap.get(v.row.right)"
+                                    @mouseenter="event => scheduleLens(v.row.right, event)"
+                                    @mouseleave="hideLens">
+                                    <span
+                                        class="ln"
+                                        @click.stop="event => showLensNow(v.row.right, event)"
+                                        >{{ v.row.right?.newNo ?? '' }}</span
+                                    >
                                     <pre
                                         v-if="v.row.right"
                                         v-html="htmlFor(v.row.right, v.i)" />
@@ -1006,9 +1186,19 @@
                         class="diff-line"
                         :class="[v.line.type, lineFlagClass(v.line), { 'search-current': searchIndexMap.get(v.line) === currentMatch }]"
                         :data-change="changeIndexMap.get(v.i)"
-                        :data-search="searchIndexMap.get(v.line)">
-                        <span class="ln">{{ v.line.oldNo ?? '' }}</span>
-                        <span class="ln">{{ v.line.newNo ?? '' }}</span>
+                        :data-search="searchIndexMap.get(v.line)"
+                        @mouseenter="event => scheduleLens(v.line, event)"
+                        @mouseleave="hideLens">
+                        <span
+                            class="ln"
+                            @click.stop="event => showLensNow(v.line, event)"
+                            >{{ v.line.oldNo ?? '' }}</span
+                        >
+                        <span
+                            class="ln"
+                            @click.stop="event => showLensNow(v.line, event)"
+                            >{{ v.line.newNo ?? '' }}</span
+                        >
                         <!-- eslint-disable-next-line vue/no-v-html -->
                         <pre v-html="htmlFor(v.line, v.i)" />
                         <button
@@ -1041,6 +1231,37 @@
                     ref="viewportEl"
                     class="minimap-viewport" />
             </div>
+        </div>
+        <div
+            v-if="lens"
+            ref="lensEl"
+            class="blame-lens-tip"
+            :style="{ left: `${lens.x}px`, top: `${lens.y}px` }">
+            <template v-if="lens.entry && lens.entry.hash !== ZERO_HASH">
+                <span class="avatar-tip-author">
+                    <span
+                        class="avatar-tip-dot"
+                        :style="{ background: lensAvatarColor(lens.entry.author) }"
+                        >{{ lens.entry.author.trim().slice(0, 1).toUpperCase() }}</span
+                    >
+                    <strong>{{ lens.entry.author }}</strong>
+                </span>
+                <span
+                    v-if="lens.entry.summary"
+                    class="blame-lens-subject"
+                    >{{ lens.entry.summary }}</span
+                >
+                <span class="avatar-tip-date"
+                    >{{ formatDatePattern(lens.entry.date, lensDatePattern) }} · line {{ lens.lineNo }} ·
+                    {{ lens.entry.hash.slice(0, 7) }}</span
+                >
+            </template>
+            <template v-else>
+                <span class="avatar-tip-author">
+                    <strong>Uncommitted changes</strong>
+                </span>
+                <span class="avatar-tip-date">line {{ lens.lineNo }} · not in git history yet</span>
+            </template>
         </div>
     </div>
 </template>
