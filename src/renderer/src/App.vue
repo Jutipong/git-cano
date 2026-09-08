@@ -407,6 +407,7 @@
                                 :commits="commits"
                                 :has-more="hasMore"
                                 :commit-open="!!selectedCommit || !!selectedStash"
+                                :hide-to-top="!!(selectedFile || selectedConflict || historyFile || blameFile)"
                                 @select-commit="selectCommit"
                                 @load-more="repoStore.loadMore()"
                                 @checkout="checkoutCommit"

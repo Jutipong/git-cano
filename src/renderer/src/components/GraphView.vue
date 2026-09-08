@@ -16,6 +16,8 @@
         commits: CommitNode[]
         hasMore: boolean
         commitOpen: boolean
+        /** True while a diff overlay (DiffView / ConflictView / FileHistory / Blame) covers the graph. */
+        hideToTop?: boolean
     }
 
     const props = defineProps<Props>()
@@ -86,7 +88,10 @@
         if (event.key === 'Escape') expandedHash.value = null
     }
     onMounted(() => window.addEventListener('keydown', onKeydown))
-    onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+    onBeforeUnmount(() => {
+        window.removeEventListener('keydown', onKeydown)
+        if (scrollAnimation) cancelAnimationFrame(scrollAnimation)
+    })
     onBeforeUnmount(() => window.clearTimeout(tipTimer))
 
     const normalizedQuery = computed(() => uiTransient.searchQuery.trim().toLowerCase())
@@ -153,8 +158,32 @@
         }
     }
 
+    /** Same easing as DiffView's animateBodyScrollTo so both to-top buttons feel identical. */
+    let scrollAnimation: number | null = null
+    function animateScrollTo(target: number) {
+        const el = scrollEl.value
+        if (!el) return
+        const from = el.scrollTop
+        const distance = target - from
+        if (Math.abs(distance) < 4) return
+        if (scrollAnimation) cancelAnimationFrame(scrollAnimation)
+        if (Math.abs(distance) < 120) {
+            el.scrollTo({ top: target })
+            return
+        }
+        const duration = 160
+        const start = performance.now()
+        const step = (now: number) => {
+            const t = Math.min((now - start) / duration, 1)
+            const eased = 1 - Math.pow(1 - t, 3)
+            el.scrollTo({ top: from + distance * eased })
+            scrollAnimation = t < 1 ? requestAnimationFrame(step) : null
+        }
+        scrollAnimation = requestAnimationFrame(step)
+    }
+
     function scrollToTop() {
-        scrollEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
+        animateScrollTo(0)
     }
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
@@ -764,7 +793,7 @@
             </div>
         </div>
         <button
-            v-if="showToTop"
+            v-if="showToTop && !props.hideToTop"
             class="to-top-btn"
             title="Back to top"
             @click="scrollToTop">

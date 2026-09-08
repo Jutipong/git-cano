@@ -52,6 +52,7 @@
     const rowHeight = ref(ROW_HEIGHT)
     const scrollTop = ref(0)
     const viewportH = ref(0)
+    const showToTop = ref(false)
 
     // Per-line highlight cache, keyed by the stable DiffLine objects of the current load.
     let htmlCache = new Map<DiffLine, string>()
@@ -82,6 +83,7 @@
         images.value = null
         rawPatch.value = ''
         currentChange.value = 0
+        showToTop.value = false
         htmlCache = new Map()
         hideLens()
         blameKey = ''
@@ -503,6 +505,10 @@
         animateBodyScrollTo(rowIndex * rowHeight.value)
     }
 
+    function scrollToTop() {
+        animateBodyScrollTo(0)
+    }
+
     function goToChange(delta: number) {
         if (!changeCount.value) return
         currentChange.value = (currentChange.value + delta + changeCount.value) % changeCount.value
@@ -802,6 +808,7 @@
         hideLens()
         const body = diffBody.value
         if (body) scrollTop.value = body.scrollTop
+        showToTop.value = !!body && body.scrollTop > rowHeight.value * 20
         updateViewport()
         if (scrollSyncTimer) clearTimeout(scrollSyncTimer)
         scrollSyncTimer = setTimeout(syncChangeCounter, 150)
@@ -1231,6 +1238,16 @@
                     ref="viewportEl"
                     class="minimap-viewport" />
             </div>
+
+            <button
+                v-if="showToTop && !loading"
+                class="to-top-btn"
+                title="Back to top"
+                @click="scrollToTop">
+                <i-lucide-arrow-up
+                    width="16"
+                    height="16" />
+            </button>
         </div>
         <div
             v-if="lens"

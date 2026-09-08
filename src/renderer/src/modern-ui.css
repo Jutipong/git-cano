@@ -4958,10 +4958,17 @@ body {
 }
 
 .diff-main {
+    position: relative;
     display: flex;
     flex: 1;
     min-width: 0;
     min-height: 0;
+}
+
+/* Clear the 20px minimap strip on the right edge. */
+.diff-main .to-top-btn {
+    right: 30px;
+    bottom: 16px;
 }
 
 .diff-main .diff-body {
