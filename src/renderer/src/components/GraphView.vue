@@ -78,10 +78,6 @@
         expandedHash.value = hash
     }
 
-    function fullMessage(commit: CommitNode): string {
-        return [commit.subject, commit.body].filter(Boolean).join('\n\n')
-    }
-
     function onKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape') expandedHash.value = null
     }
@@ -722,11 +718,17 @@
                         class="commit-msg-popover"
                         :class="{ above: expandedAbove }"
                         @click.stop>
-                        <div class="cmp-meta">{{ [commit.author, formatDate(commit.date), commit.shortHash].join(' · ') }}</div>
+                        <div class="cmp-meta">
+                            <strong class="cmp-author">{{ commit.author }}</strong>
+                            <span class="cmp-date">{{ formatDate(commit.date) }}</span>
+                            <span class="cmp-hash">{{ commit.shortHash }}</span>
+                        </div>
+                        <div class="cmp-subject">{{ commit.subject }}</div>
                         <pre
+                            v-if="commit.body"
                             class="cmp-message"
                             :style="{ maxHeight: `${expandedMaxH}px` }"
-                            >{{ fullMessage(commit) }}</pre>
+                            >{{ commit.body }}</pre>
                     </div>
                 </div>
                 <div
@@ -762,7 +764,39 @@
             ref="tipEl"
             class="avatar-tip"
             :style="{ left: `${tip.x}px`, top: `${tip.y}px` }">
-            <strong>{{ tip.commit.author }}</strong>
+            <span
+                v-if="tip.commit.refs.length"
+                class="subject-chips avatar-tip-chips">
+                <span
+                    v-for="ref in sortedRefs(tip.commit)"
+                    :key="ref"
+                    class="ref-chip"
+                    :class="refKind(ref)"
+                    :style="{
+                        '--chip-color': chipColor(ref),
+                        '--chip-fg': contrastText(chipColor(ref)),
+                    }">
+                    <i-lucide-git-branch
+                        v-if="refKind(ref) === 'head' || refKind(ref) === 'local'"
+                        width="9"
+                        height="9" />
+                    <i-lucide-globe2
+                        v-else-if="refKind(ref) === 'remote'"
+                        width="9"
+                        height="9" />
+                    <i-lucide-tag
+                        v-else
+                        width="9"
+                        height="9" />
+                    {{ refLabel(ref) }}
+                </span>
+            </span>
+            <span class="avatar-tip-author">
+                <span
+                    class="avatar-tip-dot"
+                    :style="{ background: avatarColor(tip.commit.author) }">{{ avatarInitial(tip.commit) }}</span>
+                <strong>{{ tip.commit.author }}</strong>
+            </span>
             <span
                 v-if="tip.commit.authorEmail"
                 class="avatar-tip-email"

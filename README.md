@@ -49,6 +49,8 @@ pnpm dev
 |     |                                                             |
 | --- | ----------------------------------------------------------- |
 | 🌌  | Interactive commit graph (custom SVG renderer)              |
+| 🏷️  | Hover a commit node — branch/tag chips, author avatar, email & time |
+| 💬  | Full-message popover — subject emphasized with author/date/hash header |
 | 🔝  | To-top button — jump back to the newest commits after deep scrolling |
 | 🎯  | **Solo a branch** — focus on one branch, unsolo to restore  |
 | 🔍  | Search by message, author, hash, or ref                     |

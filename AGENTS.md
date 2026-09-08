@@ -85,6 +85,15 @@ Key files:
   Endpoint-based culling made long lane lines vanish mid-scroll; do not reintroduce it.
   The floating to-top button (`.to-top-btn`, styles in `styles.css`) appears after ~20
   rows of scroll and smooth-scrolls back to the top.
+- **Node hover tooltip** (`.avatar-tip`, 500ms delay, styles in `modern-ui.css`):
+  shows ref chips on top (reusing `sortedRefs()` / `refKind()` / `chipColor()` so chips
+  look identical to the row ones), then author with an avatar dot, email, and date.
+  Refs come from `CommitNode.refs` (git log `%d`) — they only exist on branch/tag tips;
+  no on-demand `--contains` lookup.
+- **Full-message popover** (`.commit-msg-popover`, styles in `modern-ui.css`): header row
+  is author (bold) / date / mono hash chip with a separator line, then the subject
+  (bold) and the body as a `<pre>` (shown only when `commit.body` exists). Flips above
+  the row via `.above` when there is not enough room below — keep that behavior.
 - **Commit selection** affects Changes/DiffView but there is no separate details panel —
   do not reintroduce one; extend the Changes panel instead.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should
