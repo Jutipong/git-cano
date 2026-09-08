@@ -648,6 +648,7 @@ kbd {
     box-shadow: none;
 }
 .graph-view {
+    position: relative;
     display: flex;
     flex: 1;
     flex-direction: column;
@@ -2036,6 +2037,34 @@ kbd {
     display: flex;
     justify-content: center;
     padding: 14px;
+}
+
+.to-top-btn {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    color: var(--canvas);
+    background: var(--blue);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    animation: to-top-in 0.15s ease-out;
+}
+.to-top-btn:hover {
+    background: color-mix(in srgb, var(--blue) 82%, white);
+}
+@keyframes to-top-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
 }
 
 .tok-comment {

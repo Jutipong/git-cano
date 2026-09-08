@@ -135,10 +135,12 @@
     })
 
     let loadMoreArmed = true
+    const showToTop = ref(false)
     function onScroll() {
         hideTip()
         const el = scrollEl.value
         if (!el) return
+        showToTop.value = el.scrollTop > rowH * 20
         const start = Math.max(0, Math.floor(el.scrollTop / rowH) - 15)
         const count = Math.ceil(el.clientHeight / rowH) + 30
         visibleRange.value = [start, start + count]
@@ -149,6 +151,10 @@
         } else if (!nearBottom) {
             loadMoreArmed = true
         }
+    }
+
+    function scrollToTop() {
+        scrollEl.value?.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
@@ -742,6 +748,15 @@
                 </button>
             </div>
         </div>
+        <button
+            v-if="showToTop"
+            class="to-top-btn"
+            title="Back to top"
+            @click="scrollToTop">
+            <i-lucide-arrow-up
+                width="16"
+                height="16" />
+        </button>
         <div
             v-if="tip"
             ref="tipEl"
