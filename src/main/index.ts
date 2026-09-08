@@ -21,6 +21,7 @@ import {
 import {
     checkoutWithOptions,
     checkoutRemoteWithOptions,
+    checkCherryPickConflicts,
     closeRepo,
     commit,
     createBranchWithOptions,
@@ -69,6 +70,8 @@ import {
     rebaseAbort,
     rebaseContinue,
     cherryPick,
+    cherryPickContinue,
+    cherryPickAbort,
     resetTo,
     renameBranch,
     getCommitFileDiff,
@@ -670,6 +673,18 @@ app.whenReady().then(() => {
     handle('commit:cherryPick', (hash: string) => {
         requireRepo()
         return cherryPick(hash as string)
+    })
+    handle('commit:cherryPickCheck', (hash: string, target: string) => {
+        requireRepo()
+        return checkCherryPickConflicts(hash as string, target as string)
+    })
+    handle('cherryPick:continue', () => {
+        requireRepo()
+        return cherryPickContinue()
+    })
+    handle('cherryPick:abort', () => {
+        requireRepo()
+        return cherryPickAbort()
     })
     handle('ref:reset', (target: string, mode: 'soft' | 'mixed' | 'hard') => {
         requireRepo()

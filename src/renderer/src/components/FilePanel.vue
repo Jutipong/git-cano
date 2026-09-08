@@ -141,7 +141,8 @@
     const repoState = computed(() => repoStore.repoState)
     const isMerging = computed(() => repoState.value.merging)
     const isRebasing = computed(() => repoState.value.rebasing)
-    const inConflictFlow = computed(() => isMerging.value || isRebasing.value)
+    const isCherryPicking = computed(() => repoState.value.cherryPicking)
+    const inConflictFlow = computed(() => isMerging.value || isRebasing.value || isCherryPicking.value)
     const conflictedFiles = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isConflicted) : []))
 
     function markResolved(file: FileEntry) {
@@ -163,6 +164,27 @@
     function abortRebase() {
         void run(() => window.api.rebaseAbort(), 'Rebase aborted', 'Aborting rebase…')
     }
+    function continueCherryPick() {
+        void run(() => window.api.cherryPickContinue(), 'Cherry-pick continued', 'Continuing cherry-pick…')
+    }
+    function abortCherryPick() {
+        void run(() => window.api.cherryPickAbort(), 'Cherry-pick aborted', 'Aborting cherry-pick…')
+    }
+    function continueFlow() {
+        if (isRebasing.value) return continueRebase()
+        if (isCherryPicking.value) return continueCherryPick()
+        return continueMerge()
+    }
+    function abortFlow() {
+        if (isRebasing.value) return abortRebase()
+        if (isCherryPicking.value) return abortCherryPick()
+        return abortMerge()
+    }
+    const continueIdleLabel = computed(() =>
+        isRebasing.value ? 'Continue rebase' : isCherryPicking.value ? 'Continue cherry-pick' : 'Continue merge'
+    )
+    const continueBusyLabel = computed(() => (isMerging.value && !isCherryPicking.value ? 'Merging…' : 'Continuing…'))
+    const abortLabel = computed(() => (isRebasing.value ? 'Abort rebase' : isCherryPicking.value ? 'Abort cherry-pick' : 'Abort merge'))
     watch(
         () => repoStore.repo?.path,
         () => {
@@ -1131,7 +1153,7 @@
                     class="btn conflict-continue"
                     :disabled="conflictedFiles.length > 0 || pending"
                     :title="conflictedFiles.length ? 'Resolve all conflicts first' : ''"
-                    @click="isRebasing ? continueRebase() : continueMerge()">
+                    @click="continueFlow()">
                     <ThinkSpinner
                         v-if="pending"
                         compact />
@@ -1139,16 +1161,16 @@
                         v-else
                         width="14"
                         height="14" />
-                    {{ pending ? (isRebasing ? 'Continuing…' : 'Merging…') : isRebasing ? 'Continue rebase' : 'Continue merge' }}
+                    {{ pending ? continueBusyLabel : continueIdleLabel }}
                 </button>
                 <button
                     class="btn conflict-abort"
                     :disabled="pending"
-                    @click="isRebasing ? abortRebase() : abortMerge()">
+                    @click="abortFlow()">
                     <i-lucide-x
                         width="14"
                         height="14" />
-                    {{ isRebasing ? 'Abort rebase' : 'Abort merge' }}
+                    {{ abortLabel }}
                 </button>
             </div>
             <template v-else>

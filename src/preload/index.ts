@@ -24,6 +24,7 @@ import type {
     StashEntry,
     LocalChangesMode,
     OpenInTargets,
+    RepoState,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -62,7 +63,7 @@ const api = {
     commitDetails: (hash: string): Promise<CommitDetails> => call('commit:details', hash),
     revertCommit: (hash: string): Promise<void> => call('commit:revert', hash),
     checkoutCommit: (hash: string): Promise<void> => call('commit:checkout', hash),
-    repoState: (): Promise<{ merging: boolean; rebasing: boolean; bisectActive: boolean }> => call('repo:state'),
+    repoState: (): Promise<RepoState> => call('repo:state'),
     conflictTakeSide: (file: string, side: 'ours' | 'theirs'): Promise<void> => call('conflict:side', file, side),
     markResolved: (files: string[]): Promise<void> => call('conflict:resolved', files),
     readConflictFile: (file: string): Promise<string | null> => call('conflict:read', file),
@@ -78,6 +79,9 @@ const api = {
         call('rebase:execute', baseRef, entries, Boolean(resume)),
     rebaseAbortPaused: (): Promise<void> => call('rebase:abortPaused'),
     cherryPick: (hash: string): Promise<void> => call('commit:cherryPick', hash),
+    cherryPickCheck: (hash: string, target: string): Promise<MergeCheck> => call('commit:cherryPickCheck', hash, target),
+    cherryPickContinue: (): Promise<void> => call('cherryPick:continue'),
+    cherryPickAbort: (): Promise<void> => call('cherryPick:abort'),
     resetTo: (target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> => call('ref:reset', target, mode),
     renameBranch: (oldName: string, newName: string): Promise<void> => call('branch:rename', oldName, newName),
     commitFileDiff: (hash: string, file: string, context?: number): Promise<DiffLine[]> => call('file:commitDiff', hash, file, context),

@@ -1164,6 +1164,53 @@ export async function checkMergeConflicts(source: string, target: string): Promi
     return parseMergeTreeOutput(stdout)
 }
 
+/**
+ * Dry-run cherry-pick check via `git merge-tree --write-tree` — simulates replaying `hash` onto `target` the same way `git cherry-pick`
+ * would (ours = target tip, theirs = commit, base = the commit's parent). Requires git >= 2.38 with `--merge-base` support, otherwise
+ * `supported: false`. Root commits have no parent to replay from, so they also report unsupported.
+ *
+ * Note: this only covers tree-level conflicts — a dirty worktree or untracked files can still fail the real pick.
+ */
+export async function checkCherryPickConflicts(hash: string, target: string): Promise<MergeCheck> {
+    const { git: g } = getRepo()
+    const rev = hash.trim()
+    const tip = target.trim()
+    if (!rev || !tip) throw new Error('A commit and a branch are required')
+    let parents = ''
+    try {
+        parents = (await g.raw(['show', '-s', '--format=%P', rev])).trim()
+    } catch {
+        throw new Error(`Unknown commit: ${rev.slice(0, 7)}`)
+    }
+    const base = parents.split(/\s+/).filter(Boolean)[0]
+    if (!base) return { supported: false, fastForward: false, conflicts: [] }
+    try {
+        const [mergeBase, targetHead] = await Promise.all([
+            g.raw(['merge-base', tip, rev]).then(out => out.trim(), () => ''),
+            g.raw(['rev-parse', '--verify', tip]).then(out => out.trim(), () => ''),
+        ])
+        // Already an ancestor of the target — the real pick would come out empty.
+        if (mergeBase && targetHead && (mergeBase === rev || mergeBase.startsWith(rev))) {
+            return { supported: true, fastForward: true, conflicts: [] }
+        }
+    } catch {}
+    let stdout = ''
+    try {
+        stdout = await g.raw(['merge-tree', '--write-tree', '--name-only', `--merge-base=${base}`, tip, rev])
+    } catch (error) {
+        const err = error as { git?: { stdout?: string }; message?: string }
+        stdout = err.git?.stdout ?? ''
+        if (!stdout) {
+            const text = err.message ?? ''
+            if (!/unknown option|unrecognized|usage: git merge-tree/i.test(text)) {
+                log('warn', 'git', `cherry-pick check failed: ${text.split('\n')[0]}`)
+            }
+            return { supported: false, fastForward: false, conflicts: [] }
+        }
+    }
+    return parseMergeTreeOutput(stdout)
+}
+
 function parseMergeTreeOutput(stdout: string): MergeCheck {
     // Success: a single tree OID line. Conflict (exit 1): tree OID, then with
     // --name-only one conflicted file per line until a blank line, then
@@ -1332,8 +1379,9 @@ export function getRepoState(): RepoState {
     const gitDir = fs.existsSync(path.join(p, '.git')) ? path.join(p, '.git') : p
     const merging = fs.existsSync(path.join(gitDir, 'MERGE_HEAD'))
     const rebasing = fs.existsSync(path.join(gitDir, 'rebase-merge')) || fs.existsSync(path.join(gitDir, 'rebase-apply'))
+    const cherryPicking = fs.existsSync(path.join(gitDir, 'CHERRY_PICK_HEAD'))
     const bisectActive = fs.existsSync(path.join(gitDir, 'BISECT_START')) || fs.existsSync(path.join(gitDir, 'BISECT_LOG'))
-    return { merging, rebasing, bisectActive, mergeSource: merging ? mergeSourceName(gitDir) : null }
+    return { merging, rebasing, cherryPicking, bisectActive, mergeSource: merging ? mergeSourceName(gitDir) : null }
 }
 
 export async function checkoutSide(file: string, side: 'ours' | 'theirs'): Promise<void> {
@@ -1429,7 +1477,27 @@ export async function rebaseContinue(): Promise<void> {
 
 export async function cherryPick(hash: string): Promise<void> {
     const { git: g } = getRepo()
-    await g.raw(['cherry-pick', hash])
+    try {
+        await g.raw(['cherry-pick', hash])
+    } catch {
+        if (getRepoState().cherryPicking) throw new Error('Cherry-pick stopped due to conflicts. Resolve them, then continue.')
+        throw new Error('Cherry-pick failed')
+    }
+}
+
+export async function cherryPickContinue(): Promise<void> {
+    const { git: g } = getRepo()
+    g.env({ ...baseEnv(), GIT_EDITOR: 'true' })
+    try {
+        await g.raw(['cherry-pick', '--continue'])
+    } finally {
+        g.env(baseEnv())
+    }
+}
+
+export async function cherryPickAbort(): Promise<void> {
+    const { git: g } = getRepo()
+    await g.raw(['cherry-pick', '--abort'])
 }
 
 export async function resetTo(target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> {

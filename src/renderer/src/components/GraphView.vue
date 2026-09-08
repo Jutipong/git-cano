@@ -56,7 +56,6 @@
     const selectedHash = ref<string | null>(null)
     const showSettings = ref(false)
     const menu = ref<CommitMenuState | null>(null)
-    const dropTargetHash = ref<string | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
     const expandedHash = ref<string | null>(null)
@@ -167,6 +166,18 @@
         selectedHash.value = commit.hash
         if (expandedHash.value && expandedHash.value !== commit.hash) expandedHash.value = null
         emit('select-commit', commit)
+    }
+
+    /** Graph rows are drag sources only (sidebar branches are the drop targets) — no drop handling here. */
+    function startCommitDrag(commit: CommitNode, event: DragEvent) {
+        if (uiTransient.busy) {
+            event.preventDefault()
+            return
+        }
+        if (event.dataTransfer) {
+            event.dataTransfer.effectAllowed = 'copy'
+            event.dataTransfer.setData('text/plain', `commit:${commit.hash}`)
+        }
     }
 
     function lanePalette(): string[] {
@@ -612,7 +623,6 @@
                     class="graph-row"
                     :class="{
                         selected: selectedHash === commit.hash,
-                        'drop-target': dropTargetHash === commit.hash,
                         'msg-expanded': expandedHash === commit.hash,
                     }"
                     :style="{
@@ -623,25 +633,13 @@
                     draggable="true"
                     @click="select(commit)"
                     @contextmenu.prevent.stop="openMenu(commit, $event)"
-                    @dragstart="$event.dataTransfer?.setData('text/plain', `commit:${commit.hash}`)"
-                    @dragover="
-                        $event => {
-                            if ($event.dataTransfer?.types.includes('text/plain')) {
-                                $event.preventDefault()
-                                dropTargetHash = commit.hash
-                            }
-                        }
-                    "
-                    @dragleave="dropTargetHash = null">
+                    @dragstart="event => startCommitDrag(commit, event)">
                     <div
                         class="graph-cell"
                         :style="{ width: `${graphW}px` }">
                         <span
                             class="node-ring"
-                            :class="{
-                                selected: selectedHash === commit.hash,
-                                'drop-target': dropTargetHash === commit.hash,
-                            }"
+                            :class="{ selected: selectedHash === commit.hash }"
                             :style="avatarStyle(commit)"></span>
                         <span
                             class="node-avatar"

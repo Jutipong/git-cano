@@ -93,6 +93,7 @@ export interface StashEntry {
 export interface RepoState {
     merging: boolean
     rebasing: boolean
+    cherryPicking: boolean
     bisectActive: boolean
     /** While merging: the branch (or short hash) being merged in — the "theirs" side. */
     mergeSource?: string | null

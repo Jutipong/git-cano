@@ -82,7 +82,7 @@ export const useRepoStore = defineStore('repo', () => {
     const commitAuthor = ref('')
     const commitDate = ref('')
     const stashFiles = ref<CommitFile[]>([])
-    const repoState = ref<RepoState>({ merging: false, rebasing: false, bisectActive: false })
+    const repoState = ref<RepoState>({ merging: false, rebasing: false, cherryPicking: false, bisectActive: false })
     const loadedSession = loadSavedSession()
     const session = ref<PersistedSession>(loadedSession.session)
     let legacyMigrationPending = loadedSession.fromLegacy
