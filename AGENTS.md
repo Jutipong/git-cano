@@ -73,7 +73,10 @@ Key files:
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
-  (author · date chip sits above it).
+  (author · date chip sits above it). Commit/stash mode (`commit-mode` in `modern-ui.css`)
+  tints the header + file list green with a green title/border so it reads as a different
+  mode from working-dir Changes — per-theme tuning keeps the title ≥ 4.5:1 contrast
+  (dark 26%, dark-modern/terminal 20%, light 14% with a darker `#053a1a` title green).
 - **DiffView overlay**: opens as a floating card over the tab bar + sidebar + graph when a
   file row is clicked (right pane stays interactive for switching files). It is rendered as a
   direct child of `.app` — **not** inside `.app-body` — because `.app-body` has

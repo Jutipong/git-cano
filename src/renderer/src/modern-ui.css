@@ -2103,7 +2103,7 @@ body {
 }
 
 .file-panel.commit-mode .file-groups {
-    background: color-mix(in srgb, var(--green) 3%, var(--surface-1));
+    background: color-mix(in srgb, var(--green) 8%, var(--surface-1));
 }
 
 .panel-heading,
@@ -2179,7 +2179,35 @@ body {
 }
 
 .panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--green) 26%, var(--surface-0));
+    border-bottom: 1px solid color-mix(in srgb, var(--green) 45%, transparent);
+}
+
+.panel-heading.commit-mode .panel-heading-title,
+.panel-heading.commit-mode .panel-heading-title svg {
+    color: var(--green);
+}
+
+/* per-theme tuning: keep green title >= 4.5:1 contrast on the tinted header */
+:root[data-theme='dark-modern'] .panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--green) 20%, var(--surface-0));
+}
+
+:root[data-theme='terminal'] .panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--green) 20%, var(--surface-0));
+}
+
+:root[data-theme='light'] .panel-heading.commit-mode {
     background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
+}
+
+:root[data-theme='light'] .file-panel.commit-mode .file-groups {
+    background: color-mix(in srgb, var(--green) 5%, var(--surface-1));
+}
+
+:root[data-theme='light'] .panel-heading.commit-mode .panel-heading-title,
+:root[data-theme='light'] .panel-heading.commit-mode .panel-heading-title svg {
+    color: #053a1a;
 }
 
 .file-groups .diff-loading {

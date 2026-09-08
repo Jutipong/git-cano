@@ -52,6 +52,7 @@ pnpm dev
 | 🏷️  | Hover a commit node — branch/tag chips, author avatar, email & time |
 | 💬  | Full-message popover — subject emphasized with author/date/hash header |
 | 🔝  | To-top button — jump back to the newest commits after deep scrolling |
+| 🟢  | Selecting a commit flips the right panel to **Committed History** — green-tinted header & title, clearly distinct from working-dir Changes |
 | 🎯  | **Solo a branch** — focus on one branch, unsolo to restore  |
 | 🔍  | Search by message, author, hash, or ref                     |
 | 🧺  | Stage/unstage files — or single diff hunks                  |
