@@ -2164,6 +2164,16 @@ body {
     cursor: default;
 }
 
+/* focus mode: workdir files untouched by the soloed branch fade but stay clickable */
+.file-row.file-dimmed {
+    opacity: 0.45;
+}
+
+.file-row.file-dimmed:hover,
+.file-row.selected.file-dimmed {
+    opacity: 1;
+}
+
 /* solo chip in the graph header */
 .solo-chip {
     display: inline-flex;

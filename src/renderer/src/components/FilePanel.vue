@@ -565,6 +565,17 @@
     function unifiedUnstaged(file: FileEntry | CommitFile) {
         return isWorkdir.value && hasStatus(unifiedWorkdirFile(file).unstaged)
     }
+    const soloFileSet = computed(() => new Set(repoStore.soloFiles ?? []))
+    /**
+     * Focus mode: while a branch is soloed, fade tracked workdir files its visible commits never
+     * touched. New files (untracked / staged-added) are current work and always stay bright.
+     */
+    function dimmedBySolo(file: FileEntry | CommitFile): boolean {
+        if (!isWorkdir.value || !repoStore.soloBranch || !repoStore.soloFiles?.length) return false
+        const workdirFile = file as FileEntry
+        if (workdirFile.unstaged === '?' || workdirFile.staged === 'A') return false
+        return !soloFileSet.value.has(workdirFile.path)
+    }
 
     const firstLine = computed(() => message.value.split('\n')[0] ?? '')
     const subjectCountClass = computed(() => (firstLine.value.length > 72 ? 'over' : firstLine.value.length > 50 ? 'warn' : ''))
@@ -694,7 +705,7 @@
                     <div
                         v-else
                         class="file-row"
-                        :class="{ selected: selected?.path === row.fullPath }"
+                        :class="{ selected: selected?.path === row.fullPath, 'file-dimmed': dimmedBySolo(row.file!) }"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="emit('select', { path: row.fullPath, staged: unifiedStaged(row.file!) })"
                         @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
@@ -888,7 +899,10 @@
                         <div
                             v-else
                             class="file-row"
-                            :class="{ selected: selected?.path === row.fullPath && selected.staged }"
+                            :class="{
+                                selected: selected?.path === row.fullPath && selected.staged,
+                                'file-dimmed': dimmedBySolo(row.file!),
+                            }"
                             :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                             @click="emit('select', { path: row.fullPath, staged: true })"
                             @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">
@@ -997,7 +1011,10 @@
                     <div
                         v-else
                         class="file-row"
-                        :class="{ selected: selected?.path === row.fullPath && !selected.staged }"
+                        :class="{
+                            selected: selected?.path === row.fullPath && !selected.staged,
+                            'file-dimmed': dimmedBySolo(row.file!),
+                        }"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="emit('select', { path: row.fullPath, staged: false })"
                         @contextmenu.prevent="openFileMenu($event, row.fullPath, row.file!)">

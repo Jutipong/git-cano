@@ -79,6 +79,7 @@ import {
     getCommitImageVersion,
     getRebasePlan,
     listBranches,
+    listSoloFiles,
     mergeInto,
     checkMergeConflicts,
     onRepoChanged,
@@ -755,6 +756,10 @@ app.whenReady().then(() => {
     handle('branch:cached', () => {
         requireRepo()
         return getCachedBranches()
+    })
+    handle('branch:soloFiles', (branch?: string, _limit?: number) => {
+        requireRepo()
+        return listSoloFiles(branch as string, typeof _limit === 'number' ? _limit : 500)
     })
     handle('branch:create', (name: string, co: boolean, startPoint?: string, localChanges?: LocalChangesMode) => {
         requireRepo()

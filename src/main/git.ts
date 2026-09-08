@@ -530,6 +530,18 @@ export async function getSoloLogPage(branch: string, offset: number, limit: numb
     return commits
 }
 
+/**
+ * Files touched by the commits visible in branch Solo (same depth as the solo log) — powers
+ * Focus dimming in FilePanel. One spawn, paths only.
+ */
+export async function listSoloFiles(branch: string, limit = 500): Promise<string[]> {
+    const rev = requireRevision(branch)
+    const { git: g } = getRepo()
+    await g.raw(['rev-parse', '--verify', rev])
+    const text = await g.raw(['log', '--pretty=format:', '--name-only', `--max-count=${limit}`, rev, '--'])
+    return [...new Set(text.split('\n').map(line => line.trim()).filter(Boolean))]
+}
+
 export async function stage(paths: string[]): Promise<void> {
     const { git: g } = getRepo()
     await g.add(paths)

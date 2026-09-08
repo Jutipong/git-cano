@@ -107,6 +107,8 @@ export const useRepoStore = defineStore('repo', () => {
     const pendingFocusHash = ref<string | null>(null)
     /** Branch soloed in the graph (GitKraken-style focus) — view-only filter, never persisted. */
     const soloBranch = ref<string | null>(null)
+    /** Files touched by the soloed branch's visible commits (Focus dimming) — null when not soloed. */
+    const soloFiles = ref<string[] | null>(null)
     let tagLoadingRequests = 0
     let remoteTagRequest = 0
     const loadingRemoteTags = ref(false)
@@ -222,17 +224,20 @@ export const useRepoStore = defineStore('repo', () => {
                     return window.api.log(limit)
                 }
             })()
-            const [status, log, branches, state, tags, remote] = await Promise.all([
+            const [status, log, branches, state, tags, remote, focused] = await Promise.all([
                 precomputedStatus ? Promise.resolve(precomputedStatus) : window.api.status(),
                 logPromise,
                 window.api.branches(),
                 window.api.repoState(),
                 loadTags(),
                 window.api.hasRemote(),
+                solo ? window.api.soloFiles(solo, limit).catch(() => [] as string[]) : Promise.resolve(null),
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
             if (tabs.value[activeTab.value]?.path !== status.path) return
             commits.value = log
+            // A second solo may have started mid-flight — only apply files for the current one.
+            if (soloBranch.value === solo) soloFiles.value = focused
             hasMore.value = log.length >= limit
             repoState.value = state
             branchList.value = branches
@@ -563,6 +568,7 @@ export const useRepoStore = defineStore('repo', () => {
         selectedStash,
         pendingFocusHash,
         soloBranch,
+        soloFiles,
         setSolo,
         commitFiles,
         loadingCommitDetails,
