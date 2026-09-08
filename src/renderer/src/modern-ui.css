@@ -243,6 +243,168 @@
     background: #384364;
 }
 
+:root[data-theme='light-retro'] {
+    --canvas: #b3aa97;
+    --surface-0: #b7b09c;
+    --surface-1: #bdb6a1;
+    --surface-2: #aaa393;
+    --surface-3: #9e9787;
+    --surface-hover: #a39c88;
+    --surface-selected: #9e9787;
+    --line: #2b2b2b;
+    --line-soft: rgba(50, 45, 35, 0.24);
+    --text: #211d14;
+    --text-secondary: #3e3a2d;
+    --text-muted: #57503f;
+    --teal: #000000;
+    --teal-dark: #000000;
+    --blue: #084d9e;
+    --green: #095c2b;
+    --orange: #8c2c08;
+    --red: #9a0e1b;
+    --purple: #4c1da3;
+    --pink: #960f4e;
+    --yellow: #635100;
+    --diff-bg: #bdb6a1;
+    --diff-inline-bg: #aaa393;
+    --toast-bg: #bdb6a1;
+    --toast-border: #2b2b2b;
+    --conflict-bg: #bfb088;
+    --conflict-border: #a08c52;
+    --conflict-text: #4e3d06;
+    --shadow: 4px 4px 0 #111111;
+    --radius-card: 0px;
+    --radius-pill: 0px;
+    --font-ui: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
+}
+
+:root[data-theme='light-retro'] mark {
+    background: #a19d92;
+}
+
+/* grayscale syntax tokens — dim paper had no color, so weight carries meaning */
+:root[data-theme='light-retro'] .tok-comment {
+    color: #555555;
+}
+:root[data-theme='light-retro'] .tok-string {
+    color: #2b2b2b;
+}
+:root[data-theme='light-retro'] .tok-number {
+    color: #111111;
+}
+:root[data-theme='light-retro'] .tok-keyword {
+    color: #000000;
+    font-weight: 700;
+}
+:root[data-theme='light-retro'] .tok-function {
+    color: #000000;
+}
+:root[data-theme='light-retro'] .tok-param {
+    color: #404040;
+}
+:root[data-theme='light-retro'] .tok-type {
+    color: #222222;
+}
+:root[data-theme='light-retro'] .tok-support {
+    color: #4d4d4d;
+}
+
+/* GitHub photo avatars go mono too */
+:root[data-theme='light-retro'] .author-avatar-img {
+    filter: grayscale(1) contrast(1.15);
+}
+
+/* ===== Light-retro chrome — chunky 1-bit B&W treatment (light-retro theme only) ===== */
+
+/* dithered checker backdrop baked BEHIND content so text stays sharp */
+:root[data-theme='light-retro'] .app,
+:root[data-theme='light-retro'] .app-empty {
+    background:
+        repeating-conic-gradient(rgba(0, 0, 0, 0.08) 0% 25%, transparent 0% 50%),
+        var(--canvas);
+    background-size:
+        16px 16px,
+        auto;
+}
+
+/* square corners everywhere — explicit circles like .node-ring keep theirs */
+:root[data-theme='light-retro'] :is(*, *::before, *::after) {
+    border-radius: 0;
+}
+
+:root[data-theme='light-retro'] .node-ring {
+    border-radius: 50%;
+}
+
+/* chunky 1-bit keys */
+:root[data-theme='light-retro'] kbd {
+    padding: 1px 5px;
+    color: var(--teal);
+    background: var(--surface-1);
+    border: 2px solid var(--line);
+    border-radius: 0;
+    box-shadow: 2px 2px 0 #111111;
+    opacity: 1;
+}
+
+/* caret + selection */
+:root[data-theme='light-retro'] :is(input, textarea) {
+    caret-color: #000000;
+}
+
+:root[data-theme='light-retro'] ::selection {
+    background: rgba(0, 0, 0, 0.22);
+}
+
+/* stepped focus ring instead of the soft glow */
+:root[data-theme='light-retro'] *:focus-visible {
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+}
+
+/* chunky stepped scrollbars */
+:root[data-theme='light-retro'] ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+:root[data-theme='light-retro'] ::-webkit-scrollbar-thumb {
+    background: var(--line);
+    border: 2px solid var(--canvas);
+    border-radius: 0;
+}
+
+:root[data-theme='light-retro'] ::-webkit-scrollbar-thumb:hover {
+    background: var(--teal);
+}
+
+:root[data-theme='light-retro'] .sidebar > .sidebar-section > .section-body {
+    scrollbar-color: var(--line) transparent;
+}
+
+:root[data-theme='light-retro'] ::-webkit-scrollbar-track,
+:root[data-theme='light-retro'] ::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* hard offset shadows on floating surfaces — the sprite-like depth cue that sets pixel apart from terminal's flat look */
+:root[data-theme='light-retro'] :is(.diff-overlay, .modal-overlay > div, .confirm-dialog, .error-dialog) {
+    box-shadow: 6px 6px 0 #111111;
+}
+
+/* chunky stepped frame on panes */
+:root[data-theme='light-retro'] :is(
+    .sidebar,
+    .center-column,
+    .right-pane,
+    .tab-group,
+    .tab-actions,
+    .tab-sync-actions
+) {
+    outline: 2px solid var(--line);
+    outline-offset: -2px;
+}
+
 /* ===== Terminal chrome — full TUI treatment (terminal theme only) ===== */
 
 /* CRT backdrop: dot-grid baked BEHIND content so text stays sharp (no scanlines — they turn to noise on low-clarity screens) */
@@ -2195,6 +2357,15 @@ body {
 
 :root[data-theme='terminal'] .panel-heading.commit-mode {
     background: color-mix(in srgb, var(--green) 20%, var(--surface-0));
+}
+
+:root[data-theme='light-retro'] .panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
+}
+
+:root[data-theme='light-retro'] .panel-heading.commit-mode .panel-heading-title,
+:root[data-theme='light-retro'] .panel-heading.commit-mode .panel-heading-title svg {
+    color: #053a1a;
 }
 
 :root[data-theme='light'] .panel-heading.commit-mode {
@@ -4836,6 +5007,10 @@ body {
     background: #343d5e;
 }
 
+:root[data-theme='light-retro'] .diff-body::-webkit-scrollbar-thumb {
+    background: #2b2b2b;
+}
+
 .diff-body::-webkit-scrollbar-track,
 .diff-body::-webkit-scrollbar-corner {
     background: transparent;
@@ -4956,6 +5131,13 @@ body {
 }
 
 .setting-choice-row {
+    gap: 7px;
+}
+
+/* theme picker: dark row on top, light row below */
+.theme-rows {
+    display: flex;
+    flex-direction: column;
     gap: 7px;
 }
 

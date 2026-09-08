@@ -38,8 +38,13 @@
     /** Slightly toned palette for the terminal theme. */
     const TERMINAL_FIRST_LANE_COLOR = '#F06C82'
     const TERMINAL_COLORS = ['#69D987', '#C58AE0', '#ED9A64', '#68C4E9', '#88A9E6', '#9E91E3', '#55D6B9', '#DF91C3']
+    /** Deep dusty palette for the light-retro theme — dim paper needs darker tones to tell lanes apart. 8 entries, mutually distinct. */
+    const LIGHT_RETRO_FIRST_LANE_COLOR = '#1A1A1A'
+    const LIGHT_RETRO_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#4A4A4A', '#1F6B5E', '#713C4D']
     /* Vivid avatar colors: deliberately spaced apart and without yellow. */
     const AVATAR_COLORS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
+    /** Dusty avatars to match the light-retro lane palette. */
+    const LIGHT_RETRO_AVATAR_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#333333', '#1F6B5E', '#713C4D']
     const laneW = 32
     const rowH = 28
     /* breathing room between the graph panel's left edge and the first lane */
@@ -165,11 +170,21 @@
     }
 
     function lanePalette(): string[] {
-        return ui.theme === 'terminal' ? TERMINAL_COLORS : COLORS
+        if (ui.theme === 'terminal') return TERMINAL_COLORS
+        if (ui.theme === 'light-retro') return LIGHT_RETRO_COLORS
+        return COLORS
+    }
+
+    function avatarPalette(): string[] {
+        return ui.theme === 'light-retro' ? LIGHT_RETRO_AVATAR_COLORS : AVATAR_COLORS
     }
 
     function nodeColor(commit: CommitNode) {
-        if (commit.lane === 0) return ui.theme === 'terminal' ? TERMINAL_FIRST_LANE_COLOR : FIRST_LANE_COLOR
+        if (commit.lane === 0) {
+            if (ui.theme === 'terminal') return TERMINAL_FIRST_LANE_COLOR
+            if (ui.theme === 'light-retro') return LIGHT_RETRO_FIRST_LANE_COLOR
+            return FIRST_LANE_COLOR
+        }
         const palette = lanePalette()
         return palette[(commit.lane - 1) % palette.length]
     }

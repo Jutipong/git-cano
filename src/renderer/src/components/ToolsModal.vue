@@ -81,6 +81,8 @@
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
+    const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
+    const lightThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'light'))
 
     const ai = useAiStore()
     const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
@@ -532,20 +534,37 @@
                             Appearance
                         </strong>
                         <span class="setting-label">Theme</span>
-                        <div class="setting-choice-row">
-                            <button
-                                v-for="option in ui.themeOptions"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.theme === option.value }"
-                                @click="ui.setTheme(option.value)">
-                                <component
-                                    :is="themeIcon(option)"
-                                    width="13"
-                                    height="13" />
-                                {{ option.label }}
-                            </button>
+                        <div class="theme-rows">
+                            <div class="setting-choice-row">
+                                <button
+                                    v-for="option in darkThemeOptions"
+                                    :key="option.value"
+                                    type="button"
+                                    class="setting-chip"
+                                    :class="{ active: ui.theme === option.value }"
+                                    @click="ui.setTheme(option.value)">
+                                    <component
+                                        :is="themeIcon(option)"
+                                        width="13"
+                                        height="13" />
+                                    {{ option.label }}
+                                </button>
+                            </div>
+                            <div class="setting-choice-row">
+                                <button
+                                    v-for="option in lightThemeOptions"
+                                    :key="option.value"
+                                    type="button"
+                                    class="setting-chip"
+                                    :class="{ active: ui.theme === option.value }"
+                                    @click="ui.setTheme(option.value)">
+                                    <component
+                                        :is="themeIcon(option)"
+                                        width="13"
+                                        height="13" />
+                                    {{ option.label }}
+                                </button>
+                            </div>
                         </div>
                         <span class="setting-label">Font size</span>
                         <div class="setting-choice-row">

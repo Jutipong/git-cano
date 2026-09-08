@@ -1,4 +1,4 @@
-export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal'
+export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro'
 
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 
@@ -59,14 +59,17 @@ export interface ThemeOption {
     label: string
     description: string
     icon: 'moon' | 'sun'
+    /** Settings groups dark themes on the top row, light themes below. */
+    kind: 'dark' | 'light'
 }
 
 const themeOptions: ThemeOption[] = [
-    { value: 'dark', label: 'Dark', description: 'Deep navy with vivid blue accents', icon: 'moon' },
-    { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon' },
-    { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon' },
-    { value: 'terminal', label: 'Terminal', description: 'Dusty navy TUI with blue accents', icon: 'moon' },
-    { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun' },
+    { value: 'dark', label: 'Dark', description: 'Deep navy with vivid blue accents', icon: 'moon', kind: 'dark' },
+    { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon', kind: 'dark' },
+    { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon', kind: 'dark' },
+    { value: 'terminal', label: 'Dark Retro', description: 'Dusty navy TUI with blue accents', icon: 'moon', kind: 'dark' },
+    { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun', kind: 'light' },
+    { value: 'light-retro', label: 'Light Retro', description: 'Mono paper with faded vintage accents', icon: 'sun', kind: 'light' },
 ]
 
 export const useUiStore = defineStore(
@@ -80,7 +83,8 @@ export const useUiStore = defineStore(
                 savedTheme !== 'light' &&
                 savedTheme !== 'dark-modern' &&
                 savedTheme !== 'dark-neon' &&
-                savedTheme !== 'terminal'
+                savedTheme !== 'terminal' &&
+                savedTheme !== 'light-retro'
             )
                 theme.value = DEFAULT_THEME
         })
