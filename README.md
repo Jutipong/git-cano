@@ -49,6 +49,7 @@ pnpm dev
 |     |                                                             |
 | --- | ----------------------------------------------------------- |
 | 🌌  | Interactive commit graph (custom SVG renderer)              |
+| 🔝  | To-top button — jump back to the newest commits after deep scrolling |
 | 🎯  | **Solo a branch** — focus on one branch, unsolo to restore  |
 | 🔍  | Search by message, author, hash, or ref                     |
 | 🧺  | Stage/unstage files — or single diff hunks                  |

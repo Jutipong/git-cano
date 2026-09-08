@@ -97,6 +97,13 @@ stroke = `nodeColor(commit)`, ความหนา `2px` เต็ม เฉพ
 - วาดเฉพาะช่วงที่เห็น: `visibleRange` จาก `scrollTop / rowH` (บัฟเฟอร์ ±15 แถว)
 - spacer `<div>` บน/ล่าง ชดเชยความสูงที่ยังไม่วาด
 - `--graph-w` ใช้เป็นตัวแปร CSS ในการเริ่มตำแหน่ง highlight/spacer
+- เส้นเชื่อม (edge) เก็บใน computed `renderEdges`: วนทุก commit แล้วเก็บเฉพาะ edge ที่
+  ช่วงแถว `[childIndex, parentIndex]` ตัดกับหน้าต่างที่เห็น (+5 แถว overscan) —
+  **ตัดสินจาก "ช่วงของเส้น" ไม่ใช่จาก endpoint ทั้งสอง** เพื่อไม่ให้เส้น lane ยาว
+  (เช่น เส้น main ที่เดินผ่านหลายสิบแถวโดยไม่มีจุดของตัวเอง) หายไปตอน scroll
+  ก่อนหน้านี้ตัดจาก endpoint แล้วเส้นหายกลางจอ — ห้ามย้อนกลับ
+- ปุ่ม to-top (`.to-top-btn`) ลอยมุมขวาล่างของ `.graph-view` โผล่เมื่อ scroll เกิน
+  `rowH * 20` แถว กดแล้ว smooth-scroll กลับ top (virtual window ตามอัปเดตผ่าน `onScroll()` เอง)
 
 ---
 

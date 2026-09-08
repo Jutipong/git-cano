@@ -79,6 +79,12 @@ Key files:
   direct child of `.app` — **not** inside `.app-body` — because `.app-body` has
   `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
   close (✕).
+- **Commit graph virtualization** (`GraphView.vue`): SVG edges are collected in the
+  `renderEdges` computed and drawn whenever the child→parent row span intersects the
+  visible window (+5 rows overscan) — NOT only when both endpoints are on screen.
+  Endpoint-based culling made long lane lines vanish mid-scroll; do not reintroduce it.
+  The floating to-top button (`.to-top-btn`, styles in `styles.css`) appears after ~20
+  rows of scroll and smooth-scrolls back to the top.
 - **Commit selection** affects Changes/DiffView but there is no separate details panel —
   do not reintroduce one; extend the Changes panel instead.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should
