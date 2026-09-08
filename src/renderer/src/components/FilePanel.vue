@@ -452,8 +452,22 @@
     function stage(file: FileEntry) {
         void run(() => window.api.stage([file.path]), null)
     }
+    function filesInDirectory(path: string, files: FileEntry[]) {
+        const prefix = `${path}/`
+        return files.filter(file => file.path.startsWith(prefix))
+    }
+    function stageDirectory(path: string) {
+        const files = filesInDirectory(path, [...unstaged.value, ...untracked.value])
+        if (files.length === 0) return
+        void run(() => window.api.stage(files.map(file => file.path)), null)
+    }
     function unstageAll() {
         void run(() => window.api.unstageAll(), null)
+    }
+    function unstageDirectory(path: string) {
+        const files = filesInDirectory(path, staged.value)
+        if (files.length === 0) return
+        void run(() => window.api.unstage(files.map(file => file.path)), null)
     }
     function stageAll() {
         void run(() => window.api.stageAll(), null)
@@ -470,6 +484,21 @@
         })
         if (!ok) return
         void run(() => window.api.discardFile(file.path), untrackedFile ? 'File deleted' : 'Changes discarded')
+    }
+    async function discardDirectory(path: string) {
+        const files = filesInDirectory(path, [...unstaged.value, ...untracked.value])
+        if (files.length === 0) return
+        const ok = await confirmDialog({
+            title: 'Discard folder changes',
+            message: `All unstaged changes and untracked files in "${path}" will be lost. This cannot be undone.`,
+            confirmLabel: 'Discard',
+            danger: true,
+        })
+        if (!ok) return
+        void run(
+            () => files.reduce((previous, file) => previous.then(() => window.api.discardFile(file.path)), Promise.resolve()),
+            'Folder changes discarded'
+        )
     }
     async function discardUnstagedAll() {
         const ok = await confirmDialog({
@@ -631,12 +660,14 @@
                             class="dir-icon"
                             width="14"
                             height="14" />
-                        <span
-                            class="file-path dir-name"
-                            :title="row.fullPath"
-                            >{{ row.name }}</span
-                        >
-                        <span class="dir-count">{{ row.count }}</span>
+                        <span class="dir-label">
+                            <span
+                                class="file-path dir-name"
+                                :title="row.fullPath"
+                                >{{ row.name }}</span
+                            >
+                            <span class="dir-count">{{ row.count }}</span>
+                        </span>
                     </div>
                     <div
                         v-else
@@ -812,12 +843,25 @@
                                 class="dir-icon"
                                 width="14"
                                 height="14" />
-                            <span
-                                class="file-path dir-name"
-                                :title="row.fullPath"
-                                >{{ row.name }}</span
-                            >
-                            <span class="dir-count">{{ row.count }}</span>
+                            <span class="dir-label">
+                                <span
+                                    class="file-path dir-name"
+                                    :title="row.fullPath"
+                                    >{{ row.name }}</span
+                                >
+                                <span class="dir-count">{{ row.count }}</span>
+                            </span>
+                            <div class="dir-actions">
+                                <button
+                                    class="icon-btn"
+                                    :disabled="pending"
+                                    title="Unstage all files in this folder"
+                                    @click.stop="unstageDirectory(row.fullPath)">
+                                    <i-lucide-minus
+                                        width="14"
+                                        height="14" />
+                                </button>
+                            </div>
                         </div>
                         <div
                             v-else
@@ -899,12 +943,34 @@
                             class="dir-icon"
                             width="14"
                             height="14" />
-                        <span
-                            class="file-path dir-name"
-                            :title="row.fullPath"
-                            >{{ row.name }}</span
-                        >
-                        <span class="dir-count">{{ row.count }}</span>
+                        <span class="dir-label">
+                            <span
+                                class="file-path dir-name"
+                                :title="row.fullPath"
+                                >{{ row.name }}</span
+                            >
+                            <span class="dir-count">{{ row.count }}</span>
+                        </span>
+                        <div class="dir-actions">
+                            <button
+                                class="icon-btn"
+                                :disabled="pending"
+                                title="Stage all files in this folder"
+                                @click.stop="stageDirectory(row.fullPath)">
+                                <i-lucide-plus
+                                    width="14"
+                                    height="14" />
+                            </button>
+                            <button
+                                class="icon-btn danger"
+                                :disabled="pending"
+                                title="Discard all changes in this folder"
+                                @click.stop="discardDirectory(row.fullPath)">
+                                <i-lucide-rotate-ccw
+                                    width="13"
+                                    height="13" />
+                            </button>
+                        </div>
                     </div>
                     <div
                         v-else
@@ -998,12 +1064,14 @@
                             class="dir-icon"
                             width="14"
                             height="14" />
-                        <span
-                            class="file-path dir-name"
-                            :title="row.fullPath"
-                            >{{ row.name }}</span
-                        >
-                        <span class="dir-count">{{ row.count }}</span>
+                        <span class="dir-label">
+                            <span
+                                class="file-path dir-name"
+                                :title="row.fullPath"
+                                >{{ row.name }}</span
+                            >
+                            <span class="dir-count">{{ row.count }}</span>
+                        </span>
                     </div>
                     <div
                         v-else

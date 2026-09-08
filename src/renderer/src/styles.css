@@ -1221,10 +1221,19 @@ kbd {
     color: var(--teal);
     opacity: 0.75;
 }
-.dir-name {
+.dir-label {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: center;
+    min-width: 0;
+    gap: 6px;
+}
+.dir-label .dir-name {
     color: var(--text-secondary);
     font-weight: 600;
     font-size: 12px;
+    /* Overrides `.file-path`'s `flex: 1` (declared later) so the count sits next to the name. */
+    flex: 0 1 auto;
 }
 .dir-count {
     min-width: 20px;
@@ -1234,6 +1243,22 @@ kbd {
     border-radius: 8px;
     font-size: 10px;
     text-align: center;
+}
+.dir-actions {
+    display: inline-flex;
+    flex: none;
+    gap: 2px;
+    margin-left: 2px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.dir-row:hover .dir-actions,
+.dir-row:focus-within .dir-actions {
+    opacity: 1;
+}
+.dir-actions .icon-btn:disabled {
+    cursor: wait;
+    opacity: 0.55;
 }
 .file-path {
     flex: 1;
