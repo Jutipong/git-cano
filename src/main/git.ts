@@ -1403,6 +1403,16 @@ function mergeSourceName(gitDir: string): string | null {
     return null
 }
 
+/** Short hash of the commit being cherry-picked — read from CHERRY_PICK_HEAD. */
+function cherryPickSourceName(gitDir: string): string | null {
+    const headPath = path.join(gitDir, 'CHERRY_PICK_HEAD')
+    if (fs.existsSync(headPath)) {
+        const hash = fs.readFileSync(headPath, 'utf8').trim().slice(0, 7)
+        if (hash) return hash
+    }
+    return null
+}
+
 export function getRepoState(): RepoState {
     const { path: p } = getRepo()
     const gitDir = fs.existsSync(path.join(p, '.git')) ? path.join(p, '.git') : p
@@ -1410,7 +1420,14 @@ export function getRepoState(): RepoState {
     const rebasing = fs.existsSync(path.join(gitDir, 'rebase-merge')) || fs.existsSync(path.join(gitDir, 'rebase-apply'))
     const cherryPicking = fs.existsSync(path.join(gitDir, 'CHERRY_PICK_HEAD'))
     const bisectActive = fs.existsSync(path.join(gitDir, 'BISECT_START')) || fs.existsSync(path.join(gitDir, 'BISECT_LOG'))
-    return { merging, rebasing, cherryPicking, bisectActive, mergeSource: merging ? mergeSourceName(gitDir) : null }
+    return {
+        merging,
+        rebasing,
+        cherryPicking,
+        bisectActive,
+        mergeSource: merging ? mergeSourceName(gitDir) : null,
+        cherryPickSource: cherryPicking ? cherryPickSourceName(gitDir) : null,
+    }
 }
 
 export async function checkoutSide(file: string, side: 'ours' | 'theirs'): Promise<void> {

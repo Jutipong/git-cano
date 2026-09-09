@@ -149,9 +149,17 @@ export const useRepoStore = defineStore('repo', () => {
     })
     const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
 
-    /** Labels for the two sides of a merge conflict (shared by FilePanel and ConflictView). */
-    const oursLabel = computed(() => (repoState.value.merging ? repo.value?.branch || 'ours' : 'ours'))
-    const theirsLabel = computed(() => (repoState.value.merging ? repoState.value.mergeSource || 'theirs' : 'theirs'))
+    /** Labels for the two sides of a conflict (shared by FilePanel and ConflictView). */
+    const oursLabel = computed(() =>
+        repoState.value.merging || repoState.value.cherryPicking || repoState.value.rebasing
+            ? repo.value?.branch || 'current'
+            : 'ours'
+    )
+    const theirsLabel = computed(() => {
+        if (repoState.value.merging) return repoState.value.mergeSource || 'incoming'
+        if (repoState.value.cherryPicking) return repoState.value.cherryPickSource || 'incoming'
+        return 'theirs'
+    })
 
     // ConflictView closes itself once its file no longer reports unmerged (resolved elsewhere or saved)
     watch(conflicts, list => {

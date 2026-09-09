@@ -217,9 +217,13 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   (it describes the old repo) with a warning instead of filling the new repo's box.
   New repo-scoped git operations must follow this pattern (optional `dir` param →
   `getRepoFor`), not `getRepo()`.
-- **Availability gate**: `canGenerate` in `FilePanel.vue` is false during merge/rebase
+- **Availability gate**: `canGenerate` in `FilePanel.vue` is false during merge/rebase/cherry-pick
   conflict flows (the panel shows conflict actions then) — the command-palette one-shot
   path shares this gate.
+- **Conflict labels + view**: `repoStore.oursLabel` is the current branch during any conflict
+  flow, `theirsLabel` is the merge source or cherry-picked short hash (fallbacks
+  `current`/`incoming`); any conflict state clears `selectedCommit`/`selectedStash`/
+  `selectedFile` so `FilePanel` returns to workdir Changes.
 - **Cancellation**: while generating, the AI button doubles as Cancel. The renderer
   calls `ai:cancelGenerate` (keyed by pinned repo path); the main process aborts the
   in-flight `fetch` via a per-key `AbortController` (`cancelModelCall`). A cancelled

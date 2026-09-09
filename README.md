@@ -69,7 +69,7 @@ pnpm dev
 | 🌐   | Remotes: add, edit, remove, test URLs                  |
 | ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token)          |
 | 📦   | Stashes, worktrees, submodules, bisect assistant       |
-| 🧩   | Merge-conflict resolver — per-line picks + manual edit |
+| 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes |
 
 ### 🤖 AI Commit Messages _(optional)_
 
