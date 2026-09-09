@@ -27,6 +27,7 @@
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
+    import { eventToCombo } from './utils/shortcuts'
     import { notifyUndoable } from './utils/undo'
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
@@ -38,6 +39,7 @@
     const uiTransient = useUiTransientStore()
     const auth = useAuthStore()
     const wsStore = useWorkspaceStore()
+    const syncStore = useSyncStore()
     const {
         tabs,
         activeTab,
@@ -237,6 +239,31 @@
                 target?.focus()
                 target?.select()
                 return
+            }
+            // Push/Pull/Fetch — customizable (Settings → General → Shortcuts).
+            // Skipped while typing (Ctrl+Arrows = word jump), palette open (owns Arrows), or no repo.
+            if (!repoStore.commandPaletteOpen && repoStore.repo) {
+                const target = event.target as HTMLElement | null
+                if (!target?.closest('input, textarea, [contenteditable="true"]')) {
+                    const combo = eventToCombo(event)
+                    if (combo) {
+                        if (combo === ui.getShortcut('fetch')) {
+                            event.preventDefault()
+                            void syncStore.fetch(repoStore.refresh)
+                            return
+                        }
+                        if (combo === ui.getShortcut('push')) {
+                            event.preventDefault()
+                            void syncStore.push(repoStore.refresh)
+                            return
+                        }
+                        if (combo === ui.getShortcut('pull')) {
+                            event.preventDefault()
+                            void syncStore.pull(repoStore.refresh)
+                            return
+                        }
+                    }
+                }
             }
         }
 

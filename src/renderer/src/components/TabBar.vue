@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { nextTick } from 'vue'
 
+    import { formatCombo } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import OpenInButton from './OpenInButton.vue'
     import OpenRepoMenu from './OpenRepoMenu.vue'
@@ -255,7 +256,7 @@
             <button
                 class="toolbar-action primary-action"
                 :disabled="!!syncBusy || !repo"
-                title="Push"
+                :title="`Push (${formatCombo(ui.getShortcut('push'))})`"
                 @click="actPush()">
                 <i-lucide-arrow-up
                     :class="{ 'bouncing-up': syncBusy === 'Push' }"
@@ -272,7 +273,7 @@
             <button
                 class="toolbar-action action-pull"
                 :disabled="!!syncBusy || !repo"
-                title="Pull"
+                :title="`Pull (${formatCombo(ui.getShortcut('pull'))})`"
                 @click="actPull()">
                 <i-lucide-arrow-down
                     :class="{ 'bouncing-down': syncBusy === 'Pull' }"
@@ -289,7 +290,7 @@
             <button
                 class="toolbar-action action-fetch"
                 :disabled="!!syncBusy || !repo"
-                title="Fetch"
+                :title="`Fetch (${formatCombo(ui.getShortcut('fetch'))})`"
                 @click="actFetch()">
                 <span>Fetch</span>
             </button>

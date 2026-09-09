@@ -4,6 +4,14 @@
 
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
+    import {
+        SYNC_SHORTCUT_IDS,
+        eventToCombo,
+        formatCombo,
+        isReservedCombo,
+        isValidSyncCombo,
+        type SyncShortcutId,
+    } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
@@ -273,7 +281,67 @@
         })
         if (!ok) return
         ui.resetGeneral()
+        ui.resetShortcuts()
         notify('Settings reset to defaults', 'success')
+    }
+
+    const SYNC_LABELS: Record<SyncShortcutId, string> = { push: 'Push', pull: 'Pull', fetch: 'Fetch' }
+    const recordingId = ref<SyncShortcutId | null>(null)
+
+    function startRecording(id: SyncShortcutId) {
+        recordingId.value = id
+    }
+
+    function cancelRecording() {
+        recordingId.value = null
+    }
+
+    function onRecordKey(event: KeyboardEvent, id: SyncShortcutId) {
+        event.preventDefault()
+        event.stopPropagation()
+        if (event.key === 'Escape') {
+            recordingId.value = null
+            return
+        }
+        const combo = eventToCombo(event)
+        if (!combo) return
+        if (!isValidSyncCombo(combo)) {
+            notify('Shortcut must include Ctrl (or Cmd)', 'error')
+            return
+        }
+        if (isReservedCombo(combo, ui.effectiveShortcuts(), id)) {
+            notify(`${formatCombo(combo)} is already in use`, 'error')
+            return
+        }
+        ui.setShortcut(id, combo)
+        recordingId.value = null
+        notify(`${SYNC_LABELS[id]} shortcut saved`, 'success')
+    }
+
+    // Capture keys anywhere in the modal while recording (button focus is unreliable after v-if swap).
+    function onGlobalRecordKey(event: KeyboardEvent) {
+        const id = recordingId.value
+        if (!id) return
+        onRecordKey(event, id)
+    }
+
+    watch(recordingId, id => {
+        if (id) window.addEventListener('keydown', onGlobalRecordKey, true)
+        else window.removeEventListener('keydown', onGlobalRecordKey, true)
+    })
+    onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalRecordKey, true))
+
+    async function resetShortcutsToDefaults() {
+        const ok = await confirmDialog({
+            message: 'Reset push/pull/fetch shortcuts to defaults?',
+            confirmLabel: 'Reset',
+            danger: true,
+            confirmIcon: 'reset',
+        })
+        if (!ok) return
+        ui.resetShortcuts()
+        recordingId.value = null
+        notify('Shortcuts reset to defaults', 'success')
     }
 
     async function resetAppearance() {
@@ -685,15 +753,52 @@
                                 height="13" />
                             Shortcuts
                         </strong>
-                        <button
-                            class="btn small"
-                            title="Show the keyboard shortcuts list"
-                            @click="openShortcuts()">
-                            <i-lucide-keyboard
-                                width="13"
-                                height="13" />
-                            Keyboard shortcuts…
-                        </button>
+                        <div class="shortcut-list">
+                            <div
+                                v-for="id in SYNC_SHORTCUT_IDS"
+                                :key="id"
+                                class="shortcut-row">
+                                <span class="shortcut-name">{{ SYNC_LABELS[id] }}</span>
+                                <kbd class="shortcut-kbd">{{ formatCombo(ui.getShortcut(id)) }}</kbd>
+                                <button
+                                    v-if="recordingId !== id"
+                                    class="btn small"
+                                    :title="`Change ${SYNC_LABELS[id]} shortcut`"
+                                    @click="startRecording(id)">
+                                    Change…
+                                </button>
+                                <button
+                                    v-else
+                                    class="btn small shortcut-recording"
+                                    title="Press keys, Esc to cancel"
+                                    @click="cancelRecording()">
+                                    Press keys…
+                                </button>
+                            </div>
+                        </div>
+                        <span class="setting-hint"> Push defaults to Ctrl+↑, Pull to Ctrl+↓, Fetch to Ctrl+Shift+↓. Click Change… then press
+                            keys. Esc cancels. </span>
+                        <div class="tools-actions">
+                            <button
+                                class="btn small"
+                                title="Show the keyboard shortcuts list"
+                                @click="openShortcuts()">
+                                <i-lucide-keyboard
+                                    width="13"
+                                    height="13" />
+                                Keyboard shortcuts…
+                            </button>
+                            <span class="spacer" />
+                            <button
+                                class="btn danger small"
+                                title="Reset push/pull/fetch shortcuts to defaults"
+                                @click="resetShortcutsToDefaults()">
+                                <i-lucide-rotate-ccw
+                                    width="13"
+                                    height="13" />
+                                Default
+                            </button>
+                        </div>
                         <span class="setting-hint">
                             The command palette, open repository, settings and search all have shortcuts. Press <kbd>?</kbd> anywhere to see
                             the full list.

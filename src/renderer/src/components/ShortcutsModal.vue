@@ -1,8 +1,20 @@
 <script setup lang="ts">
-    import { SHORTCUTS, isMac } from '../utils/shortcuts'
+    import { SHORTCUTS, formatCombo, isMac, type SyncShortcutId } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
+
+    const ui = useUiStore()
+
+    const rows = computed(() =>
+        SHORTCUTS.map(shortcut => {
+            if (shortcut.id === 'push' || shortcut.id === 'pull' || shortcut.id === 'fetch') {
+                const combo = formatCombo(ui.getShortcut(shortcut.id as SyncShortcutId))
+                return { ...shortcut, mac: [combo], win: [combo] }
+            }
+            return shortcut
+        })
+    )
 
     onMounted(() => document.addEventListener('keydown', onKey))
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
@@ -30,7 +42,7 @@
                     <span class="shortcuts-head">macOS</span>
                     <span class="shortcuts-head">Windows</span>
                     <template
-                        v-for="shortcut in SHORTCUTS"
+                        v-for="shortcut in rows"
                         :key="shortcut.id">
                         <span class="shortcuts-label">{{ shortcut.label }}</span>
                         <span class="shortcuts-keys">

@@ -5462,6 +5462,35 @@ body {
     margin-top: 2px;
 }
 
+/* Customizable sync shortcuts (Settings → General → Shortcuts) */
+.shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.shortcut-name {
+    width: 44px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 550;
+}
+
+.shortcut-kbd {
+    min-width: 110px;
+    text-align: center;
+}
+
+.shortcut-recording {
+    border-style: dashed;
+}
+
 /* ---- ConflictView (ours | theirs + live Output, GitKraken-style) ---- */
 
 .conflict-header {

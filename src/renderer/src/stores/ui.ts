@@ -1,3 +1,5 @@
+import { SYNC_SHORTCUT_DEFAULTS, isValidSyncCombo, type SyncShortcutId } from '../utils/shortcuts'
+
 export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro'
 
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
@@ -153,6 +155,42 @@ export const useUiStore = defineStore(
         })
         const commitDateFormat = ref('dd/MM/yyyy HH:mm')
 
+        /** Custom sync shortcuts (push/pull/fetch). Empty = use SYNC_SHORTCUT_DEFAULTS. Persisted. */
+        const shortcutOverrides = ref<Partial<Record<SyncShortcutId, string>>>({})
+        watchEffect(() => {
+            let dirty = false
+            for (const [id, combo] of Object.entries(shortcutOverrides.value)) {
+                if (typeof combo !== 'string' || !isValidSyncCombo(combo) || combo === SYNC_SHORTCUT_DEFAULTS[id as SyncShortcutId]) {
+                    delete shortcutOverrides.value[id as SyncShortcutId]
+                    dirty = true
+                }
+            }
+            if (dirty) shortcutOverrides.value = { ...shortcutOverrides.value }
+        })
+
+        function getShortcut(id: SyncShortcutId): string {
+            return shortcutOverrides.value[id] ?? SYNC_SHORTCUT_DEFAULTS[id]
+        }
+
+        function effectiveShortcuts(): Record<SyncShortcutId, string> {
+            return {
+                push: getShortcut('push'),
+                pull: getShortcut('pull'),
+                fetch: getShortcut('fetch'),
+            }
+        }
+
+        function setShortcut(id: SyncShortcutId, combo: string) {
+            if (!isValidSyncCombo(combo)) return
+            if (combo === SYNC_SHORTCUT_DEFAULTS[id]) delete shortcutOverrides.value[id]
+            else shortcutOverrides.value[id] = combo
+            shortcutOverrides.value = { ...shortcutOverrides.value }
+        }
+
+        function resetShortcuts() {
+            shortcutOverrides.value = {}
+        }
+
         function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {
             sidebarSections.value[key] = !sidebarSections.value[key]
         }
@@ -186,7 +224,6 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
-        document.documentElement.dataset.theme = theme.value
         watchEffect(() => {
             const scale = (zoom.value / DEFAULT_ZOOM) * (fontSize.value / DEFAULT_FONT_SIZE)
             document.documentElement.style.zoom = String(scale)
@@ -218,6 +255,11 @@ export const useUiStore = defineStore(
             sidebarSections,
             commitColumns,
             commitDateFormat,
+            shortcutOverrides,
+            getShortcut,
+            effectiveShortcuts,
+            setShortcut,
+            resetShortcuts,
             toggleSection,
             resetCommitColumns,
             resetAppearance,
@@ -250,6 +292,7 @@ export const useUiStore = defineStore(
                 'sidebarSections',
                 'commitColumns',
                 'commitDateFormat',
+                'shortcutOverrides',
             ],
         },
     }

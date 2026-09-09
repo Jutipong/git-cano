@@ -22,6 +22,8 @@ declare global {
   const REFRESH_INTERVAL_OPTIONS: typeof import('./stores/ui').REFRESH_INTERVAL_OPTIONS
   const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
   const SHORTCUTS: typeof import('./utils/shortcuts').SHORTCUTS
+  const SYNC_SHORTCUT_DEFAULTS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_DEFAULTS
+  const SYNC_SHORTCUT_IDS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_IDS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
   const UNDO_TOAST_DURATION: typeof import('./stores/uiTransient').UNDO_TOAST_DURATION
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
@@ -34,7 +36,9 @@ declare global {
   const defineProps: typeof import('vue').defineProps
   const defineStore: typeof import('pinia').defineStore
   const detectMovedLines: typeof import('./utils/highlight').detectMovedLines
+  const eventToCombo: typeof import('./utils/shortcuts').eventToCombo
   const flattenTree: typeof import('./utils/fileTree').flattenTree
+  const formatCombo: typeof import('./utils/shortcuts').formatCombo
   const formatCommitDate: typeof import('./utils/format').formatCommitDate
   const formatDatePattern: typeof import('./utils/format').formatDatePattern
   const formatDateTime: typeof import('./utils/format').formatDateTime
@@ -46,6 +50,8 @@ declare global {
   const inject: typeof import('vue').inject
   const intraLineRange: typeof import('./utils/highlight').intraLineRange
   const isMac: typeof import('./utils/shortcuts').isMac
+  const isReservedCombo: typeof import('./utils/shortcuts').isReservedCombo
+  const isValidSyncCombo: typeof import('./utils/shortcuts').isValidSyncCombo
   const isWhitespaceOnlyChange: typeof import('./utils/highlight').isWhitespaceOnlyChange
   const keysFor: typeof import('./utils/shortcuts').keysFor
   const notifyUndoable: typeof import('./utils/undo').notifyUndoable
@@ -106,6 +112,6 @@ declare global {
   export type { LineRenderContext } from './utils/highlight'
   import('./utils/highlight')
   // @ts-ignore
-  export type { ShortcutDef } from './utils/shortcuts'
+  export type { ShortcutDef, SyncShortcutId } from './utils/shortcuts'
   import('./utils/shortcuts')
 }
