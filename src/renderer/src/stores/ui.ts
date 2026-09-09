@@ -1,4 +1,12 @@
-import { SHORTCUT_DEFAULTS, isValidSyncCombo, type CustomShortcutId } from '../utils/shortcuts'
+import {
+    SHORTCUT_DEFAULTS,
+    SHORTCUT_PLATFORMS,
+    currentPlatform,
+    isValidSyncCombo,
+    type CustomShortcutId,
+    type ShortcutOverrideMap,
+    type ShortcutPlatform,
+} from '../utils/shortcuts'
 
 export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro'
 
@@ -155,45 +163,91 @@ export const useUiStore = defineStore(
         })
         const commitDateFormat = ref('dd/MM/yyyy HH:mm')
 
-        /** Custom shortcuts (sync + app actions). Empty = use SHORTCUT_DEFAULTS. Persisted. */
-        const shortcutOverrides = ref<Partial<Record<CustomShortcutId, string>>>({})
+        /** Custom shortcuts (sync + app actions) per platform. Empty = use SHORTCUT_DEFAULTS. Persisted. */
+        const shortcutOverrides = ref<ShortcutOverrideMap>({})
         watchEffect(() => {
+            const raw = shortcutOverrides.value as unknown as Record<string, unknown>
             let dirty = false
-            for (const [id, combo] of Object.entries(shortcutOverrides.value)) {
-                if (
-                    !(id in SHORTCUT_DEFAULTS) ||
-                    typeof combo !== 'string' ||
-                    !isValidSyncCombo(combo) ||
-                    combo === SHORTCUT_DEFAULTS[id as CustomShortcutId]
-                ) {
-                    delete shortcutOverrides.value[id as CustomShortcutId]
+            for (const [id, value] of Object.entries(raw)) {
+                if (!(id in SHORTCUT_DEFAULTS)) {
+                    delete raw[id]
+                    dirty = true
+                    continue
+                }
+                const def = SHORTCUT_DEFAULTS[id as CustomShortcutId]
+                // Legacy shape (single string) → expand to both platforms.
+                if (typeof value === 'string') {
+                    if (!isValidSyncCombo(value) || value === def) {
+                        delete raw[id]
+                    } else {
+                        raw[id] = { mac: value, win: value }
+                    }
+                    dirty = true
+                    continue
+                }
+                if (!value || typeof value !== 'object') {
+                    delete raw[id]
+                    dirty = true
+                    continue
+                }
+                const entry = value as Record<string, unknown>
+                for (const platform of SHORTCUT_PLATFORMS) {
+                    const combo = entry[platform]
+                    if (combo === undefined || combo === null) {
+                        if (combo === null) {
+                            delete entry[platform]
+                            dirty = true
+                        }
+                        continue
+                    }
+                    if (typeof combo !== 'string' || !isValidSyncCombo(combo) || combo === def) {
+                        delete entry[platform]
+                        dirty = true
+                    }
+                }
+                for (const key of Object.keys(entry)) {
+                    if (key !== 'mac' && key !== 'win') {
+                        delete entry[key]
+                        dirty = true
+                    }
+                }
+                if (entry.mac === undefined && entry.win === undefined) {
+                    delete raw[id]
                     dirty = true
                 }
             }
-            if (dirty) shortcutOverrides.value = { ...shortcutOverrides.value }
+            if (dirty) shortcutOverrides.value = { ...(raw as ShortcutOverrideMap) }
         })
 
-        function getShortcut(id: CustomShortcutId): string {
-            return shortcutOverrides.value[id] ?? SHORTCUT_DEFAULTS[id]
+        function getShortcut(id: CustomShortcutId, platform: ShortcutPlatform = currentPlatform()): string {
+            return shortcutOverrides.value[id]?.[platform] ?? SHORTCUT_DEFAULTS[id]
         }
 
-        function effectiveShortcuts(): Record<CustomShortcutId, string> {
+        function effectiveShortcuts(platform: ShortcutPlatform = currentPlatform()): Record<CustomShortcutId, string> {
             return {
-                fetch: getShortcut('fetch'),
-                pull: getShortcut('pull'),
-                push: getShortcut('push'),
-                openRepo: getShortcut('openRepo'),
-                searchCommits: getShortcut('searchCommits'),
-                settings: getShortcut('settings'),
-                commandPalette: getShortcut('commandPalette'),
+                fetch: getShortcut('fetch', platform),
+                pull: getShortcut('pull', platform),
+                push: getShortcut('push', platform),
+                openRepo: getShortcut('openRepo', platform),
+                searchCommits: getShortcut('searchCommits', platform),
+                settings: getShortcut('settings', platform),
+                commandPalette: getShortcut('commandPalette', platform),
             }
         }
 
-        function setShortcut(id: CustomShortcutId, combo: string) {
+        function setShortcut(id: CustomShortcutId, combo: string, platform: ShortcutPlatform = currentPlatform()) {
             if (!isValidSyncCombo(combo)) return
-            if (combo === SHORTCUT_DEFAULTS[id]) delete shortcutOverrides.value[id]
-            else shortcutOverrides.value[id] = combo
-            shortcutOverrides.value = { ...shortcutOverrides.value }
+            const next: ShortcutOverrideMap = { ...shortcutOverrides.value }
+            if (combo === SHORTCUT_DEFAULTS[id]) {
+                if (!next[id]) return
+                const entry = { ...next[id] }
+                delete entry[platform]
+                if (entry.mac === undefined && entry.win === undefined) delete next[id]
+                else next[id] = entry
+            } else {
+                next[id] = { ...next[id], [platform]: combo }
+            }
+            shortcutOverrides.value = next
         }
 
         function resetShortcuts() {

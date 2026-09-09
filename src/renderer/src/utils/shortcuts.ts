@@ -44,6 +44,22 @@ export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'commandPalette',
 ]
 
+/** Platform a custom shortcut override applies to. Combos stay canonical ("Ctrl+…", Cmd counts as Ctrl) — only the stored value differs per platform. */
+export type ShortcutPlatform = 'mac' | 'win'
+
+export const SHORTCUT_PLATFORMS: ShortcutPlatform[] = ['mac', 'win']
+
+/** Per-platform overrides for one shortcut id. Absent platform = use SHORTCUT_DEFAULTS. */
+export type ShortcutOverrideEntry = Partial<Record<ShortcutPlatform, string>>
+
+/** Persisted custom shortcuts. Empty = use SHORTCUT_DEFAULTS everywhere. */
+export type ShortcutOverrideMap = Partial<Record<CustomShortcutId, ShortcutOverrideEntry>>
+
+/** Platform of the current runtime. */
+export function currentPlatform(): ShortcutPlatform {
+    return isMac ? 'mac' : 'win'
+}
+
 /** Effective defaults for every customizable shortcut. */
 export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     ...SYNC_SHORTCUT_DEFAULTS,

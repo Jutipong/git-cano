@@ -9,9 +9,10 @@
     const rows = computed(() =>
         SHORTCUTS.map(shortcut => {
             if ((CUSTOM_SHORTCUT_IDS as string[]).includes(shortcut.id)) {
-                const combo = ui.getShortcut(shortcut.id as CustomShortcutId)
-                const mac = [formatComboMac(combo)]
-                const win = [formatCombo(combo)]
+                const macCombo = ui.getShortcut(shortcut.id as CustomShortcutId, 'mac')
+                const winCombo = ui.getShortcut(shortcut.id as CustomShortcutId, 'win')
+                const mac = [formatComboMac(macCombo)]
+                const win = [formatCombo(winCombo)]
                 // Command palette always keeps double-Shift as a fixed alternative.
                 if (shortcut.id === 'commandPalette') {
                     mac.push('Shift+Shift')

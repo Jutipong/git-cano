@@ -162,15 +162,15 @@ Key files:
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
   Fetch, Pull, Push, Open repo, Search commits, Open settings, Command
-  palette. Click Change… then press keys (`Esc` cancels, capture listener
+  palette. Click Change… under macOS or Windows then press keys (`Esc` cancels, capture listener
   while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed zoom combos (`Ctrl+=, -, 0`) or other customized ids
-  are rejected (`isReservedCombo`). `?` and zoom stay fixed.
-  Overrides live in `ui.shortcutOverrides` (persisted, invalid or
-  default-equal values are pruned) with `getShortcut` / `setShortcut` /
-  `resetShortcuts` plus a Default button (confirmed). `ShortcutsModal.vue`
-  shows effective values for customized ids. Settings lists each shortcut in
-  macOS (`⌘`) / Windows columns; Command palette keeps double-Shift fixed.
+  on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
+  Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
+  default-equal values are pruned, legacy single-string values migrate to both platforms) with `getShortcut(id, platform?)` /
+  `setShortcut(id, combo, platform?)` / `resetShortcuts` plus a Default button (confirmed). `ShortcutsModal.vue`
+  shows effective values per platform for customized ids. Settings lists each shortcut in
+  macOS (`⌘`) / Windows columns with a separate Change… button each; Command palette keeps double-Shift fixed.
 - App.vue sync handling skips while typing in inputs (where `Ctrl+Arrows`
   are word jumps), while the command palette is open (owns Arrows), with no
   repo, or while busy. Customizable shortcuts match canonical combos, so

@@ -24,6 +24,7 @@ declare global {
   const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
   const SHORTCUTS: typeof import('./utils/shortcuts').SHORTCUTS
   const SHORTCUT_DEFAULTS: typeof import('./utils/shortcuts').SHORTCUT_DEFAULTS
+  const SHORTCUT_PLATFORMS: typeof import('./utils/shortcuts').SHORTCUT_PLATFORMS
   const SYNC_SHORTCUT_DEFAULTS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_DEFAULTS
   const SYNC_SHORTCUT_IDS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_IDS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
@@ -34,6 +35,7 @@ declare global {
   const computeLineStates: typeof import('./utils/highlight').computeLineStates
   const computed: typeof import('vue').computed
   const confirmDialog: typeof import('./utils/confirm').confirmDialog
+  const currentPlatform: typeof import('./utils/shortcuts').currentPlatform
   const defineEmits: typeof import('vue').defineEmits
   const defineProps: typeof import('vue').defineProps
   const defineStore: typeof import('pinia').defineStore
@@ -115,6 +117,6 @@ declare global {
   export type { LineRenderContext } from './utils/highlight'
   import('./utils/highlight')
   // @ts-ignore
-  export type { ShortcutDef, SyncShortcutId, CustomShortcutId } from './utils/shortcuts'
+  export type { ShortcutDef, SyncShortcutId, CustomShortcutId, ShortcutPlatform, ShortcutOverrideEntry, ShortcutOverrideMap } from './utils/shortcuts'
   import('./utils/shortcuts')
 }

@@ -12,6 +12,7 @@
         isReservedCombo,
         isValidSyncCombo,
         type CustomShortcutId,
+        type ShortcutPlatform,
     } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -294,21 +295,25 @@
         settings: 'Open settings',
         commandPalette: 'Command palette',
     }
-    const recordingId = ref<CustomShortcutId | null>(null)
+    const recording = ref<{ id: CustomShortcutId; platform: ShortcutPlatform } | null>(null)
 
-    function startRecording(id: CustomShortcutId) {
-        recordingId.value = id
+    function startRecording(id: CustomShortcutId, platform: ShortcutPlatform) {
+        recording.value = { id, platform }
     }
 
     function cancelRecording() {
-        recordingId.value = null
+        recording.value = null
     }
 
-    function onRecordKey(event: KeyboardEvent, id: CustomShortcutId) {
+    function isRecording(id: CustomShortcutId, platform: ShortcutPlatform) {
+        return recording.value?.id === id && recording.value.platform === platform
+    }
+
+    function onRecordKey(event: KeyboardEvent, id: CustomShortcutId, platform: ShortcutPlatform) {
         event.preventDefault()
         event.stopPropagation()
         if (event.key === 'Escape') {
-            recordingId.value = null
+            recording.value = null
             return
         }
         const combo = eventToCombo(event)
@@ -317,24 +322,24 @@
             notify('Shortcut must include Ctrl (or Cmd)', 'error')
             return
         }
-        if (isReservedCombo(combo, ui.effectiveShortcuts(), id)) {
-            notify(`${formatCombo(combo)} is already in use`, 'error')
+        if (isReservedCombo(combo, ui.effectiveShortcuts(platform), id)) {
+            notify(`${formatCombo(combo)} is already in use on ${platform === 'mac' ? 'macOS' : 'Windows'}`, 'error')
             return
         }
-        ui.setShortcut(id, combo)
-        recordingId.value = null
-        notify(`${SHORTCUT_LABELS[id]} shortcut saved`, 'success')
+        ui.setShortcut(id, combo, platform)
+        recording.value = null
+        notify(`${SHORTCUT_LABELS[id]} shortcut (${platform === 'mac' ? 'macOS' : 'Windows'}) saved`, 'success')
     }
 
     // Capture keys anywhere in the modal while recording (button focus is unreliable after v-if swap).
     function onGlobalRecordKey(event: KeyboardEvent) {
-        const id = recordingId.value
-        if (!id) return
-        onRecordKey(event, id)
+        const current = recording.value
+        if (!current) return
+        onRecordKey(event, current.id, current.platform)
     }
 
-    watch(recordingId, id => {
-        if (id) window.addEventListener('keydown', onGlobalRecordKey, true)
+    watch(recording, current => {
+        if (current) window.addEventListener('keydown', onGlobalRecordKey, true)
         else window.removeEventListener('keydown', onGlobalRecordKey, true)
     })
     onBeforeUnmount(() => window.removeEventListener('keydown', onGlobalRecordKey, true))
@@ -348,7 +353,7 @@
         })
         if (!ok) return
         ui.resetShortcuts()
-        recordingId.value = null
+        recording.value = null
         notify('Shortcuts reset to defaults', 'success')
     }
 
@@ -547,7 +552,7 @@
     }
 
     function openShortcuts() {
-        recordingId.value = null
+        recording.value = null
         repoStore.shortcutsOpen = true
     }
 </script>
@@ -805,6 +810,7 @@
                                 aria-hidden="true">
                                 <span />
                                 <span class="shortcut-head">macOS</span>
+                                <span />
                                 <span class="shortcut-head">Windows</span>
                                 <span />
                             </div>
@@ -815,13 +821,27 @@
                                 <span class="shortcut-name">{{ SHORTCUT_LABELS[id] }}</span>
                                 <kbd
                                     class="shortcut-kbd"
-                                    title="macOS (⌘ works as Ctrl)">{{ formatComboMac(ui.getShortcut(id)) }}</kbd>
-                                <kbd class="shortcut-kbd">{{ formatCombo(ui.getShortcut(id)) }}</kbd>
+                                    title="macOS (⌘ works as Ctrl)">{{ formatComboMac(ui.getShortcut(id, 'mac')) }}</kbd>
                                 <button
-                                    v-if="recordingId !== id"
+                                    v-if="!isRecording(id, 'mac')"
                                     class="btn small"
-                                    :title="`Change ${SHORTCUT_LABELS[id]} shortcut`"
-                                    @click="startRecording(id)">
+                                    :title="`Change ${SHORTCUT_LABELS[id]} shortcut (macOS)`"
+                                    @click="startRecording(id, 'mac')">
+                                    Change…
+                                </button>
+                                <button
+                                    v-else
+                                    class="btn small shortcut-recording"
+                                    title="Press keys, Esc to cancel"
+                                    @click="cancelRecording()">
+                                    Press keys…
+                                </button>
+                                <kbd class="shortcut-kbd">{{ formatCombo(ui.getShortcut(id, 'win')) }}</kbd>
+                                <button
+                                    v-if="!isRecording(id, 'win')"
+                                    class="btn small"
+                                    :title="`Change ${SHORTCUT_LABELS[id]} shortcut (Windows)`"
+                                    @click="startRecording(id, 'win')">
                                     Change…
                                 </button>
                                 <button
@@ -833,8 +853,8 @@
                                 </button>
                             </div>
                         </div>
-                        <span class="setting-hint"> Click Change… then press keys (must include Ctrl or Cmd). Esc cancels. Duplicates are
-                            rejected. Command palette also opens with double-Shift (fixed). </span>
+                        <span class="setting-hint"> Click Change… under macOS or Windows then press keys (must include Ctrl or Cmd). Esc
+                            cancels. Duplicates are rejected per platform. Command palette also opens with double-Shift (fixed). </span>
                         <div class="tools-actions">
                             <button
                                 class="btn small"
