@@ -80,6 +80,11 @@ export function formatCombo(combo: string): string {
         .replaceAll('ArrowRight', '→')
 }
 
+/** Canonical combo → macOS display ("Ctrl+Shift+ArrowDown" → "⌘+Shift+↓"). */
+export function formatComboMac(combo: string): string {
+    return formatCombo(combo).replaceAll('Ctrl', '⌘')
+}
+
 /** A valid custom sync combo requires Ctrl (or Cmd) plus a main key. */
 export function isValidSyncCombo(combo: string): boolean {
     const parts = combo.split('+')

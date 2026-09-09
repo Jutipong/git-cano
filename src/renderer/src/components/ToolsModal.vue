@@ -8,6 +8,7 @@
         CUSTOM_SHORTCUT_IDS,
         eventToCombo,
         formatCombo,
+        formatComboMac,
         isReservedCombo,
         isValidSyncCombo,
         type CustomShortcutId,
@@ -800,10 +801,21 @@
                         </strong>
                         <div class="shortcut-list">
                             <div
+                                class="shortcut-row shortcut-head-row"
+                                aria-hidden="true">
+                                <span />
+                                <span class="shortcut-head">macOS</span>
+                                <span class="shortcut-head">Windows</span>
+                                <span />
+                            </div>
+                            <div
                                 v-for="id in CUSTOM_SHORTCUT_IDS"
                                 :key="id"
                                 class="shortcut-row">
                                 <span class="shortcut-name">{{ SHORTCUT_LABELS[id] }}</span>
+                                <kbd
+                                    class="shortcut-kbd"
+                                    title="macOS (⌘ works as Ctrl)">{{ formatComboMac(ui.getShortcut(id)) }}</kbd>
                                 <kbd class="shortcut-kbd">{{ formatCombo(ui.getShortcut(id)) }}</kbd>
                                 <button
                                     v-if="recordingId !== id"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, formatCombo, isMac, type CustomShortcutId } from '../utils/shortcuts'
+    import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, formatCombo, formatComboMac, isMac, type CustomShortcutId } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -9,10 +9,15 @@
     const rows = computed(() =>
         SHORTCUTS.map(shortcut => {
             if ((CUSTOM_SHORTCUT_IDS as string[]).includes(shortcut.id)) {
-                const combo = formatCombo(ui.getShortcut(shortcut.id as CustomShortcutId))
+                const combo = ui.getShortcut(shortcut.id as CustomShortcutId)
+                const mac = [formatComboMac(combo)]
+                const win = [formatCombo(combo)]
                 // Command palette always keeps double-Shift as a fixed alternative.
-                if (shortcut.id === 'commandPalette') return { ...shortcut, mac: [combo, 'Shift+Shift'], win: [combo, 'Shift+Shift'] }
-                return { ...shortcut, mac: [combo], win: [combo] }
+                if (shortcut.id === 'commandPalette') {
+                    mac.push('Shift+Shift')
+                    win.push('Shift+Shift')
+                }
+                return { ...shortcut, mac, win }
             }
             return shortcut
         })

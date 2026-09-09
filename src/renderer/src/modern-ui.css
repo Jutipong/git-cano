@@ -5462,7 +5462,7 @@ body {
     margin-top: 2px;
 }
 
-/* Customizable sync shortcuts (Settings → General → Shortcuts) */
+/* Customizable shortcuts (Settings → Shortcuts) — two-column (macOS / Windows) like the help modal */
 .shortcut-list {
     display: flex;
     flex-direction: column;
@@ -5470,21 +5470,41 @@ body {
 }
 
 .shortcut-row {
-    display: flex;
+    display: grid;
+    grid-template-columns: 118px 1fr 1fr auto;
     align-items: center;
-    gap: 8px;
+    gap: 4px 10px;
+    padding: 3px 6px;
+    margin: 0 -6px;
+    border-radius: 8px;
+}
+
+.shortcut-row:not(.shortcut-head-row):hover {
+    background: color-mix(in srgb, var(--text-muted) 8%, transparent);
+}
+
+.shortcut-head-row {
+    padding-bottom: 2px;
+}
+
+.shortcut-head {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+    opacity: 0.85;
 }
 
 .shortcut-name {
-    width: 44px;
     color: var(--text-secondary);
     font-size: 12px;
     font-weight: 550;
 }
 
 .shortcut-kbd {
-    min-width: 110px;
-    text-align: center;
+    justify-self: center;
 }
 
 .shortcut-recording {
@@ -6115,7 +6135,8 @@ body {
     min-width: 148px;
 }
 
-.shortcuts-keys kbd {
+.shortcuts-keys kbd,
+.tools-body kbd {
     display: inline-flex;
     align-items: center;
     justify-content: center;

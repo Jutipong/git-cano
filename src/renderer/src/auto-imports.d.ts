@@ -41,6 +41,7 @@ declare global {
   const eventToCombo: typeof import('./utils/shortcuts').eventToCombo
   const flattenTree: typeof import('./utils/fileTree').flattenTree
   const formatCombo: typeof import('./utils/shortcuts').formatCombo
+  const formatComboMac: typeof import('./utils/shortcuts').formatComboMac
   const formatCommitDate: typeof import('./utils/format').formatCommitDate
   const formatDatePattern: typeof import('./utils/format').formatDatePattern
   const formatDateTime: typeof import('./utils/format').formatDateTime

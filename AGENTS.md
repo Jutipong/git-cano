@@ -158,7 +158,8 @@ Key files:
 - Sync defaults (`SYNC_SHORTCUT_DEFAULTS`): Push `Ctrl+ArrowUp`, Pull
   `Ctrl+ArrowDown`, Fetch `Ctrl+Shift+ArrowDown`. `eventToCombo()` normalizes
   events to canonical combos (`Cmd` counts as `Ctrl`); `formatCombo()` renders
-  arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips.
+  arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips,
+  `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
   Fetch, Pull, Push, Open repo, Search commits, Open settings, Command
   palette. Click Change… then press keys (`Esc` cancels, capture listener
@@ -168,7 +169,8 @@ Key files:
   Overrides live in `ui.shortcutOverrides` (persisted, invalid or
   default-equal values are pruned) with `getShortcut` / `setShortcut` /
   `resetShortcuts` plus a Default button (confirmed). `ShortcutsModal.vue`
-  shows effective values for customized ids.
+  shows effective values for customized ids. Settings lists each shortcut in
+  macOS (`⌘`) / Windows columns; Command palette keeps double-Shift fixed.
 - App.vue sync handling skips while typing in inputs (where `Ctrl+Arrows`
   are word jumps), while the command palette is open (owns Arrows), with no
   repo, or while busy. Customizable shortcuts match canonical combos, so
