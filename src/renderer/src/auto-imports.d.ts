@@ -11,6 +11,7 @@ declare global {
   const CODE_FONT_SIZE_MAX: typeof import('./stores/ui').CODE_FONT_SIZE_MAX
   const CODE_FONT_SIZE_MIN: typeof import('./stores/ui').CODE_FONT_SIZE_MIN
   const COMMIT_COLUMN_DEFAULTS: typeof import('./stores/ui').COMMIT_COLUMN_DEFAULTS
+  const CUSTOM_SHORTCUT_IDS: typeof import('./utils/shortcuts').CUSTOM_SHORTCUT_IDS
   const DEFAULT_CODE_FONT_SIZE: typeof import('./stores/ui').DEFAULT_CODE_FONT_SIZE
   const DEFAULT_DIFF_VIEW_MODE: typeof import('./stores/ui').DEFAULT_DIFF_VIEW_MODE
   const DEFAULT_FILE_VIEW_MODE: typeof import('./stores/ui').DEFAULT_FILE_VIEW_MODE
@@ -22,6 +23,7 @@ declare global {
   const REFRESH_INTERVAL_OPTIONS: typeof import('./stores/ui').REFRESH_INTERVAL_OPTIONS
   const REPO_TAB_COLOR_OPTIONS: typeof import('./stores/ui').REPO_TAB_COLOR_OPTIONS
   const SHORTCUTS: typeof import('./utils/shortcuts').SHORTCUTS
+  const SHORTCUT_DEFAULTS: typeof import('./utils/shortcuts').SHORTCUT_DEFAULTS
   const SYNC_SHORTCUT_DEFAULTS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_DEFAULTS
   const SYNC_SHORTCUT_IDS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_IDS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
@@ -112,6 +114,6 @@ declare global {
   export type { LineRenderContext } from './utils/highlight'
   import('./utils/highlight')
   // @ts-ignore
-  export type { ShortcutDef, SyncShortcutId } from './utils/shortcuts'
+  export type { ShortcutDef, SyncShortcutId, CustomShortcutId } from './utils/shortcuts'
   import('./utils/shortcuts')
 }

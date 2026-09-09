@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { SHORTCUTS, formatCombo, isMac, type SyncShortcutId } from '../utils/shortcuts'
+    import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, formatCombo, isMac, type CustomShortcutId } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -8,8 +8,10 @@
 
     const rows = computed(() =>
         SHORTCUTS.map(shortcut => {
-            if (shortcut.id === 'push' || shortcut.id === 'pull' || shortcut.id === 'fetch') {
-                const combo = formatCombo(ui.getShortcut(shortcut.id as SyncShortcutId))
+            if ((CUSTOM_SHORTCUT_IDS as string[]).includes(shortcut.id)) {
+                const combo = formatCombo(ui.getShortcut(shortcut.id as CustomShortcutId))
+                // Command palette always keeps double-Shift as a fixed alternative.
+                if (shortcut.id === 'commandPalette') return { ...shortcut, mac: [combo, 'Shift+Shift'], win: [combo, 'Shift+Shift'] }
                 return { ...shortcut, mac: [combo], win: [combo] }
             }
             return shortcut
@@ -20,7 +22,11 @@
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
     function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
+        // Stop at the top dialog — Settings may be open underneath and must stay open.
+        if (event.key === 'Escape') {
+            event.stopPropagation()
+            emit('close')
+        }
     }
 </script>
 

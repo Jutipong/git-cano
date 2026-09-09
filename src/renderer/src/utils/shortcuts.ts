@@ -31,8 +31,30 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
 
 export const SYNC_SHORTCUT_IDS: SyncShortcutId[] = ['fetch', 'pull', 'push']
 
-/** Non-sync combos a custom shortcut must not override. */
-const RESERVED_COMBOS = new Set(['Ctrl+O', 'Ctrl+,', 'Ctrl+P', 'Ctrl+F', 'Ctrl+=', 'Ctrl+-', 'Ctrl+0'])
+/** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
+export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'searchCommits' | 'settings' | 'commandPalette'
+
+export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
+    'fetch',
+    'pull',
+    'push',
+    'openRepo',
+    'searchCommits',
+    'settings',
+    'commandPalette',
+]
+
+/** Effective defaults for every customizable shortcut. */
+export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
+    ...SYNC_SHORTCUT_DEFAULTS,
+    openRepo: 'Ctrl+O',
+    searchCommits: 'Ctrl+F',
+    settings: 'Ctrl+,',
+    commandPalette: 'Ctrl+P',
+}
+
+/** Fixed combos a custom shortcut must not override (app zoom — handled above the busy gate). */
+const RESERVED_COMBOS = new Set(['Ctrl+=', 'Ctrl+-', 'Ctrl+0'])
 
 /** Normalize a KeyboardEvent to a canonical combo ("Ctrl+Shift+ArrowDown"). Cmd counts as Ctrl. */
 export function eventToCombo(event: KeyboardEvent): string | null {
@@ -66,11 +88,11 @@ export function isValidSyncCombo(combo: string): boolean {
     return main !== 'Ctrl' && main !== 'Shift' && main !== 'Alt' && main !== 'Meta' && main.length > 0
 }
 
-/** True when the combo is taken by a reserved shortcut or another sync id (pass effective values). */
-export function isReservedCombo(combo: string, effective: Record<SyncShortcutId, string>, except?: SyncShortcutId): boolean {
+/** True when the combo is taken by a fixed shortcut or another customizable id (pass effective values). */
+export function isReservedCombo(combo: string, effective: Partial<Record<string, string>>, except?: string): boolean {
     if (RESERVED_COMBOS.has(combo)) return true
-    for (const id of SYNC_SHORTCUT_IDS) {
-        if (id !== except && effective[id] === combo) return true
+    for (const [id, value] of Object.entries(effective)) {
+        if (id !== except && value === combo) return true
     }
     return false
 }

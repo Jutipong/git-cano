@@ -208,44 +208,40 @@
                 return
             }
 
-            // Open repo — Ctrl+O
-            if (event.ctrlKey && event.key.toLowerCase() === 'o') {
+            // Customizable shortcuts (Settings → Shortcuts) — canonical combos, so Ctrl and Cmd both work.
+            const combo = eventToCombo(event)
+
+            // Open repo
+            if (combo && combo === ui.getShortcut('openRepo')) {
                 event.preventDefault()
                 openNewRepo()
                 return
             }
-            // Open settings — Ctrl+,
-            if (event.ctrlKey && event.key === ',') {
+            // Open settings
+            if (combo && combo === ui.getShortcut('settings')) {
                 event.preventDefault()
                 repoStore.toolsOpen = true
                 return
             }
-            // Command palette — Ctrl+P (double-Shift is handled above)
-            if (event.ctrlKey && event.key.toLowerCase() === 'p' && !event.shiftKey) {
+            // Command palette (double-Shift is handled above)
+            if (combo && combo === ui.getShortcut('commandPalette')) {
                 event.preventDefault()
                 repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
                 return
             }
-            // Focus commit-history search — Ctrl+F (a diff overlay owns Ctrl+F while open)
-            if (
-                (event.ctrlKey || event.metaKey) &&
-                !event.shiftKey &&
-                event.key.toLowerCase() === 'f' &&
-                !selectedFile.value &&
-                !selectedConflict.value
-            ) {
+            // Focus commit-history search (a diff overlay owns Ctrl+F while open)
+            if (combo && combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
                 event.preventDefault()
                 const target = document.querySelector<HTMLInputElement>('.commit-search input')
                 target?.focus()
                 target?.select()
                 return
             }
-            // Push/Pull/Fetch — customizable (Settings → General → Shortcuts).
+            // Push/Pull/Fetch.
             // Skipped while typing (Ctrl+Arrows = word jump), palette open (owns Arrows), or no repo.
             if (!repoStore.commandPaletteOpen && repoStore.repo) {
                 const target = event.target as HTMLElement | null
                 if (!target?.closest('input, textarea, [contenteditable="true"]')) {
-                    const combo = eventToCombo(event)
                     if (combo) {
                         if (combo === ui.getShortcut('fetch')) {
                             event.preventDefault()

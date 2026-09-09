@@ -32,7 +32,7 @@ Key files:
 - `src/main/opencode.ts` — AI commit-message generation (see "AI commit messages" below)
 - `src/preload/index.ts` — the `window.api` surface (keep names verb-first)
 - `src/renderer/src/stores/repo.ts` — repo tabs, selected commit/file, commit files
-- `src/renderer/src/stores/ui.ts` — persisted UI state (theme, font size, zoom, panel widths/heights, sync shortcut overrides)
+- `src/renderer/src/stores/ui.ts` — persisted UI state (theme, font size, zoom, panel widths/heights, shortcut overrides)
 - `src/renderer/src/stores/workspace.ts` — named workspaces, each with its own persisted
   repo-tab session (paths + active tab)
 - `src/renderer/src/utils/shortcuts.ts` — single source of truth for keyboard shortcuts
@@ -159,21 +159,22 @@ Key files:
   `Ctrl+ArrowDown`, Fetch `Ctrl+Shift+ArrowDown`. `eventToCombo()` normalizes
   events to canonical combos (`Cmd` counts as `Ctrl`); `formatCombo()` renders
   arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips.
-- Sync shortcuts are customizable in Settings → Shortcuts tab: click
-  Change… then press keys (`Esc` cancels, capture listener while recording),
-  combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`), conflicts with
-  reserved combos (`Ctrl+O/,/P/F, =, -, 0`) or other sync ids are rejected.
+- Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
+  Fetch, Pull, Push, Open repo, Search commits, Open settings, Command
+  palette. Click Change… then press keys (`Esc` cancels, capture listener
+  while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
+  conflicts with fixed zoom combos (`Ctrl+=, -, 0`) or other customized ids
+  are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` (persisted, invalid or
   default-equal values are pruned) with `getShortcut` / `setShortcut` /
   `resetShortcuts` plus a Default button (confirmed). `ShortcutsModal.vue`
-  shows effective values for sync ids.
+  shows effective values for customized ids.
 - App.vue sync handling skips while typing in inputs (where `Ctrl+Arrows`
   are word jumps), while the command palette is open (owns Arrows), with no
-  repo, or while busy. Note: only combos explicitly coded with `metaKey`
-  work with `⌘` — search and sync combos accept it, `Ctrl+O/,/P` are
-  `ctrlKey`-only, so do not claim blanket `⌘` support.
-- Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑` (all
-  customizable), Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`,
+  repo, or while busy. Customizable shortcuts match canonical combos, so
+  `Ctrl` and `⌘` both work.
+- Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
+  Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`,
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm

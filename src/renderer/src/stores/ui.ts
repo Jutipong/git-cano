@@ -1,4 +1,4 @@
-import { SYNC_SHORTCUT_DEFAULTS, isValidSyncCombo, type SyncShortcutId } from '../utils/shortcuts'
+import { SHORTCUT_DEFAULTS, isValidSyncCombo, type CustomShortcutId } from '../utils/shortcuts'
 
 export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro'
 
@@ -155,34 +155,43 @@ export const useUiStore = defineStore(
         })
         const commitDateFormat = ref('dd/MM/yyyy HH:mm')
 
-        /** Custom sync shortcuts (push/pull/fetch). Empty = use SYNC_SHORTCUT_DEFAULTS. Persisted. */
-        const shortcutOverrides = ref<Partial<Record<SyncShortcutId, string>>>({})
+        /** Custom shortcuts (sync + app actions). Empty = use SHORTCUT_DEFAULTS. Persisted. */
+        const shortcutOverrides = ref<Partial<Record<CustomShortcutId, string>>>({})
         watchEffect(() => {
             let dirty = false
             for (const [id, combo] of Object.entries(shortcutOverrides.value)) {
-                if (typeof combo !== 'string' || !isValidSyncCombo(combo) || combo === SYNC_SHORTCUT_DEFAULTS[id as SyncShortcutId]) {
-                    delete shortcutOverrides.value[id as SyncShortcutId]
+                if (
+                    !(id in SHORTCUT_DEFAULTS) ||
+                    typeof combo !== 'string' ||
+                    !isValidSyncCombo(combo) ||
+                    combo === SHORTCUT_DEFAULTS[id as CustomShortcutId]
+                ) {
+                    delete shortcutOverrides.value[id as CustomShortcutId]
                     dirty = true
                 }
             }
             if (dirty) shortcutOverrides.value = { ...shortcutOverrides.value }
         })
 
-        function getShortcut(id: SyncShortcutId): string {
-            return shortcutOverrides.value[id] ?? SYNC_SHORTCUT_DEFAULTS[id]
+        function getShortcut(id: CustomShortcutId): string {
+            return shortcutOverrides.value[id] ?? SHORTCUT_DEFAULTS[id]
         }
 
-        function effectiveShortcuts(): Record<SyncShortcutId, string> {
+        function effectiveShortcuts(): Record<CustomShortcutId, string> {
             return {
                 fetch: getShortcut('fetch'),
                 pull: getShortcut('pull'),
                 push: getShortcut('push'),
+                openRepo: getShortcut('openRepo'),
+                searchCommits: getShortcut('searchCommits'),
+                settings: getShortcut('settings'),
+                commandPalette: getShortcut('commandPalette'),
             }
         }
 
-        function setShortcut(id: SyncShortcutId, combo: string) {
+        function setShortcut(id: CustomShortcutId, combo: string) {
             if (!isValidSyncCombo(combo)) return
-            if (combo === SYNC_SHORTCUT_DEFAULTS[id]) delete shortcutOverrides.value[id]
+            if (combo === SHORTCUT_DEFAULTS[id]) delete shortcutOverrides.value[id]
             else shortcutOverrides.value[id] = combo
             shortcutOverrides.value = { ...shortcutOverrides.value }
         }

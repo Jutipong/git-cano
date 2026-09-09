@@ -102,7 +102,7 @@ export const useRepoStore = defineStore('repo', () => {
     /** Whether the command palette overlay is open. */
     const commandPaletteOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'hook' | 'ai'>('appearance')
+    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'ai'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
     /** Branch soloed in the graph (GitKraken-style focus) — view-only filter, never persisted. */

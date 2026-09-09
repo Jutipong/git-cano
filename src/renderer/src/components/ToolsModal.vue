@@ -5,12 +5,12 @@
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
-        SYNC_SHORTCUT_IDS,
+        CUSTOM_SHORTCUT_IDS,
         eventToCombo,
         formatCombo,
         isReservedCombo,
         isValidSyncCombo,
-        type SyncShortcutId,
+        type CustomShortcutId,
     } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -21,7 +21,7 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'auth' | 'hook' | 'ai' | 'shortcuts'
+        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts'
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -79,10 +79,9 @@
     const TABS = [
         { key: 'appearance', label: 'Appearance' },
         { key: 'general', label: 'General' },
-        { key: 'shortcuts', label: 'Shortcuts' },
         { key: 'auth', label: 'Remotes' },
-        { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
+        { key: 'shortcuts', label: 'Shortcuts' },
     ] as const
     const tab = ref(props.initialTab ?? 'appearance')
 
@@ -285,10 +284,18 @@
         notify('Settings reset to defaults', 'success')
     }
 
-    const SYNC_LABELS: Record<SyncShortcutId, string> = { push: 'Push', pull: 'Pull', fetch: 'Fetch' }
-    const recordingId = ref<SyncShortcutId | null>(null)
+    const SHORTCUT_LABELS: Record<CustomShortcutId, string> = {
+        fetch: 'Fetch',
+        pull: 'Pull',
+        push: 'Push',
+        openRepo: 'Open repo',
+        searchCommits: 'Search commits',
+        settings: 'Open settings',
+        commandPalette: 'Command palette',
+    }
+    const recordingId = ref<CustomShortcutId | null>(null)
 
-    function startRecording(id: SyncShortcutId) {
+    function startRecording(id: CustomShortcutId) {
         recordingId.value = id
     }
 
@@ -296,7 +303,7 @@
         recordingId.value = null
     }
 
-    function onRecordKey(event: KeyboardEvent, id: SyncShortcutId) {
+    function onRecordKey(event: KeyboardEvent, id: CustomShortcutId) {
         event.preventDefault()
         event.stopPropagation()
         if (event.key === 'Escape') {
@@ -315,7 +322,7 @@
         }
         ui.setShortcut(id, combo)
         recordingId.value = null
-        notify(`${SYNC_LABELS[id]} shortcut saved`, 'success')
+        notify(`${SHORTCUT_LABELS[id]} shortcut saved`, 'success')
     }
 
     // Capture keys anywhere in the modal while recording (button focus is unreliable after v-if swap).
@@ -333,7 +340,7 @@
 
     async function resetShortcutsToDefaults() {
         const ok = await confirmDialog({
-            message: 'Reset push/pull/fetch shortcuts to defaults?',
+            message: 'Reset all custom shortcuts to defaults?',
             confirmLabel: 'Reset',
             danger: true,
             confirmIcon: 'reset',
@@ -539,7 +546,7 @@
     }
 
     function openShortcuts() {
-        emit('close')
+        recordingId.value = null
         repoStore.shortcutsOpen = true
     }
 </script>
@@ -575,10 +582,6 @@
                         height="13" />
                     <i-lucide-sliders-horizontal
                         v-else-if="tabItem.key === 'general'"
-                        width="13"
-                        height="13" />
-                    <i-lucide-zap
-                        v-else-if="tabItem.key === 'hook'"
                         width="13"
                         height="13" />
                     <i-lucide-keyboard
@@ -750,6 +753,29 @@
                         </span>
                     </div>
 
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Commit message</strong>
+                        <span class="setting-label">Format before generating</span>
+                        <div class="setting-choice-row">
+                            <button
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.formatBeforeGenerate }"
+                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
+                                <i-lucide-check
+                                    v-if="ui.formatBeforeGenerate"
+                                    width="13"
+                                    height="13" />
+                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">
+                            When enabled, the repository's format command runs first if it has an
+                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is. Formatting worktree files cannot affect a
+                            staged-only message, so it applies to the Auto Commit modes and is skipped for Generate Only.
+                        </p>
+                    </div>
+
                     <div class="tools-actions tools-reset-row">
                         <span class="spacer" />
                         <button
@@ -770,19 +796,19 @@
                             <i-lucide-keyboard
                                 width="13"
                                 height="13" />
-                            Push / Pull / Fetch
+                            Keyboard shortcuts
                         </strong>
                         <div class="shortcut-list">
                             <div
-                                v-for="id in SYNC_SHORTCUT_IDS"
+                                v-for="id in CUSTOM_SHORTCUT_IDS"
                                 :key="id"
                                 class="shortcut-row">
-                                <span class="shortcut-name">{{ SYNC_LABELS[id] }}</span>
+                                <span class="shortcut-name">{{ SHORTCUT_LABELS[id] }}</span>
                                 <kbd class="shortcut-kbd">{{ formatCombo(ui.getShortcut(id)) }}</kbd>
                                 <button
                                     v-if="recordingId !== id"
                                     class="btn small"
-                                    :title="`Change ${SYNC_LABELS[id]} shortcut`"
+                                    :title="`Change ${SHORTCUT_LABELS[id]} shortcut`"
                                     @click="startRecording(id)">
                                     Change…
                                 </button>
@@ -795,8 +821,8 @@
                                 </button>
                             </div>
                         </div>
-                        <span class="setting-hint"> Fetch defaults to Ctrl+Shift+↓, Pull to Ctrl+↓, Push to Ctrl+↑. Click Change… then press
-                            keys. Esc cancels. </span>
+                        <span class="setting-hint"> Click Change… then press keys (must include Ctrl or Cmd). Esc cancels. Duplicates are
+                            rejected. Command palette also opens with double-Shift (fixed). </span>
                         <div class="tools-actions">
                             <button
                                 class="btn small"
@@ -809,8 +835,7 @@
                             </button>
                         </div>
                         <span class="setting-hint">
-                            The command palette, open repository, settings and search all have shortcuts. Press <kbd>?</kbd> anywhere to see
-                            the full list.
+                            Press <kbd>?</kbd> anywhere to see the full list.
                         </span>
                     </div>
 
@@ -818,7 +843,7 @@
                         <span class="spacer" />
                         <button
                             class="btn danger small"
-                            title="Reset push/pull/fetch shortcuts to defaults"
+                            title="Reset all custom shortcuts to defaults"
                             @click="resetShortcutsToDefaults()">
                             <i-lucide-rotate-ccw
                                 width="13"
@@ -1131,31 +1156,6 @@
                             </div>
                         </div>
                     </template>
-                </template>
-
-                <template v-else-if="tab === 'hook'">
-                    <div class="tools-section">
-                        <strong class="tools-section-title">Commit message</strong>
-                        <span class="setting-label">Format before generating</span>
-                        <div class="setting-choice-row">
-                            <button
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.formatBeforeGenerate }"
-                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
-                                <i-lucide-check
-                                    v-if="ui.formatBeforeGenerate"
-                                    width="13"
-                                    height="13" />
-                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
-                            </button>
-                        </div>
-                        <p class="tools-section-hint">
-                            When enabled, the repository's format command runs first if it has an
-                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is. Formatting worktree files cannot affect a
-                            staged-only message, so it applies to the Auto Commit modes and is skipped for Generate Only.
-                        </p>
-                    </div>
                 </template>
 
                 <template v-else>
