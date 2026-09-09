@@ -100,19 +100,21 @@ pnpm dev
 <details>
 <summary><b>Click to expand the cheat sheet 📋</b></summary>
 
-| Action                   | macOS 🍎           | Windows 🪟                     |
-| ------------------------ | ------------------ | ------------------------------ |
-| ⬇️ Pull                  | `Ctrl+L` / `⌘↓`    | `Ctrl+L` / `Alt+↓`             |
-| ⬆️ Push                  | `Ctrl+P` / `⌘↑`    | `Ctrl+P` / `Alt+↑`             |
-| 🔄 Fetch                 | `Ctrl+F`           | `Ctrl+F`                       |
-| 📁 Open repo             | `Ctrl+O`           | `Ctrl+O`                       |
-| ⚙️ Settings              | `Ctrl+,`           | `Ctrl+,`                       |
-| ✨ Refresh               | `⌘R`               | `Ctrl+R`                       |
-| 🔍 Search commits        | `⌘⇧F`              | `Ctrl+Shift+F`                 |
-| ➕ New tab               | `⌘⇧P`              | `Ctrl+Shift+P`                 |
-| ✅ Commit                | `⌘↵`               | `Ctrl+↵`                       |
-| ❌ Close / cancel        | `Esc`              | `Esc`                          |
-| 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0` | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
+| Action                   | macOS 🍎              | Windows 🪟               |
+| ------------------------ | --------------------- | ------------------------ |
+| 🔄 Fetch                 | `Ctrl+Shift+↓`        | `Ctrl+Shift+↓`           |
+| ⬇️ Pull                  | `Ctrl+↓`              | `Ctrl+↓`                 |
+| ⬆️ Push                  | `Ctrl+↑`              | `Ctrl+↑`                 |
+| 📁 Open repo             | `Ctrl+O`              | `Ctrl+O`                 |
+| 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
+| ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
+| ✨ Command palette       | `Ctrl+P` / `Shift×2`  | `Ctrl+P` / `Shift×2`     |
+| ⌨️ Show shortcuts        | `?`                   | `?`                      |
+| ✅ Commit                | `⌘↵`                  | `Ctrl+↵`                 |
+| ❌ Close / cancel        | `Esc`                 | `Esc`                    |
+| 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0`    | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
+
+> ✏️ Push / Pull / Fetch are customizable in Settings → Shortcuts (persisted, with a Default button).
 
 </details>
 

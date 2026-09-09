@@ -41,6 +41,9 @@
                     <span class="shortcuts-head" />
                     <span class="shortcuts-head">macOS</span>
                     <span class="shortcuts-head">Windows</span>
+                    <span
+                        class="shortcuts-divider"
+                        aria-hidden="true" />
                     <template
                         v-for="shortcut in rows"
                         :key="shortcut.id">
@@ -59,6 +62,10 @@
                                 >{{ key }}</kbd
                             >
                         </span>
+                        <span
+                            v-if="shortcut.id === 'push' || shortcut.id === 'commandPalette'"
+                            class="shortcuts-divider"
+                            aria-hidden="true" />
                     </template>
                 </div>
                 <p

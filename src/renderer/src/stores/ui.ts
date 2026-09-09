@@ -174,9 +174,9 @@ export const useUiStore = defineStore(
 
         function effectiveShortcuts(): Record<SyncShortcutId, string> {
             return {
-                push: getShortcut('push'),
-                pull: getShortcut('pull'),
                 fetch: getShortcut('fetch'),
+                pull: getShortcut('pull'),
+                push: getShortcut('push'),
             }
         }
 

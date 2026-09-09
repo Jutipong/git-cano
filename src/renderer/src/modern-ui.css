@@ -6075,55 +6075,76 @@ body {
 /* Keyboard shortcuts help modal — two-column (macOS / Windows) key reference */
 
 .shortcuts-modal {
-    width: min(520px, 92vw);
+    width: min(560px, 94vw);
     border-radius: var(--radius-card);
 }
 
 .shortcuts-modal-body {
-    padding: 14px 16px 16px;
+    padding: 16px 20px 18px;
     overflow: auto;
 }
 
 .shortcuts-table {
     display: grid;
     grid-template-columns: 1fr auto auto;
-    gap: 8px 18px;
+    gap: 10px 22px;
     align-items: center;
 }
 
 .shortcuts-head {
+    padding-bottom: 2px;
     color: var(--text-muted);
     font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    opacity: 0.85;
 }
 
 .shortcuts-label {
-    color: var(--text);
+    color: var(--text-secondary);
     font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
 }
 
 .shortcuts-keys {
     display: flex;
     gap: 6px;
     justify-content: flex-start;
-    min-width: 130px;
+    min-width: 148px;
 }
 
 .shortcuts-keys kbd {
-    padding: 3px 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    padding: 4px 11px;
     color: var(--text);
-    background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 85%, transparent), color-mix(in srgb, var(--text-muted) 14%, transparent));
     border: 1px solid var(--line);
-    border-radius: var(--radius-pill);
+    border-bottom-width: 2px;
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     white-space: nowrap;
 }
 
+.shortcuts-divider {
+    grid-column: 1 / -1;
+    height: 1px;
+    margin: 3px 0;
+    background: linear-gradient(90deg, transparent, var(--line-soft) 12%, var(--line-soft) 88%, transparent);
+    opacity: 0.9;
+}
+
 .shortcuts-note {
-    margin: 12px 0 0;
+    margin: 14px 0 0;
     color: var(--text-muted);
     font-size: 12px;
 }

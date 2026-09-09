@@ -10,14 +10,14 @@ export interface ShortcutDef {
 }
 
 export const SHORTCUTS: ShortcutDef[] = [
-    { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
-    { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
-    { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
-    { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
-    { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },
-    { id: 'push', label: 'Push', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
-    { id: 'pull', label: 'Pull', mac: ['Ctrl+↓'], win: ['Ctrl+↓'] },
     { id: 'fetch', label: 'Fetch', mac: ['Ctrl+Shift+↓'], win: ['Ctrl+Shift+↓'] },
+    { id: 'pull', label: 'Pull', mac: ['Ctrl+↓'], win: ['Ctrl+↓'] },
+    { id: 'push', label: 'Push', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
+    { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
+    { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
+    { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
+    { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
+    { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },
 ]
 
 export type SyncShortcutId = 'push' | 'pull' | 'fetch'
@@ -29,7 +29,7 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
     fetch: 'Ctrl+Shift+ArrowDown',
 }
 
-export const SYNC_SHORTCUT_IDS: SyncShortcutId[] = ['push', 'pull', 'fetch']
+export const SYNC_SHORTCUT_IDS: SyncShortcutId[] = ['fetch', 'pull', 'push']
 
 /** Non-sync combos a custom shortcut must not override. */
 const RESERVED_COMBOS = new Set(['Ctrl+O', 'Ctrl+,', 'Ctrl+P', 'Ctrl+F', 'Ctrl+=', 'Ctrl+-', 'Ctrl+0'])

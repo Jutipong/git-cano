@@ -21,7 +21,7 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'auth' | 'hook' | 'ai'
+        initialTab?: 'appearance' | 'general' | 'auth' | 'hook' | 'ai' | 'shortcuts'
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -79,6 +79,7 @@
     const TABS = [
         { key: 'appearance', label: 'Appearance' },
         { key: 'general', label: 'General' },
+        { key: 'shortcuts', label: 'Shortcuts' },
         { key: 'auth', label: 'Remotes' },
         { key: 'hook', label: 'Hook' },
         { key: 'ai', label: 'AI' },
@@ -281,7 +282,6 @@
         })
         if (!ok) return
         ui.resetGeneral()
-        ui.resetShortcuts()
         notify('Settings reset to defaults', 'success')
     }
 
@@ -581,6 +581,10 @@
                         v-else-if="tabItem.key === 'hook'"
                         width="13"
                         height="13" />
+                    <i-lucide-keyboard
+                        v-else-if="tabItem.key === 'shortcuts'"
+                        width="13"
+                        height="13" />
                     <i-lucide-globe2
                         v-else-if="tabItem.key === 'auth'"
                         width="13"
@@ -746,12 +750,27 @@
                         </span>
                     </div>
 
+                    <div class="tools-actions tools-reset-row">
+                        <span class="spacer" />
+                        <button
+                            class="btn danger small"
+                            title="Restore general settings to defaults"
+                            @click="resetGeneral()">
+                            <i-lucide-rotate-ccw
+                                width="13"
+                                height="13" />
+                            Reset to defaults
+                        </button>
+                    </div>
+                </template>
+
+                <template v-else-if="tab === 'shortcuts'">
                     <div class="tools-section">
                         <strong class="tools-section-title">
                             <i-lucide-keyboard
                                 width="13"
                                 height="13" />
-                            Shortcuts
+                            Push / Pull / Fetch
                         </strong>
                         <div class="shortcut-list">
                             <div
@@ -776,7 +795,7 @@
                                 </button>
                             </div>
                         </div>
-                        <span class="setting-hint"> Push defaults to Ctrl+↑, Pull to Ctrl+↓, Fetch to Ctrl+Shift+↓. Click Change… then press
+                        <span class="setting-hint"> Fetch defaults to Ctrl+Shift+↓, Pull to Ctrl+↓, Push to Ctrl+↑. Click Change… then press
                             keys. Esc cancels. </span>
                         <div class="tools-actions">
                             <button
@@ -787,16 +806,6 @@
                                     width="13"
                                     height="13" />
                                 Keyboard shortcuts…
-                            </button>
-                            <span class="spacer" />
-                            <button
-                                class="btn danger small"
-                                title="Reset push/pull/fetch shortcuts to defaults"
-                                @click="resetShortcutsToDefaults()">
-                                <i-lucide-rotate-ccw
-                                    width="13"
-                                    height="13" />
-                                Default
                             </button>
                         </div>
                         <span class="setting-hint">
@@ -809,12 +818,12 @@
                         <span class="spacer" />
                         <button
                             class="btn danger small"
-                            title="Restore general settings to defaults"
-                            @click="resetGeneral()">
+                            title="Reset push/pull/fetch shortcuts to defaults"
+                            @click="resetShortcutsToDefaults()">
                             <i-lucide-rotate-ccw
                                 width="13"
                                 height="13" />
-                            Reset to defaults
+                            Default
                         </button>
                     </div>
                 </template>
