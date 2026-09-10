@@ -4,6 +4,7 @@
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
+    import { notifyUndoable } from '../utils/undo'
     import CollapseAllButton from './CollapseAllButton.vue'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
@@ -127,6 +128,19 @@
             }, busyLabel)
             notify(ok, 'success')
         } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
+    async function runUndoable(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
+        try {
+            await uiTransient.withBusy(async () => {
+                await fn()
+                await props.refresh()
+            }, busyLabel)
+            await notifyUndoable(props.repo.path, ok)
+        } catch (error) {
+            await props.refresh().catch(() => {})
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
     }
@@ -398,7 +412,7 @@
                 await window.api.cherryPick(hash)
                 await props.refresh()
             }, `Cherry-picking onto ${targetBranch}…`)
-            notify(`Cherry-picked ${short} onto ${targetBranch}`, 'success')
+            await notifyUndoable(props.repo.path, `Cherry-picked ${short} onto ${targetBranch}`)
         } catch (error) {
             // A conflict leaves unmerged files behind — refresh anyway so they paint instead of going stale.
             await props.refresh().catch(() => {})
@@ -447,7 +461,7 @@
                 confirmLabel: 'Merge',
             })
             if (!ok) return
-            void run(
+            void runUndoable(
                 () => window.api.mergeInto(value, targetBranch),
                 `Merged ${value} into ${targetBranch}`,
                 `Merging ${value} into ${targetBranch}…`

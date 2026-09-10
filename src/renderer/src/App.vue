@@ -352,7 +352,19 @@
     }
 
     function cherryPickCommit(commit: CommitNode) {
-        void run('Cherry-picked', () => window.api.cherryPick(commit.hash), 'Cherry-picking…')
+        void (async () => {
+            try {
+                await uiTransient.withBusy(async () => {
+                    await window.api.cherryPick(commit.hash)
+                    await repoStore.refresh()
+                }, 'Cherry-picking…')
+                await notifyUndoable(repoStore.repo?.path, `Cherry-picked ${commit.shortHash}`)
+            } catch (error) {
+                // Conflicts leave unmerged files behind — refresh so they paint instead of going stale.
+                await repoStore.refresh().catch(() => {})
+                uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            }
+        })()
     }
 
     async function revertCommit(commit: CommitNode) {
@@ -361,7 +373,15 @@
             confirmLabel: 'Revert',
         })
         if (!ok) return
-        void run('Commit reverted', () => window.api.revertCommit(commit.hash), 'Reverting commit…')
+        try {
+            await uiTransient.withBusy(async () => {
+                await window.api.revertCommit(commit.hash)
+                await repoStore.refresh()
+            }, 'Reverting commit…')
+            await notifyUndoable(repoStore.repo?.path, `Reverted ${commit.shortHash}`)
+        } catch (error) {
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
     }
 
     async function resetTo(commit: CommitNode, mode: 'soft' | 'hard') {
@@ -513,7 +533,7 @@
                 message => {
                     rebaseBase = null
                     void repoStore.refresh()
-                    uiTransient.notify(message, 'success')
+                    void notifyUndoable(repoStore.repo?.path, message)
                 }
             " />
         <FileHistoryModal

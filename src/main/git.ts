@@ -924,8 +924,16 @@ export async function getStashImageVersion(hash: string, file: string): Promise<
 }
 
 export async function revertCommit(hash: string): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    const headBefore = await g
+        .revparse(['HEAD'])
+        .then(out => out.trim())
+        .catch(() => null)
     await g.raw(['revert', '--no-edit', hash])
+    // A revert only appends a commit, so restoring the pointer is always lossless.
+    if (headBefore) {
+        pushUndo({ label: 'revert', doneMessage: 'Revert undone', repoPath: p, kind: 'commit', headBefore })
+    }
 }
 
 export async function checkoutCommit(hash: string): Promise<void> {
@@ -1267,15 +1275,31 @@ function parseMergeTreeOutput(stdout: string): MergeCheck {
  * repo so the conflict banner can drive resolution.
  */
 export async function mergeInto(source: string, target: string, mode: MergeMode = 'default'): Promise<string> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
     const status = await g.status()
     if (status.current === target) {
+        const clean = status.files.length === 0
+        const headBefore = clean ? await g.revparse(['HEAD']).then(out => out.trim()).catch(() => null) : null
         const args: string[] = [source]
         if (mode === 'no-ff') args.push('--no-ff')
         else if (mode === 'ff-only') args.push('--ff-only')
         args.push('--no-edit')
         const res = await g.merge(args)
+        // Conflicts throw above, so reaching here means the merge committed cleanly.
+        if (headBefore) {
+            pushUndo({ label: 'merge', doneMessage: 'Merge undone', repoPath: p, kind: 'reset', headBefore, resetMode: 'hard' })
+        }
         return res.result || 'Merged'
+    }
+
+    const ref = `refs/heads/${target}`
+    const oldTip = await g.raw(['rev-parse', '--verify', ref]).then(out => out.trim()).catch(() => null)
+    const journalTip = async () => {
+        if (!oldTip) return
+        const newTip = await g.raw(['rev-parse', '--verify', ref]).then(out => out.trim()).catch(() => null)
+        if (newTip && newTip !== oldTip) {
+            pushUndo({ label: 'merge', doneMessage: 'Merge undone', repoPath: p, kind: 'branchTip', ref, oldTip, newTip })
+        }
     }
 
     const ff = await isFastForward(g, source, target)
@@ -1283,10 +1307,12 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
         if (!ff) throw new Error(`"${target}" cannot be fast-forwarded to "${source}"`)
         // Updates the branch ref without any checkout (refuses non-ff).
         await g.raw(['fetch', '.', `refs/heads/${source}:refs/heads/${target}`])
+        await journalTip()
         return `Fast-forwarded ${target} to ${source}`
     }
     if (mode === 'default' && ff) {
         await g.raw(['fetch', '.', `refs/heads/${source}:refs/heads/${target}`])
+        await journalTip()
         return `Fast-forwarded ${target} to ${source}`
     }
 
@@ -1295,6 +1321,7 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
     try {
         await g.raw(['worktree', 'add', tmp, target])
         await createGit(tmp).merge(mode === 'no-ff' ? [source, '--no-ff', '--no-edit'] : [source, '--no-edit'])
+        await journalTip()
         return 'Merged'
     } catch (error) {
         worktreeFailed = error
@@ -1491,9 +1518,17 @@ export async function abortMerge(): Promise<void> {
 }
 
 export async function rebaseOnto(ref: string): Promise<string> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    const clean = (await g.status()).files.length === 0
+    const headBefore = await g
+        .revparse(['HEAD'])
+        .then(out => out.trim())
+        .catch(() => null)
     try {
         await g.raw(['rebase', ref])
+        if (clean && headBefore) {
+            pushUndo({ label: 'rebase', doneMessage: 'Rebase undone', repoPath: p, kind: 'reset', headBefore, resetMode: 'hard' })
+        }
         return `Rebased onto ${ref}`
     } catch {
         const state = await getRepoState()
@@ -1523,12 +1558,20 @@ export async function rebaseContinue(): Promise<void> {
 }
 
 export async function cherryPick(hash: string): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    const clean = (await g.status()).files.length === 0
+    const headBefore = await g
+        .revparse(['HEAD'])
+        .then(out => out.trim())
+        .catch(() => null)
     try {
         await g.raw(['cherry-pick', hash])
     } catch {
         if (getRepoState().cherryPicking) throw new Error('Cherry-pick stopped due to conflicts. Resolve them, then continue.')
         throw new Error('Cherry-pick failed')
+    }
+    if (clean && headBefore) {
+        pushUndo({ label: 'cherry-pick', doneMessage: 'Cherry-pick undone', repoPath: p, kind: 'reset', headBefore, resetMode: 'hard' })
     }
 }
 
@@ -1744,7 +1787,7 @@ export async function getLastCommitMessage(): Promise<string> {
  * repo) so a tab switch mid-flight can't undo the wrong repository. The toast window is the UI
  * gate; the journal itself is just capped.
  */
-type UndoKind = 'commit' | 'reset' | 'dropStash'
+type UndoKind = 'commit' | 'reset' | 'branchTip' | 'dropStash'
 
 interface UndoEntry {
     id: number
@@ -1754,6 +1797,11 @@ interface UndoEntry {
     kind: UndoKind
     headBefore?: string
     resetMode?: 'soft' | 'mixed' | 'hard'
+    /** Branch ref moved without touching the worktree (e.g. fast-forward merge into another branch). */
+    ref?: string
+    oldTip?: string
+    /** Expected current tip — the undo refuses to run when the ref moved on (compare-and-swap). */
+    newTip?: string
     stashHash?: string
     stashMessage?: string
 }
@@ -1794,14 +1842,32 @@ export async function undoById(id: number, dir?: string): Promise<string> {
     const found = undoStackFor(dir)
     const top = found?.stack.at(-1)
     if (!found || !top || top.id !== id) throw new Error('Nothing to undo — the action expired')
-    found.stack.pop()
     const { git: g } = getRepoFor(top.repoPath)
+    // Destructive restores refuse while new uncommitted work exists — checked BEFORE the pop
+    // so the user can stash/commit and retry the same Undo toast.
+    if (top.kind === 'reset' && top.resetMode === 'hard' && (await g.status()).files.length > 0) {
+        throw new Error('Commit or stash your changes first — undo would discard them')
+    }
+    if (top.kind === 'branchTip') {
+        const branch = (top.ref as string).replace(/^refs\/heads\//, '')
+        const status = await g.status()
+        if (status.current === branch && status.files.length > 0) {
+            throw new Error('Commit or stash your changes first — undo would discard them')
+        }
+    }
+    found.stack.pop()
     switch (top.kind) {
         case 'commit':
             await g.raw(['reset', '--soft', top.headBefore as string])
             return top.doneMessage
         case 'reset':
+            // Hard resets themselves are never journaled — a hard restore here always belongs to
+            // a rebase / cherry-pick / merge undo, which started from a clean tree.
             await g.raw(['reset', `--${top.resetMode as string}`, top.headBefore as string])
+            return top.doneMessage
+        case 'branchTip':
+            // Compare-and-swap: refuses when the ref moved on since the merge.
+            await g.raw(['update-ref', top.ref as string, top.oldTip as string, top.newTip as string])
             return top.doneMessage
         case 'dropStash':
             await g.raw(['stash', 'store', '-m', top.stashMessage as string, top.stashHash as string])
@@ -2193,7 +2259,7 @@ function backupPath(): string {
 }
 
 export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[], resume: boolean): Promise<RebaseOutcome> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
 
     const backupFile = backupPath()
     const status = await g.status()
@@ -2205,6 +2271,8 @@ export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[],
         origHead = fs.readFileSync(backupFile, 'utf8').trim()
     } else {
         if (!entries.length) throw new Error('Nothing to rebase')
+        // The plan starts with `reset --hard`, which would silently discard uncommitted work.
+        if (status.files.length > 0) throw new Error('Commit or stash your changes first')
         origHead = await g.revparse(['HEAD'])
         fs.writeFileSync(backupFile, origHead)
         await g.raw(['reset', '--hard', baseRef])
@@ -2249,6 +2317,7 @@ export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[],
 
         fs.promises.unlink(backupFile).catch(() => {})
         const replayed = entries.filter(e => e.command !== 'drop').length
+        pushUndo({ label: 'rebase', doneMessage: 'Rebase undone', repoPath: p, kind: 'reset', headBefore: origHead.trim(), resetMode: 'hard' })
         return { completed: true, message: `Interactive rebase complete (${replayed} commits)` }
     } catch {
         await rollback()
