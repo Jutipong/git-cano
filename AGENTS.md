@@ -67,7 +67,8 @@ Key files:
   `StashContextMenu.vue`, `RepoTabContextMenu.vue`, `FileContextMenu.vue`. The shared
   `ContextMenu.vue` is only for generic dropdown menus (e.g. remote branches in the
   sidebar and the `OpenInButton.vue` short-label menu: Folder / Terminal / VS Code,
-  plus Kiro / Visual Studio / Rider when installed).
+  plus Kiro / Visual Studio / Rider when installed). The command palette mirrors
+  it via a repo-gated `Open in…` mode with the same items/conditions.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.

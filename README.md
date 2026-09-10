@@ -42,7 +42,7 @@ pnpm dev
 | 🗂️  | Multiple repos open at once as tabs                                     |
 | 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder |
 | 💾  | Session & recent-repo restore on startup                                |
-| 🔗  | "Open in" → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) |
+| 🔗  | "Open in" → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette |
 
 ### 📊 History & Changes
 
