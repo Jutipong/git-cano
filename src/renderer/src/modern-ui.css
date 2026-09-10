@@ -4254,9 +4254,30 @@ body {
 .merge-actions {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
     padding: 10px 12px;
+}
+
+.merge-actions .btn {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.merge-actions .btn svg {
+    flex: none;
+}
+
+.merge-actions .conflict-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .merge-actions-buttons .btn {

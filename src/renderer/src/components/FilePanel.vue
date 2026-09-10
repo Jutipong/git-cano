@@ -1186,7 +1186,7 @@
                         v-else
                         width="14"
                         height="14" />
-                    {{ pending ? continueBusyLabel : continueIdleLabel }}
+                    <span class="conflict-label">{{ pending ? continueBusyLabel : continueIdleLabel }}</span>
                 </button>
                 <button
                     class="btn conflict-abort"
@@ -1195,7 +1195,7 @@
                     <i-lucide-x
                         width="14"
                         height="14" />
-                    {{ abortLabel }}
+                    <span class="conflict-label">{{ abortLabel }}</span>
                 </button>
             </div>
             <template v-else>

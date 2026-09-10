@@ -223,7 +223,8 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - **Conflict labels + view**: `repoStore.oursLabel` is the current branch during any conflict
   flow, `theirsLabel` is the merge source or cherry-picked short hash (fallbacks
   `current`/`incoming`); any conflict state clears `selectedCommit`/`selectedStash`/
-  `selectedFile` so `FilePanel` returns to workdir Changes.
+  `selectedFile` so `FilePanel` returns to workdir Changes. Continue/abort buttons
+  share equal width and truncate long labels via `.conflict-label` ellipsis.
 - **Cancellation**: while generating, the AI button doubles as Cancel. The renderer
   calls `ai:cancelGenerate` (keyed by pinned repo path); the main process aborts the
   in-flight `fetch` via a per-key `AbortController` (`cancelModelCall`). A cancelled
