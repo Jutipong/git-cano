@@ -4701,24 +4701,27 @@ body {
 }
 
 .toast-close-count {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
     font-size: 10px;
     font-weight: 700;
     line-height: 1;
     font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    transform: translateY(-1px);
 }
 
-/* Countdown digit swap: soft blur-fade between seconds. */
+/* Countdown digit swap: soft fade between seconds. */
 .toast-count-enter-active,
 .toast-count-leave-active {
-    transition:
-        opacity 160ms ease,
-        filter 160ms ease;
+    transition: opacity 160ms ease;
 }
 
 .toast-count-enter-from,
 .toast-count-leave-to {
     opacity: 0;
-    filter: blur(3px);
 }
 
 /* Hovering the close button swaps the countdown digit for the X. */
