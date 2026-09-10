@@ -269,14 +269,30 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   AI commit-message generation failures in `FilePanel.vue` use `notify(msg, 'error')`.
 - Toasts carry kinds (`success | error | warning | info | fetch | pull | push | stash`); the
   `push`/`pull`/`fetch`/`stash` kinds are action-accent colors for the sidebar sync card.
-- **Undo toasts** (`utils/undo.ts` → `notifyUndoable`): commit/amend, soft/mixed reset, and
+- **Undo toasts** (`utils/undo.ts` → `notifyUndoable`): commit/amend, squash, soft/mixed reset, and
   stash delete journal their pre-op state in `main/git.ts` (per-repo stacks, cap 10, cleared on
   `closeRepo`) and offer a 15s Undo button (`.toast-action` in `App.vue`, per-toast
   `durationMs` — the 10s global default stays). Undo resolves through an id-guarded
   `git:undo` IPC call so a stale toast can't undo a newer action. Rules: journal only fully
   recoverable ops — hard reset and anything already pushed are excluded (no entry = no
   button, plain toast); undo paths must `bumpStashList()` because `StashPanel` loads outside
-  `refresh()`.
+  `refresh()`. Squash reuses the `commit` undo kind (`reset --soft headBefore` restores the
+  range, the tree is identical) — do not add a new undo kind for it.
+
+## Squash
+
+- Squash is HEAD-range only: `getSquashPlan(target)` / `squashCommits(base, message)` in
+  `main/git.ts` via `reset --soft base` + one commit (`squash:plan` / `squash:run` IPC,
+  `squashPlan` / `squashCommits` on `window.api`, `SquashPlan` in `shared/types.ts`).
+  Middle-slice squash is deliberately unsupported — it would need commit replay.
+- Selection (`GraphView.vue`): `Shift+click` extends a range from the last pick (or the open
+  commit); plain click / `Esc` / right-click elsewhere clears. The scope is always
+  HEAD..oldest pick with gaps auto-filled, so skipping is structurally impossible — never add
+  a control that breaks contiguity. The context menu (`CommitContextMenu.vue`,
+  `squashCount`) only shows Squash when the scope has ≥2 commits.
+- Modal (`SquashModal.vue`, styles in `modern-ui.css` `.squash-*`): lists the exact range
+  newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
+  with the FilePanel-style soft length counter, and blocks on a dirty worktree.
 
 ## Conventions
 
