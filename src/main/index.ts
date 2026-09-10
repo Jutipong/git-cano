@@ -78,6 +78,8 @@ import {
     getCommitFileMeta,
     getCommitImageVersion,
     getRebasePlan,
+    getSquashPlan,
+    squashCommits,
     listBranches,
     listSoloFiles,
     mergeInto,
@@ -820,6 +822,14 @@ app.whenReady().then(() => {
     handle('rebase:execute', (baseRef: string, entries, resume: boolean) => {
         requireRepo()
         return executeRebasePlan(baseRef as string, entries as never[], Boolean(resume))
+    })
+    handle('squash:plan', (target: string) => {
+        requireRepo()
+        return getSquashPlan(target as string)
+    })
+    handle('squash:run', (base: string, message: string) => {
+        requireRepo()
+        return squashCommits(base as string, message as string)
     })
     handle('rebase:abortPaused', () => {
         requireRepo()

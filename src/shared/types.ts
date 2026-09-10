@@ -153,6 +153,14 @@ export interface RebaseOutcome {
     message: string
 }
 
+export interface SquashPlan {
+    base: string
+    target: string
+    commits: CommitNode[]
+    defaultMessage: string
+    dirty: boolean
+}
+
 export interface TagInfo {
     name: string
     hash: string

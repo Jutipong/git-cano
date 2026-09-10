@@ -29,6 +29,7 @@
         (e: 'create-branch', commit: CommitNode): void
         (e: 'create-tag', commit: CommitNode): void
         (e: 'cherry-pick', commit: CommitNode): void
+        (e: 'squash', commit: CommitNode): void
         (e: 'revert', commit: CommitNode): void
         (e: 'reset-soft', commit: CommitNode): void
         (e: 'reset-hard', commit: CommitNode): void
@@ -85,7 +86,10 @@
     }
 
     function onKeydown(event: KeyboardEvent) {
-        if (event.key === 'Escape') expandedHash.value = null
+        if (event.key === 'Escape') {
+            expandedHash.value = null
+            clearSquashPicks()
+        }
     }
     onMounted(() => window.addEventListener('keydown', onKeydown))
     onBeforeUnmount(() => {
@@ -188,8 +192,79 @@
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
         select(commit)
-        menu.value = { x: event.clientX, y: event.clientY, commit }
+        const clickedIdx = fullRowIndex.value.get(commit.hash) ?? -1
+        if (squashOldestIdx.value >= 0 && clickedIdx >= 0 && clickedIdx <= squashOldestIdx.value) {
+            const oldest = props.commits[squashOldestIdx.value]!
+            menu.value = { x: event.clientX, y: event.clientY, commit: oldest, squashCount: squashOldestIdx.value + 1 }
+        } else {
+            clearSquashPicks()
+            menu.value = { x: event.clientX, y: event.clientY, commit, squashCount: clickedIdx + 1 }
+        }
     }
+
+    /** Multi-select for squash: Shift+click extends a range from the last pick (or the */
+    /** Open commit). The scope is always HEAD..oldest pick with gaps auto-filled, so */
+    /** Skipping commits is structurally impossible. */
+    const squashPicks = ref<string[]>([])
+    const fullRowIndex = computed(() => new Map(props.commits.map((commit, index) => [commit.hash as string, index])))
+    const squashOldestIdx = computed(() => {
+        let max = -1
+        for (const hash of squashPicks.value) {
+            const index = fullRowIndex.value.get(hash)
+            if (index !== undefined && index > max) max = index
+        }
+        return max
+    })
+    const squashCount = computed(() => (squashOldestIdx.value >= 0 ? squashOldestIdx.value + 1 : 0))
+
+    function inSquashScope(commit: CommitNode): boolean {
+        if (squashOldestIdx.value < 0) return false
+        const index = fullRowIndex.value.get(commit.hash)
+        return index !== undefined && index <= squashOldestIdx.value
+    }
+
+    function rangeSquashPick(commit: CommitNode) {
+        if (uiTransient.busy) return
+        const anchorHash = squashPicks.value.at(-1) ?? selectedHash.value
+        const anchorIdx = anchorHash ? (fullRowIndex.value.get(anchorHash) ?? -1) : -1
+        const targetIdx = fullRowIndex.value.get(commit.hash) ?? -1
+        if (anchorIdx < 0 || targetIdx < 0) {
+            if (!squashPicks.value.includes(commit.hash)) squashPicks.value = [...squashPicks.value, commit.hash]
+            return
+        }
+        const span = new Set(squashPicks.value)
+        const [lo, hi] = anchorIdx < targetIdx ? [anchorIdx, targetIdx] : [targetIdx, anchorIdx]
+        for (let index = lo; index <= hi; index++) span.add(props.commits[index]!.hash)
+        squashPicks.value = [...span]
+    }
+
+    function clearSquashPicks() {
+        squashPicks.value = []
+    }
+
+    function onRowClick(commit: CommitNode, event: MouseEvent) {
+        if (event.shiftKey) {
+            rangeSquashPick(commit)
+            return
+        }
+        clearSquashPicks()
+        select(commit)
+    }
+
+    function onMenuSquash(commit: CommitNode) {
+        clearSquashPicks()
+        emit('squash', commit)
+    }
+
+    watch(
+        () => props.commits,
+        () => {
+            if (!squashPicks.value.length) return
+            const alive = new Set(props.commits.map(commit => commit.hash))
+            const kept = squashPicks.value.filter(hash => alive.has(hash))
+            if (kept.length !== squashPicks.value.length) squashPicks.value = kept
+        }
+    )
 
     function select(commit: CommitNode) {
         selectedHash.value = commit.hash
@@ -557,6 +632,21 @@
                         <CloseXIcon />
                     </button>
                 </span>
+                <span
+                    v-if="squashCount > 1"
+                    class="solo-chip"
+                    title="Shift+click to select a range — right-click to squash">
+                    <i-lucide-combine
+                        width="11"
+                        height="11" />
+                    Squash {{ squashCount }}
+                    <button
+                        class="icon-btn danger commit-close-btn solo-clear"
+                        title="Clear squash selection"
+                        @click="clearSquashPicks()">
+                        <CloseXIcon />
+                    </button>
+                </span>
                 <ThinkSpinner
                     v-if="repoStore.refreshingRepo"
                     compact
@@ -653,6 +743,7 @@
                     :class="{
                         selected: selectedHash === commit.hash,
                         'msg-expanded': expandedHash === commit.hash,
+                        'squash-in-scope': inSquashScope(commit),
                     }"
                     :style="{
                         height: `${rowH}px`,
@@ -660,7 +751,7 @@
                         '--row-color': nodeColor(commit),
                     }"
                     draggable="true"
-                    @click="select(commit)"
+                    @click="event => onRowClick(commit, event)"
                     @contextmenu.prevent.stop="openMenu(commit, $event)"
                     @dragstart="event => startCommitDrag(commit, event)">
                     <div
@@ -836,7 +927,8 @@
             <span class="avatar-tip-author">
                 <span
                     class="avatar-tip-dot"
-                    :style="{ background: avatarColor(tip.commit.author) }">{{ avatarInitial(tip.commit) }}</span>
+                    :style="{ background: avatarColor(tip.commit.author) }">{{ avatarInitial(tip.commit) }}</span
+                >
                 <strong>{{ tip.commit.author }}</strong>
             </span>
             <span
@@ -853,6 +945,7 @@
             @create-branch="commit => emit('create-branch', commit)"
             @create-tag="commit => emit('create-tag', commit)"
             @cherry-pick="commit => emit('cherry-pick', commit)"
+            @squash="onMenuSquash"
             @revert="commit => emit('revert', commit)"
             @reset-soft="commit => emit('reset-soft', commit)"
             @reset-hard="commit => emit('reset-hard', commit)" />

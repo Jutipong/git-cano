@@ -20,6 +20,7 @@ import type {
     RemoteTestResult,
     RepoStatus,
     RebaseEntry,
+    SquashPlan,
     SshKeyInfo,
     SshTestResult,
     StashEntry,
@@ -80,6 +81,8 @@ const api = {
     rebaseExecute: (baseRef: string, entries: RebaseEntry[], resume?: boolean): Promise<{ completed: boolean; message: string }> =>
         call('rebase:execute', baseRef, entries, Boolean(resume)),
     rebaseAbortPaused: (): Promise<void> => call('rebase:abortPaused'),
+    squashPlan: (target: string): Promise<SquashPlan> => call('squash:plan', target),
+    squashCommits: (base: string, message: string): Promise<string> => call('squash:run', base, message),
     cherryPick: (hash: string): Promise<void> => call('commit:cherryPick', hash),
     cherryPickCheck: (hash: string, target: string): Promise<MergeCheck> => call('commit:cherryPickCheck', hash, target),
     cherryPickContinue: (): Promise<void> => call('cherryPick:continue'),

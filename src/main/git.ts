@@ -24,6 +24,7 @@ import type {
     MergeMode,
     RebaseEntry,
     RebaseOutcome,
+    SquashPlan,
     RemoteTestResult,
     RepoState,
     RepoStatus,
@@ -1643,6 +1644,71 @@ export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
             const [hash, shortHash, author, date, subject] = line.split(SEP)
             return { hash, shortHash, parents: [], author, date, subject, refs: [], lane: 0 }
         })
+}
+
+export async function getSquashPlan(targetHash: string): Promise<SquashPlan> {
+    const { git: g } = getRepo()
+    if (!targetHash.trim()) throw new Error('A commit is required')
+    const target = (await g.raw(['rev-parse', '--verify', targetHash.trim()])).trim()
+    const head = (await g.revparse(['HEAD'])).trim()
+    if (target === head) throw new Error('Select an older commit — there is nothing to squash')
+    let base: string
+    try {
+        base = (await g.raw(['rev-parse', `${target}^`])).trim()
+    } catch {
+        throw new Error('Cannot squash the root commit')
+    }
+    await g.raw(['merge-base', '--is-ancestor', target, 'HEAD']).catch(() => {
+        throw new Error('Only commits on the current branch can be squashed')
+    })
+    const text = await g.raw(['log', '--reverse', '--pretty=format:%H%x1f%P%x1f%h%x1f%an%x1f%aI%x1f%s%x1f%b%x1e', `${base}..HEAD`, '--'])
+    const commits: CommitNode[] = text
+        .split('\x1e')
+        .map(line => line.replace(/^\n/, ''))
+        .filter(line => line.trim())
+        .map(line => {
+            const [hash, parentsRaw, shortHash, author, date, subject, bodyRaw] = line.split('\x1f')
+            return {
+                hash,
+                shortHash,
+                parents: parentsRaw ? parentsRaw.split(' ').filter(Boolean) : [],
+                author,
+                date,
+                subject,
+                body: bodyRaw?.trim() || undefined,
+                refs: [],
+                lane: 0,
+            }
+        })
+    if (commits.length < 2) throw new Error('Select an older commit — there is nothing to squash')
+    if (commits.some(c => c.parents.length > 1)) throw new Error('Merge commits cannot be squashed')
+    const dirty = (await g.status()).files.length > 0
+    const defaultMessage = commits[0]?.subject ?? ''
+    return { base, target, commits, defaultMessage, dirty }
+}
+
+export async function squashCommits(baseHash: string, message: string): Promise<string> {
+    const { path: p, git: g } = getRepo()
+    const base = baseHash.trim()
+    const trimmed = message.trim()
+    if (!base) throw new Error('A base commit is required')
+    if (!trimmed) throw new Error('Enter a commit message')
+    await g.raw(['rev-parse', '--verify', base])
+    if ((await g.status()).files.length > 0) throw new Error('Commit or stash your changes first')
+    const headBefore = (await g.revparse(['HEAD'])).trim()
+    await g.raw(['merge-base', '--is-ancestor', base, 'HEAD']).catch(() => {
+        throw new Error('The base commit is no longer on this branch')
+    })
+    const count = Number.parseInt((await g.raw(['rev-list', '--count', `${base}..HEAD`])).trim(), 10)
+    if (!Number.isFinite(count) || count < 2) throw new Error('There is nothing to squash')
+    const parentsText = await g.raw(['log', '--pretty=format:%P', `${base}..HEAD`, '--'])
+    if (parentsText.split('\n').some(line => line.trim().split(/\s+/).filter(Boolean).length > 1)) {
+        throw new Error('Merge commits cannot be squashed')
+    }
+    await g.raw(['reset', '--soft', base])
+    await g.commit(trimmed)
+    pushUndo({ label: 'squash', doneMessage: 'Squash undone', repoPath: p, kind: 'commit', headBefore })
+    return (await g.revparse(['HEAD'])).trim()
 }
 
 export async function commitMessage(message: string, amend: boolean, dir?: string): Promise<string> {

@@ -2,6 +2,7 @@
     import Cherry from '~icons/lucide/cherry'
     import ChevronRight from '~icons/lucide/chevron-right'
     import CircleCheck from '~icons/lucide/circle-check'
+    import Combine from '~icons/lucide/combine'
     import Copy from '~icons/lucide/copy'
     import CornerDownRight from '~icons/lucide/corner-down-right'
     import GitBranchPlus from '~icons/lucide/git-branch-plus'
@@ -17,6 +18,7 @@
         x: number
         y: number
         commit: CommitNode
+        squashCount?: number
     }
 
     const props = defineProps<{ menu: CommitMenuState | null }>()
@@ -26,6 +28,7 @@
         (e: 'create-branch', commit: CommitNode): void
         (e: 'create-tag', commit: CommitNode): void
         (e: 'cherry-pick', commit: CommitNode): void
+        (e: 'squash', commit: CommitNode): void
         (e: 'revert', commit: CommitNode): void
         (e: 'reset-soft', commit: CommitNode): void
         (e: 'reset-hard', commit: CommitNode): void
@@ -50,7 +53,7 @@
         document.removeEventListener('keydown', onKey)
     })
 
-    type CommitAction = 'checkout' | 'create-branch' | 'create-tag' | 'cherry-pick' | 'revert' | 'reset-soft' | 'reset-hard'
+    type CommitAction = 'checkout' | 'create-branch' | 'create-tag' | 'cherry-pick' | 'squash' | 'revert' | 'reset-soft' | 'reset-hard'
 
     function act(kind: CommitAction) {
         const commit = props.menu?.commit
@@ -60,6 +63,7 @@
         else if (kind === 'create-branch') emit('create-branch', commit)
         else if (kind === 'create-tag') emit('create-tag', commit)
         else if (kind === 'cherry-pick') emit('cherry-pick', commit)
+        else if (kind === 'squash') emit('squash', commit)
         else if (kind === 'revert') emit('revert', commit)
         else if (kind === 'reset-soft') emit('reset-soft', commit)
         else emit('reset-hard', commit)
@@ -117,6 +121,16 @@
                 width="13"
                 height="13" />
             Cherry-pick onto HEAD
+        </button>
+        <button
+            v-if="(menu.squashCount ?? 0) >= 2"
+            class="commit-menu-item"
+            @click="act('squash')">
+            <Combine
+                class="commit-menu-ic"
+                width="13"
+                height="13" />
+            Squash {{ menu.squashCount }} commits…
         </button>
         <div class="commit-menu-separator" />
         <button

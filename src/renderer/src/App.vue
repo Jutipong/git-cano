@@ -15,6 +15,7 @@
     import RebaseEditor from './components/RebaseEditor.vue'
     import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
+    import SquashModal from './components/SquashModal.vue'
     import StashCreateModal from './components/StashCreateModal.vue'
     import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
@@ -84,6 +85,7 @@
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     const tagTarget = ref<CommitNode | null>(null)
+    const squashTarget = ref<CommitNode | null>(null)
     const stashCreateOpen = ref(false)
     const cloneOpen = ref(false)
 
@@ -437,6 +439,7 @@
                                 @create-branch="createBranchAt"
                                 @create-tag="tagTarget = $event"
                                 @cherry-pick="cherryPickCommit"
+                                @squash="squashTarget = $event"
                                 @revert="revertCommit"
                                 @reset-soft="commit => resetTo(commit, 'soft')"
                                 @reset-hard="commit => resetTo(commit, 'hard')" />
@@ -529,6 +532,11 @@
             v-if="tagTarget"
             :commit="tagTarget"
             @close="tagTarget = null" />
+        <SquashModal
+            v-if="squashTarget"
+            :commit="squashTarget"
+            @close="squashTarget = null"
+            @complete="squashTarget = null" />
         <StashCreateModal
             v-if="stashCreateOpen"
             @close="stashCreateOpen = false" />

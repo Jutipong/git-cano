@@ -3856,6 +3856,112 @@ body {
     padding: 10px 14px;
 }
 
+.squash-modal {
+    width: min(520px, 92vw);
+}
+
+.squash-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+}
+
+.squash-warn {
+    padding: 8px 10px;
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent);
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.squash-note {
+    color: var(--text-muted);
+    font-size: 11px;
+}
+
+.graph-row.squash-in-scope {
+    background: color-mix(in srgb, var(--purple) 12%, transparent);
+}
+
+.squash-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 220px;
+    overflow: auto;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+}
+
+.squash-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 12px;
+}
+
+.squash-row:last-child {
+    border-bottom: none;
+}
+
+.squash-badge {
+    flex: 0 0 auto;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+}
+
+.squash-badge.head {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
+.squash-badge.keep {
+    color: var(--purple);
+    background: color-mix(in srgb, var(--purple) 14%, transparent);
+}
+
+.squash-subject {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.squash-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.squash-count.over {
+    color: var(--red);
+}
+
+.squash-message {
+    min-height: 88px;
+    padding: 8px 10px;
+    color: var(--text);
+    background: var(--surface-0);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 12px;
+}
+
+.squash-message:focus {
+    border-color: var(--teal);
+}
+
 .context-menu,
 .rebase-modal {
     border-color: var(--line-soft);
