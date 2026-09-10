@@ -1,5 +1,5 @@
 import { useRepoStore } from '../stores/repo'
-import { UNDO_TOAST_DURATION, useUiTransientStore } from '../stores/uiTransient'
+import { useUiTransientStore } from '../stores/uiTransient'
 
 /**
  * Shows a success toast with a timed Undo button when the main process journaled an undoable
@@ -16,7 +16,6 @@ export async function notifyUndoable(repoPath: string | undefined, successMessag
     }
     const { id } = preview
     uiTransient.notify(successMessage, 'success', {
-        durationMs: UNDO_TOAST_DURATION,
         action: { label: 'Undo', act: () => void performUndo(target, id) },
     })
 }

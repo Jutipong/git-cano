@@ -319,9 +319,7 @@
 /* dithered checker backdrop baked BEHIND content so text stays sharp */
 :root[data-theme='light-retro'] .app,
 :root[data-theme='light-retro'] .app-empty {
-    background:
-        repeating-conic-gradient(rgba(0, 0, 0, 0.08) 0% 25%, transparent 0% 50%),
-        var(--canvas);
+    background: repeating-conic-gradient(rgba(0, 0, 0, 0.08) 0% 25%, transparent 0% 50%), var(--canvas);
     background-size:
         16px 16px,
         auto;
@@ -393,14 +391,7 @@
 }
 
 /* chunky stepped frame on panes */
-:root[data-theme='light-retro'] :is(
-    .sidebar,
-    .center-column,
-    .right-pane,
-    .tab-group,
-    .tab-actions,
-    .tab-sync-actions
-) {
+:root[data-theme='light-retro'] :is(.sidebar, .center-column, .right-pane, .tab-group, .tab-actions, .tab-sync-actions) {
     outline: 2px solid var(--line);
     outline-offset: -2px;
 }
@@ -409,18 +400,14 @@
 
 /* CRT backdrop: dot-grid baked BEHIND content so text stays sharp (no scanlines — they turn to noise on low-clarity screens) */
 :root[data-theme='terminal'] .app {
-    background:
-        radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px),
-        var(--canvas);
+    background: radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px), var(--canvas);
     background-size:
         12px 12px,
         auto;
 }
 
 :root[data-theme='terminal'] .app-empty {
-    background:
-        radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px),
-        var(--canvas);
+    background: radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px), var(--canvas);
     background-size:
         12px 12px,
         auto;
@@ -566,18 +553,19 @@
 }
 
 /* double-frame TUI panes/dialogs — outline paints a second frame without moving layout */
-:root[data-theme='terminal'] :is(
-    .sidebar,
-    .center-column,
-    .right-pane,
-    .tab-group,
-    .tab-actions,
-    .tab-sync-actions,
-    .diff-overlay,
-    .modal-overlay > div,
-    .confirm-dialog,
-    .error-dialog
-) {
+:root[data-theme='terminal']
+    :is(
+        .sidebar,
+        .center-column,
+        .right-pane,
+        .tab-group,
+        .tab-actions,
+        .tab-sync-actions,
+        .diff-overlay,
+        .modal-overlay > div,
+        .confirm-dialog,
+        .error-dialog
+    ) {
     outline: 1px solid var(--line);
     outline-offset: 2px;
 }
@@ -4582,7 +4570,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 
     pointer-events: none;
 }
@@ -4591,11 +4579,11 @@ body {
     position: static;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: max-content;
     max-width: min(400px, calc(100vw - 32px));
-    min-height: 42px;
-    padding: 9px 10px 9px 12px;
+    min-height: 44px;
+    padding: 10px 12px;
     overflow: hidden;
     color: var(--text);
     background: color-mix(in srgb, var(--toast-accent, var(--teal)) 10%, var(--surface-2));
@@ -4708,6 +4696,46 @@ body {
     stroke-width: 1;
     stroke-linecap: round;
     vector-effect: non-scaling-stroke;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.toast-close-count {
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Countdown digit swap: soft blur-fade between seconds. */
+.toast-count-enter-active,
+.toast-count-leave-active {
+    transition:
+        opacity 160ms ease,
+        filter 160ms ease;
+}
+
+.toast-count-enter-from,
+.toast-count-leave-to {
+    opacity: 0;
+    filter: blur(3px);
+}
+
+/* Hovering the close button swaps the countdown digit for the X. */
+.toast-close:hover .toast-close-count {
+    opacity: 0;
+}
+
+.toast-close:hover .toast-close-x {
+    opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .toast-count-enter-active,
+    .toast-count-leave-active,
+    .toast-close-x {
+        transition: none;
+    }
 }
 
 .toast-ring {
@@ -6270,8 +6298,11 @@ body {
     min-width: 28px;
     padding: 4px 11px;
     color: var(--text);
-    background:
-        linear-gradient(180deg, color-mix(in srgb, var(--surface-1) 85%, transparent), color-mix(in srgb, var(--text-muted) 14%, transparent));
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--surface-1) 85%, transparent),
+        color-mix(in srgb, var(--text-muted) 14%, transparent)
+    );
     border: 1px solid var(--line);
     border-bottom-width: 2px;
     border-radius: 8px;

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import canoIcon from './assets/cano.svg'
     import BlameModal from './components/BlameModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
     import CommandPalette from './components/CommandPalette.vue'
@@ -33,7 +34,6 @@
 
     import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
-    import canoIcon from './assets/cano.svg'
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -58,6 +58,11 @@
         switchingWorkspace,
     } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
+
+    /** Whole seconds left on a toast, shown as the countdown badge on its close button. */
+    function countdownSeconds(t: { progress: number; durationMs: number }) {
+        return Math.ceil((t.progress * t.durationMs) / 1000)
+    }
 
     const RIGHT_PANEL_MIN_WIDTH = 360
     if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
@@ -595,7 +600,9 @@
                     :key="t.id"
                     class="toast"
                     :class="`toast-${t.type}`"
-                    role="status">
+                    role="status"
+                    @mouseenter="uiTransient.pauseToast(t.id)"
+                    @mouseleave="uiTransient.resumeToast(t.id)">
                     <span
                         class="toast-icon"
                         aria-hidden="true">
@@ -656,6 +663,15 @@
                                 class="toast-close-x"
                                 d="M14.5 7.5L7.5 14.5M7.5 7.5l7 7" />
                         </svg>
+                        <Transition
+                            name="toast-count"
+                            mode="out-in">
+                            <span
+                                :key="countdownSeconds(t)"
+                                class="toast-close-count"
+                                >{{ countdownSeconds(t) }}</span
+                            >
+                        </Transition>
                     </button>
                 </div>
             </TransitionGroup>

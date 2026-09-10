@@ -21,14 +21,14 @@ interface ToastMessage {
     deadline: number
     durationMs: number
     action: ToastAction | null
+    paused: boolean
+    pausedAt: number
 }
 
 let toastTicker: ReturnType<typeof setInterval> | null = null
 let nextToastId = 0
 
-export const TOAST_DURATION = 10000
-/** Undo toasts linger longer so the action stays reachable. */
-export const UNDO_TOAST_DURATION = 15000
+export const TOAST_DURATION = 15000
 const TOAST_TICK_MS = 50
 
 function inferToastKind(message: string): ToastKind {
@@ -72,6 +72,7 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         toastTicker = setInterval(() => {
             const now = Date.now()
             toasts.value = toasts.value.filter(t => {
+                if (t.paused) return true
                 t.progress = Math.max(0, (t.deadline - now) / t.durationMs)
                 return t.progress > 0
             })
@@ -90,6 +91,22 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         found.action.act()
     }
 
+    /** Freeze a toast's countdown while the pointer rests on it. */
+    function pauseToast(id: number) {
+        const found = toasts.value.find(t => t.id === id)
+        if (!found || found.paused) return
+        found.paused = true
+        found.pausedAt = Date.now()
+    }
+
+    /** Resume a paused toast, shifting the deadline so the remaining time is preserved. */
+    function resumeToast(id: number) {
+        const found = toasts.value.find(t => t.id === id)
+        if (!found || !found.paused) return
+        found.deadline += Date.now() - found.pausedAt
+        found.paused = false
+    }
+
     function notify(message: string, type?: ToastKind, opts?: NotifyOptions) {
         const kind = type ?? inferToastKind(message)
         if (kind === 'error' && !opts?.asToast) {
@@ -105,6 +122,8 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
             deadline: Date.now() + durationMs,
             durationMs,
             action: opts?.action ?? null,
+            paused: false,
+            pausedAt: 0,
         })
         ensureToastTicker()
     }
@@ -133,6 +152,8 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
         notify,
         dismissToast,
         runToastAction,
+        pauseToast,
+        resumeToast,
         closeErrorDialog,
         withBusy,
     }
