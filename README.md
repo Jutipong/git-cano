@@ -114,6 +114,7 @@ pnpm dev
 | ⬇️ Pull                  | `Ctrl+↓`              | `Ctrl+↓`                 |
 | ⬆️ Push                  | `Ctrl+↑`              | `Ctrl+↑`                 |
 | 📁 Open repo             | `Ctrl+O`              | `Ctrl+O`                 |
+| ❎ Close tab             | `Ctrl+W`              | `Ctrl+W`                 |
 | 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
 | ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
 | ✨ Command palette       | `Ctrl+P` / `Shift×2`  | `Ctrl+P` / `Shift×2`     |

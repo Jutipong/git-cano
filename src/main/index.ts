@@ -477,11 +477,17 @@ function startDir(): string | undefined {
 /**
  * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't zoom the web frame behind the
  * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead.
+ * Ctrl/Cmd+W is also freed from the native Close-window role so it closes the active repo tab instead
+ * (window close stays available via Ctrl/Cmd+Shift+W).
  */
 function setupMenu(): void {
+    const isMac = process.platform === 'darwin'
     const template: MenuItemConstructorOptions[] = [
-        ...(process.platform === 'darwin' ? [{ role: 'appMenu' } as const] : []),
-        { role: 'fileMenu' },
+        ...(isMac ? [{ role: 'appMenu' } as const] : []),
+        // File → Close owns Cmd+W on macOS — rebind it so Cmd+W reaches the renderer.
+        isMac
+            ? { label: 'File', submenu: [{ role: 'close', accelerator: 'Command+Shift+W' }] }
+            : { role: 'fileMenu' },
         { role: 'editMenu' },
         {
             label: 'View',
@@ -493,7 +499,17 @@ function setupMenu(): void {
                 { role: 'togglefullscreen' },
             ],
         },
-        { role: 'windowMenu' },
+        // Window → Close owns Ctrl+W on Windows/Linux — rebind it the same way.
+        isMac
+            ? { role: 'windowMenu' }
+            : {
+                  label: 'Window',
+                  submenu: [
+                      { role: 'minimize' },
+                      { role: 'zoom' },
+                      { role: 'close', accelerator: 'CommandOrControl+Shift+W' },
+                  ],
+              },
     ]
     Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

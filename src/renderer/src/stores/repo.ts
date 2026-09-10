@@ -335,6 +335,7 @@ export const useRepoStore = defineStore('repo', () => {
     async function closeTab(index: number) {
         if (useUiTransientStore().busy) return
         const tab = tabs.value[index]
+        if (!tab) return
         const wasActive = index === activeTab.value
         const stillOpen = await window.api.closeRepo(tab.path).catch(() => false)
         const remaining = tabs.value.filter((_, i) => i !== index)

@@ -151,7 +151,7 @@ Key files:
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Search commits, Open settings, Command palette, Show shortcuts — with
+  Close tab, Search commits, Open settings, Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
   `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
@@ -167,7 +167,7 @@ Key files:
   Fetch, Pull, Push, Open repo, Search commits, Open settings, Command
   palette. Click Change… under macOS or Windows then press keys (`Esc` cancels, capture listener
   while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
-  conflicts with fixed zoom combos (`Ctrl+=, -, 0`) or other customized ids
+  conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
   default-equal values are pruned, legacy single-string values migrate to both platforms) with `getShortcut(id, platform?)` /
@@ -179,14 +179,19 @@ Key files:
   repo, or while busy. Customizable shortcuts match canonical combos, so
   `Ctrl` and `⌘` both work.
 - Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
-  Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`,
+  Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Close tab
+  `Ctrl+W` (fixed, works while typing),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
   dialogs `Enter`/`Esc`, app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel,
   `Esc` to close diff/deselect.
-- Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom,
-  which is intentionally handled above the gate in `App.vue`.
+- Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom
+  and close tab, which are intentionally handled above the gate in `App.vue`
+  (close tab still no-ops on busy and on unknown indexes via its own guards).
+  The native Close-window `CmdOrCtrl+W` accelerator is rebound to
+  `CmdOrCtrl+Shift+W` in `setupMenu()` (`main/index.ts`) so `Ctrl/Cmd+W`
+  reaches the renderer.
 
 ## AI commit messages
 

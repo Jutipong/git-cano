@@ -180,6 +180,12 @@
                     ui.zoom = DEFAULT_ZOOM
                     return
                 }
+                // Close active repo tab — fixed, works everywhere (even while typing).
+                if (eventToCombo(event) === 'Ctrl+W') {
+                    event.preventDefault()
+                    if (tabs.value.length > 0) void repoStore.closeTab(activeTab.value)
+                    return
+                }
             }
             if (uiTransient.busy) return
             if (event.key === 'Escape') {

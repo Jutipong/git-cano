@@ -14,6 +14,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'pull', label: 'Pull', mac: ['Ctrl+↓'], win: ['Ctrl+↓'] },
     { id: 'push', label: 'Push', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
     { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
+    { id: 'closeTab', label: 'Close tab', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
     { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
     { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
@@ -69,8 +70,8 @@ export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     commandPalette: 'Ctrl+P',
 }
 
-/** Fixed combos a custom shortcut must not override (app zoom — handled above the busy gate). */
-const RESERVED_COMBOS = new Set(['Ctrl+=', 'Ctrl+-', 'Ctrl+0'])
+/** Fixed combos a custom shortcut must not override (app zoom + close tab — handled above the busy gate). */
+const RESERVED_COMBOS = new Set(['Ctrl+=', 'Ctrl+-', 'Ctrl+0', 'Ctrl+W'])
 
 /** Normalize a KeyboardEvent to a canonical combo ("Ctrl+Shift+ArrowDown"). Cmd counts as Ctrl. */
 export function eventToCombo(event: KeyboardEvent): string | null {
