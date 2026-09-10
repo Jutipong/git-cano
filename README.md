@@ -87,6 +87,12 @@ pnpm dev
 - 🖌️ Commit-graph lane colors adapt per theme
 - 🛶 Cano logo in the sidebar toolbar, splash screen & empty state
 
+### 🔔 Calm, non-blocking feedback
+
+- ⏳ Transient toasts auto-dismiss in **15s** — the dismiss button shows a live **countdown ring**, and hovering a toast pauses its timer.
+- 🔴 Failures interrupt with a focused dialog instead of a fleeting toast.
+- ↩️ Risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer a **timed Undo**.
+
 ### 🐇 Feels fast
 
 - ⚡ Local data loads first — the repo is usable immediately
