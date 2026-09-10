@@ -193,7 +193,10 @@
             ...(aiCanRun.value
                 ? [{ id: 'ai', label: 'AI…', hint: 'Generate commit', icon: Sparkles, run: () => enterMode('ai') } satisfies PaletteItem]
                 : []),
-            { id: 'openRepo', label: 'Open repository', icon: FolderOpen, run: () => emit('open-repo') },
+            { id: 'openRepo', label: 'Open repository', icon: FolderOpen, run: () => {
+                close()
+                emit('open-repo')
+            } },
             ...(repoStore.repo
                 ? [
                       {

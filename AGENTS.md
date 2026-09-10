@@ -69,6 +69,8 @@ Key files:
   sidebar and the `OpenInButton.vue` short-label menu: Folder / Terminal / VS Code,
   plus Kiro / Visual Studio / Rider when installed). The command palette mirrors
   it via a repo-gated `Open in…` mode with the same items/conditions.
+  Palette command items must `close()` before acting/emitting (mode switches like
+  Repo…/Branch… excepted) — otherwise the palette stays open over the next dialog.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
