@@ -97,6 +97,8 @@ export const useRepoStore = defineStore('repo', () => {
     const historyFile = ref<string | null>(null)
     const blameFile = ref<string | null>(null)
     const toolsOpen = ref(false)
+    /** Whether the reflog recovery viewer is open. */
+    const reflogOpen = ref(false)
     /** Whether the keyboard-shortcuts help modal is open. */
     const shortcutsOpen = ref(false)
     /** Whether the command palette overlay is open. */
@@ -590,6 +592,7 @@ export const useRepoStore = defineStore('repo', () => {
         blameFile,
         toolsOpen,
         toolsTab,
+        reflogOpen,
         shortcutsOpen,
         commandPaletteOpen,
         repo,

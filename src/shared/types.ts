@@ -96,6 +96,17 @@ export interface UndoPreview {
     label: string
 }
 
+/** One `HEAD@{n}` reflog entry — newest first, index 0 is the current tip. */
+export interface ReflogEntry {
+    index: number
+    hash: string
+    shortHash: string
+    selector: string
+    action: string
+    message: string
+    date: string
+}
+
 export interface RepoState {
     merging: boolean
     rebasing: boolean

@@ -80,6 +80,8 @@ import {
     getRebasePlan,
     getSquashPlan,
     squashCommits,
+    listReflog,
+    restoreReflog,
     listBranches,
     listSoloFiles,
     mergeInto,
@@ -830,6 +832,14 @@ app.whenReady().then(() => {
     handle('squash:run', (base: string, message: string) => {
         requireRepo()
         return squashCommits(base as string, message as string)
+    })
+    handle('reflog:list', (limit?: number) => {
+        requireRepo()
+        return listReflog(typeof limit === 'number' ? limit : 100)
+    })
+    handle('reflog:restore', (ref: string) => {
+        requireRepo()
+        return restoreReflog(ref as string)
     })
     handle('rebase:abortPaused', () => {
         requireRepo()

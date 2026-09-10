@@ -292,6 +292,21 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   range, the tree is identical) — do not add a new undo kind for it. Conflict flows
   (merge/cherry-pick/rebase continuations) are owned by abort — never journal them.
 
+## Reflog
+
+- Recovery net beyond the undo toast window: `listReflog(limit)` / `restoreReflog(ref)` in
+  `main/git.ts` (`reflog:list` / `reflog:restore` IPC, `window.api.reflog` / `restoreReflog`,
+  `ReflogEntry` in `shared/types.ts`). Unborn branches have no reflog — git exits non-zero,
+  so `listReflog` catches and returns `[]` (modal shows "No reflog entries", never a raw fatal).
+- Modal (`ReflogModal.vue`, styles in `modern-ui.css` `.reflog-*`): timeline rail with
+  per-action node/badge colors via `actionKind()` (commit/reset/checkout/rebase/merge/
+  cherry/revert/branch), day-grouped sticky headers, relative time (`formatCommitDate`),
+  Restore per row behind `confirmDialog`. Opened from the command palette (`Reflog` item,
+  repo-gated) and the sidebar toolbar; visibility flag is `repoStore.reflogOpen`.
+- Rules: restore requires a clean tree (dirty = disabled buttons + warning, no auto-stash);
+  the restore itself journals a hard `reset` entry so it stays undoable (with the usual
+  dirty-tree retry guard).
+
 ## Squash
 
 - Squash is HEAD-range only: `getSquashPlan(target)` / `squashCommits(base, message)` in

@@ -14,6 +14,7 @@
     import OpenRepoMenu from './components/OpenRepoMenu.vue'
     import PromptDialog from './components/PromptDialog.vue'
     import RebaseEditor from './components/RebaseEditor.vue'
+    import ReflogModal from './components/ReflogModal.vue'
     import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
     import SquashModal from './components/SquashModal.vue'
@@ -573,6 +574,9 @@
             :initial-tab="repoStore.toolsTab"
             :refresh="repoStore.refresh"
             @close="toolsOpen = false" />
+        <ReflogModal
+            v-if="repoStore.reflogOpen"
+            @close="repoStore.reflogOpen = false" />
         <CommandPalette
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"

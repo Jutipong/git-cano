@@ -828,6 +828,14 @@
                     aria-hidden="true" />
                 <button
                     class="toolbar-icon-button"
+                    title="Reflog (recover history)"
+                    @click="repoStore.reflogOpen = true">
+                    <i-lucide-history
+                        width="17"
+                        height="17" />
+                </button>
+                <button
+                    class="toolbar-icon-button"
                     :class="{ 'bisect-active': repoStore.repoState.bisectActive }"
                     title="Settings"
                     @click="repoStore.toolsOpen = true">

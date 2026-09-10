@@ -3950,6 +3950,180 @@ body {
     border-color: var(--teal);
 }
 
+.reflog-modal {
+    width: min(720px, 94vw);
+}
+
+.reflog-warn {
+    margin: 10px 15px 0;
+}
+
+.reflog-list {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    margin: 8px 0;
+    padding: 0 14px 12px;
+}
+
+.reflog-day {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 8px 0 4px;
+    color: var(--text-muted);
+    background: var(--surface-1);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.reflog-row {
+    display: grid;
+    grid-template-columns: 16px minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 10px;
+    padding: 5px 8px 5px 0;
+    border-radius: 8px;
+    transition: background 0.12s ease;
+}
+
+.reflog-row:hover {
+    background: color-mix(in srgb, var(--surface-3) 45%, transparent);
+}
+
+.reflog-row.current {
+    background: color-mix(in srgb, var(--teal) 8%, transparent);
+}
+
+/* Vertical rail + node: the line is drawn per row so rows connect seamlessly. */
+.reflog-track {
+    position: relative;
+    align-self: stretch;
+    display: flex;
+    justify-content: center;
+    min-height: 20px;
+}
+
+.reflog-track::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--line-soft);
+}
+
+.reflog-row.first .reflog-track::before {
+    top: 14px;
+}
+
+.reflog-node {
+    position: relative;
+    z-index: 1;
+    width: 9px;
+    height: 9px;
+    margin-top: 6px;
+    background: var(--node-color, var(--text-muted));
+    border: 2px solid var(--surface-1);
+    border-radius: 50%;
+    box-sizing: content-box;
+}
+
+.reflog-row.current .reflog-node {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 22%, transparent);
+}
+
+.reflog-body {
+    min-width: 0;
+}
+
+.reflog-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 22px;
+}
+
+.reflog-action {
+    flex: 0 0 auto;
+    padding: 1px 8px;
+    color: var(--node-color, var(--text-muted));
+    background: color-mix(in srgb, var(--node-color, var(--text-muted)) 14%, transparent);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.reflog-selector {
+    flex: 0 0 auto;
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 10px;
+}
+
+.reflog-message {
+    overflow: hidden;
+    color: var(--text);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.reflog-time {
+    padding-top: 4px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.reflog-badge {
+    flex: 0 0 auto;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+}
+
+.reflog-badge.current-badge {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+}
+
+.reflog-restore {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Per-action node/badge colors. */
+.reflog-row.k-commit {
+    --node-color: var(--green);
+}
+.reflog-row.k-reset {
+    --node-color: var(--red);
+}
+.reflog-row.k-checkout {
+    --node-color: var(--blue);
+}
+.reflog-row.k-rebase {
+    --node-color: var(--purple);
+}
+.reflog-row.k-merge {
+    --node-color: var(--orange);
+}
+.reflog-row.k-cherry {
+    --node-color: var(--orange);
+}
+.reflog-row.k-branch {
+    --node-color: var(--teal);
+}
+
+.reflog-error {
+    margin: 0 15px 12px;
+}
+
 .context-menu,
 .rebase-modal {
     border-color: var(--line-soft);

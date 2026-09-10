@@ -5,6 +5,7 @@
     import FolderGit2 from '~icons/lucide/folder-git2'
     import FolderOpen from '~icons/lucide/folder-open'
     import GitBranch from '~icons/lucide/git-branch'
+    import History from '~icons/lucide/history'
     import Layers from '~icons/lucide/layers'
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
@@ -153,6 +154,20 @@
                 ? [{ id: 'ai', label: 'AI…', hint: 'Generate commit', icon: Sparkles, run: () => enterMode('ai') } satisfies PaletteItem]
                 : []),
             { id: 'openRepo', label: 'Open repository', icon: FolderOpen, run: () => emit('open-repo') },
+            ...(repoStore.repo
+                ? [
+                      {
+                          id: 'reflog',
+                          label: 'Reflog',
+                          hint: 'Recover lost history',
+                          icon: History,
+                          run: () => {
+                              close()
+                              repoStore.reflogOpen = true
+                          },
+                      } satisfies PaletteItem,
+                  ]
+                : []),
             {
                 id: 'settings',
                 label: 'Settings',

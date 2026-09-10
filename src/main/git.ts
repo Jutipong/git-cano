@@ -24,6 +24,7 @@ import type {
     MergeMode,
     RebaseEntry,
     RebaseOutcome,
+    ReflogEntry,
     SquashPlan,
     RemoteTestResult,
     RepoState,
@@ -1614,6 +1615,54 @@ export async function resetTo(target: string, mode: 'soft' | 'mixed' | 'hard'): 
 export async function renameBranch(oldName: string, newName: string): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['branch', '-m', oldName, newName])
+}
+
+/**
+ * HEAD reflog, newest first. This is the recovery net for history that the undo toast
+ * window has already closed over (e.g. a hard reset) — the objects are still on disk.
+ */
+export async function listReflog(limit = 100): Promise<ReflogEntry[]> {
+    const { git: g } = getRepo()
+    const SEP = '\x1f'
+    const capped = Math.max(1, Math.min(500, Math.floor(limit) || 100))
+    // `--date=iso-strict` makes %gd render HEAD@{<ISO 8601>}; the index is rebuilt from row order.
+    // An unborn branch has no reflog at all — git exits non-zero with a raw fatal message, which
+    // this recovery tool should surface as "nothing to recover", not as an error.
+    const text = await g
+        .raw(['reflog', '--date=iso-strict', `--format=%H${SEP}%h${SEP}%gd${SEP}%gs`, '-n', String(capped)])
+        .catch(() => '')
+    return text
+        .split('\n')
+        .map(line => line.trim())
+        .filter(Boolean)
+        .map((line, index) => {
+            const [hash, shortHash, selectorRaw, subject = ''] = line.split(SEP)
+            const selector = (selectorRaw ?? '').trim()
+            const date = /^HEAD@\{(.+)\}$/.exec(selector)?.[1]?.trim() ?? ''
+            const colonAt = subject.indexOf(':')
+            return {
+                index,
+                hash: hash ?? '',
+                shortHash: shortHash ?? '',
+                selector: `HEAD@{${index}}`,
+                action: colonAt >= 0 ? subject.slice(0, colonAt).trim() : subject.trim(),
+                message: colonAt >= 0 ? subject.slice(colonAt + 1).trim() : '',
+                date,
+            }
+        })
+}
+
+/** Moves the current branch back to a reflog entry. Always journaled — the restore itself is undoable. */
+export async function restoreReflog(ref: string): Promise<string> {
+    const { path: p, git: g } = getRepo()
+    const target = ref.trim()
+    if (!target) throw new Error('A reflog entry is required')
+    await g.raw(['rev-parse', '--verify', `${target}^{commit}`])
+    if ((await g.status()).files.length > 0) throw new Error('Commit or stash your changes first')
+    const headBefore = (await g.revparse(['HEAD'])).trim()
+    await g.raw(['reset', '--hard', target])
+    pushUndo({ label: 'reflog restore', doneMessage: 'Reflog restore undone', repoPath: p, kind: 'reset', headBefore, resetMode: 'hard' })
+    return (await g.revparse(['HEAD'])).trim()
 }
 
 export async function getCommitFileDiff(hash: string, file: string, context?: number): Promise<DiffLine[]> {

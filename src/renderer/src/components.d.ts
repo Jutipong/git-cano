@@ -102,6 +102,7 @@ declare module 'vue' {
     OpenRepoMenu: typeof import('./components/OpenRepoMenu.vue')['default']
     PromptDialog: typeof import('./components/PromptDialog.vue')['default']
     RebaseEditor: typeof import('./components/RebaseEditor.vue')['default']
+    ReflogModal: typeof import('./components/ReflogModal.vue')['default']
     RemoteManager: typeof import('./components/RemoteManager.vue')['default']
     RepoTabContextMenu: typeof import('./components/RepoTabContextMenu.vue')['default']
     ShortcutsModal: typeof import('./components/ShortcutsModal.vue')['default']
