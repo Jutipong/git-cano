@@ -49,7 +49,9 @@ Key files:
 ## UI model
 
 - **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the `+` button is a flat
-  green icon styled like the panel refresh buttons — no outline.
+  green icon styled like the panel refresh buttons — no outline. Push/Pull/Fetch swap
+  their icon for a compact `ThinkSpinner` (fixed 15px slot, inherits the button color)
+  while `syncStore.busy` is set.
 - **Sidebar**: fetch/pull/push sync card at the top, workspace switcher
   (`WorkspaceButton.vue`, one persisted repo-tab session per workspace), branch/tag
   sections, then the STASHES section; bottom actions are Settings and the theme toggle

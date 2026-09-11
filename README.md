@@ -69,7 +69,7 @@ pnpm dev
 | 🌱   | Create / checkout / rename / delete / merge / rebase — drag a branch onto a branch to merge, drag a commit onto a branch to cherry-pick |
 | 🏷️   | Tag create / delete / push                             |
 | 🌐   | Remotes: add, edit, remove, test URLs                  |
-| ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token)          |
+| ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token) — buttons show an inline spinner while busy |
 | 📦   | Stashes, worktrees, submodules, bisect assistant       |
 | 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes |
 
