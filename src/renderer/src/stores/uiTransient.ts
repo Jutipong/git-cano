@@ -113,7 +113,7 @@ export const useUiTransientStore = defineStore('uiTransient', () => {
             errorDialog.value = message
             return
         }
-        const durationMs = opts?.durationMs ?? TOAST_DURATION
+        const durationMs = opts?.durationMs ?? useUiStore().toastDurationSec * 1000
         toasts.value.push({
             id: ++nextToastId,
             message,

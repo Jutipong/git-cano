@@ -90,7 +90,7 @@ pnpm dev
 
 ### 🔔 Calm, non-blocking feedback
 
-- ⏳ Transient toasts auto-dismiss in **15s** — the dismiss button shows a live **countdown ring**, and hovering a toast pauses its timer.
+- ⏳ Transient toasts auto-dismiss (default **20s**, change it in Settings → General → Notifications) — the dismiss button shows a live **countdown ring**, and hovering a toast pauses its timer.
 - 🔴 Failures interrupt with a focused dialog instead of a fleeting toast.
 - ↩️ Risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer a **timed Undo**.
 

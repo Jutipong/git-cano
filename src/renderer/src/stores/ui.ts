@@ -46,6 +46,10 @@ export const DEFAULT_FILE_VIEW_MODE: FileViewMode = 'tree'
 export const REFRESH_INTERVAL_OPTIONS = [3, 5, 10, 15, 20, 24, 30]
 export const DEFAULT_REFRESH_INTERVAL = 5
 
+/** Toast auto-dismiss options, in seconds. */
+export const TOAST_DURATION_OPTIONS = [10, 20, 30, 40, 50, 60]
+export const DEFAULT_TOAST_DURATION_SEC = 20
+
 /** Run the repo formatter (when it has .oxfmtrc.json) before AI commit-message generation. */
 export const DEFAULT_FORMAT_BEFORE_GENERATE = false
 
@@ -122,6 +126,10 @@ export const useUiStore = defineStore(
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
         watchEffect(() => {
             if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+        })
+        const toastDurationSec = ref(DEFAULT_TOAST_DURATION_SEC)
+        watchEffect(() => {
+            if (!TOAST_DURATION_OPTIONS.includes(toastDurationSec.value)) toastDurationSec.value = DEFAULT_TOAST_DURATION_SEC
         })
         const fontSize = ref(DEFAULT_FONT_SIZE)
         watchEffect(() => {
@@ -282,6 +290,7 @@ export const useUiStore = defineStore(
 
         function resetGeneral() {
             refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+            toastDurationSec.value = DEFAULT_TOAST_DURATION_SEC
         }
 
         watchEffect(() => {
@@ -309,6 +318,7 @@ export const useUiStore = defineStore(
             aiRunRequest,
             tagPushToOrigin,
             refreshInterval,
+            toastDurationSec,
             fontSize,
             zoom,
             stepZoom,
@@ -348,6 +358,7 @@ export const useUiStore = defineStore(
                 'formatBeforeGenerate',
                 'tagPushToOrigin',
                 'refreshInterval',
+                'toastDurationSec',
                 'fontSize',
                 'zoom',
                 'codeFontSize',

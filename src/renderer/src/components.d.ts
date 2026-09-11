@@ -37,6 +37,7 @@ declare module 'vue' {
     ILucideArrowDown: typeof import('~icons/lucide/arrow-down')['default']
     ILucideArrowDownToLine: typeof import('~icons/lucide/arrow-down-to-line')['default']
     ILucideArrowUp: typeof import('~icons/lucide/arrow-up')['default']
+    ILucideBell: typeof import('~icons/lucide/bell')['default']
     ILucideCheck: typeof import('~icons/lucide/check')['default']
     ILucideChevronDown: typeof import('~icons/lucide/chevron-down')['default']
     ILucideChevronRight: typeof import('~icons/lucide/chevron-right')['default']

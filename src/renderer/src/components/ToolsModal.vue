@@ -2,7 +2,7 @@
     import Moon from '~icons/lucide/moon'
     import Sun from '~icons/lucide/sun'
 
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -88,6 +88,7 @@
     const tab = ref(props.initialTab ?? 'appearance')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
+    const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
@@ -692,6 +693,27 @@
                                 class="setting-chip"
                                 :class="{ active: ui.refreshInterval === option.value }"
                                 @click="ui.refreshInterval = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-bell
+                                width="13"
+                                height="13" />
+                            Notifications
+                        </strong>
+                        <span class="setting-label">Toast auto-dismiss after</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in TOAST_OPTIONS"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.toastDurationSec === option.value }"
+                                @click="ui.toastDurationSec = option.value">
                                 {{ option.label }}
                             </button>
                         </div>

@@ -28,6 +28,7 @@ declare global {
   const SYNC_SHORTCUT_DEFAULTS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_DEFAULTS
   const SYNC_SHORTCUT_IDS: typeof import('./utils/shortcuts').SYNC_SHORTCUT_IDS
   const TOAST_DURATION: typeof import('./stores/uiTransient').TOAST_DURATION
+  const TOAST_DURATION_OPTIONS: typeof import('./stores/ui').TOAST_DURATION_OPTIONS
   const ZOOM_OPTIONS: typeof import('./stores/ui').ZOOM_OPTIONS
   const buildPrefix: typeof import('./utils/virtual').buildPrefix
   const buildTree: typeof import('./utils/fileTree').buildTree
