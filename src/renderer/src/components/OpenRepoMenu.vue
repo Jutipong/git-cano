@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
+    import { formatCombo } from '../utils/shortcuts'
 
     const props = withDefaults(
         defineProps<{
@@ -10,6 +11,7 @@
     const emit = defineEmits<{ (e: 'clone'): void }>()
 
     const repoStore = useRepoStore()
+    const ui = useUiStore()
     const uiTransient = useUiTransientStore()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
@@ -80,30 +82,34 @@
         </button>
         <div
             v-if="open"
-            class="open-repo-pop">
+            class="open-repo-pop"
+            role="menu">
             <div class="open-repo-label">Open repository</div>
             <button
                 class="open-repo-item"
+                role="menuitem"
                 title="Pick a folder from your local disk"
                 @click="openLocal()">
                 <span class="open-repo-icon">
                     <i-lucide-folder-open
-                        width="15"
-                        height="15" />
+                        width="14"
+                        height="14" />
                 </span>
                 <span class="open-repo-text">
                     <span class="open-repo-title">Open from local</span>
                     <span class="open-repo-desc">Pick a folder from your disk</span>
                 </span>
+                <kbd class="open-repo-kbd">{{ formatCombo(ui.getShortcut('openRepo')) }}</kbd>
             </button>
             <button
                 class="open-repo-item"
+                role="menuitem"
                 title="Clone a remote repository into a new folder"
                 @click="openClone()">
                 <span class="open-repo-icon">
                     <i-lucide-download
-                        width="15"
-                        height="15" />
+                        width="14"
+                        height="14" />
                 </span>
                 <span class="open-repo-text">
                     <span class="open-repo-title">Clone from URL</span>

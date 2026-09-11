@@ -1390,16 +1390,15 @@ body {
 .tab-actions .open-repo-wrap {
     flex: 0 0 32px;
     align-self: center;
-    /* let the popup anchor to the pill (.tab-actions) instead of this button
-       so its width can stretch to the whole group */
+    /* anchor the popup to the pill (.tab-actions) so it aligns under the + button */
     position: static;
 }
 
 .tab-actions .open-repo-pop {
-    left: 0;
-    right: auto;
-    width: 100%;
-    min-width: 0;
+    left: auto;
+    right: 0;
+    width: max-content;
+    min-width: 228px;
 }
 
 .open-repo-pop {
@@ -1409,19 +1408,17 @@ body {
     z-index: 60;
     display: flex;
     flex-direction: column;
-    gap: 2px;
-    min-width: 272px;
-    padding: 6px;
+    gap: 1px;
+    min-width: 228px;
+    padding: 4px;
     background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-card);
-    box-shadow:
-        0 12px 32px var(--shadow),
-        0 0 0 1px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+    box-shadow: 0 18px 50px var(--shadow);
 }
 
 .open-repo-label {
-    padding: 4px 10px 6px;
+    padding: 5px 8px 3px;
     color: var(--text-muted);
     font-size: 10px;
     font-weight: 600;
@@ -1432,57 +1429,71 @@ body {
 .open-repo-item {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    padding: 8px 10px;
+    min-height: 32px;
+    padding: 5px 8px;
     color: var(--text);
     font-size: 12px;
     text-align: left;
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
 }
 
-.open-repo-item:hover {
+.open-repo-item:hover,
+.open-repo-item:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
+    outline: none;
 }
 
 .open-repo-icon {
     display: inline-flex;
-    flex: 0 0 28px;
+    flex: 0 0 auto;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 28px;
     color: var(--text-muted);
-    background: var(--surface-hover);
-    border-radius: 8px;
 }
 
-.open-repo-item:hover .open-repo-icon {
+.open-repo-item:hover .open-repo-icon,
+.open-repo-item:focus-visible .open-repo-icon {
     color: var(--text);
 }
 
 .open-repo-text {
     display: flex;
+    flex: 1 1 auto;
     flex-direction: column;
-    gap: 1px;
+    gap: 0;
     min-width: 0;
 }
 
 .open-repo-title {
-    color: var(--text);
+    color: var(--text-secondary);
     font-size: 12px;
     font-weight: 500;
-    line-height: 1.3;
+    line-height: 1.35;
+}
+
+.open-repo-item:hover .open-repo-title,
+.open-repo-item:focus-visible .open-repo-title {
+    color: var(--text);
 }
 
 .open-repo-desc {
     color: var(--text-muted);
     font-size: 11px;
-    line-height: 1.3;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.open-repo-kbd {
+    flex: 0 0 auto;
+    margin-left: 16px;
 }
 
 .clone-modal {
