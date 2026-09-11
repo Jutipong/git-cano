@@ -1,3 +1,6 @@
+import { defineStore } from 'pinia'
+import { computed, ref } from 'vue'
+
 import type { AiConfig } from '@shared/types'
 
 export const useAiStore = defineStore('ai', () => {

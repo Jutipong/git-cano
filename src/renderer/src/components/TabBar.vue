@@ -1,6 +1,11 @@
 <script setup lang="ts">
-    import { nextTick } from 'vue'
+    import { nextTick, computed, onMounted, onUnmounted, ref } from 'vue'
+    import ILucideArrowDown from '~icons/lucide/arrow-down'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideSearch from '~icons/lucide/search'
 
+    import { useSyncStore } from '../stores/sync'
+    import { useUiStore } from '../stores/ui'
     import { formatCombo } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import OpenInButton from './OpenInButton.vue'

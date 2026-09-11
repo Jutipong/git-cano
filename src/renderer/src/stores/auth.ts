@@ -1,3 +1,6 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+
 import type { AuthConfig, GithubUser, SshKeyInfo } from '@shared/types'
 
 export const useAuthStore = defineStore('auth', () => {

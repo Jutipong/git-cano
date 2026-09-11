@@ -1,4 +1,9 @@
 <script setup lang="ts">
+    import { inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideMaximize from '~icons/lucide/maximize'
+    import ILucideMinimize from '~icons/lucide/minimize'
+
+    import { useUiStore } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
 
     interface Props {

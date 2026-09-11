@@ -1,13 +1,23 @@
 <script setup lang="ts">
-    import { nextTick } from 'vue'
+    import { nextTick, computed, ref, watch, inject } from 'vue'
+    import ILucideArrowDown from '~icons/lucide/arrow-down'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideMaximize from '~icons/lucide/maximize'
+    import ILucideMinimize from '~icons/lucide/minimize'
+    import ILucidePencil from '~icons/lucide/pencil'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+    import ILucideSave from '~icons/lucide/save'
 
+    import { useRepoStore } from '../stores/repo'
+    import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
     import { highlightLine, computeLineStates, highlightLineAt, type LineRenderContext } from '../utils/highlight'
     import { buildPrefix, windowFor } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
-    import type { ToastKind } from '../stores/uiTransient'
     import type { ConflictVersions, DiffLine } from '@shared/types'
 
     interface Props {

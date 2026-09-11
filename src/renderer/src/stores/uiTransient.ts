@@ -1,3 +1,7 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+
+import { useUiStore } from './ui'
 export type ToastKind = 'success' | 'error' | 'warning' | 'info' | 'fetch' | 'pull' | 'push' | 'stash'
 
 export interface ToastAction {

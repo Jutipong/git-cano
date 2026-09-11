@@ -1,4 +1,12 @@
 <script setup lang="ts">
+    import { storeToRefs } from 'pinia'
+    import { computed, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+    import ILucideArchive from '~icons/lucide/archive'
+    import ILucideArrowDown from '~icons/lucide/arrow-down'
+    import ILucideArrowDownToLine from '~icons/lucide/arrow-down-to-line'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideUndo2 from '~icons/lucide/undo-2'
+
     import canoIcon from './assets/cano.svg'
     import BlameModal from './components/BlameModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
@@ -25,15 +33,18 @@
     import ThinkSpinner from './components/ThinkSpinner.vue'
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
+    import { useAiStore } from './stores/ai'
     import { useAuthStore } from './stores/auth'
-    import { DEFAULT_ZOOM } from './stores/ui'
+    import { useRepoStore } from './stores/repo'
+    import { useSyncStore } from './stores/sync'
+    import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
+    import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
     import { eventToCombo } from './utils/shortcuts'
     import { notifyUndoable } from './utils/undo'
 
-    import type { NotifyOptions, ToastKind } from './stores/uiTransient'
     import type { CommitNode, RepoStatus } from '@shared/types'
 
     const repoStore = useRepoStore()

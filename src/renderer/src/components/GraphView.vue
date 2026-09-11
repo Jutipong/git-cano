@@ -1,9 +1,20 @@
 <script setup lang="ts">
-    import { nextTick } from 'vue'
+    import { nextTick, watch, computed, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideChevronRight from '~icons/lucide/chevron-right'
+    import ILucideCombine from '~icons/lucide/combine'
+    import ILucideCrosshair from '~icons/lucide/crosshair'
+    import ILucideGitBranch from '~icons/lucide/git-branch'
+    import ILucideGlobe2 from '~icons/lucide/globe2'
+    import ILucideSearch from '~icons/lucide/search'
+    import ILucideSettings from '~icons/lucide/settings'
+    import ILucideTag from '~icons/lucide/tag'
 
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore } from '../stores/uiTransient'
     import { formatDatePattern, formatShortDate } from '../utils/format'
     import CloseXIcon from './CloseXIcon.vue'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
@@ -121,8 +132,8 @@
         return visibleCommits.value.slice(from, to).map((commit, offset) => ({ commit, index: from + offset }))
     })
     /**
-     * Edges whose row span intersects the visible window (+ overscan). Judged by span, not by both
-     * endpoints being on screen, so long lane lines stay drawn while both ends are scrolled off.
+     * Edges whose row span intersects the visible window (+ overscan). Judged by span, not by both endpoints being on screen, so long lane
+     * lines stay drawn while both ends are scrolled off.
      */
     const EDGE_OVERSCAN = 5
     const renderEdges = computed(() => {
@@ -927,7 +938,8 @@
             <span class="avatar-tip-author">
                 <span
                     class="avatar-tip-dot"
-                    :style="{ background: avatarColor(tip.commit.author) }">{{ avatarInitial(tip.commit) }}</span
+                    :style="{ background: avatarColor(tip.commit.author) }"
+                    >{{ avatarInitial(tip.commit) }}</span
                 >
                 <strong>{{ tip.commit.author }}</strong>
             </span>

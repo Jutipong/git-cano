@@ -1,6 +1,12 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onMounted } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideLock from '~icons/lucide/lock'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+
     import { useUiStore, COMMIT_COLUMN_DEFAULTS, type CommitColumn } from '../stores/ui'
     import { formatDatePattern } from '../utils/format'
+    import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()

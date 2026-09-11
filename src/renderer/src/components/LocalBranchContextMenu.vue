@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { onBeforeUnmount, onMounted, ref } from 'vue'
     import ArrowDown from '~icons/lucide/arrow-down'
     import ArrowUp from '~icons/lucide/arrow-up'
     import Copy from '~icons/lucide/copy'

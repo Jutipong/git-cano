@@ -1,4 +1,9 @@
 import { assignLanes } from '@shared/lanes'
+import { defineStore } from 'pinia'
+import { computed, ref, watch } from 'vue'
+
+import { useUiTransientStore } from './uiTransient'
+import { useWorkspaceStore } from './workspace'
 
 import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
 
@@ -153,9 +158,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     /** Labels for the two sides of a conflict (shared by FilePanel and ConflictView). */
     const oursLabel = computed(() =>
-        repoState.value.merging || repoState.value.cherryPicking || repoState.value.rebasing
-            ? repo.value?.branch || 'current'
-            : 'ours'
+        repoState.value.merging || repoState.value.cherryPicking || repoState.value.rebasing ? repo.value?.branch || 'current' : 'ours'
     )
     const theirsLabel = computed(() => {
         if (repoState.value.merging) return repoState.value.mergeSource || 'incoming'

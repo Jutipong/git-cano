@@ -1,4 +1,29 @@
 <script setup lang="ts">
+    import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+    import IFluentEmojiFlatRobot from '~icons/fluent-emoji-flat/robot'
+    import IIconParkOutlineChange from '~icons/icon-park-outline/change'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideChevronRight from '~icons/lucide/chevron-right'
+    import ILucideCopy from '~icons/lucide/copy'
+    import ILucideFileDiff from '~icons/lucide/file-diff'
+    import ILucideFolder from '~icons/lucide/folder'
+    import ILucideFolderTree from '~icons/lucide/folder-tree'
+    import ILucideList from '~icons/lucide/list'
+    import ILucideListTree from '~icons/lucide/list-tree'
+    import ILucideMinus from '~icons/lucide/minus'
+    import ILucidePlus from '~icons/lucide/plus'
+    import ILucideRefreshCw from '~icons/lucide/refresh-cw'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+    import ILucideX from '~icons/lucide/x'
+    import IMageMessageDots from '~icons/mage/message-dots'
+    import IStreamlineFlexColorArtificialIntelligenceBrainChipFlat from '~icons/streamline-flex-color/artificial-intelligence-brain-chip-flat'
+
+    import { useAiStore } from '../stores/ai'
+    import { useRepoStore } from '../stores/repo'
+    import { useUiStore, type AiCommitMode } from '../stores/ui'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
@@ -8,8 +33,6 @@
     import FileContextMenu, { type FileMenuState } from './FileContextMenu.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
-    import type { AiCommitMode } from '../stores/ui'
-    import type { ToastKind } from '../stores/uiTransient'
     import type { CommitFile, FileEntry } from '@shared/types'
 
     interface Props {
@@ -387,14 +410,11 @@
             message.value = generated
             if (generated && ui.aiCommitMode !== 'off') {
                 const mode = ui.aiCommitMode
-                const ok = await run(
-                    async () => {
-                        await window.api.stageAll(repoPath)
-                        await window.api.commitWithAmend(generated, false, repoPath)
-                        if (mode === 'commit-push') await window.api.push(false, repoPath)
-                    },
-                    null
-                )
+                const ok = await run(async () => {
+                    await window.api.stageAll(repoPath)
+                    await window.api.commitWithAmend(generated, false, repoPath)
+                    if (mode === 'commit-push') await window.api.push(false, repoPath)
+                }, null)
                 if (!ok) return
                 message.value = ''
                 if (mode === 'commit-push') notify('Committed and pushed successfully', 'success')
@@ -575,8 +595,8 @@
     }
     const soloFileSet = computed(() => new Set(repoStore.soloFiles ?? []))
     /**
-     * Focus mode: while a branch is soloed, fade tracked workdir files its visible commits never
-     * touched. New files (untracked / staged-added) are current work and always stay bright.
+     * Focus mode: while a branch is soloed, fade tracked workdir files its visible commits never touched. New files (untracked /
+     * staged-added) are current work and always stay bright.
      */
     function dimmedBySolo(file: FileEntry | CommitFile): boolean {
         if (!isWorkdir.value || !repoStore.soloBranch || !repoStore.soloFiles?.length) return false

@@ -1,5 +1,7 @@
 <script setup lang="ts">
-    import { useTemplateRef } from 'vue'
+    import { useTemplateRef, onBeforeUnmount, onMounted, watch } from 'vue'
+    import ILucideAlertTriangle from '~icons/lucide/alert-triangle'
+    import ILucideCheck from '~icons/lucide/check'
 
     import CloseXIcon from './CloseXIcon.vue'
 

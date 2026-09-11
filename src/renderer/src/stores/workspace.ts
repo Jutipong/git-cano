@@ -1,3 +1,5 @@
+import { defineStore } from 'pinia'
+import { ref, watchEffect } from 'vue'
 export interface WorkspaceSession {
     paths: string[]
     active: number

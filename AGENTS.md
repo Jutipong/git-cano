@@ -333,8 +333,8 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 ## Conventions
 
 - **Never commit on your own.** Only commit when the user explicitly asks (e.g. "commit").
-- Vue SFCs use 4-space indentation inside `<script setup>`; auto-imports cover vue/pinia APIs
-  (no explicit `ref`/`computed` imports) — icons come from `lucide-vue-next`.
+- Vue SFCs use 4-space indentation inside `<script setup>`; all imports are explicit
+  (`vue`/`pinia`, stores/utils, `~icons/...` via `unplugin-icons`) — no auto-import plugins.
 - Per-feature context menus get their own dedicated SFC (e.g. `StashContextMenu.vue`,
   `TagContextMenu.vue`) instead of adding more actions to the shared `ContextMenu.vue`.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it

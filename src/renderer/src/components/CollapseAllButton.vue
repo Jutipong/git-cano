@@ -1,4 +1,6 @@
 <script setup lang="ts">
+    import IClarityCollapseLine from '~icons/clarity/collapse-line'
+
     defineProps<{
         allCollapsed: boolean
     }>()

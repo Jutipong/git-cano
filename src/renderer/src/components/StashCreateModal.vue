@@ -1,10 +1,10 @@
 <script setup lang="ts">
-    import { nextTick, useTemplateRef } from 'vue'
+    import { nextTick, useTemplateRef, computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
 
     import { useRepoStore } from '../stores/repo'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import CloseXIcon from './CloseXIcon.vue'
-
-    import type { ToastKind } from '../stores/uiTransient'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})

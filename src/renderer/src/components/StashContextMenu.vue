@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { onBeforeUnmount, onMounted, ref } from 'vue'
     import Download from '~icons/lucide/download'
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'

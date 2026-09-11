@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
     import Check from '~icons/lucide/check'
 
     import { REPO_TAB_COLOR_OPTIONS } from '../stores/ui'

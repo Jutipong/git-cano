@@ -1,3 +1,6 @@
+import { defineStore } from 'pinia'
+import { ref, watchEffect } from 'vue'
+
 import {
     SHORTCUT_DEFAULTS,
     SHORTCUT_PLATFORMS,

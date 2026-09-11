@@ -1,6 +1,24 @@
 <script setup lang="ts">
+    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideChevronRight from '~icons/lucide/chevron-right'
+    import ILucideChevronUp from '~icons/lucide/chevron-up'
+    import ILucideCloud from '~icons/lucide/cloud'
+    import ILucideCloudOff from '~icons/lucide/cloud-off'
+    import ILucideCrosshair from '~icons/lucide/crosshair'
+    import ILucideGitBranch from '~icons/lucide/git-branch'
+    import ILucideGlobe2 from '~icons/lucide/globe2'
+    import ILucideSearch from '~icons/lucide/search'
+    import ILucideSettings from '~icons/lucide/settings'
+    import ILucideTag from '~icons/lucide/tag'
+    import ILucideTrash2 from '~icons/lucide/trash2'
+    import ILucideZoomIn from '~icons/lucide/zoom-in'
+
+    import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
@@ -11,9 +29,7 @@
     import StashPanel from './StashPanel.vue'
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
-    import canoIcon from '../assets/cano.svg'
 
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { LocalChangesMode, MenuItem, RepoStatus } from '@shared/types'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()

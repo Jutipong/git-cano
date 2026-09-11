@@ -1,9 +1,13 @@
 <script setup lang="ts">
+    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
+
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
 
-    import type { ToastKind } from '../stores/uiTransient'
     import type { CommitNode } from '@shared/types'
 
     const props = defineProps<{ commit: CommitNode }>()

@@ -1,5 +1,10 @@
 <script setup lang="ts">
+    import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideGitBranch from '~icons/lucide/git-branch'
+
     import { useSwitchStore } from '../stores/switch'
+    import AppRadio from './AppRadio.vue'
 
     import type { LocalChangesMode } from '@shared/types'
 

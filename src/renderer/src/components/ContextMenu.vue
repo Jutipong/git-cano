@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { onBeforeUnmount, onMounted, ref, type FunctionalComponent } from 'vue'
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
     import FolderCompact from '~icons/codicon/folder-compact'
@@ -13,7 +14,6 @@
     import Kiro from '~icons/thesvg-color/kiro'
 
     import type { MenuItem } from '@shared/types'
-    import type { FunctionalComponent } from 'vue'
 
     export interface MenuState {
         x: number

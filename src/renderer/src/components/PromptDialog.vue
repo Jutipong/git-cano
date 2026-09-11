@@ -1,5 +1,11 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideGitBranch from '~icons/lucide/git-branch'
+
     import { usePromptStore, type PromptResult } from '../stores/prompt'
+    import AppCheckbox from './AppCheckbox.vue'
+    import AppRadio from './AppRadio.vue'
 
     import type { LocalChangesMode } from '@shared/types'
 

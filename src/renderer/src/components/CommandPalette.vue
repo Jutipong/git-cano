@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { computed, inject, onMounted, ref, watch, type Component } from 'vue'
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
     import FolderCompact from '~icons/codicon/folder-compact'
@@ -19,13 +20,15 @@
     import X from '~icons/lucide/x'
     import Kiro from '~icons/thesvg-color/kiro'
 
+    import { useAiStore } from '../stores/ai'
     import { useRepoStore } from '../stores/repo'
+    import { useSyncStore } from '../stores/sync'
+    import { useUiStore, type AiCommitMode } from '../stores/ui'
+    import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
+    import { useWorkspaceStore } from '../stores/workspace'
     import { resolveCheckoutMode } from '../utils/checkout'
 
-    import type { AiCommitMode } from '../stores/ui'
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { BranchInfo, OpenInTargets } from '@shared/types'
-    import type { Component } from 'vue'
 
     const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void }>()
 
@@ -193,10 +196,15 @@
             ...(aiCanRun.value
                 ? [{ id: 'ai', label: 'AI…', hint: 'Generate commit', icon: Sparkles, run: () => enterMode('ai') } satisfies PaletteItem]
                 : []),
-            { id: 'openRepo', label: 'Open repository', icon: FolderOpen, run: () => {
-                close()
-                emit('open-repo')
-            } },
+            {
+                id: 'openRepo',
+                label: 'Open repository',
+                icon: FolderOpen,
+                run: () => {
+                    close()
+                    emit('open-repo')
+                },
+            },
             ...(repoStore.repo
                 ? [
                       {

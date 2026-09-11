@@ -1,7 +1,12 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideHistory from '~icons/lucide/history'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+
     import { useRepoStore } from '../stores/repo'
-    import { formatCommitDate } from '../utils/format'
+    import { useUiTransientStore } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
+    import { formatCommitDate } from '../utils/format'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
 
@@ -121,7 +126,9 @@
 
             <div
                 v-if="dirty"
-                class="squash-warn reflog-warn">Commit or stash your changes first — restoring moves the branch pointer and rewrites the worktree.</div>
+                class="squash-warn reflog-warn">
+                Commit or stash your changes first — restoring moves the branch pointer and rewrites the worktree.
+            </div>
 
             <div
                 v-if="loading"
@@ -162,7 +169,8 @@
                                 <span class="spacer" />
                                 <span
                                     v-if="entry.index === 0"
-                                    class="reflog-badge current-badge">current</span
+                                    class="reflog-badge current-badge"
+                                    >current</span
                                 >
                                 <button
                                     v-else

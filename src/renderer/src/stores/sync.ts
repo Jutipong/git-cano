@@ -1,8 +1,12 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+
 /**
  * Shared fetch/pull/push actions used by both the tab-bar sync buttons and the global keyboard shortcuts, so both paths share the busy
  * guard and toasts.
  */
 import { confirmDialog } from '../utils/confirm'
+import { useUiTransientStore } from './uiTransient'
 
 export const useSyncStore = defineStore('sync', () => {
     const uiTransient = useUiTransientStore()

@@ -1,3 +1,6 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+
 import type { LocalChangesMode } from '@shared/types'
 
 export interface PromptOptions {

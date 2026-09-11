@@ -1,7 +1,12 @@
 <script setup lang="ts">
-    import ThinkSpinner from './ThinkSpinner.vue'
+    import { inject, onMounted, ref } from 'vue'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideGlobe2 from '~icons/lucide/globe2'
+    import ILucidePlugZap from '~icons/lucide/plug-zap'
+    import ILucidePlus from '~icons/lucide/plus'
 
-    import type { ToastKind } from '../stores/uiTransient'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     const props = defineProps<{ refresh: () => Promise<unknown> }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})

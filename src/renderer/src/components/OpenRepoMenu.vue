@@ -1,5 +1,12 @@
 <script setup lang="ts">
-    import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
+    import { inject, onMounted, onUnmounted, ref } from 'vue'
+    import ILucideDownload from '~icons/lucide/download'
+    import ILucideFolderOpen from '~icons/lucide/folder-open'
+    import ILucidePlus from '~icons/lucide/plus'
+
+    import { useRepoStore } from '../stores/repo'
+    import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { formatCombo } from '../utils/shortcuts'
 
     const props = withDefaults(

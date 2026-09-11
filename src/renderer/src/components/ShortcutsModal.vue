@@ -1,4 +1,7 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onMounted } from 'vue'
+
+    import { useUiStore } from '../stores/ui'
     import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, formatCombo, formatComboMac, isMac, type CustomShortcutId } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
 

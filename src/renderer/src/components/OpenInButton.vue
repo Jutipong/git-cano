@@ -1,4 +1,8 @@
 <script setup lang="ts">
+    import { ref, watch } from 'vue'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+
+    import { useUiTransientStore } from '../stores/uiTransient'
     import ContextMenu, { type MenuState } from './ContextMenu.vue'
 
     import type { MenuItem, OpenInTargets } from '@shared/types'

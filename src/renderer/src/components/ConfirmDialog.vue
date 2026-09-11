@@ -1,5 +1,15 @@
 <script setup lang="ts">
-    import { useTemplateRef } from 'vue'
+    import { useTemplateRef, computed, onBeforeUnmount, onMounted, watch } from 'vue'
+    import ILucideAlertTriangle from '~icons/lucide/alert-triangle'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideGitBranch from '~icons/lucide/git-branch'
+    import ILucideGitMerge from '~icons/lucide/git-merge'
+    import ILucideInfo from '~icons/lucide/info'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+    import ILucideTrash2 from '~icons/lucide/trash2'
+    import ILucideZap from '~icons/lucide/zap'
+
+    import { useConfirmStore } from '../stores/confirm'
 
     const confirmStore = useConfirmStore()
     const confirmBtn = useTemplateRef<HTMLButtonElement>('confirmBtn')

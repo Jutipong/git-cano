@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
     import ChevronRight from '~icons/lucide/chevron-right'
     import File from '~icons/lucide/file'
     import Files from '~icons/lucide/files'

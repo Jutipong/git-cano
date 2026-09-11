@@ -1,5 +1,8 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+
     import { useRepoStore } from '../stores/repo'
+    import { useUiTransientStore } from '../stores/uiTransient'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
 

@@ -1,10 +1,18 @@
 <script setup lang="ts">
+    import { computed, inject, onMounted, ref, watch } from 'vue'
+    import ILucideArchive from '~icons/lucide/archive'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideChevronRight from '~icons/lucide/chevron-right'
+    import ILucideTrash2 from '~icons/lucide/trash2'
+
+    import { useRepoStore } from '../stores/repo'
+    import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
     import { formatDateTime } from '../utils/format'
     import { notifyUndoable } from '../utils/undo'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
-    import type { ToastKind } from '../stores/uiTransient'
     import type { StashEntry } from '@shared/types'
 
     const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown>; filter?: string }>()

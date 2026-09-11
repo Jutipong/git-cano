@@ -1,5 +1,13 @@
 <script setup lang="ts">
-    import { nextTick } from 'vue'
+    import { nextTick, onMounted, onUnmounted, computed, inject, ref } from 'vue'
+    import ILucideAlertTriangle from '~icons/lucide/alert-triangle'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideLayers from '~icons/lucide/layers'
+    import ILucidePencil from '~icons/lucide/pencil'
+    import ILucidePlus from '~icons/lucide/plus'
+    import ILucideTrash2 from '~icons/lucide/trash2'
+    import ILucideX from '~icons/lucide/x'
 
     import { useRepoStore } from '../stores/repo'
     import { useWorkspaceStore } from '../stores/workspace'

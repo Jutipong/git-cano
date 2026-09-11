@@ -1,3 +1,5 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
 export interface ConfirmOptions {
     title?: string
     message: string

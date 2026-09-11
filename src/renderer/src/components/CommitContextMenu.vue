@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { inject, onBeforeUnmount, onMounted, ref } from 'vue'
     import Cherry from '~icons/lucide/cherry'
     import ChevronRight from '~icons/lucide/chevron-right'
     import CircleCheck from '~icons/lucide/circle-check'

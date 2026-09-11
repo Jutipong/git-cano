@@ -1,4 +1,13 @@
 <script setup lang="ts">
+    import { computed, inject, ref, watch } from 'vue'
+    import ILucideArrowDown from '~icons/lucide/arrow-down'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucidePauseCircle from '~icons/lucide/pause-circle'
+    import ILucidePlay from '~icons/lucide/play'
+    import ILucidePlus from '~icons/lucide/plus'
+    import ILucideTrash2 from '~icons/lucide/trash2'
+
+    import { useUiTransientStore } from '../stores/uiTransient'
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { CommitNode, RebaseCommand } from '@shared/types'

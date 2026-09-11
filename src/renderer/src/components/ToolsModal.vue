@@ -1,7 +1,36 @@
 <script setup lang="ts">
+    import { computed, onBeforeUnmount, onUnmounted, reactive, watch, inject, onMounted, ref } from 'vue'
+    import ILucideBell from '~icons/lucide/bell'
+    import ILucideCheck from '~icons/lucide/check'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideCopy from '~icons/lucide/copy'
+    import ILucideDownload from '~icons/lucide/download'
+    import ILucideExternalLink from '~icons/lucide/external-link'
+    import ILucideFlaskConical from '~icons/lucide/flask-conical'
+    import ILucideFolderGit2 from '~icons/lucide/folder-git-2'
+    import ILucideFolderOpen from '~icons/lucide/folder-open'
+    import ILucideGlobe2 from '~icons/lucide/globe2'
+    import ILucideKeyRound from '~icons/lucide/key-round'
+    import ILucideKeyboard from '~icons/lucide/keyboard'
     import Moon from '~icons/lucide/moon'
+    import ILucidePalette from '~icons/lucide/palette'
+    import ILucidePlus from '~icons/lucide/plus'
+    import ILucideRefreshCw from '~icons/lucide/refresh-cw'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+    import ILucideSave from '~icons/lucide/save'
+    import ILucideSettings2 from '~icons/lucide/settings2'
+    import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
+    import ILucideSparkles from '~icons/lucide/sparkles'
     import Sun from '~icons/lucide/sun'
+    import ILucideTrash2 from '~icons/lucide/trash-2'
+    import ILucideUserRound from '~icons/lucide/user-round'
+    import ILucideUsers from '~icons/lucide/users'
+    import ILucideX from '~icons/lucide/x'
+    import ILucideZap from '~icons/lucide/zap'
 
+    import { useAiStore } from '../stores/ai'
+    import { useAuthStore } from '../stores/auth'
+    import { useRepoStore } from '../stores/repo'
     import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
@@ -14,6 +43,7 @@
         type CustomShortcutId,
         type ShortcutPlatform,
     } from '../utils/shortcuts'
+    import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
@@ -843,7 +873,9 @@
                                 <span class="shortcut-name">{{ SHORTCUT_LABELS[id] }}</span>
                                 <kbd
                                     class="shortcut-kbd"
-                                    title="macOS (⌘ works as Ctrl)">{{ formatComboMac(ui.getShortcut(id, 'mac')) }}</kbd>
+                                    title="macOS (⌘ works as Ctrl)"
+                                    >{{ formatComboMac(ui.getShortcut(id, 'mac')) }}</kbd
+                                >
                                 <button
                                     v-if="!isRecording(id, 'mac')"
                                     class="btn small"
@@ -875,8 +907,10 @@
                                 </button>
                             </div>
                         </div>
-                        <span class="setting-hint"> Click Change… under macOS or Windows then press keys (must include Ctrl or Cmd). Esc
-                            cancels. Duplicates are rejected per platform. Command palette also opens with double-Shift (fixed). </span>
+                        <span class="setting-hint">
+                            Click Change… under macOS or Windows then press keys (must include Ctrl or Cmd). Esc cancels. Duplicates are
+                            rejected per platform. Command palette also opens with double-Shift (fixed).
+                        </span>
                         <div class="tools-actions">
                             <button
                                 class="btn small"
@@ -888,9 +922,7 @@
                                 Keyboard shortcuts…
                             </button>
                         </div>
-                        <span class="setting-hint">
-                            Press <kbd>?</kbd> anywhere to see the full list.
-                        </span>
+                        <span class="setting-hint"> Press <kbd>?</kbd> anywhere to see the full list. </span>
                     </div>
 
                     <div class="tools-actions tools-reset-row">

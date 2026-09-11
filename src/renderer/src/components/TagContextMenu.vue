@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { onBeforeUnmount, onMounted, ref } from 'vue'
     import CloudUpload from '~icons/lucide/cloud-upload'
     import Copy from '~icons/lucide/copy'
     import Trash2 from '~icons/lucide/trash2'

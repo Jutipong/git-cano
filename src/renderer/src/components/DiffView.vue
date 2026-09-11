@@ -1,6 +1,18 @@
 <script setup lang="ts">
-    import { nextTick } from 'vue'
+    import { nextTick, computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import ILucideArrowDown from '~icons/lucide/arrow-down'
+    import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideColumns2 from '~icons/lucide/columns2'
+    import ILucideHistory from '~icons/lucide/history'
+    import ILucideMaximize from '~icons/lucide/maximize'
+    import ILucideMinimize from '~icons/lucide/minimize'
+    import ILucideRows3 from '~icons/lucide/rows3'
+    import ILucideSearch from '~icons/lucide/search'
+    import ILucideUnfoldVertical from '~icons/lucide/unfold-vertical'
 
+    import { useUiStore } from '../stores/ui'
+    import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import { formatDatePattern } from '../utils/format'
     import {
         intraLineRange,
         isWhitespaceOnlyChange,
@@ -9,11 +21,9 @@
         highlightLineAt,
         type LineRenderContext,
     } from '../utils/highlight'
-    import { formatDatePattern } from '../utils/format'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
-    import type { ToastKind } from '../stores/uiTransient'
     import type { BlameLine, DiffLine } from '@shared/types'
 
     interface Props {
@@ -174,9 +184,9 @@
     }
 
     /**
-     * Lazily blame both sides of the viewed revision (new side for added/context lines, old side for
-     * deleted ones). Workdir blames the worktree (uncommitted lines surface as zero-hash), commit/stash
-     * views blame their trees. Cached per file+revision; the old side is skipped for addition-only diffs.
+     * Lazily blame both sides of the viewed revision (new side for added/context lines, old side for deleted ones). Workdir blames the
+     * worktree (uncommitted lines surface as zero-hash), commit/stash views blame their trees. Cached per file+revision; the old side is
+     * skipped for addition-only diffs.
      */
     async function ensureLensBlame(): Promise<void> {
         const f = props.file
