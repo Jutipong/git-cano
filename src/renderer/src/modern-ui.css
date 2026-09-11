@@ -868,6 +868,13 @@ body {
     flex: 0 0 auto;
 }
 
+/* busy spinner occupies the same slot as the 15px icon so the button doesn't jitter */
+.tab-sync-actions .toolbar-action > .think-spinner.compact {
+    flex: 0 0 auto;
+    width: 15px;
+    justify-content: center;
+}
+
 .tab-sync-actions .toolbar-action > span:not(.sync-count) {
     overflow: hidden;
     text-overflow: ellipsis;

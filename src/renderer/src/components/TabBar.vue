@@ -11,6 +11,7 @@
     import OpenInButton from './OpenInButton.vue'
     import OpenRepoMenu from './OpenRepoMenu.vue'
     import RepoTabContextMenu, { type RepoTabMenuState } from './RepoTabContextMenu.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
 
     import type { RepoStatus } from '@shared/types'
@@ -263,8 +264,11 @@
                 :disabled="!!syncBusy || !repo"
                 :title="`Push (${formatCombo(ui.getShortcut('push'))})`"
                 @click="actPush()">
+                <ThinkSpinner
+                    v-if="syncBusy === 'Push'"
+                    compact />
                 <i-lucide-arrow-up
-                    :class="{ 'bouncing-up': syncBusy === 'Push' }"
+                    v-else
                     width="15"
                     height="15" />
                 <span>Push</span>
@@ -280,8 +284,11 @@
                 :disabled="!!syncBusy || !repo"
                 :title="`Pull (${formatCombo(ui.getShortcut('pull'))})`"
                 @click="actPull()">
+                <ThinkSpinner
+                    v-if="syncBusy === 'Pull'"
+                    compact />
                 <i-lucide-arrow-down
-                    :class="{ 'bouncing-down': syncBusy === 'Pull' }"
+                    v-else
                     width="15"
                     height="15" />
                 <span>Pull</span>
@@ -297,6 +304,9 @@
                 :disabled="!!syncBusy || !repo"
                 :title="`Fetch (${formatCombo(ui.getShortcut('fetch'))})`"
                 @click="actFetch()">
+                <ThinkSpinner
+                    v-if="syncBusy === 'Fetch'"
+                    compact />
                 <span>Fetch</span>
             </button>
             <span class="tab-actions-sep" />
