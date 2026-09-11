@@ -74,6 +74,7 @@
         <button
             v-else
             class="btn primary"
+            :class="{ open }"
             @click="toggle()">
             <i-lucide-plus
                 width="15"
