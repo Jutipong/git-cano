@@ -310,7 +310,7 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   per-action node/badge colors via `actionKind()` (commit/reset/checkout/rebase/merge/
   cherry/revert/branch), day-grouped sticky headers, relative time (`formatCommitDate`),
   Restore per row behind `confirmDialog`. Opened from the command palette (`Reflog` item,
-  repo-gated) and the sidebar toolbar; visibility flag is `repoStore.reflogOpen`.
+  repo-gated); visibility flag is `repoStore.reflogOpen`.
 - Rules: restore requires a clean tree (dirty = disabled buttons + warning, no auto-stash);
   the restore itself journals a hard `reset` entry so it stays undoable (with the usual
   dirty-tree retry guard).
