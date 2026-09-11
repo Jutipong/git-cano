@@ -48,7 +48,7 @@ export const DEFAULT_REFRESH_INTERVAL = 5
 
 /** Toast auto-dismiss options, in seconds. */
 export const TOAST_DURATION_OPTIONS = [10, 20, 30, 40, 50, 60]
-export const DEFAULT_TOAST_DURATION_SEC = 20
+export const DEFAULT_TOAST_DURATION_SEC = 10
 
 /** Run the repo formatter (when it has .oxfmtrc.json) before AI commit-message generation. */
 export const DEFAULT_FORMAT_BEFORE_GENERATE = false

@@ -289,7 +289,7 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - **Undo toasts** (`utils/undo.ts` → `notifyUndoable`): commit/amend, revert, squash, soft/mixed reset,
   rebase (native + interactive), cherry-pick, merge, and stash delete journal their pre-op state in
   `main/git.ts` (per-repo stacks, cap 10, cleared on `closeRepo`) and offer an Undo button (`.toast-action` in `App.vue`) on the shared toast duration
-  `toastDurationSec` default (Settings → General → Notifications, default 20s; per-toast `durationMs` can still override it). Undo resolves through an id-guarded
+  `toastDurationSec` default (Settings → General → Notifications, default 10s; per-toast `durationMs` can still override it). Undo resolves through an id-guarded
   `git:undo` IPC call so a stale toast can't undo a newer action. Rules: journal only fully
   recoverable ops — hard reset and anything already pushed are excluded (no entry = no
   button, plain toast); history-rewriting ops journal only from a clean tree (dirty tree = plain
