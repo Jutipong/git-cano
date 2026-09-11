@@ -228,6 +228,9 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - **Availability gate**: `canGenerate` in `FilePanel.vue` is false during merge/rebase/cherry-pick
   conflict flows (the panel shows conflict actions then) — the command-palette one-shot
   path shares this gate.
+- **Commit-box indicator**: `FilePanel.vue` shows the short model name plus a mode dot
+  (green = Generate only, orange = Auto Commit, red = Auto Commit & Push); the full
+  `provider: model` label lives in the `title` tooltip.
 - **Conflict labels + view**: `repoStore.oursLabel` is the current branch during any conflict
   flow, `theirsLabel` is the merge source or cherry-picked short hash (fallbacks
   `current`/`incoming`); any conflict state clears `selectedCommit`/`selectedStash`/

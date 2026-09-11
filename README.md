@@ -79,6 +79,7 @@ pnpm dev
 
 - 🔌 OpenCode Go or OpenRouter providers
 - 📝 Generate from **staged** changes, or auto-commit / auto-commit + push
+- 👁️ Commit box shows the active model + auto-commit mode inline (green / orange / red dot, full name in tooltip)
 - ⚡ `minimal` reasoning effort = fast responses
 - 🎨 Optional auto-format before generating
 
