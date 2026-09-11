@@ -117,12 +117,15 @@
     })
     const ui = useUiStore()
     const ai = useAiStore()
-    const commitModelName = computed(() => {
+    const commitModel = computed(() => {
         const models = ai.provider === 'openrouter' ? ai.config.openrouter.models : ai.config.opencodeGo.models
-        const selectedModel = models.find(model => model.id === ai.modelId)
-        const providerName = ai.provider === 'openrouter' ? 'OpenRouter' : 'OpenCode Go'
-        return `${providerName}: ${selectedModel?.name ?? ai.modelId}`
+        return models.find(model => model.id === ai.modelId) ?? null
     })
+    const commitModelName = computed(() => {
+        const providerName = ai.provider === 'openrouter' ? 'OpenRouter' : 'OpenCode Go'
+        return `${providerName}: ${commitModel.value?.name ?? ai.modelId}`
+    })
+    const commitModelShortName = computed(() => commitModel.value?.name ?? ai.modelId)
     const AI_MODE_OPTIONS: { value: AiCommitMode; label: string }[] = [
         { value: 'off', label: 'Generate Only' },
         { value: 'commit', label: 'Auto Commit' },
@@ -1278,16 +1281,17 @@
                         :title="`Commit-message model: ${commitModelLabel}`">
                         <span class="counter-model-main">
                             <i-streamline-flex-color-artificial-intelligence-brain-chip-flat
-                                width="14"
-                                height="14" />
-                            <span class="counter-model-name">{{ commitModelName }}</span>
+                                width="12"
+                                height="12"
+                                class="counter-model-ic" />
+                            <span class="counter-model-name">{{ commitModelShortName }}</span>
                         </span>
                         <span
                             v-if="ui.aiCommitMode !== 'off'"
-                            class="counter-mode-detail">
-                            <i-fluent-emoji-flat-robot
-                                width="14"
-                                height="14" />
+                            class="counter-mode-inline">
+                            <span
+                                class="mode-dot"
+                                :class="`cb-ai-mode-${ui.aiCommitMode}`" />
                             <span
                                 class="counter-mode-label"
                                 :class="`cb-ai-mode-${ui.aiCommitMode}`"

@@ -3138,7 +3138,8 @@ body {
 }
 
 .commit-box {
-    padding: 10px 12px;
+    gap: 10px;
+    padding: 12px;
     background: color-mix(in srgb, var(--surface-0) 62%, transparent);
 }
 
@@ -3274,40 +3275,78 @@ body {
 }
 
 .summary-counter {
-    justify-content: flex-start;
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    margin-top: 4px;
+    padding: 0 2px;
 }
 
 .counter-model {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
     margin-left: 0;
-    max-width: 100%;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    line-height: 1.4;
 }
 
 .counter-model-main {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    max-width: 100%;
+    gap: 6px;
+    min-width: 0;
+    flex: 1 1 auto;
+    opacity: 0.9;
+}
+
+.counter-model-ic {
+    flex: none;
+    opacity: 0.8;
 }
 
 .counter-model-name {
-    min-width: 180px;
+    min-width: 0;
     flex: 1 1 auto;
-    overflow-wrap: anywhere;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
-.counter-mode-detail {
+.counter-mode-inline {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    flex: none;
+    gap: 5px;
     white-space: nowrap;
+    line-height: 1.2;
+}
+
+.mode-dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--orange);
+}
+
+.mode-dot.cb-ai-mode-off {
+    background: var(--green);
+}
+
+.mode-dot.cb-ai-mode-commit-push {
+    background: var(--red);
 }
 
 .counter-mode-label {
     color: var(--orange);
+    font-size: 11px;
     font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
 .counter-mode-label.cb-ai-mode-off {
@@ -3328,7 +3367,58 @@ body {
 .remote-url {
     background: var(--surface-0);
     border-color: var(--line-soft);
-    border-radius: 8px;
+    border-radius: 10px;
+}
+
+.commit-box textarea {
+    min-height: 88px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    transition:
+        border-color 120ms ease,
+        box-shadow 120ms ease;
+}
+
+.commit-box textarea:hover {
+    border-color: color-mix(in srgb, var(--teal) 35%, var(--line-soft));
+}
+
+.commit-box textarea:focus {
+    border-color: color-mix(in srgb, var(--teal) 60%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 14%, transparent);
+}
+
+.commit-box textarea::placeholder {
+    color: color-mix(in srgb, var(--text-muted) 75%, transparent);
+}
+
+.cb-toolbar {
+    min-height: 20px;
+    padding: 0 2px;
+}
+
+.commit-box-label {
+    gap: 6px !important;
+    color: var(--text-secondary) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase;
+}
+
+.commit-box-label svg {
+    color: var(--teal);
+}
+
+.cb-toolbar .subject-count {
+    margin-left: auto;
+    padding: 1px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
+    font-size: 10px !important;
+    letter-spacing: 0.02em !important;
 }
 
 .btn {
@@ -3782,9 +3872,9 @@ body {
 
 .commit-actions {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 2px;
 }
 
 .commit-actions .commit-group {
@@ -3798,8 +3888,8 @@ body {
     min-width: 0;
     align-items: center;
     gap: 2px;
-    min-height: 34px;
-    padding: 2px 4px;
+    min-height: 36px;
+    padding: 2px 3px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-pill);
@@ -3815,9 +3905,12 @@ body {
     min-height: 30px;
     padding: 0 12px;
     border: 0;
+    border-radius: var(--radius-pill);
     background: transparent;
     color: var(--green);
-    font-weight: 600;
+    font-size: 12.5px;
+    font-weight: 650;
+    letter-spacing: 0.01em;
 }
 
 /* ไอคอนในปุ่ม commit — ห้ามบีบเมื่อปุ่มแคบ */
@@ -3848,12 +3941,14 @@ body {
     justify-content: center;
     gap: 6px;
     min-height: 30px;
-    padding: 0 12px;
+    padding: 0 14px;
     color: var(--red);
     background: transparent;
     border: 0;
     border-radius: var(--radius-pill);
-    font-weight: 600;
+    font-size: 12.5px;
+    font-weight: 650;
+    letter-spacing: 0.01em;
     white-space: nowrap;
     cursor: pointer;
     transition: 120ms ease;
@@ -3861,7 +3956,7 @@ body {
 
 .commit-group .commit-push-btn:hover {
     color: var(--red);
-    background: color-mix(in srgb, var(--red) 15%, transparent);
+    background: color-mix(in srgb, var(--red) 14%, transparent);
 }
 
 .commit-group .commit-push-btn:disabled {
