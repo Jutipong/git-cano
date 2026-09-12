@@ -51,11 +51,13 @@ Key files:
 - **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the open-repo trigger
   (`OpenRepoMenu.vue`) uses a catppuccin `folder-include` icon and repo search uses
   catppuccin `search` — the open popup appears instantly with no pop/rotate animation.
+  Its rows use catppuccin `folder-open` (local) / `folder-git` (clone).
   Push/Pull/Fetch swap
   their icon for a compact `ThinkSpinner` (fixed 15px slot and 15px glyph, inherits
   the button color) while `syncStore.busy` is set.
 - **Sidebar**: fetch/pull/push sync card at the top, workspace switcher
-  (`WorkspaceButton.vue`, one persisted repo-tab session per workspace), branch/tag
+  (`WorkspaceButton.vue`, one persisted repo-tab session per workspace, text-only button
+  with no leading icon), branch/tag
   sections, then the STASHES section; bottom actions are Settings and the theme toggle
   only (no stash button there — stash creation lives in the STASHES section).
   Brand icon `assets/cano.svg` sits at the top of the toolbar (`.sidebar-brand-icon`);

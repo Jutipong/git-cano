@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { inject, onMounted, onUnmounted, ref } from 'vue'
+    import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
+    import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
     import ICatppuccinFolderInclude from '~icons/catppuccin/folder-include'
-    import ILucideDownload from '~icons/lucide/download'
-    import ILucideFolderOpen from '~icons/lucide/folder-open'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
@@ -99,7 +99,7 @@
                 title="Pick a folder from your local disk"
                 @click="openLocal()">
                 <span class="open-repo-icon">
-                    <i-lucide-folder-open
+                    <i-catppuccin-folder-open
                         width="14"
                         height="14" />
                 </span>
@@ -115,7 +115,7 @@
                 title="Clone a remote repository into a new folder"
                 @click="openClone()">
                 <span class="open-repo-icon">
-                    <i-lucide-download
+                    <i-catppuccin-folder-git
                         width="14"
                         height="14" />
                 </span>

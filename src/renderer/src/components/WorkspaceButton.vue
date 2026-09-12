@@ -3,7 +3,6 @@
     import ILucideAlertTriangle from '~icons/lucide/alert-triangle'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
-    import ILucideLayers from '~icons/lucide/layers'
     import ILucidePencil from '~icons/lucide/pencil'
     import ILucidePlus from '~icons/lucide/plus'
     import ILucideTrash2 from '~icons/lucide/trash2'
@@ -198,10 +197,6 @@
             <ThinkSpinner
                 v-if="switching"
                 compact />
-            <i-lucide-layers
-                v-else
-                width="13"
-                height="13" />
             <span class="workspace-btn-name">{{ ws.active }}</span>
             <i-lucide-chevron-down
                 width="12"
