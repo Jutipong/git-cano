@@ -1429,15 +1429,11 @@ kbd {
 }
 .diff-line.add {
     background: color-mix(in srgb, var(--green) var(--diff-row-tint), transparent);
-}
-.diff-line.add pre {
-    color: var(--green);
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--green) 70%, transparent);
 }
 .diff-line.del {
     background: color-mix(in srgb, var(--red) var(--diff-row-tint), transparent);
-}
-.diff-line.del pre {
-    color: var(--red);
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--red) 70%, transparent);
 }
 .diff-line.hunk {
     background: color-mix(in srgb, var(--blue) 10%, transparent);

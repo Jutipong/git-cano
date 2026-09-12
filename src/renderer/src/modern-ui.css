@@ -24,8 +24,8 @@
     --diff-bg: #1b1b24;
     --diff-inline-bg: #30304a;
     /* Word-level diff highlight strength and add/del row tint, overridable per theme. */
-    --diff-row-tint: 7%;
-    --diff-mark-strength: 40%;
+    --diff-row-tint: 15%;
+    --diff-mark-strength: 45%;
     --toast-bg: #1b1b24;
     --toast-border: #2b2b3a;
     --conflict-bg: #30304a;
@@ -60,7 +60,7 @@
     --yellow: #635100;
     --diff-bg: #bdb9ae;
     --diff-inline-bg: #a8a499;
-    --diff-mark-strength: 22%;
+    --diff-mark-strength: 27%;
     --toast-bg: #bdb9ae;
     --toast-border: #8b877b;
     --conflict-bg: #bfb088;
@@ -1842,10 +1842,6 @@ body {
 
 .diff-line.moved {
     background: color-mix(in srgb, var(--purple) 14%, transparent);
-}
-
-.diff-line.moved pre {
-    color: var(--purple);
 }
 
 .diff-line.add .ln {

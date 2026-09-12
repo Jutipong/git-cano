@@ -104,8 +104,11 @@ Key files:
   (512). `markHighlightedRanges()` wraps those ranges into HTML that was highlighted **once
   for the whole line** — never tokenize per mark segment, or strings/comments split across a
   mark change color. Search hits and diff marks are merged in `renderOne()`, with search
-  winning overlaps. Row tint (`--diff-row-tint`, base 7%) and mark strength
-  (`--diff-mark-strength`, 40% dark / 22% light) are CSS variables in `modern-ui.css`;
+  winning overlaps. Syntax token colors always win inside add/del rows — the row tint
+  (`--diff-row-tint`) and the 2px inset accent bar are the only add/del signals, so do not
+  reintroduce `.diff-line.add pre { color: … }` or `.diff-line.moved pre` (a moved row keeps
+  the purple background). Mark strength (`--diff-mark-strength`) and row tint live as CSS
+  variables in `modern-ui.css` (light overrides the strength per paper contrast);
   `.diff-line.add/del mark` uses `:not(.search-hit)` so the orange search style stays intact.
 - **Blame lens** (`.blame-lens-tip`, 450ms delay, styles in `modern-ui.css`, toggle in the
   DiffView header persisted via `ui.blameLens`, default off): hovering a gutter shows per-line
