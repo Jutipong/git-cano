@@ -115,6 +115,7 @@ pnpm dev
 | ⬇️ Pull                  | `Ctrl+↓`              | `Ctrl+↓`                 |
 | ⬆️ Push                  | `Ctrl+↑`              | `Ctrl+↑`                 |
 | 📁 Open repo             | `Ctrl+O`              | `Ctrl+O`                 |
+| 📥 Clone repo            | `Ctrl+N`              | `Ctrl+N`                 |
 | ❎ Close tab             | `Ctrl+W`              | `Ctrl+W`                 |
 | 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
 | ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
@@ -124,7 +125,7 @@ pnpm dev
 | ❌ Close / cancel        | `Esc`                 | `Esc`                    |
 | 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0`    | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
 
-> ✏️ Fetch, Pull, Push, Open repo, Search commits, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
+> ✏️ Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
 
 </details>
 

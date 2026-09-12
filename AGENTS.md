@@ -153,7 +153,7 @@ Key files:
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Close tab, Search commits, Open settings, Command palette, Show shortcuts — with
+  Clone repo, Close tab, Search commits, Open settings, Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
   `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
@@ -166,7 +166,7 @@ Key files:
   arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips,
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
-  Fetch, Pull, Push, Open repo, Search commits, Open settings, Command
+  Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
   palette. Click Change… under macOS or Windows then press keys (`Esc` cancels, capture listener
   while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab) or other customized ids
@@ -181,7 +181,7 @@ Key files:
   repo, or while busy. Customizable shortcuts match canonical combos, so
   `Ctrl` and `⌘` both work.
 - Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
-  Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Close tab
+  Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside

@@ -240,6 +240,7 @@ export const useUiStore = defineStore(
                 pull: getShortcut('pull', platform),
                 push: getShortcut('push', platform),
                 openRepo: getShortcut('openRepo', platform),
+                cloneRepo: getShortcut('cloneRepo', platform),
                 searchCommits: getShortcut('searchCommits', platform),
                 settings: getShortcut('settings', platform),
                 commandPalette: getShortcut('commandPalette', platform),

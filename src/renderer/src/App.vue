@@ -242,6 +242,12 @@
                 openNewRepo()
                 return
             }
+            // Clone repo
+            if (combo && combo === ui.getShortcut('cloneRepo')) {
+                event.preventDefault()
+                cloneOpen.value = true
+                return
+            }
             // Open settings
             if (combo && combo === ui.getShortcut('settings')) {
                 event.preventDefault()

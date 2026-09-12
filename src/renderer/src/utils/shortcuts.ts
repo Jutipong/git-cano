@@ -14,6 +14,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'pull', label: 'Pull', mac: ['Ctrl+↓'], win: ['Ctrl+↓'] },
     { id: 'push', label: 'Push', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
     { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
+    { id: 'cloneRepo', label: 'Clone repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
     { id: 'closeTab', label: 'Close tab', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
     { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
@@ -33,13 +34,14 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
 export const SYNC_SHORTCUT_IDS: SyncShortcutId[] = ['fetch', 'pull', 'push']
 
 /** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
-export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'searchCommits' | 'settings' | 'commandPalette'
+export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'settings' | 'commandPalette'
 
 export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'fetch',
     'pull',
     'push',
     'openRepo',
+    'cloneRepo',
     'searchCommits',
     'settings',
     'commandPalette',
@@ -65,6 +67,7 @@ export function currentPlatform(): ShortcutPlatform {
 export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     ...SYNC_SHORTCUT_DEFAULTS,
     openRepo: 'Ctrl+O',
+    cloneRepo: 'Ctrl+N',
     searchCommits: 'Ctrl+F',
     settings: 'Ctrl+,',
     commandPalette: 'Ctrl+P',

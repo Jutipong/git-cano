@@ -322,6 +322,7 @@
         pull: 'Pull',
         push: 'Push',
         openRepo: 'Open repo',
+        cloneRepo: 'Clone repo',
         searchCommits: 'Search commits',
         settings: 'Open settings',
         commandPalette: 'Command palette',

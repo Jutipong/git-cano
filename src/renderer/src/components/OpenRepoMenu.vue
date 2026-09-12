@@ -123,6 +123,7 @@
                     <span class="open-repo-title">Clone from URL</span>
                     <span class="open-repo-desc">Download a remote repository</span>
                 </span>
+                <kbd class="open-repo-kbd">{{ formatCombo(ui.getShortcut('cloneRepo')) }}</kbd>
             </button>
         </div>
     </div>
