@@ -844,43 +844,286 @@ export function highlightLineAt(
     )
 }
 
-export function highlightDiffLines(
-    lines: DiffLine[],
-    filename: string,
-    render: (line: DiffLine, highlight: (content: string) => string) => string
-): Map<DiffLine, string> {
-    const contexts = computeLineStates(lines, filename)
-    const map = new Map<DiffLine, string>()
-    lines.forEach((line, index) => map.set(line, highlightLineAt(line, contexts[index]!, render)))
-    return map
+export type TextRange = [number, number]
+
+interface DiffToken {
+    text: string
+    start: number
+    end: number
+    weight: number
 }
 
-export function intraLineRange(oldText: string, newText: string): { old: [number, number]; new: [number, number] } | null {
-    let start = 0
-    const minLen = Math.min(oldText.length, newText.length)
-    while (start < minLen && oldText[start] === newText[start]) start++
-    let endOld = oldText.length
-    let endNew = newText.length
-    while (endOld > start && endNew > start && oldText[endOld - 1] === newText[endNew - 1]) {
-        endOld--
-        endNew--
+const MAX_DIFF_TOKENS = 256
+/** Token budget for the windowed fallback used by generated/minified lines. */
+const MAX_DIFF_WINDOW_TOKENS = 512
+/** Blocks above these sizes skip word-level matching entirely so huge rewrites stay cheap. */
+const MAX_MATCH_LINES = 250
+const MAX_MATCH_PAIRS = 12_000
+
+/** True for characters that carry meaning; punctuation and whitespace change constantly and score low. */
+const WEIGHTY_CHAR = /[\p{L}\p{N}_$]/u
+const CHAR_WEIGHT = 0.3
+const TOKEN_WEIGHT = 1
+
+function diffTokens(text: string): DiffToken[] {
+    const tokens: DiffToken[] = []
+    const pattern = /\s+|[\p{L}\p{N}_$]+|[^\s\p{L}\p{N}_$]/gu
+    let match: RegExpExecArray | null
+    while ((match = pattern.exec(text)) !== null) {
+        let weight = 0
+        for (const char of match[0]) weight += WEIGHTY_CHAR.test(char) ? TOKEN_WEIGHT : CHAR_WEIGHT
+        tokens.push({ text: match[0], start: match.index, end: match.index + match[0].length, weight })
     }
-    if (endOld - start > 60 || endNew - start > 60) return null
-    return { old: [start, endOld], new: [start, endNew] }
+    return tokens
 }
 
-export function renderDiffContent(line: string, filename: string, mark?: [number, number] | null): string {
-    const content = line.slice(1)
-    if (!content) return ''
-    if (!mark) return highlightLine(content, filename)
-    const start = Math.min(mark[0], content.length)
-    const end = Math.min(mark[1], content.length)
-    if (end <= start) return highlightLine(content, filename)
-    return [
-        highlightLine(content.slice(0, start), filename),
-        `<mark>${highlightLine(content.slice(start, end), filename)}</mark>`,
-        highlightLine(content.slice(end), filename),
-    ].join('')
+function mergeTextRanges(ranges: TextRange[]): TextRange[] {
+    const merged: TextRange[] = []
+    for (const range of ranges) {
+        const previous = merged[merged.length - 1]
+        if (previous && range[0] <= previous[1]) previous[1] = Math.max(previous[1], range[1])
+        else if (range[1] > range[0]) merged.push([...range])
+    }
+    return merged
+}
+
+/** Marks the token runs that differ, optionally shifting the ranges back to the original string offsets. */
+function substituteLines(
+    oldTokens: DiffToken[],
+    newTokens: DiffToken[],
+    threshold: number,
+    oldDelta = 0,
+    newDelta = 0
+): { ranges: { old: TextRange[]; new: TextRange[] }; similarity: number } {
+    let oldWeight = 0
+    let newWeight = 0
+    for (const token of oldTokens) oldWeight += token.weight
+    for (const token of newTokens) newWeight += token.weight
+    const denominator = Math.max(oldWeight, newWeight)
+
+    const lcs = Array.from({ length: oldTokens.length + 1 }, () => new Uint16Array(newTokens.length + 1))
+    for (let oldIndex = 1; oldIndex <= oldTokens.length; oldIndex++) {
+        for (let newIndex = 1; newIndex <= newTokens.length; newIndex++) {
+            lcs[oldIndex]![newIndex] =
+                oldTokens[oldIndex - 1]!.text === newTokens[newIndex - 1]!.text
+                    ? lcs[oldIndex - 1]![newIndex - 1]! + 1
+                    : Math.max(lcs[oldIndex - 1]![newIndex]!, lcs[oldIndex]![newIndex - 1]!)
+        }
+    }
+
+    const matchedOld = new Set<number>()
+    const matchedNew = new Set<number>()
+    let unchangedWeight = 0
+    let oldIndex = oldTokens.length
+    let newIndex = newTokens.length
+    while (oldIndex > 0 && newIndex > 0) {
+        if (oldTokens[oldIndex - 1]!.text === newTokens[newIndex - 1]!.text) {
+            matchedOld.add(oldIndex - 1)
+            matchedNew.add(newIndex - 1)
+            unchangedWeight += oldTokens[oldIndex - 1]!.weight
+            oldIndex--
+            newIndex--
+        } else if (lcs[oldIndex - 1]![newIndex]! >= lcs[oldIndex]![newIndex - 1]!) oldIndex--
+        else newIndex--
+    }
+
+    const similarity = denominator ? unchangedWeight / denominator : 0
+    if (similarity <= threshold) return { ranges: { old: [], new: [] }, similarity }
+    const oldRanges = mergeTextRanges(
+        oldTokens.filter((_, index) => !matchedOld.has(index)).map(token => [token.start + oldDelta, token.end + oldDelta] as TextRange)
+    )
+    const newRanges = mergeTextRanges(
+        newTokens.filter((_, index) => !matchedNew.has(index)).map(token => [token.start + newDelta, token.end + newDelta] as TextRange)
+    )
+    return { ranges: { old: oldRanges, new: newRanges }, similarity }
+}
+
+/** Minimal {start, end} window around the changed region, or null when the whole lines differ. */
+function diffWindow(oldText: string, newText: string): { oldStart: number; oldEnd: number; newStart: number; newEnd: number } | null {
+    let prefix = 0
+    const minLength = Math.min(oldText.length, newText.length)
+    while (prefix < minLength && oldText[prefix] === newText[prefix]) prefix++
+
+    // Trim the common suffix without letting it collide with the prefix.
+    const suffixLimit = minLength - prefix
+    let suffix = 0
+    while (suffix < suffixLimit && oldText[oldText.length - 1 - suffix] === newText[newText.length - 1 - suffix]) suffix++
+
+    const oldFragment = oldText.length - prefix - suffix
+    const newFragment = newText.length - prefix - suffix
+    if (oldFragment <= 0 || newFragment <= 0) return null
+    const margin = Math.max(0, Math.ceil(Math.max(oldFragment, newFragment) / 2))
+    const oldStart = Math.max(0, prefix - margin)
+    const oldEnd = Math.min(oldText.length, oldText.length - suffix + margin)
+    const newStart = Math.max(0, prefix - margin)
+    const newEnd = Math.min(newText.length, newText.length - suffix + margin)
+    return { oldStart, oldEnd, newStart, newEnd }
+}
+
+/**
+ * Similarity between two changed lines plus the ranges that differ, when the lines are similar enough to be a renamed or
+ * edited counterpart rather than two unrelated rows. Punctuation and whitespace weigh less so shared syntax alone cannot
+ * make unrelated declarations look related. Pre-tokenized lines reuse their tokens; oversized generated lines fall back
+ * to a bounded window around the changed region so they can still receive word-level marks.
+ */
+function lineSimilarity(
+    oldLine: DiffLine,
+    newLine: DiffLine,
+    oldTokens: DiffToken[] | undefined,
+    newTokens: DiffToken[] | undefined,
+    threshold: number
+): { similarity: number; old: TextRange[]; new: TextRange[] } {
+    // Cheap upper bound: the length ratio caps how similar two lines can be, so very unequal lines
+    // skip the LCS work without changing the outcome.
+    const oldText = oldLine.text.slice(1)
+    const newText = newLine.text.slice(1)
+    const minLength = Math.min(oldText.length, newText.length)
+    const maxLength = Math.max(oldText.length, newText.length)
+    if (!maxLength || minLength / maxLength <= threshold) return { similarity: 0, old: [], new: [] }
+
+    if (oldTokens && newTokens) {
+        const result = substituteLines(oldTokens, newTokens, threshold)
+        return { similarity: result.similarity, ...result.ranges }
+    }
+
+    const window = diffWindow(oldText, newText)
+    if (window) {
+        // Cheap prefilter: the trimmed fragments are what actually differs, so when the changed
+        // fragment is a small part of a longer line the pair cannot clear the threshold anyway.
+        const oldFragment = oldText.slice(window.oldStart, window.oldEnd)
+        const newFragment = newText.slice(window.newStart, window.newEnd)
+        const fragmentRatio = Math.min(oldFragment.length, newFragment.length) / Math.max(oldFragment.length, newFragment.length)
+        if (fragmentRatio <= threshold) return { similarity: 0, old: [], new: [] }
+        const oldWindowTokens = diffTokens(oldFragment)
+        const newWindowTokens = diffTokens(newFragment)
+        if (oldWindowTokens.length <= MAX_DIFF_WINDOW_TOKENS && newWindowTokens.length <= MAX_DIFF_WINDOW_TOKENS) {
+            const result = substituteLines(oldWindowTokens, newWindowTokens, threshold, window.oldStart, window.newStart)
+            return { similarity: result.similarity, ...result.ranges }
+        }
+    }
+    return { similarity: 0, old: [], new: [] }
+}
+
+// Below this similarity two lines of a del/add block are treated as unrelated (a removed `Memo = dto.memo` next to an
+// added `PayDate = dto.paydate`), so only their row background shows and no misleading word-level mark appears.
+const MIN_LINE_SIMILARITY = 0.4
+
+/**
+ * Pairs deleted lines with their most similar added lines inside one del/add block. Matching is greedy and order
+ * preserving, so marks never cross, and a line without a similar counterpart keeps just the row background. Blocks whose
+ * candidate pairs would make the matching quadratic (for example a whole-file rewrite) are skipped entirely.
+ */
+export function markChangedLines(deleted: DiffLine[], added: DiffLine[]): Map<DiffLine, TextRange[]> {
+    const marks = new Map<DiffLine, TextRange[]>()
+    if (!deleted.length || !added.length) return marks
+    if (deleted.length > MAX_MATCH_LINES || added.length > MAX_MATCH_LINES) return marks
+    if (deleted.length * added.length > MAX_MATCH_PAIRS) return marks
+
+    // Tokenize each line once; oversized generated lines stay without tokens and use the windowed path per pair.
+    const tokens = new Map<DiffLine, DiffToken[]>()
+    for (const line of [...deleted, ...added]) {
+        const content = line.text.slice(1)
+        const lineTokens = diffTokens(content)
+        if (lineTokens.length <= MAX_DIFF_TOKENS) tokens.set(line, lineTokens)
+    }
+
+    const taken = new Set<DiffLine>()
+    for (const line of deleted) {
+        let best: DiffLine | null = null
+        let bestResult: { old: TextRange[]; new: TextRange[] } | null = null
+        let bestSimilarity = MIN_LINE_SIMILARITY
+        for (const candidate of added) {
+            if (taken.has(candidate)) continue
+            const result = lineSimilarity(line, candidate, tokens.get(line), tokens.get(candidate), bestSimilarity)
+            if (result.similarity > bestSimilarity) {
+                best = candidate
+                bestResult = result
+                bestSimilarity = result.similarity
+            }
+        }
+        if (best && bestResult && (bestResult.old.length || bestResult.new.length)) {
+            taken.add(best)
+            marks.set(line, bestResult.old)
+            marks.set(best, bestResult.new)
+        }
+    }
+    return marks
+}
+
+export interface HighlightRange {
+    start: number
+    end: number
+    className?: string
+}
+
+/** Wraps source ranges in already-highlighted HTML without splitting syntax-token spans or entities. */
+export function markHighlightedRanges(html: string, source: string, ranges: HighlightRange[]): string {
+    if (!ranges.length || !source.length) return html
+
+    const units: string[] = []
+    for (let index = 0; index < html.length; ) {
+        if (html[index] === '<') {
+            const end = html.indexOf('>', index)
+            if (end === -1) return html
+            units.push(html.slice(index, end + 1))
+            index = end + 1
+            continue
+        }
+        if (html[index] === '&') {
+            const entity = /^(?:&amp;|&lt;|&gt;)/.exec(html.slice(index))
+            if (entity) {
+                units.push(entity[0])
+                index += entity[0].length
+                continue
+            }
+        }
+        units.push(html[index]!)
+        index++
+    }
+
+    const afterSourceChar: number[] = [0]
+    let visibleLength = 0
+    for (let index = 0; index < units.length; index++) {
+        if (units[index]!.startsWith('<')) continue
+        visibleLength++
+        afterSourceChar[visibleLength] = index + 1
+    }
+    if (visibleLength !== source.length) return html
+
+    const movePastClosingTags = (index: number) => {
+        while (index < units.length && units[index]!.startsWith('</')) index++
+        return index
+    }
+    const events = new Map<number, { open: string[]; close: string[] }>()
+    const eventAt = (index: number) => {
+        const event = events.get(index)
+        if (event) return event
+        const created = { open: [], close: [] }
+        events.set(index, created)
+        return created
+    }
+
+    for (const range of ranges) {
+        const start = Math.max(0, Math.min(range.start, source.length))
+        const end = Math.max(start, Math.min(range.end, source.length))
+        if (end <= start) continue
+        const startAt = movePastClosingTags(afterSourceChar[start] ?? 0)
+        const endAt = movePastClosingTags(afterSourceChar[end] ?? units.length)
+        const className = range.className ? ` class="${escapeHtml(range.className)}"` : ''
+        eventAt(startAt).open.push(`<mark${className}>`)
+        eventAt(endAt).close.unshift('</mark>')
+    }
+
+    let output = ''
+    for (let index = 0; index <= units.length; index++) {
+        const event = events.get(index)
+        if (event) {
+            output += event.close.join('')
+            output += event.open.join('')
+        }
+        if (index < units.length) output += units[index]
+    }
+    return output
 }
 
 export function isWhitespaceOnlyChange(oldText: string, newText: string): boolean {

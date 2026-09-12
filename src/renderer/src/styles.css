@@ -1428,13 +1428,13 @@ kbd {
     line-height: 20px;
 }
 .diff-line.add {
-    background: color-mix(in srgb, var(--green) 12%, transparent);
+    background: color-mix(in srgb, var(--green) var(--diff-row-tint), transparent);
 }
 .diff-line.add pre {
     color: var(--green);
 }
 .diff-line.del {
-    background: color-mix(in srgb, var(--red) 12%, transparent);
+    background: color-mix(in srgb, var(--red) var(--diff-row-tint), transparent);
 }
 .diff-line.del pre {
     color: var(--red);

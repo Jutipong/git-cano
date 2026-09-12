@@ -14,11 +14,13 @@
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { formatDatePattern } from '../utils/format'
     import {
-        intraLineRange,
+        markChangedLines,
         isWhitespaceOnlyChange,
         detectMovedLines,
         computeLineStates,
         highlightLineAt,
+        markHighlightedRanges,
+        type TextRange,
         type LineRenderContext,
     } from '../utils/highlight'
     import CloseXIcon from './CloseXIcon.vue'
@@ -399,16 +401,20 @@
     )
 
     const marks = computed(() => {
-        const map = new Map<DiffLine, [number, number] | null>()
-        for (let i = 0; i < lines.value.length - 1; i++) {
-            if (lines.value[i].type === 'del' && lines.value[i + 1].type === 'add') {
-                const range = intraLineRange(lines.value[i].text.slice(1), lines.value[i + 1].text.slice(1))
-                if (range) {
-                    map.set(lines.value[i], range.old)
-                    map.set(lines.value[i + 1], range.new)
-                }
+        const map = new Map<DiffLine, TextRange[]>()
+        let i = 0
+        while (i < lines.value.length) {
+            if (lines.value[i].type !== 'del') {
                 i++
+                continue
             }
+
+            const deleted: DiffLine[] = []
+            while (i < lines.value.length && lines.value[i].type === 'del') deleted.push(lines.value[i++]!)
+            const added: DiffLine[] = []
+            while (i < lines.value.length && lines.value[i].type === 'add') added.push(lines.value[i++]!)
+
+            for (const [line, ranges] of markChangedLines(deleted, added)) map.set(line, ranges)
         }
         return map
     })
@@ -573,8 +579,10 @@
         const ranges: { start: number; end: number; kind: 'diff' | 'search' }[] = []
         if (line.type === 'add' || line.type === 'del') {
             const mark = movedLines.value.has(line) ? null : (marks.value.get(line) ?? null)
-            if (mark && mark[1] > mark[0]) {
-                ranges.push({ start: Math.min(mark[0], content.length), end: Math.min(mark[1], content.length), kind: 'diff' })
+            for (const [start, end] of mark ?? []) {
+                if (end > start) {
+                    ranges.push({ start: Math.min(start, content.length), end: Math.min(end, content.length), kind: 'diff' })
+                }
             }
         }
         for (const [start, end] of searchRangesByLine.value.get(line) ?? []) {
@@ -598,16 +606,16 @@
             }
             if (kind) merged.push({ start, end, kind })
         }
-        let out = ''
-        let cursor = 0
-        for (const range of merged) {
-            if (range.start > cursor) out += highlight(content.slice(cursor, range.start))
-            const inner = highlight(content.slice(range.start, range.end))
-            out += range.kind === 'search' ? `<mark class="search-hit">${inner}</mark>` : `<mark>${inner}</mark>`
-            cursor = range.end
-        }
-        if (cursor < content.length) out += highlight(content.slice(cursor))
-        return out
+        const highlighted = highlight(content)
+        return markHighlightedRanges(
+            highlighted,
+            content,
+            merged.map(range => ({
+                start: range.start,
+                end: range.end,
+                className: range.kind === 'search' ? 'search-hit' : undefined,
+            }))
+        )
     }
 
     const lineStates = computed(() => computeLineStates(lines.value, props.file?.path ?? ''))

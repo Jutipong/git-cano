@@ -94,6 +94,19 @@ Key files:
   direct child of `.app` — **not** inside `.app-body` — because `.app-body` has
   `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
   close (✕).
+- **Diff line highlighting** (`utils/highlight.ts` + `DiffView.vue`): word-level marks come
+  from `markChangedLines()`, which pairs each `del` with its most similar `add` inside one
+  block via weighted token LCS (letters/digits weigh 1, punctuation/whitespace 0.3) and only
+  marks pairs above `MIN_LINE_SIMILARITY` 0.4 — do not drop the threshold or unrelated rows
+  like `Memo = dto.memo` next to `PayDate = dto.paydate,` get misleading marks. Blocks larger
+  than `MAX_MATCH_LINES` (250) or `MAX_MATCH_PAIRS` (12 000) skip matching entirely, and
+  generated/minified lines use a `diffWindow` fallback capped at `MAX_DIFF_WINDOW_TOKENS`
+  (512). `markHighlightedRanges()` wraps those ranges into HTML that was highlighted **once
+  for the whole line** — never tokenize per mark segment, or strings/comments split across a
+  mark change color. Search hits and diff marks are merged in `renderOne()`, with search
+  winning overlaps. Row tint (`--diff-row-tint`, base 7%) and mark strength
+  (`--diff-mark-strength`, 40% dark / 22% light) are CSS variables in `modern-ui.css`;
+  `.diff-line.add/del mark` uses `:not(.search-hit)` so the orange search style stays intact.
 - **Blame lens** (`.blame-lens-tip`, 450ms delay, styles in `modern-ui.css`, toggle in the
   DiffView header persisted via `ui.blameLens`, default off): hovering a gutter shows per-line
   authorship without opening `BlameModal.vue`. Blame is lazy (first hover only, cached per

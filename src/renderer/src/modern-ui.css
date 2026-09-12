@@ -23,6 +23,9 @@
     --yellow: #ffd60a;
     --diff-bg: #1b1b24;
     --diff-inline-bg: #30304a;
+    /* Word-level diff highlight strength and add/del row tint, overridable per theme. */
+    --diff-row-tint: 7%;
+    --diff-mark-strength: 40%;
     --toast-bg: #1b1b24;
     --toast-border: #2b2b3a;
     --conflict-bg: #30304a;
@@ -57,6 +60,7 @@
     --yellow: #635100;
     --diff-bg: #bdb9ae;
     --diff-inline-bg: #a8a499;
+    --diff-mark-strength: 22%;
     --toast-bg: #bdb9ae;
     --toast-border: #8b877b;
     --conflict-bg: #bfb088;
@@ -104,11 +108,11 @@
     background: color-mix(in srgb, var(--row-color, var(--teal)) 10%, transparent);
 }
 /* muted word-level diff marks on bright paper */
-:root[data-theme='light'] .diff-line.add mark {
-    background: color-mix(in srgb, var(--green) 22%, transparent);
+:root[data-theme='light'] .diff-line.add mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--green) var(--diff-mark-strength), transparent);
 }
-:root[data-theme='light'] .diff-line.del mark {
-    background: color-mix(in srgb, var(--red) 22%, transparent);
+:root[data-theme='light'] .diff-line.del mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--red) var(--diff-mark-strength), transparent);
 }
 /* softer search hits on bright paper */
 :root[data-theme='light'] .search-hit {
@@ -1856,14 +1860,16 @@ body {
     border-right-color: color-mix(in srgb, var(--red) 25%, var(--line-soft));
 }
 
-.diff-line.add mark {
-    background: color-mix(in srgb, var(--green) 30%, transparent);
+.diff-line.add mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--green) var(--diff-mark-strength), transparent);
     border-radius: 3px;
+    color: inherit;
 }
 
-.diff-line.del mark {
-    background: color-mix(in srgb, var(--red) 30%, transparent);
+.diff-line.del mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--red) var(--diff-mark-strength), transparent);
     border-radius: 3px;
+    color: inherit;
 }
 
 .diff-line.half.blank {
