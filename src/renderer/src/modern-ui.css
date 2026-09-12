@@ -2511,32 +2511,16 @@ body {
     opacity: 0.85;
 }
 
+/* selected: static double ring + glow, no animation */
 .node-ring.selected {
     border-color: color-mix(in srgb, var(--node-color, var(--teal)) 75%, var(--text));
-
-    animation: node-ripple 2.4s ease-out infinite;
-}
-
-@keyframes node-ripple {
-    0% {
-        box-shadow:
-            0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent),
-            0 0 0 0 color-mix(in srgb, var(--node-color, var(--teal)) 55%, transparent);
-    }
-
-    100% {
-        box-shadow:
-            0 0 5px color-mix(in srgb, var(--node-color, var(--teal)) 45%, transparent),
-            0 0 0 8px transparent;
-    }
+    box-shadow:
+        0 0 0 3px color-mix(in srgb, var(--node-color, var(--teal)) 22%, transparent),
+        0 0 8px color-mix(in srgb, var(--node-color, var(--teal)) 40%, transparent);
 }
 
 .node-ring.drop-target {
     border-color: var(--teal);
-}
-
-.graph-row:hover .node-avatar {
-    transform: translate(-50%, -50%) scale(1.08);
 }
 
 .node-avatar.selected {

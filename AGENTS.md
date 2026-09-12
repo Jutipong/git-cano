@@ -139,6 +139,10 @@ Key files:
   BlameModal), App.vue passes `hide-to-top` to GraphView so the graph button hides:
   the overlay leaves a ~14px sliver on the right edge where it would otherwise peek
   out beside the diff's own button.
+- **Selected commit node** (`.node-ring.selected`, styles in `modern-ui.css`) is a
+  static double ring + soft glow in the lane color — deliberately no animation
+  (ripple/pulse/dot-orbit variants were tried and rejected as distracting at 20px).
+  Row hover does not zoom the avatar either; only selection scales it (1.12x).
 - **Node hover tooltip** (`.avatar-tip`, 500ms delay, styles in `modern-ui.css`):
   shows ref chips on top (reusing `sortedRefs()` / `refKind()` / `chipColor()` so chips
   look identical to the row ones), then author with an avatar dot, email, and date.
