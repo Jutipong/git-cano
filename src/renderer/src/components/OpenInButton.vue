@@ -1,6 +1,5 @@
 <script setup lang="ts">
     import { ref, watch } from 'vue'
-    import ILucideChevronDown from '~icons/lucide/chevron-down'
 
     import { useUiTransientStore } from '../stores/uiTransient'
     import ContextMenu, { type MenuState } from './ContextMenu.vue'
@@ -90,9 +89,6 @@
         title="Open active repository in external app"
         @click="toggleOpenIn">
         <span>Open in</span>
-        <i-lucide-chevron-down
-            width="12"
-            height="12" />
     </button>
     <ContextMenu
         :menu="openInMenu"

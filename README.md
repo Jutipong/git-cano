@@ -42,7 +42,7 @@ pnpm dev
 | 🗂️  | Multiple repos open at once as tabs                                     |
 | 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder; switcher button shows text only, no icon |
 | 💾  | Session & recent-repo restore on startup                                |
-| 🔗  | "Open in" → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette |
+| 🔗  | "Open in" text-only button (no chevron) → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette |
 | 🎨  | Catppuccin icons — open menu (`folder-include` + rows `folder-open`/`folder-git`), repo search, Open in Folder/Terminal (`folder`/`bash`); open popup shows instantly, no animation |
 
 ### 📊 History & Changes

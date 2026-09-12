@@ -51,7 +51,8 @@ Key files:
 - **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the open-repo trigger
   (`OpenRepoMenu.vue`) uses a catppuccin `folder-include` icon and repo search uses
   catppuccin `search` — the open popup appears instantly with no pop/rotate animation.
-  Its rows use catppuccin `folder-open` (local) / `folder-git` (clone).
+  Its rows use catppuccin `folder-open` (local) / `folder-git` (clone). The `Open in`
+  trigger (`OpenInButton.vue`) is a text-only button with no chevron and tighter padding.
   Push/Pull/Fetch swap
   their icon for a compact `ThinkSpinner` (fixed 15px slot and 15px glyph, inherits
   the button color) while `syncStore.busy` is set.

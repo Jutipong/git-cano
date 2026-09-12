@@ -1145,10 +1145,10 @@ body {
     align-self: center;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 2px;
     height: 28px;
     margin-left: auto;
-    padding: 0 10px;
+    padding: 0 6px;
     color: var(--text);
     font-weight: 600;
     background: color-mix(in srgb, var(--teal) 10%, transparent);
