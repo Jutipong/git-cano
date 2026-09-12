@@ -101,7 +101,7 @@
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
-    const tagTarget = ref<CommitNode | null>(null)
+    const tagTarget = ref<{ hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null } | null>(null)
     const squashTarget = ref<CommitNode | null>(null)
     const stashCreateOpen = ref(false)
     const cloneOpen = ref(false)
@@ -457,7 +457,8 @@
                 <Sidebar
                     :repo="repo"
                     :refresh="repoStore.refresh"
-                    @interactive-rebase="rebaseBase = $event" />
+                    @interactive-rebase="rebaseBase = $event"
+                    @create-tag="tagTarget = $event" />
                 <div
                     class="panel-splitter"
                     @mousedown="event => beginResize('left', event)" />

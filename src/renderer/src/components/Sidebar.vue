@@ -33,7 +33,10 @@
     import type { LocalChangesMode, MenuItem, RepoStatus } from '@shared/types'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
-    const emit = defineEmits<{ (e: 'interactive-rebase', baseRef: string): void }>()
+    const emit = defineEmits<{
+        (e: 'interactive-rebase', baseRef: string): void
+        (e: 'create-tag', target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }): void
+    }>()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
 
@@ -296,20 +299,21 @@
             `Creating branch ${result.name}…`
         )
     }
-    async function createTagHere(branch: LocalBranchMenuState['branch']) {
-        const result = await promptDialog({
-            title: 'Create tag',
-            message: `New tag at "${branch.name}"`,
-            placeholder: 'tag name',
-            confirmLabel: 'Create',
-            existing: tags.value.map(t => t.name),
+    function createTagHere(branch: LocalBranchMenuState['branch']) {
+        const commit = branch.commitHash
+            ? (repoStore.commits.find(c => c.hash === branch.commitHash) ?? null)
+            : (repoStore.commits.find(c => c.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`)) ?? null)
+        const hash = commit?.hash ?? branch.commitHash ?? null
+        if (!hash) {
+            notify('Cannot locate commit for this branch', 'error')
+            return
+        }
+        emit('create-tag', {
+            hash,
+            subject: commit?.subject ?? null,
+            shortHash: commit?.shortHash ?? hash.slice(0, 7),
+            branchName: branch.name,
         })
-        if (!result?.name) return
-        void run(
-            () => window.api.createTag(result.name, branch.commitHash ?? null),
-            `Tag ${result.name} created`,
-            `Creating tag ${result.name}…`
-        )
     }
     function copyBranchName(branch: LocalBranchMenuState['branch']) {
         void navigator.clipboard

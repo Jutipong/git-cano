@@ -8,9 +8,9 @@
     import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
 
-    import type { CommitNode } from '@shared/types'
-
-    const props = defineProps<{ commit: CommitNode }>()
+    const props = defineProps<{
+        commit: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
+    }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const repoStore = useRepoStore()
@@ -35,8 +35,13 @@
     }
 
     const head = computed(() => {
+        const branch = props.commit.branchName?.trim() ?? ''
+        if (branch) return branch.length > 48 ? `${branch.slice(0, 48).trimEnd()}…` : branch
+        const short = props.commit.shortHash?.trim() || props.commit.hash?.slice(0, 7) || ''
         const s = props.commit.subject?.trim() ?? ''
-        return s.length > 48 ? `${s.slice(0, 48).trimEnd()}…` : s
+        const truncated = s.length > 48 ? `${s.slice(0, 48).trimEnd()}…` : s
+        if (short && truncated) return `${short} — ${truncated}`
+        return short || truncated
     })
 
     const TAG_NAME_FORBIDDEN = /[\s~^:?*[\]\\]/
@@ -60,7 +65,7 @@
         busy.value = true
         error.value = ''
         try {
-            await useUiTransientStore().withBusy(() => window.api.createTag(trimmed, props.commit.hash), 'Creating tag…')
+            await useUiTransientStore().withBusy(() => window.api.createTag(trimmed, props.commit.hash ?? null), 'Creating tag…')
             await repoStore.refresh()
             if (ui.tagPushToOrigin) {
                 try {
