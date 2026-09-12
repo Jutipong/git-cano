@@ -20,7 +20,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { resolveCheckoutMode } from '../utils/checkout'
-    import { confirmDialog } from '../utils/confirm'
+    import { confirmDialog, confirmDialogWithOption } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
     import { notifyUndoable } from '../utils/undo'
     import CollapseAllButton from './CollapseAllButton.vue'
@@ -35,7 +35,10 @@
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
     const emit = defineEmits<{
         (e: 'interactive-rebase', baseRef: string): void
-        (e: 'create-tag', target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }): void
+        (
+            e: 'create-tag',
+            target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
+        ): void
     }>()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
@@ -245,13 +248,44 @@
         void run(() => window.api.deleteRemoteBranch(ref), `Remote branch ${label} deleted`)
     }
     async function deleteTag(tag: { name: string; hash: string }) {
-        const ok = await confirmDialog({
+        if (!remoteTagNames.value.includes(tag.name)) {
+            const ok = await confirmDialog({
+                message: `Delete tag: ${tag.name}`,
+                confirmLabel: 'Delete',
+                danger: true,
+            })
+            if (!ok) return
+            void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
+            return
+        }
+        const result = await confirmDialogWithOption({
             message: `Delete tag: ${tag.name}`,
             confirmLabel: 'Delete',
             danger: true,
+            checkOption: { label: 'Also delete on origin', defaultChecked: false },
         })
-        if (!ok) return
-        void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
+        if (!result.ok) return
+        if (result.checked) pendingRemoteTag.value = tag.name
+        let remoteError: string | null = null
+        try {
+            await uiTransient.withBusy(async () => {
+                await window.api.deleteTag(tag.name)
+                if (result.checked) {
+                    try {
+                        await window.api.deleteRemoteTag(tag.name)
+                    } catch (error) {
+                        remoteError = String(error).replace(/^Error:\s*/, '')
+                    }
+                }
+                await props.refresh()
+            })
+            if (remoteError) notify(`Tag ${tag.name} deleted locally, but remote delete failed: ${remoteError}`, 'error')
+            else notify(result.checked ? `Tag ${tag.name} deleted locally and on origin` : `Tag ${tag.name} deleted`, 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            if (pendingRemoteTag.value === tag.name) pendingRemoteTag.value = null
+        }
     }
     function copyTagName(tag: { name: string }) {
         void navigator.clipboard

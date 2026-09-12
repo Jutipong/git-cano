@@ -10,12 +10,19 @@
     import ILucideZap from '~icons/lucide/zap'
 
     import { useConfirmStore } from '../stores/confirm'
+    import AppCheckbox from './AppCheckbox.vue'
 
     const confirmStore = useConfirmStore()
     const confirmBtn = useTemplateRef<HTMLButtonElement>('confirmBtn')
 
     const conflict = computed(() => confirmStore.current?.status?.kind === 'warn')
     const forcePush = computed(() => confirmStore.current?.confirmIcon === 'force-push')
+    const checked = computed({
+        get: () => confirmStore.current?.checked ?? false,
+        set: value => {
+            if (confirmStore.current) confirmStore.current.checked = value
+        },
+    })
 
     function onKey(event: KeyboardEvent) {
         if (!confirmStore.current) return
@@ -133,6 +140,12 @@
                     <span>{{ confirmStore.current.status.text }}</span>
                 </div>
                 <pre>{{ confirmStore.current.message }}</pre>
+                <AppCheckbox
+                    v-if="confirmStore.current.checkOption"
+                    v-model="checked"
+                    class="prompt-option">
+                    {{ confirmStore.current.checkOption.label }}
+                </AppCheckbox>
             </div>
             <div class="confirm-dialog-actions">
                 <button
