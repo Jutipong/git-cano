@@ -50,6 +50,7 @@ pnpm dev
 | --- | ----------------------------------------------------------- |
 | 🌌  | Interactive commit graph (custom SVG renderer)              |
 | 🏷️  | Hover a commit node — branch/tag chips (tags first, then remote before local per branch), author avatar, email & time |
+| 📏  | Commits with 5+ ref chips get a taller two-line row (chips above the message) |
 | 💬  | Full-message popover — subject emphasized with author/date/hash header |
 | 🔝  | To-top button — jump back to the top after deep scrolling (commit graph & diff view) |
 | 🟢  | Selecting a commit flips the right panel to **Committed History** — green-tinted header & title, clearly distinct from working-dir Changes |

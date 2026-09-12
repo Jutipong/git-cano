@@ -2345,15 +2345,6 @@ body {
     border-bottom-color: var(--line-soft);
 }
 
-.graph-graph-header {
-    position: relative;
-}
-
-.graph-graph-header .graph-settings-btn {
-    position: absolute;
-    left: 2px;
-}
-
 /* breathing room so the first row's node ring + glow clears the header
    (SVG canvas is shifted by the same offset to stay aligned with rows) */
 .graph-scroll {

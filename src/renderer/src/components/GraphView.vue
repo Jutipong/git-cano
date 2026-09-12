@@ -16,6 +16,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore } from '../stores/uiTransient'
     import { formatDatePattern, formatShortDate } from '../utils/format'
+    import { buildPrefix, indexAtOffset } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
@@ -60,7 +61,9 @@
     /** Dusty avatars to match the light-retro lane palette. */
     const LIGHT_RETRO_AVATAR_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#333333', '#1F6B5E', '#713C4D']
     const laneW = 32
-    const rowH = 28
+    const rowH = 30
+    const rowHChip = 48
+    const TWO_LINE_CHIP_COUNT = 5
     /* breathing room between the graph panel's left edge and the first lane */
     const GRAPH_PAD = 4
 
@@ -117,12 +120,28 @@
               )
             : props.commits
     )
-    const GRAPH_MIN_W = 120
+    const GRAPH_MIN_W = 80
     const graphW = computed(
-        () => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 20, GRAPH_MIN_W) + GRAPH_PAD
+        () => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 4, GRAPH_MIN_W) + GRAPH_PAD
     )
     const rowIndex = computed(() => new Map(visibleCommits.value.map((commit, index) => [commit.hash as string, index])))
-    const totalHeight = computed(() => visibleCommits.value.length * rowH)
+    function isTwoLine(commit: CommitNode): boolean {
+        return commit.refs.length > TWO_LINE_CHIP_COUNT
+    }
+    function rowHeightFor(commit: CommitNode): number {
+        return isTwoLine(commit) ? rowHChip : rowH
+    }
+    const rowHeights = computed(() => visibleCommits.value.map(rowHeightFor))
+    const rowPrefix = computed(() => buildPrefix(rowHeights.value))
+    const totalHeight = computed(() => rowPrefix.value[rowPrefix.value.length - 1] ?? 0)
+    const padTop = computed(() => rowPrefix.value[visibleRange.value[0]] ?? 0)
+    const padBottom = computed(() => totalHeight.value - (rowPrefix.value[visibleRange.value[1]] ?? totalHeight.value))
+    function rowTop(index: number): number {
+        return rowPrefix.value[index] ?? 0
+    }
+    function rowHeightAt(index: number): number {
+        return rowHeights.value[index] ?? rowH
+    }
     const renderedCommits = computed(() => visibleCommits.value.slice(visibleRange.value[0], visibleRange.value[1]))
     /** Only the commits inside the visible window (+ overscan) get SVG nodes — tint/tick/edges. */
     const graphWindow = computed(() => {
@@ -161,9 +180,15 @@
         const el = scrollEl.value
         if (!el) return
         showToTop.value = el.scrollTop > rowH * 20
-        const start = Math.max(0, Math.floor(el.scrollTop / rowH) - 15)
-        const count = Math.ceil(el.clientHeight / rowH) + 30
-        visibleRange.value = [start, start + count]
+        const prefix = rowPrefix.value
+        const n = visibleCommits.value.length
+        if (!prefix.length || n === 0) {
+            visibleRange.value = [0, 0]
+        } else {
+            const atTop = indexAtOffset(prefix, el.scrollTop)
+            const atBottom = indexAtOffset(prefix, el.scrollTop + el.clientHeight)
+            visibleRange.value = [Math.max(0, atTop - 15), Math.min(n, atBottom + 1 + 15)]
+        }
         const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - rowH * 10
         if (props.hasMore && nearBottom && loadMoreArmed) {
             loadMoreArmed = false
@@ -321,7 +346,7 @@
         return GRAPH_PAD + commit.lane * laneW + laneW / 2
     }
     function nodeY(index: number) {
-        return index * rowH + rowH / 2
+        return rowTop(index) + rowHeightAt(index) / 2
     }
     function edgeD(childIndex: number, parentIndex: number): string {
         const cx = nodeX(visibleCommits.value[childIndex])
@@ -601,7 +626,7 @@
             else repoStore.pendingFocusHash = null
             return
         }
-        el.scrollTop = Math.max(0, index * rowH - el.clientHeight / 2)
+        el.scrollTop = Math.max(0, rowTop(index) + rowHeightAt(index) / 2 - el.clientHeight / 2)
         onScroll()
         select(visibleCommits.value[index])
         repoStore.pendingFocusHash = null
@@ -623,14 +648,6 @@
             <span
                 class="graph-graph-header"
                 :style="{ width: `${graphW}px` }">
-                <button
-                    class="icon-btn graph-settings-btn"
-                    title="Commit history settings"
-                    @click="showSettings = true">
-                    <i-lucide-settings
-                        width="14"
-                        height="14" />
-                </button>
                 GRAPH
             </span>
             <span class="graph-message-header">
@@ -689,6 +706,14 @@
                         ×
                     </button>
                 </label>
+                <button
+                    class="icon-btn graph-settings-btn"
+                    title="Commit history settings"
+                    @click="showSettings = true">
+                    <i-lucide-settings
+                        width="14"
+                        height="14" />
+                </button>
             </span>
             <span
                 v-if="ui.commitColumns.author"
@@ -722,18 +747,18 @@
                         <rect
                             class="lane-tint"
                             :x="nodeX(commit)"
-                            :y="index * rowH + 1"
+                            :y="rowTop(index) + 1"
                             :width="Math.max(0, graphW - nodeX(commit))"
-                            :height="rowH - 2"
+                            :height="rowHeightAt(index) - 2"
                             rx="2"
                             :fill="nodeColor(commit)"
                             fill-opacity="0.1" />
                         <rect
                             class="lane-tick"
                             :x="graphW - 3"
-                            :y="index * rowH + 1"
+                            :y="rowTop(index) + 1"
                             width="3"
-                            :height="rowH - 2"
+                            :height="rowHeightAt(index) - 2"
                             rx="1.5"
                             :fill="tickColor(commit)" />
                     </template>
@@ -755,7 +780,7 @@
                     </template>
                 </svg>
                 <div
-                    :style="{ height: `${visibleRange[0] * rowH}px` }"
+                    :style="{ height: `${padTop}px` }"
                     aria-hidden="true" />
                 <div
                     v-for="commit in renderedCommits"
@@ -765,9 +790,10 @@
                         selected: selectedHash === commit.hash,
                         'msg-expanded': expandedHash === commit.hash,
                         'squash-in-scope': inSquashScope(commit),
+                        'has-chips': isTwoLine(commit),
                     }"
                     :style="{
-                        height: `${rowH}px`,
+                        height: `${rowHeightFor(commit)}px`,
                         '--graph-w': `${graphW}px`,
                         '--row-color': nodeColor(commit),
                     }"
@@ -805,6 +831,7 @@
                                 :key="ref"
                                 class="ref-chip"
                                 :class="refKind(ref)"
+                                :title="refLabel(ref)"
                                 :style="{
                                     '--chip-color': chipColor(ref),
                                     '--chip-fg': contrastText(chipColor(ref)),
@@ -886,7 +913,7 @@
                     </div>
                 </div>
                 <div
-                    :style="{ height: `${Math.max(0, (visibleCommits.length - visibleRange[1]) * rowH)}px` }"
+                    :style="{ height: `${padBottom}px` }"
                     aria-hidden="true" />
             </template>
             <div

@@ -125,6 +125,10 @@ Key files:
   `renderEdges` computed and drawn whenever the child→parent row span intersects the
   visible window (+5 rows overscan) — NOT only when both endpoints are on screen.
   Endpoint-based culling made long lane lines vanish mid-scroll; do not reintroduce it.
+  Rows have variable heights via a prefix sum (`buildPrefix`/`indexAtOffset` in
+  `utils/virtual.ts`): commits with more than 5 refs get a two-line 48px row
+  (chips above the message), everything else is 30px — keep every Y computation
+  (nodeY, tints, ticks, spacers, focus scroll) on the prefix, never `index * rowH`.
   The floating to-top button (`.to-top-btn`, styles in `styles.css`) appears after ~20
   rows of scroll in both the graph and the DiffView overlay (mounted in `.diff-main`
   with `right: 30px` to clear the minimap strip — `position: relative` on `.diff-main`
