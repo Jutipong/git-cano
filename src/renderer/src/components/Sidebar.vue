@@ -134,7 +134,7 @@
         if (repoStore.soloBranch && repoStore.soloBranch !== branch.name) return
         const hash =
             branch.commitHash ??
-            repoStore.commits.find(commit => commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`))?.hash
+            repoStore.commits.find(commit => commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}` || ref === `remote:${branch.name}`))?.hash
         if (hash) repoStore.pendingFocusHash = hash
     }
 
@@ -336,7 +336,7 @@
     function createTagHere(branch: LocalBranchMenuState['branch']) {
         const commit = branch.commitHash
             ? (repoStore.commits.find(c => c.hash === branch.commitHash) ?? null)
-            : (repoStore.commits.find(c => c.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}`)) ?? null)
+            : (repoStore.commits.find(c => c.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}` || ref === `remote:${branch.name}`)) ?? null)
         const hash = commit?.hash ?? branch.commitHash ?? null
         if (!hash) {
             notify('Cannot locate commit for this branch', 'error')

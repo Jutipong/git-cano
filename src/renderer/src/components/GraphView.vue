@@ -428,32 +428,42 @@
     }
 
     type RefKind = 'head' | 'local' | 'remote' | 'tag'
-    const REF_ORDER: Record<RefKind, number> = { head: 0, local: 1, remote: 2, tag: 3 }
-
-    const knownRemotes = ref(new Set<string>())
-    async function loadRemotes() {
-        try {
-            const list = await window.api.remotesFull()
-            knownRemotes.value = new Set(list.map(r => r.name))
-        } catch {
-            knownRemotes.value = new Set()
-        }
-    }
-    watch(() => repoStore.repo?.path, loadRemotes, { immediate: true })
+    const REF_GROUP: Record<RefKind, number> = { head: 2, tag: 0, local: 2, remote: 2 }
 
     function refKind(ref: string): RefKind {
         if (ref.startsWith('tag:')) return 'tag'
-        const name = ref.replace('HEAD -> ', '')
-        if (name !== ref) return 'head'
-        const slash = name.indexOf('/')
-        if (slash > 0 && knownRemotes.value.has(name.slice(0, slash))) return 'remote'
+        if (ref.startsWith('HEAD -> ')) return 'head'
+        if (ref.startsWith('remote:')) return 'remote'
         return 'local'
     }
     function refLabel(ref: string): string {
-        return ref.startsWith('tag:') ? ref.slice(4).trim() : ref.replace('HEAD -> ', '')
+        if (ref.startsWith('tag:')) return ref.slice(4).trim()
+        if (ref.startsWith('HEAD -> ')) return ref.slice('HEAD -> '.length)
+        if (ref.startsWith('remote:')) return ref.slice('remote:'.length)
+        return ref
+    }
+    function refBase(ref: string): string {
+        const name = refLabel(ref)
+        if (refKind(ref) !== 'remote') return name
+        const slash = name.indexOf('/')
+        return slash > 0 ? name.slice(slash + 1) : name
     }
     function sortedRefs(commit: CommitNode): string[] {
-        return [...commit.refs].sort((a, b) => REF_ORDER[refKind(a)] - REF_ORDER[refKind(b)])
+        return [...commit.refs].sort((a, b) => {
+            const ka = refKind(a)
+            const kb = refKind(b)
+            const ga = REF_GROUP[ka]
+            const gb = REF_GROUP[kb]
+            if (ga !== gb) return ga - gb
+            if (ka === 'tag') return refLabel(a).localeCompare(refLabel(b))
+            const base = refBase(a).localeCompare(refBase(b))
+            if (base !== 0) return base
+            if (ka !== kb) {
+                if (ka === 'remote' || kb === 'remote') return ka === 'remote' ? -1 : 1
+                return ka === 'head' ? -1 : 1
+            }
+            return refLabel(a).localeCompare(refLabel(b))
+        })
     }
     function chipColor(ref: string): string {
         const kind = refKind(ref)

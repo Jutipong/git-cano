@@ -122,8 +122,11 @@ Key files:
 - **Node hover tooltip** (`.avatar-tip`, 500ms delay, styles in `modern-ui.css`):
   shows ref chips on top (reusing `sortedRefs()` / `refKind()` / `chipColor()` so chips
   look identical to the row ones), then author with an avatar dot, email, and date.
-  Refs come from `CommitNode.refs` (git log `%d`) — they only exist on branch/tag tips;
-  no on-demand `--contains` lookup.
+  Refs come from `CommitNode.refs` (git log `%d` with `--decorate=full`) — they only
+  exist on branch/tag tips; no on-demand `--contains` lookup. Remotes are encoded
+  as `remote:<name>` by `normalizeRef()` in `git.ts` so classification needs no
+  remote list. Chip order is tags (a-z) first, then branches grouped by short base
+  (a-z) with remote before HEAD before local — keep it.
 - **Full-message popover** (`.commit-msg-popover`, styles in `modern-ui.css`): header row
   is author (bold) / date / mono hash chip with a separator line, then the subject
   (bold) and the body as a `<pre>` (shown only when `commit.body` exists). Flips above

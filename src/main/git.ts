@@ -430,6 +430,32 @@ export async function getImageVersion(file: string, source: 'workdir' | 'index' 
     }
 }
 
+function normalizeRef(raw: string): string | null {
+    const s = raw.trim()
+    if (!s) return null
+    if (s.startsWith('HEAD -> ')) {
+        const target = s.slice('HEAD -> '.length).trim()
+        return `HEAD -> ${target.replace(/^refs\/heads\//, '')}`
+    }
+    if (s.startsWith('tag:')) {
+        const name = s
+            .slice(4)
+            .trim()
+            .replace(/\^\{\}$/, '')
+            .replace(/^refs\/tags\//, '')
+        return `tag: ${name}`
+    }
+    if (s.startsWith('refs/tags/')) return `tag: ${s.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')}`
+    if (s.startsWith('refs/remotes/')) {
+        const short = s.replace(/^refs\/remotes\//, '')
+        if (!short || short.endsWith('/HEAD')) return null
+        return `remote:${short}`
+    }
+    if (s.startsWith('refs/heads/')) return s.replace(/^refs\/heads\//, '')
+    if (s.endsWith('/HEAD')) return null
+    return s
+}
+
 function parseLog(text: string): CommitNode[] {
     const SEP = '\x1f'
     const REC = '\x1e'
@@ -444,9 +470,8 @@ function parseLog(text: string): CommitNode[] {
                   .replace(/^\(/, '')
                   .replace(/\)$/, '')
                   .split(',')
-                  .map(s => s.trim())
-                  .filter(Boolean)
-                  .filter(ref => !ref.endsWith('/HEAD'))
+                  .map(normalizeRef)
+                  .filter((ref): ref is string => !!ref)
             : []
         commits.push({
             hash,
@@ -470,6 +495,7 @@ function logArgs(limit: number, skip?: number): string[] {
         '--branches',
         '--remotes',
         '--tags',
+        '--decorate=full',
         `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join('\x1f')}\x1e`,
         '--date=iso',
         `--max-count=${limit}`,
@@ -502,6 +528,7 @@ function soloLogArgs(branch: string, limit: number, skip?: number): string[] {
     return [
         'log',
         branch,
+        '--decorate=full',
         `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join('\x1f')}\x1e`,
         '--date=iso',
         `--max-count=${limit}`,
