@@ -2,7 +2,7 @@
     import { nextTick, computed, onMounted, onUnmounted, ref } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
-    import ILucideSearch from '~icons/lucide/search'
+    import ICatppuccinSearch from '~icons/catppuccin/search'
 
     import { useSyncStore } from '../stores/sync'
     import { useUiStore } from '../stores/ui'
@@ -166,7 +166,7 @@
             :class="{ 'search-open': searchOpen }">
             <template v-if="searchOpen">
                 <div class="tab-search-field">
-                    <i-lucide-search
+                    <i-catppuccin-search
                         width="15"
                         height="15" />
                     <input
@@ -211,7 +211,7 @@
                     class="icon-btn tab-search"
                     title="Search open repositories"
                     @click="toggleSearch">
-                    <i-lucide-search
+                    <i-catppuccin-search
                         width="15"
                         height="15" />
                 </button>

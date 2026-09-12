@@ -2,8 +2,8 @@
     import { onBeforeUnmount, onMounted, ref, type FunctionalComponent } from 'vue'
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
-    import FolderCompact from '~icons/codicon/folder-compact'
-    import SquareTerminal from '~icons/hugeicons/square-terminal'
+    import Folder from '~icons/catppuccin/folder'
+    import Bash from '~icons/catppuccin/bash'
     import Rider from '~icons/logos/rider'
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
@@ -33,8 +33,8 @@
         zap: Zap,
         pencil: Pencil,
         copy: Copy,
-        folder: FolderCompact,
-        terminal: SquareTerminal,
+        folder: Folder,
+        terminal: Bash,
         vscode: VisualStudioCode,
         kiro: Kiro,
         rider: Rider,

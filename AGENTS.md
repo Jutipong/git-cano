@@ -48,8 +48,10 @@ Key files:
 
 ## UI model
 
-- **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the `+` button is a flat
-  green icon styled like the panel refresh buttons — no outline. Push/Pull/Fetch swap
+- **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the open-repo trigger
+  (`OpenRepoMenu.vue`) uses a catppuccin `folder-include` icon and repo search uses
+  catppuccin `search` — the open popup appears instantly with no pop/rotate animation.
+  Push/Pull/Fetch swap
   their icon for a compact `ThinkSpinner` (fixed 15px slot and 15px glyph, inherits
   the button color) while `syncStore.busy` is set.
 - **Sidebar**: fetch/pull/push sync card at the top, workspace switcher
@@ -70,7 +72,8 @@ Key files:
   `ContextMenu.vue` is only for generic dropdown menus (e.g. remote branches in the
   sidebar and the `OpenInButton.vue` short-label menu: Folder / Terminal / VS Code,
   plus Kiro / Visual Studio / Rider when installed). The command palette mirrors
-  it via a repo-gated `Open in…` mode with the same items/conditions.
+  it via a repo-gated `Open in…` mode with the same items/conditions. Open-in Folder /
+  Terminal use catppuccin `folder` / `bash` icons in both places.
   Palette command items must `close()` before acting/emitting (mode switches like
   Repo…/Branch… excepted) — otherwise the palette stays open over the next dialog.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it

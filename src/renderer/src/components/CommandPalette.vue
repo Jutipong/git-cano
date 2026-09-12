@@ -2,8 +2,8 @@
     import { computed, inject, onMounted, ref, watch, type Component } from 'vue'
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
-    import FolderCompact from '~icons/codicon/folder-compact'
-    import SquareTerminal from '~icons/hugeicons/square-terminal'
+    import Folder from '~icons/catppuccin/folder'
+    import Bash from '~icons/catppuccin/bash'
     import Rider from '~icons/logos/rider'
     import ArrowDown from '~icons/lucide/arrow-down'
     import ArrowDownToLine from '~icons/lucide/arrow-down-to-line'
@@ -291,8 +291,8 @@
     const openInItems = computed<PaletteItem[]>(() => {
         if (!repoStore.repo) return []
         const items: PaletteItem[] = [
-            { id: 'folder', label: 'Folder', icon: FolderCompact, run: () => openExternal(path => window.api.openInFolder(path)) },
-            { id: 'terminal', label: 'Terminal', icon: SquareTerminal, run: () => openExternal(path => window.api.openTerminal(path)) },
+            { id: 'folder', label: 'Folder', icon: Folder, run: () => openExternal(path => window.api.openInFolder(path)) },
+            { id: 'terminal', label: 'Terminal', icon: Bash, run: () => openExternal(path => window.api.openTerminal(path)) },
             { id: 'vscode', label: 'VS Code', icon: VisualStudioCode, run: () => openExternal(path => window.api.openInVSCode(path)) },
         ]
         if (openInTargets.value?.kiro) {

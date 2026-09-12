@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { inject, onMounted, onUnmounted, ref } from 'vue'
+    import ICatppuccinFolderInclude from '~icons/catppuccin/folder-include'
     import ILucideDownload from '~icons/lucide/download'
     import ILucideFolderOpen from '~icons/lucide/folder-open'
-    import ILucidePlus from '~icons/lucide/plus'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
@@ -74,7 +74,7 @@
             :class="{ open }"
             title="Open from local or clone a repository"
             @click="toggle($event)">
-            <i-lucide-plus
+            <i-catppuccin-folder-include
                 width="15"
                 height="15" />
         </button>
@@ -83,7 +83,7 @@
             class="btn primary"
             :class="{ open }"
             @click="toggle()">
-            <i-lucide-plus
+            <i-catppuccin-folder-include
                 width="15"
                 height="15" />
             {{ props.label }}

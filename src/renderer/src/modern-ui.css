@@ -1427,36 +1427,6 @@ body {
     border: 1px solid var(--line-soft);
     border-radius: 8px;
     box-shadow: 0 18px 50px var(--shadow);
-    transform-origin: top right;
-    animation: open-repo-pop-in 120ms ease-out;
-}
-
-@keyframes open-repo-pop-in {
-    from {
-        opacity: 0;
-        transform: translateY(-4px) scale(0.97);
-    }
-}
-
-.open-repo-wrap .tab-new svg,
-.open-repo-wrap .btn svg {
-    transition: transform 150ms ease;
-}
-
-.open-repo-wrap .tab-new.open svg,
-.open-repo-wrap .btn.open svg {
-    transform: rotate(45deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .open-repo-pop {
-        animation: none;
-    }
-
-    .open-repo-wrap .tab-new svg,
-    .open-repo-wrap .btn svg {
-        transition: none;
-    }
 }
 
 .open-repo-label {

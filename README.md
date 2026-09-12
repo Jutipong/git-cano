@@ -43,6 +43,7 @@ pnpm dev
 | 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder |
 | 💾  | Session & recent-repo restore on startup                                |
 | 🔗  | "Open in" → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette |
+| 🎨  | Catppuccin icons — open menu (`folder-include`), repo search, Open in Folder/Terminal (`folder`/`bash`); open popup shows instantly, no animation |
 
 ### 📊 History & Changes
 
