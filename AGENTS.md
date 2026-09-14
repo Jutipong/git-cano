@@ -110,7 +110,7 @@ Key files:
   (512). `markHighlightedRanges()` wraps those ranges into HTML that was highlighted **once
   for the whole line** — never tokenize per mark segment, or strings/comments split across a
   mark change color. Search hits and diff marks are merged in `renderOne()`, with search
-  winning overlaps. Syntax token colors always win inside add/del rows — the row tint
+  winning overlaps. Syntax token colors win inside add/del rows except inside word-level marks (marks use `var(--text)` with inner token spans inheriting, so dim tokens like comments stay readable). The row tint
   (`--diff-row-tint`) and the 2px inset accent bar are the only add/del signals, so do not
   reintroduce `.diff-line.add pre { color: … }` or `.diff-line.moved pre` (a moved row keeps
   the purple background). Mark strength (`--diff-mark-strength`) and row tint live as CSS

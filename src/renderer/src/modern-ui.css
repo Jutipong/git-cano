@@ -1829,12 +1829,22 @@ body {
 .diff-line.add mark:not(.search-hit) {
     background: color-mix(in srgb, var(--green) var(--diff-mark-strength), transparent);
     border-radius: 3px;
-    color: inherit;
+    color: var(--text);
+    padding: 0 1px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
 }
 
 .diff-line.del mark:not(.search-hit) {
     background: color-mix(in srgb, var(--red) var(--diff-mark-strength), transparent);
     border-radius: 3px;
+    color: var(--text);
+    padding: 0 1px;
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.diff-line mark:not(.search-hit) span {
     color: inherit;
 }
 
