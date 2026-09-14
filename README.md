@@ -61,7 +61,7 @@ pnpm dev
 | 🧺  | Stage/unstage files — or single diff hunks                  |
 | ✅  | Commit & amend with a friendly title-length counter — risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer timed Undo |
 | 🟣  | Squash a HEAD range — `Shift+click` a range in the graph, right-click to squash N into 1 (skipping is impossible by design) |
-| ↔️  | Unified / side-by-side diffs with word-level change highlights (marked words use readable text color — add/del rows carry an accent bar), image diffs, binary detection |
+| ↔️  | Unified / side-by-side diffs with word-level change highlights (marked words use readable text color — add/del rows carry an accent bar), each split pane has its own synced horizontal scrollbar, image diffs, binary detection |
 | 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens) |
 | 🕰️  | Reflog viewer — timeline of every HEAD move with per-action colors, restore any entry (undoable) |
 

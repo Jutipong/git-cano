@@ -2169,9 +2169,6 @@ mark {
     flex: none;
     width: 100%;
 }
-.split-pane.right {
-    scrollbar-width: none;
-}
 .diff-line.half.blank {
     height: 20px;
     background: repeating-linear-gradient(-45deg, transparent 0 4px, color-mix(in srgb, var(--text-muted) 16%, transparent) 4px 7px);

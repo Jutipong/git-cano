@@ -99,7 +99,8 @@ Key files:
   file row is clicked (right pane stays interactive for switching files). It is rendered as a
   direct child of `.app` — **not** inside `.app-body` — because `.app-body` has
   `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
-  close (✕).
+  close (✕). In split mode each pane keeps its own horizontal scrollbar, synced both ways
+  via `onPaneScrollX` — do not hide one side again.
 - **Diff line highlighting** (`utils/highlight.ts` + `DiffView.vue`): word-level marks come
   from `markChangedLines()`, which pairs each `del` with its most similar `add` inside one
   block via weighted token LCS (letters/digits weigh 1, punctuation/whitespace 0.3) and only
