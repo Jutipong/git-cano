@@ -144,6 +144,22 @@ pnpm dev
 | `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`            |
 | `pnpm dist:win`  | 🪟 Windows portable `.exe` → `release/` |
 
+## 📥 Install
+
+Download the latest release from **GitHub Releases** (`Jutipong/open-git`):
+
+- 🪟 **Windows** — `git-cano-<version>-portable.exe`, just run it (no install). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
+- 🍎 **macOS (Apple Silicon)** — open the `.dmg`, drag `Git Cano` into Applications. It's unsigned, so on first launch run:
+  ```bash
+  xattr -cr /Applications/Git\ Cano.app
+  ```
+  then Right-click → Open (only needed once).
+
+## 🔄 Updates
+
+- **Settings → General → Updates**: pick how often the app checks GitHub Releases (`Off / 1h / 4h / 6h / 12h / 24h`, default `6h`), or press **Check now** anytime.
+- The download icon in the sidebar appears **only when a newer release is found** — clicking it jumps to Settings. Portable and macOS builds update by downloading the new file manually.
+
 ## 🗂️ How it's organized
 
 ```text

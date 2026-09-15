@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
-    import ILucideArrowDown from '~icons/lucide/arrow-down'
+    import ICodiconDesktopDownload from '~icons/codicon/desktop-download'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
@@ -884,7 +884,7 @@
                     >Version: {{ appVersion }}</span
                 >
                 <span
-                    v-if="appVersion"
+                    v-if="appVersion && updater.status === 'available'"
                     class="app-version-divider"
                     aria-hidden="true" />
                 <button
@@ -892,7 +892,7 @@
                     class="toolbar-icon-button update-version-btn"
                     :title="`Update available: ${updater.latestVersion} — open Settings`"
                     @click="handleUpdateVersionClick">
-                    <i-lucide-arrow-down
+                    <i-codicon-desktop-download
                         width="17"
                         height="17" />
                 </button>

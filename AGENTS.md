@@ -33,6 +33,8 @@ Key files:
 - `src/preload/index.ts` — the `window.api` surface (keep names verb-first)
 - `src/renderer/src/stores/repo.ts` — repo tabs, selected commit/file, commit files
 - `src/renderer/src/stores/ui.ts` — persisted UI state (theme, font size, zoom, panel widths/heights, shortcut overrides)
+- `src/renderer/src/stores/updater.ts` — shared update-check state (NOT persisted: every launch
+  starts `idle` so the sidebar update button stays hidden until a check finds a newer release)
 - `src/renderer/src/stores/workspace.ts` — named workspaces, each with its own persisted
   repo-tab session (paths + active tab)
 - `src/renderer/src/utils/shortcuts.ts` — single source of truth for keyboard shortcuts
@@ -368,6 +370,24 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - Modal (`SquashModal.vue`, styles in `modern-ui.css` `.squash-*`): lists the exact range
   newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
   with the FilePanel-style soft length counter, and blocks on a dirty worktree.
+
+## Updates & releases
+
+- Update checks hit `GET repos/Jutipong/open-git/releases/latest` from the renderer
+  (CSP `connect-src` in `src/renderer/index.html` must keep allowing `api.github.com`).
+  `updater.checkForUpdate()` compares `tag_name` against `window.api.getVersion()`
+  (leading `v` stripped, numeric segments, release beats prerelease).
+- Sidebar update button (`Sidebar.vue`, `codicon:desktop-download`, green
+  `.update-version-btn`) renders only on `updater.status === 'available'` — never on
+  version-loaded alone; its divider is gated the same way. Click jumps to
+  Settings → General → Updates (`repoStore.toolsTab = 'general'`).
+- Cadence lives in `ui.updateCheckHours` (`0` = manual only, default 6); `App.vue`
+  schedules one silent check 30s after launch plus the interval, rescheduled on change.
+- Release flow per version: bump `package.json` version → `pnpm dist:win` (Windows) /
+  `pnpm dist:mac` (Mac, arm64 dmg) → `git tag v<version>` → GitHub Release from that
+  tag with the `release/` assets uploaded (`release/` is gitignored, never committed).
+  Portable and unsigned macOS builds stay manual-download; auto-install is a future
+  `electron-updater` + NSIS phase.
 
 ## Conventions
 
