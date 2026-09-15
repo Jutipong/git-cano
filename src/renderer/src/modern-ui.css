@@ -4729,6 +4729,14 @@ body {
     background: var(--line-soft);
 }
 
+.toolbar-icon-button.update-version-btn {
+    color: var(--green);
+}
+
+.toolbar-icon-button.update-version-btn:hover {
+    color: var(--green);
+}
+
 .zoom-group {
     position: relative;
 }

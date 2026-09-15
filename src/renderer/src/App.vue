@@ -39,6 +39,7 @@
     import { useSyncStore } from './stores/sync'
     import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
+    import { useUpdaterStore } from './stores/updater'
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { promptDialog } from './utils/prompt'
@@ -168,6 +169,36 @@
 
         startAutoRefresh()
         watch(() => ui.refreshInterval, startAutoRefresh)
+
+        // Silent update check: first run 30s after launch, then every updateCheckHours.
+        // 0 = manual only. Only flips the shared updater state — the sidebar button
+        // appears solely when a newer release is found.
+        const updater = useUpdaterStore()
+        let updateTimer: ReturnType<typeof setTimeout> | null = null
+        let updateInterval: ReturnType<typeof setInterval> | null = null
+        function clearUpdateTimers() {
+            if (updateTimer) {
+                clearTimeout(updateTimer)
+                updateTimer = null
+            }
+            if (updateInterval) {
+                clearInterval(updateInterval)
+                updateInterval = null
+            }
+        }
+        function startUpdateSchedule() {
+            clearUpdateTimers()
+            const hours = ui.updateCheckHours
+            if (!hours || hours <= 0) return
+            updateTimer = setTimeout(() => {
+                updateTimer = null
+                void updater.checkForUpdate()
+            }, 30 * 1000)
+            updateInterval = setInterval(() => void updater.checkForUpdate(), hours * 60 * 60 * 1000)
+        }
+        startUpdateSchedule()
+        watch(() => ui.updateCheckHours, startUpdateSchedule)
+        onUnmounted(clearUpdateTimers)
 
         // double-Shift detection for the command palette (two taps within the window)
         const DOUBLE_SHIFT_MS = 400

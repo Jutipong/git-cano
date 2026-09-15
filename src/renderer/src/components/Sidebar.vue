@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
@@ -18,6 +19,7 @@
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
+    import { useUpdaterStore } from '../stores/updater'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog, confirmDialogWithOption } from '../utils/confirm'
@@ -47,6 +49,11 @@
 
     const ZOOM_CHOICES = [70, 80, 90, 100, 110, 125, 140, 150]
     const appVersion = ref('')
+    const updater = useUpdaterStore()
+    function handleUpdateVersionClick() {
+        repoStore.toolsTab = 'general'
+        repoStore.toolsOpen = true
+    }
     const zoomMenuOpen = ref(false)
     const zoomMenuRoot = ref<HTMLElement | null>(null)
     function selectZoom(value: number) {
@@ -880,6 +887,15 @@
                     v-if="appVersion"
                     class="app-version-divider"
                     aria-hidden="true" />
+                <button
+                    v-if="updater.status === 'available'"
+                    class="toolbar-icon-button update-version-btn"
+                    :title="`Update available: ${updater.latestVersion} — open Settings`"
+                    @click="handleUpdateVersionClick">
+                    <i-lucide-arrow-down
+                        width="17"
+                        height="17" />
+                </button>
                 <button
                     class="toolbar-icon-button"
                     :class="{ 'bisect-active': repoStore.repoState.bisectActive }"

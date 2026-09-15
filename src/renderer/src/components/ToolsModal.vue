@@ -31,7 +31,8 @@
     import { useAiStore } from '../stores/ai'
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUpdaterStore } from '../stores/updater'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -108,6 +109,25 @@
         void persistDefaultOpenDir('')
     }
 
+    // Manual update check against GitHub Releases (auto-update via electron-updater lands later).
+    // State lives in the shared updater store so the sidebar button reacts to the same result.
+    const updater = useUpdaterStore()
+    const updateChecking = computed(() => updater.status === 'checking')
+    const updateStatus = computed<string | null>(() => {
+        if (updater.status === 'checking') return 'Checking…'
+        if (updater.status === 'available' && updater.currentVersion)
+            return `Update available: v${updater.currentVersion} → ${updater.latestVersion}`
+        if (updater.status === 'up-to-date' && updater.currentVersion)
+            return updater.latestVersion
+                ? `You're up to date (v${updater.currentVersion})`
+                : `Current v${updater.currentVersion} · no releases published yet`
+        if (updater.status === 'error' && updater.error) return `Check failed: ${updater.error}`
+        return null
+    })
+    function checkForUpdateManual() {
+        void updater.checkForUpdate(true, notify)
+    }
+
     const TABS = [
         { key: 'appearance', label: 'Appearance' },
         { key: 'general', label: 'General' },
@@ -118,6 +138,7 @@
     const tab = ref(props.initialTab ?? 'appearance')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
+    const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
     const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
 
@@ -727,6 +748,51 @@
                                 {{ option.label }}
                             </button>
                         </div>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-download
+                                width="13"
+                                height="13" />
+                            Updates
+                        </strong>
+                        <span class="setting-label">Check for updates every</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in UPDATE_OPTIONS"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.updateCheckHours === option.value }"
+                                @click="ui.updateCheckHours = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                        <div class="tools-actions">
+                            <button
+                                class="btn small"
+                                :disabled="updateChecking"
+                                title="Check GitHub Releases for a newer version now"
+                                @click="checkForUpdateManual()">
+                                <i-lucide-refresh-cw
+                                    v-if="!updateChecking"
+                                    width="13"
+                                    height="13" />
+                                <ThinkSpinner
+                                    v-else
+                                    compact />
+                                {{ updateChecking ? 'Checking…' : 'Check now' }}
+                            </button>
+                            <span
+                                v-if="updateStatus"
+                                class="setting-hint"
+                                >{{ updateStatus }}</span
+                            >
+                        </div>
+                        <span class="setting-hint">
+                            Off = manual check only. Automatic install lands with the Setup .exe build; portable and macOS stay manual.
+                        </span>
                     </div>
 
                     <div class="tools-section">

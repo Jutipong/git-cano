@@ -49,6 +49,10 @@ export const DEFAULT_FILE_VIEW_MODE: FileViewMode = 'tree'
 export const REFRESH_INTERVAL_OPTIONS = [3, 5, 10, 15, 20, 24, 30]
 export const DEFAULT_REFRESH_INTERVAL = 5
 
+/** Update-check interval options, in hours. 0 = off (manual check only). */
+export const UPDATE_CHECK_HOURS_OPTIONS = [0, 1, 4, 6, 12, 24]
+export const DEFAULT_UPDATE_CHECK_HOURS = 6
+
 /** Toast auto-dismiss options, in seconds. */
 export const TOAST_DURATION_OPTIONS = [10, 20, 30, 40, 50, 60]
 export const DEFAULT_TOAST_DURATION_SEC = 10
@@ -129,6 +133,11 @@ export const useUiStore = defineStore(
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
         watchEffect(() => {
             if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+        })
+        const updateCheckHours = ref(DEFAULT_UPDATE_CHECK_HOURS)
+        watchEffect(() => {
+            if (!UPDATE_CHECK_HOURS_OPTIONS.includes(updateCheckHours.value))
+                updateCheckHours.value = DEFAULT_UPDATE_CHECK_HOURS
         })
         const toastDurationSec = ref(DEFAULT_TOAST_DURATION_SEC)
         watchEffect(() => {
@@ -294,6 +303,7 @@ export const useUiStore = defineStore(
 
         function resetGeneral() {
             refreshInterval.value = DEFAULT_REFRESH_INTERVAL
+            updateCheckHours.value = DEFAULT_UPDATE_CHECK_HOURS
             toastDurationSec.value = DEFAULT_TOAST_DURATION_SEC
         }
 
@@ -322,6 +332,7 @@ export const useUiStore = defineStore(
             aiRunRequest,
             tagPushToOrigin,
             refreshInterval,
+            updateCheckHours,
             toastDurationSec,
             fontSize,
             zoom,
@@ -362,6 +373,7 @@ export const useUiStore = defineStore(
                 'formatBeforeGenerate',
                 'tagPushToOrigin',
                 'refreshInterval',
+                'updateCheckHours',
                 'toastDurationSec',
                 'fontSize',
                 'zoom',
