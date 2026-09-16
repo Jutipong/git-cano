@@ -3,6 +3,7 @@
     import ILucideCheck from '~icons/lucide/check'
     import ILucideLock from '~icons/lucide/lock'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
+    import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
 
     import { useUiStore, COMMIT_COLUMN_DEFAULTS, type CommitColumn } from '../stores/ui'
     import { formatDatePattern } from '../utils/format'
@@ -45,6 +46,9 @@
     <div class="modal-overlay">
         <div class="graph-settings-modal">
             <div class="rebase-modal-header">
+                <i-lucide-sliders-horizontal
+                    width="17"
+                    height="17" />
                 <strong>Commit history settings</strong>
                 <span class="spacer" />
                 <button
@@ -67,8 +71,8 @@
                         class="graph-settings-check"
                         aria-hidden="true">
                         <i-lucide-check
-                            width="11"
-                            height="11"
+                            width="12"
+                            height="12"
                             :stroke-width="3" />
                     </span>
                     <span class="graph-settings-label">
@@ -108,7 +112,7 @@
             </div>
             <div class="graph-settings-actions">
                 <button
-                    class="btn small"
+                    class="btn"
                     title="Restore default columns and date format"
                     @click="ui.resetCommitColumns()">
                     <i-lucide-rotate-ccw
@@ -118,7 +122,7 @@
                 </button>
                 <span class="spacer" />
                 <button
-                    class="btn primary small"
+                    class="btn primary"
                     @click="emit('close')">
                     <i-lucide-check
                         width="13"

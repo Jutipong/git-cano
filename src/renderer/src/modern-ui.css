@@ -5238,13 +5238,18 @@ body {
 .graph-settings-modal {
     display: flex;
     flex-direction: column;
-    width: min(380px, 92vw);
+    width: min(400px, 92vw);
     max-height: 82vh;
     overflow: hidden;
     background: var(--surface-1);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-card);
     box-shadow: 0 18px 50px var(--shadow);
+}
+
+.graph-settings-modal .rebase-modal-header > svg:first-child {
+    flex: none;
+    color: var(--blue);
 }
 
 .graph-settings-body {
@@ -5296,8 +5301,8 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 15px;
-    height: 15px;
+    width: 18px;
+    height: 18px;
     border-radius: 4px;
     background: var(--teal);
     color: #fff;
@@ -5348,7 +5353,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    margin: 2px 0 4px 30px;
+    margin: 2px 0 4px 40px;
 }
 
 .graph-settings-format-label {
@@ -5359,10 +5364,10 @@ body {
 }
 
 .graph-settings-format-input {
-    padding: 6px 10px;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
-    border-radius: 8px;
+    padding: 7px 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
     color: var(--text);
     font-family: var(--font-mono);
     font-size: 12px;
@@ -5705,6 +5710,13 @@ body {
 
 .setting-chip.active {
     background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+
+/* settings fields speak the same pill language as the create-form inputs */
+.tools-body input,
+.tools-body select {
+    padding: 7px 12px;
+    border-radius: var(--radius-pill);
 }
 
 .setting-toggle {

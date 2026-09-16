@@ -616,8 +616,8 @@
             <div class="rebase-modal-header">
                 <strong class="tools-modal-title">
                     <i-lucide-settings2
-                        width="15"
-                        height="15" />
+                        width="17"
+                        height="17" />
                     Settings
                 </strong>
                 <span class="spacer" />
