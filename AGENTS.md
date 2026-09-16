@@ -197,6 +197,11 @@ Key files:
   `AppRadio` in a `v-for` must bind `:value="opt.value"` — without it no option ever matches
   and clicks emit the garbage value `"on"`. The local-changes choice lives in persisted
   `ui.localChangesMode` (default `stash`), shared by branch create and switch.
+- **Settings-family modals keep their own structure**: `ToolsModal.vue` (620px, teal identity,
+  dense `btn small` buttons, section cards) and `GraphSettingsModal.vue` (400px) stay on
+  `.rebase-modal`/`.modal-overlay` — only the create forms use the confirm family. Their text
+  inputs/selects still speak the same pill language (`7px 12px`, `var(--radius-pill)`), header
+  icons are `17px`, and the readonly column checks match the `18px` checkbox boxes.
 
 ## Keyboard shortcuts
 
