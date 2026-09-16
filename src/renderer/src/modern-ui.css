@@ -5022,16 +5022,13 @@ body {
 }
 
 .toast-close-count {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
     font-size: 10px;
     font-weight: 700;
-    line-height: 1;
+    fill: currentColor;
+    text-anchor: middle;
+    dominant-baseline: central;
     font-variant-numeric: tabular-nums;
     pointer-events: none;
-    transform: translateY(-1px);
 }
 
 /* Countdown digit swap: soft fade between seconds. */
@@ -5066,7 +5063,6 @@ body {
     position: absolute;
     inset: 0;
     margin: auto;
-    transform: rotate(-90deg);
     width: 22px;
     height: 22px;
 }
@@ -5083,6 +5079,9 @@ body {
 .toast-ring-progress {
     stroke: var(--toast-accent, var(--teal));
     stroke-linecap: round;
+    transform: rotate(-90deg);
+    transform-box: fill-box;
+    transform-origin: center;
     transition: stroke-dashoffset 50ms linear;
 }
 

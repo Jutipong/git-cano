@@ -717,20 +717,25 @@
                                 r="9"
                                 :stroke-dasharray="2 * Math.PI * 9"
                                 :stroke-dashoffset="2 * Math.PI * 9 * (1 - t.progress)" />
+                            <!-- Countdown digit lives in the same SVG as the ring so both share one coordinate system -->
+                            <Transition
+                                name="toast-count"
+                                mode="out-in">
+                                <text
+                                    :key="countdownSeconds(t)"
+                                    class="toast-close-count"
+                                    x="11"
+                                    y="11"
+                                    text-anchor="middle"
+                                    dominant-baseline="central">
+                                    {{ countdownSeconds(t) }}
+                                </text>
+                            </Transition>
                             <!-- X lives in the same SVG as the ring so both stay exactly concentric -->
                             <path
                                 class="toast-close-x"
                                 d="M14.5 7.5L7.5 14.5M7.5 7.5l7 7" />
                         </svg>
-                        <Transition
-                            name="toast-count"
-                            mode="out-in">
-                            <span
-                                :key="countdownSeconds(t)"
-                                class="toast-close-count"
-                                >{{ countdownSeconds(t) }}</span
-                            >
-                        </Transition>
                     </button>
                 </div>
             </TransitionGroup>

@@ -336,9 +336,12 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   `t.progress`) with the remaining whole seconds (`.toast-close-count`, `countdownSeconds()` =
   `ceil(progress * durationMs / 1000)`) centered over it; hovering the toast pauses the
   countdown (`pauseToast`/`resumeToast` shift the deadline) and hovering the close button swaps
-  the digit for the X. The digit is an absolute overlay (`.toast-close-count` `inset: 0` +
-  `place-items: center`) so it stays concentric with the ring — a plain flow child drifts
-  off-center. Keep its swap as a plain opacity fade; a blur filter made the digit look soft on
+  the digit for the X. The digit is an SVG `<text>` inside the same `.toast-ring`
+  (`x/y=11`, `text-anchor=middle`, `dominant-baseline=central`) so it shares one
+  coordinate system with the ring — the old HTML absolute overlay drifted on macOS
+  because SF vs Segoe UI line-box metrics differ. Keep the ring upright by rotating
+  only `.toast-ring-progress` (`transform-box: fill-box`), never the whole SVG.
+  Keep its swap as a plain opacity fade; a blur filter made the digit look soft on
   low-clarity Windows displays (removed on purpose).
 - **Undo toasts** (`utils/undo.ts` → `notifyUndoable`): commit/amend, revert, squash, soft/mixed reset,
   rebase (native + interactive), cherry-pick, merge, and stash delete journal their pre-op state in
