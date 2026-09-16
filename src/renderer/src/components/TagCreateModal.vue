@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
 
     import { useRepoStore } from '../stores/repo'
@@ -20,9 +20,11 @@
     const busy = ref(false)
     const error = ref('')
     const ui = useUiStore()
+    const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
 
     onMounted(async () => {
         document.addEventListener('keydown', onKey)
+        nextTick(() => nameInput.value?.focus())
         try {
             const tags = await window.api.tags()
             existing.value = tags.map(tag => tag.name)
@@ -101,6 +103,7 @@
             </div>
             <div class="tag-modal-body">
                 <input
+                    ref="nameInput"
                     v-model="name"
                     autofocus
                     placeholder="Tag name"

@@ -184,6 +184,11 @@ Key files:
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
   The circle and the ✕ are drawn by the `CloseXIcon.vue` component (single SVG, always
   concentric) — don't swap it back for a plain `<i-lucide-x>` icon.
+- **Modal text inputs** take focus programmatically: `v-if` modals (`TagCreateModal.vue`,
+  `StashCreateModal.vue`, `CloneRepoModal.vue`) use `useTemplateRef` + `nextTick(() => el?.focus())`
+  in `onMounted` — native `autofocus` alone only focuses the first open, never the reopen.
+  Persistently-mounted store modals (`PromptDialog.vue`, `ConfirmDialog.vue`, `ErrorDialog.vue`)
+  focus via `watch(..., { flush: 'post' })` instead.
 
 ## Keyboard shortcuts
 
