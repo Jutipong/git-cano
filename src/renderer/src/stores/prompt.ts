@@ -6,6 +6,8 @@ import type { LocalChangesMode } from '@shared/types'
 export interface PromptOptions {
     title: string
     message?: string
+    /** Short context chip shown in the header (e.g. short hash or branch name), styled like the tag modal's chip. */
+    chip?: string
     placeholder?: string
     defaultValue?: string
     confirmLabel?: string

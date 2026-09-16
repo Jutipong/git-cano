@@ -1,12 +1,12 @@
 <script setup lang="ts">
     import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
+    import ILucideTag from '~icons/lucide/tag'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import AppCheckbox from './AppCheckbox.vue'
-    import CloseXIcon from './CloseXIcon.vue'
 
     const props = defineProps<{
         commit: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -39,12 +39,11 @@
     const head = computed(() => {
         const branch = props.commit.branchName?.trim() ?? ''
         if (branch) return branch.length > 48 ? `${branch.slice(0, 48).trimEnd()}…` : branch
-        const short = props.commit.shortHash?.trim() || props.commit.hash?.slice(0, 7) || ''
-        const s = props.commit.subject?.trim() ?? ''
-        const truncated = s.length > 48 ? `${s.slice(0, 48).trimEnd()}…` : s
-        if (short && truncated) return `${short} — ${truncated}`
-        return short || truncated
+        return props.commit.shortHash?.trim() || props.commit.hash?.slice(0, 7) || ''
     })
+
+    /** Full hover text — the header itself only shows the branch name or short hash. */
+    const headTitle = computed(() => props.commit.subject?.trim() || props.commit.hash || '')
 
     const TAG_NAME_FORBIDDEN = /[\s~^:?*[\]\\]/
 
@@ -89,58 +88,61 @@
 </script>
 
 <template>
-    <div class="modal-overlay">
-        <div class="rebase-modal tag-modal">
-            <div class="rebase-modal-header">
+    <div class="confirm-dialog-overlay">
+        <div class="confirm-dialog tag-confirm">
+            <div class="confirm-dialog-header flow">
+                <i-lucide-tag
+                    width="17"
+                    height="17" />
                 <strong>Create tag</strong>
-                <code class="rebase-base">{{ head }}</code>
-                <span class="spacer" />
-                <button
-                    class="icon-btn danger commit-close-btn"
-                    @click="emit('close')">
-                    <CloseXIcon />
-                </button>
+                <code
+                    class="rebase-base prompt-chip"
+                    :title="headTitle"
+                    >{{ head }}</code
+                >
             </div>
-            <div class="tag-modal-body">
+            <div class="confirm-dialog-body">
                 <input
                     ref="nameInput"
                     v-model="name"
+                    class="prompt-input"
                     autofocus
                     placeholder="Tag name"
+                    spellcheck="false"
                     @input="error = ''"
                     @keydown.enter="submit()" />
                 <AppCheckbox
                     v-model="ui.tagPushToOrigin"
-                    class="tag-create-annotated">
+                    class="prompt-option">
                     Push to origin
                 </AppCheckbox>
                 <div
                     v-if="isDuplicate"
-                    class="tag-modal-error">
+                    class="prompt-error">
                     Tag name already exists
                 </div>
                 <div
                     v-else-if="error"
-                    class="tag-modal-error">
+                    class="prompt-error">
                     {{ error }}
                 </div>
-                <div class="stash-create-actions tag-modal-actions">
-                    <button
-                        class="btn small"
-                        :disabled="busy"
-                        @click="emit('close')">
-                        Cancel
-                    </button>
-                    <button
-                        class="btn primary small"
-                        :disabled="!name.trim() || busy"
-                        @click="submit()">
-                        <i-lucide-check
-                            width="13"
-                            height="13" />
-                        Create
-                    </button>
-                </div>
+            </div>
+            <div class="confirm-dialog-actions">
+                <button
+                    class="btn"
+                    :disabled="busy"
+                    @click="emit('close')">
+                    Cancel
+                </button>
+                <button
+                    class="btn primary"
+                    :disabled="!name.trim() || busy"
+                    @click="submit()">
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
+                    Create
+                </button>
             </div>
         </div>
     </div>

@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, watchEffect } from 'vue'
 
+import type { LocalChangesMode } from '@shared/types'
+
 import {
     SHORTCUT_DEFAULTS,
     SHORTCUT_PLATFORMS,
@@ -130,6 +132,11 @@ export const useUiStore = defineStore(
         const aiRunRequest = ref<AiCommitMode | null>(null)
         /** Push a newly created tag to origin (Create tag modal checkbox). */
         const tagPushToOrigin = ref(false)
+        /** What to do with local changes on branch create/switch — remembered across sessions. */
+        const localChangesMode = ref<LocalChangesMode>('stash')
+        watchEffect(() => {
+            if (!['keep', 'stash', 'discard'].includes(localChangesMode.value)) localChangesMode.value = 'stash'
+        })
         const refreshInterval = ref(DEFAULT_REFRESH_INTERVAL)
         watchEffect(() => {
             if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
@@ -331,6 +338,7 @@ export const useUiStore = defineStore(
             formatBeforeGenerate,
             aiRunRequest,
             tagPushToOrigin,
+            localChangesMode,
             refreshInterval,
             updateCheckHours,
             toastDurationSec,
@@ -372,6 +380,7 @@ export const useUiStore = defineStore(
                 'aiCommitMode',
                 'formatBeforeGenerate',
                 'tagPushToOrigin',
+                'localChangesMode',
                 'refreshInterval',
                 'updateCheckHours',
                 'toastDurationSec',

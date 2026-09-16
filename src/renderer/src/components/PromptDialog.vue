@@ -4,17 +4,19 @@
     import ILucideGitBranch from '~icons/lucide/git-branch'
 
     import { usePromptStore, type PromptResult } from '../stores/prompt'
+    import { useUiStore } from '../stores/ui'
     import AppCheckbox from './AppCheckbox.vue'
     import AppRadio from './AppRadio.vue'
 
     import type { LocalChangesMode } from '@shared/types'
 
     const promptStore = usePromptStore()
+    const ui = useUiStore()
     const input = ref<HTMLInputElement | null>(null)
     const value = ref('')
     const error = ref('')
     const checkout = ref(true)
-    const localChanges = ref<LocalChangesMode>('stash')
+    const localChanges = ref<LocalChangesMode>(ui.localChangesMode ?? 'stash')
 
     const LOCAL_CHANGE_OPTIONS: { value: LocalChangesMode; label: string }[] = [
         { value: 'keep', label: "Don't change" },
@@ -67,11 +69,15 @@
             value.value = current?.defaultValue ?? ''
             error.value = ''
             checkout.value = current?.branchOptions?.checkout ?? true
-            localChanges.value = current?.branchOptions?.localChanges ?? 'stash'
+            localChanges.value = ui.localChangesMode ?? 'stash'
             if (current) input.value?.focus()
         },
         { flush: 'post' }
     )
+
+    watch(localChanges, value => {
+        ui.localChangesMode = value
+    })
 
     onMounted(() => document.addEventListener('keydown', onKey))
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
@@ -82,11 +88,17 @@
         v-if="promptStore.current"
         class="confirm-dialog-overlay">
         <div class="confirm-dialog">
-            <div class="confirm-dialog-header">
+            <div class="confirm-dialog-header flow">
                 <i-lucide-git-branch
                     width="17"
                     height="17" />
                 <strong>{{ promptStore.current.title }}</strong>
+                <code
+                    v-if="promptStore.current.chip"
+                    class="rebase-base prompt-chip"
+                    :title="promptStore.current.chip"
+                    >{{ promptStore.current.chip }}</code
+                >
             </div>
             <div class="confirm-dialog-body">
                 <pre v-if="promptStore.current.message">{{ promptStore.current.message }}</pre>
@@ -116,6 +128,7 @@
                             v-for="opt in LOCAL_CHANGE_OPTIONS"
                             :key="opt.value"
                             v-model="localChanges"
+                            :value="opt.value"
                             name="prompt-local-changes"
                             class="prompt-option"
                             :disabled="!checkout">

@@ -4,12 +4,14 @@
     import ILucideGitBranch from '~icons/lucide/git-branch'
 
     import { useSwitchStore } from '../stores/switch'
+    import { useUiStore } from '../stores/ui'
     import AppRadio from './AppRadio.vue'
 
     import type { LocalChangesMode } from '@shared/types'
 
     const switchStore = useSwitchStore()
-    const localChanges = ref<LocalChangesMode>('stash')
+    const ui = useUiStore()
+    const localChanges = ref<LocalChangesMode>(ui.localChangesMode ?? 'stash')
 
     const LOCAL_CHANGE_OPTIONS: { value: LocalChangesMode; label: string }[] = [
         { value: 'keep', label: "Don't change" },
@@ -26,10 +28,14 @@
     watch(
         () => switchStore.current,
         current => {
-            if (current) localChanges.value = 'stash'
+            if (current) localChanges.value = ui.localChangesMode ?? 'stash'
         },
         { flush: 'post' }
     )
+
+    watch(localChanges, value => {
+        ui.localChangesMode = value
+    })
 
     onMounted(() => document.addEventListener('keydown', onKey))
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
@@ -40,7 +46,7 @@
         v-if="switchStore.current"
         class="confirm-dialog-overlay">
         <div class="confirm-dialog">
-            <div class="confirm-dialog-header">
+            <div class="confirm-dialog-header flow">
                 <i-lucide-git-branch
                     width="17"
                     height="17" />
@@ -62,6 +68,7 @@
                         v-for="opt in LOCAL_CHANGE_OPTIONS"
                         :key="opt.value"
                         v-model="localChanges"
+                        :value="opt.value"
                         name="switch-local-changes"
                         class="prompt-option">
                         {{ opt.label }}

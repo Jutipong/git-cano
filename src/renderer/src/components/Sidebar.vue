@@ -327,7 +327,7 @@
     async function createBranchHere(branch: LocalBranchMenuState['branch']) {
         const result = await promptDialog({
             title: 'Create branch',
-            message: `New branch at "${branch.name}"`,
+            chip: branch.name,
             placeholder: 'branch name',
             confirmLabel: 'Create',
             existing: local.value.map(b => b.name),

@@ -3424,6 +3424,16 @@ body {
     border-color: var(--teal);
 }
 
+/* no message above the input anymore — drop the separating margin when first */
+.confirm-dialog-body > input.prompt-input:first-child {
+    margin-top: 0;
+}
+
+/* branch-option checkbox sits right under the input — give it breathing room */
+.confirm-dialog-body .prompt-input + .prompt-option {
+    margin-top: 12px;
+}
+
 .prompt-error {
     margin-top: 6px;
     color: var(--red);
@@ -3434,7 +3444,7 @@ body {
     display: flex;
     align-items: center;
     gap: 7px;
-    margin-top: 8px;
+    margin-top: 6px;
     font-size: 12px;
     color: var(--text);
     cursor: pointer;
@@ -3444,8 +3454,21 @@ body {
 .prompt-local-changes {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 9px 12px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
+}
+
+.prompt-local-changes .prompt-option {
+    margin-top: 0;
+}
+
+.prompt-local-changes .prompt-local-label {
+    margin-top: 0;
+    margin-bottom: 3px;
 }
 
 .prompt-local-changes.disabled {
@@ -3929,21 +3952,16 @@ body {
     opacity: 0.45;
 }
 
-.tag-modal {
-    width: min(360px, 92vw);
-}
-
-.tag-modal .rebase-base {
-    flex: 0 1 auto;
-    min-width: 0;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .tag-modal-body {
     padding: 10px 14px;
+}
+
+/* same pill input language as the branch prompt */
+.tag-modal-body > input:not([type='checkbox']) {
+    padding: 7px 12px;
+    border-color: var(--line-soft);
+    border-radius: var(--radius-pill);
+    font-size: 12px;
 }
 
 .squash-modal {
@@ -4332,6 +4350,16 @@ body {
     box-shadow: 0 24px 80px var(--shadow);
 }
 
+/* prompt form dialogs (branch create) fit tighter than generic confirms */
+.confirm-dialog:has(.prompt-input) {
+    width: min(400px, 92vw);
+}
+
+/* create-tag dialog — same family and width as the branch prompt */
+.confirm-dialog.tag-confirm {
+    width: min(400px, 92vw);
+}
+
 .confirm-dialog-header {
     display: flex;
     align-items: center;
@@ -4367,6 +4395,15 @@ body {
 .confirm-dialog-header strong {
     color: var(--text);
     font-size: 13px;
+}
+
+/* optional header context chip (branch dialog) — same language as the tag modal */
+.confirm-dialog-header .prompt-chip {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .confirm-dialog-body {
@@ -6787,7 +6824,9 @@ body {
     --cbx-size: 18px;
     --cbx-color: var(--teal);
     --cbx-border: var(--line);
-    --cbx-halo: var(--surface-1);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 }
 
 /* keep the native input in the DOM (focusable) but invisible */
@@ -6815,68 +6854,34 @@ body {
     border: calc(var(--cbx-size) * 0.1) solid var(--cbx-border);
     border-radius: calc(var(--cbx-size) * 0.2);
     background: transparent;
-    transition: border-color ease 0.2s;
+    transition: background-color ease 0.15s, border-color ease 0.15s;
     cursor: pointer;
 }
 
-.cbx19 .check-box::before,
+/* single classic check drawn with borders — sized to always fit inside the box */
 .cbx19 .check-box::after {
     position: absolute;
     box-sizing: border-box;
-    height: 0;
-    width: calc(var(--cbx-size) * 0.2);
-    border-radius: calc(var(--cbx-size) * 0.1);
-    background: var(--cbx-color);
-    content: ' ';
-    transform-origin: left top;
-}
-
-.cbx19 .check-box::before {
-    top: calc(var(--cbx-size) * 0.72);
-    left: calc(var(--cbx-size) * 0.41);
-    box-shadow: 0 0 0 calc(var(--cbx-size) * 0.05) var(--cbx-halo);
-    transform: rotate(-135deg);
-}
-
-.cbx19 .check-box::after {
-    top: calc(var(--cbx-size) * 0.37);
-    left: calc(var(--cbx-size) * 0.05);
-    transform: rotate(-45deg);
-}
-
-@keyframes cbx19-bottom-check {
-    0% {
-        height: 0;
-    }
-    100% {
-        height: calc(var(--cbx-size) / 2);
-    }
-}
-
-@keyframes cbx19-top-check {
-    0% {
-        height: 0;
-    }
-    50% {
-        height: 0;
-    }
-    100% {
-        height: calc(var(--cbx-size) * 1.2);
-    }
+    left: calc(var(--cbx-size) * 0.28);
+    top: calc(var(--cbx-size) * 0.14);
+    width: calc(var(--cbx-size) * 0.28);
+    height: calc(var(--cbx-size) * 0.52);
+    border: solid #fff;
+    border-width: 0 calc(var(--cbx-size) * 0.11) calc(var(--cbx-size) * 0.11) 0;
+    content: '';
+    transform: rotate(45deg) scale(0.6);
+    opacity: 0;
+    transition: opacity ease 0.15s, transform ease 0.15s;
 }
 
 .cbx19 input[type='checkbox']:checked + .check-box {
+    background: var(--cbx-color);
     border-color: var(--cbx-color);
 }
 
 .cbx19 input[type='checkbox']:checked + .check-box::after {
-    height: calc(var(--cbx-size) / 2);
-    animation: cbx19-bottom-check 0.2s ease 0s forwards;
-}
-
-.cbx19 input[type='checkbox']:checked + .check-box::before {
-    height: calc(var(--cbx-size) * 1.2);
-    animation: cbx19-top-check 0.4s ease 0s forwards;
+    transform: rotate(45deg) scale(1);
+    opacity: 1;
 }
 
 /* ===== Round radio (AppRadio.vue) — colors follow project theme ===== */

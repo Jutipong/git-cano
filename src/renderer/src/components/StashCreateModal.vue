@@ -1,10 +1,10 @@
 <script setup lang="ts">
     import { nextTick, useTemplateRef, computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import ILucideArchive from '~icons/lucide/archive'
     import ILucideCheck from '~icons/lucide/check'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
-    import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -64,52 +64,51 @@
 </script>
 
 <template>
-    <div class="modal-overlay">
-        <div class="rebase-modal tag-modal">
-            <div class="rebase-modal-header">
+    <div class="confirm-dialog-overlay">
+        <div class="confirm-dialog">
+            <div class="confirm-dialog-header flow">
+                <i-lucide-archive
+                    width="17"
+                    height="17" />
                 <strong>Create stash</strong>
-                <span class="spacer" />
-                <button
-                    class="icon-btn danger commit-close-btn"
-                    @click="emit('close')">
-                    <CloseXIcon />
-                </button>
             </div>
-            <div class="tag-modal-body">
+            <div class="confirm-dialog-body">
                 <input
                     ref="messageInput"
                     v-model="message"
+                    class="prompt-input"
                     autofocus
                     placeholder="Stash message"
+                    spellcheck="false"
                     @input="error = ''"
                     @keydown.enter="submit()" />
                 <div
                     v-if="isDuplicate"
-                    class="tag-modal-error">
+                    class="prompt-error">
                     Stash name already exists
                 </div>
                 <div
                     v-else-if="error"
-                    class="tag-modal-error">
+                    class="prompt-error">
                     {{ error }}
                 </div>
-                <div class="stash-create-actions tag-modal-actions">
-                    <button
-                        class="btn small"
-                        :disabled="busy"
-                        @click="emit('close')">
-                        Cancel
-                    </button>
-                    <button
-                        class="btn primary small"
-                        :disabled="!message.trim() || isDuplicate || busy"
-                        @click="submit()">
-                        <i-lucide-check
-                            width="13"
-                            height="13" />
-                        Save
-                    </button>
-                </div>
+            </div>
+            <div class="confirm-dialog-actions">
+                <button
+                    class="btn"
+                    :disabled="busy"
+                    @click="emit('close')">
+                    Cancel
+                </button>
+                <button
+                    class="btn primary"
+                    :disabled="!message.trim() || isDuplicate || busy"
+                    @click="submit()">
+                    <i-lucide-check
+                        width="13"
+                        height="13" />
+                    Save
+                </button>
             </div>
         </div>
     </div>

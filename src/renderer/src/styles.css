@@ -717,6 +717,7 @@ kbd {
     vector-effect: non-scaling-stroke;
 }
 .commit-close-btn {
+    flex: none;
     margin-left: 10px;
 }
 .diff-close-btn {
@@ -1586,15 +1587,6 @@ kbd {
 }
 .tag-modal-body > input:focus {
     border-color: var(--teal);
-}
-.tag-create-annotated {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: var(--text-muted);
-    cursor: pointer;
-    user-select: none;
 }
 .tag-modal-error {
     color: var(--red);

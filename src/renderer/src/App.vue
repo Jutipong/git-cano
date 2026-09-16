@@ -397,7 +397,7 @@
             .catch(() => [] as string[])
         const result = await promptDialog({
             title: 'Create branch',
-            message: `New branch at ${commit.shortHash} — ${commit.subject}`,
+            chip: commit.shortHash,
             placeholder: 'branch name',
             confirmLabel: 'Create',
             existing,

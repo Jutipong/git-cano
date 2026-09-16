@@ -189,6 +189,14 @@ Key files:
   in `onMounted` — native `autofocus` alone only focuses the first open, never the reopen.
   Persistently-mounted store modals (`PromptDialog.vue`, `ConfirmDialog.vue`, `ErrorDialog.vue`)
   focus via `watch(..., { flush: 'post' })` instead.
+- **Create-form modals share the confirm family**: `TagCreateModal.vue`, `StashCreateModal.vue`
+  and `PromptDialog.vue` (branch create) all use `.confirm-dialog-overlay` + `.confirm-dialog`
+  + `.confirm-dialog-header.flow` (icon + title + optional `chip`/`prompt-chip` context) +
+  `.confirm-dialog-body` + `.confirm-dialog-actions` at `400px` (via `.tag-confirm` or
+  `:has(.prompt-input)`). Do not build new forms on `.rebase-modal`/`.tag-modal-body`.
+  `AppRadio` in a `v-for` must bind `:value="opt.value"` — without it no option ever matches
+  and clicks emit the garbage value `"on"`. The local-changes choice lives in persisted
+  `ui.localChangesMode` (default `stash`), shared by branch create and switch.
 
 ## Keyboard shortcuts
 
