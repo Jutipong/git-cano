@@ -5952,6 +5952,22 @@ body {
     margin-top: 2px;
 }
 
+/* Update download progress (Settings → General → Updates) */
+.update-progress {
+    height: 6px;
+    margin-top: 8px;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--teal) 18%, transparent);
+    border-radius: 999px;
+}
+
+.update-progress-bar {
+    height: 100%;
+    background: var(--teal);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
 /* Customizable shortcuts (Settings → Shortcuts) — two-column (macOS / Windows) like the help modal */
 .shortcut-list {
     display: flex;

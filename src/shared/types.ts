@@ -265,3 +265,11 @@ export interface GithubUser {
     publicRepos: number
     followers: number
 }
+
+/** Progress pushed from the main process while electron-updater downloads (Setup .exe only). */
+export interface UpdateProgress {
+    percent: number
+    bytesPerSecond: number
+    transferred: number
+    total: number
+}

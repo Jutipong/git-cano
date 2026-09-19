@@ -1,8 +1,9 @@
 {
   "name": "git-cano",
-  "version": "0.25.23-beta",
+  "version": "1.0.0",
   "description": "git-cano - a lightweight Git GUI with basic features",
   "author": "git-cano contributors",
+  "license": "MIT",
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
@@ -14,9 +15,10 @@
     "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
     "format": "oxfmt --write --ignore-path .oxfmtignore",
     "dist:mac": "electron-vite build && electron-builder --mac dmg",
-    "dist:win": "electron-vite build && electron-builder --win portable"
+    "dist:win": "electron-vite build && electron-builder --win nsis"
   },
   "dependencies": {
+    "electron-updater": "^6.8.9",
     "pinia": "^4.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",
     "simple-git": "^3.36.0",
@@ -85,15 +87,25 @@
       "icon": "build/icons/cano.ico",
       "target": [
         {
-          "target": "portable",
+          "target": "nsis",
           "arch": [
             "x64"
           ]
         }
       ]
     },
-    "portable": {
-      "artifactName": "git-cano-${version}-portable.exe"
-    }
+    "nsis": {
+      "artifactName": "git-cano-${version}-setup.exe",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "Jutipong",
+        "repo": "open-git"
+      }
+    ]
   }
 }

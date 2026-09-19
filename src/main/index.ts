@@ -135,6 +135,7 @@ import {
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
 import { cancelModelCall, generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
+import { downloadUpdate, initAutoUpdater, installUpdate, isAutoUpdateSupported, openReleasePage } from './updater'
 
 import type { LocalChangesMode, MergeMode } from '@shared/types'
 
@@ -517,6 +518,14 @@ function setupMenu(): void {
 app.whenReady().then(() => {
     log('info', 'app', `ready (version ${app.getVersion()}, log level ${process.env.GIT_CANO_LOG_LEVEL ?? 'auto'})`)
     setupMenu()
+    initAutoUpdater(() => win)
+    handle('update:canAuto', () => isAutoUpdateSupported())
+    handle('update:download', () => downloadUpdate())
+    handle('update:install', () => {
+        installUpdate()
+        return true
+    })
+    handle('update:openRelease', (_url: string) => openReleasePage(String(_url ?? '')))
     setStatusAccelerators(readAppSettings().statusAccelerators === true)
     handle('app:getStatusAccelerators', () => getStatusAccelerators())
     handle('app:setStatusAccelerators', (_v: boolean) => {

@@ -29,6 +29,7 @@ import type {
     LocalChangesMode,
     OpenInTargets,
     RepoState,
+    UpdateProgress,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -58,6 +59,25 @@ const api = {
     setStatusAccelerators: (enabled: boolean): Promise<boolean> => call('app:setStatusAccelerators', enabled),
     getDefaultOpenDir: (): Promise<string> => call('app:getDefaultOpenDir'),
     setDefaultOpenDir: (dir: string): Promise<boolean> => call('app:setDefaultOpenDir', dir),
+    updateCanAuto: (): Promise<boolean> => call('update:canAuto'),
+    updateDownload: (): Promise<string> => call('update:download'),
+    updateInstall: (): Promise<boolean> => call('update:install'),
+    openReleasePage: (url: string): Promise<void> => call('update:openRelease', url),
+    onUpdateProgress: (callback: (progress: UpdateProgress) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, progress: UpdateProgress) => callback(progress)
+        ipcRenderer.on('update:progress', listener)
+        return () => ipcRenderer.removeListener('update:progress', listener)
+    },
+    onUpdateDownloaded: (callback: (payload: { version: string }) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, payload: { version: string }) => callback(payload)
+        ipcRenderer.on('update:downloaded', listener)
+        return () => ipcRenderer.removeListener('update:downloaded', listener)
+    },
+    onUpdateError: (callback: (message: string) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, message: string) => callback(message)
+        ipcRenderer.on('update:error', listener)
+        return () => ipcRenderer.removeListener('update:error', listener)
+    },
     status: (): Promise<RepoStatus> => call('repo:status'),
     log: (limit?: number): Promise<CommitNode[]> => call('repo:log', limit),
     logCached: (limit?: number): Promise<CommitNode[] | null> => call('repo:logCached', limit),

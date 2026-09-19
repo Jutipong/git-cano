@@ -142,13 +142,13 @@ pnpm dev
 | `pnpm lint`      | 🧹 oxlint + vue-tsc                     |
 | `pnpm format`    | 💅 Format with oxfmt                    |
 | `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`            |
-| `pnpm dist:win`  | 🪟 Windows portable `.exe` → `release/` |
+| `pnpm dist:win`  | 🪟 Windows Setup `.exe` → `release/` |
 
 ## 📥 Install
 
 Download the latest release from **GitHub Releases** (`Jutipong/open-git`):
 
-- 🪟 **Windows** — `git-cano-<version>-portable.exe`, just run it (no install). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
+- 🪟 **Windows** — `git-cano-<version>-setup.exe`, run the installer (auto-updates in-app). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
 - 🍎 **macOS (Apple Silicon)** — open the `.dmg`, drag `Git Cano` into Applications. It's unsigned, so on first launch run:
   ```bash
   xattr -cr /Applications/Git\ Cano.app
@@ -184,5 +184,5 @@ src/
 ## 📝 Good to know
 
 - 🌙 Remote tag status needs `origin` + network — it loads in the background on purpose.
-- 📦 Releases ship as macOS `.dmg` (arm64) → `release/` via `pnpm dist:mac`, and Windows portable `git-cano-<version>-portable.exe` via `pnpm dist:win` (asar + maximum compression).
+- 📦 Releases ship as macOS `.dmg` (arm64) → `release/` via `pnpm dist:mac`, and Windows Setup `git-cano-<version>-setup.exe` via `pnpm dist:win` (NSIS, asar + maximum compression).
 - 🤖 Building with AI? Read [AGENTS.md](AGENTS.md) first!

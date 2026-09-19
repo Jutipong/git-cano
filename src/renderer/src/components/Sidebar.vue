@@ -50,9 +50,25 @@
     const ZOOM_CHOICES = [70, 80, 90, 100, 110, 125, 140, 150]
     const appVersion = ref('')
     const updater = useUpdaterStore()
+    const showUpdateButton = computed(() => updater.status === 'available' || updater.status === 'downloading' || updater.status === 'downloaded')
+    const updateButtonTitle = computed(() => {
+        if (updater.status === 'downloaded') return `Restart to install ${updater.downloadedVersion || updater.latestVersion}`
+        if (updater.canAuto === false) return `Update available: ${updater.latestVersion} — open Settings`
+        return `Download update ${updater.latestVersion}`
+    })
     function handleUpdateVersionClick() {
         repoStore.toolsTab = 'general'
         repoStore.toolsOpen = true
+    }
+    async function handleUpdateButtonClick() {
+        if (updater.status === 'downloaded') {
+            void updater.installUpdate(notify)
+            return
+        }
+        if (updater.status !== 'available') return
+        const auto = await updater.ensureAutoSupport()
+        if (auto) void updater.downloadUpdate(notify)
+        else handleUpdateVersionClick()
     }
     const zoomMenuOpen = ref(false)
     const zoomMenuRoot = ref<HTMLElement | null>(null)
@@ -73,6 +89,7 @@
                 appVersion.value = version
             })
             .catch(() => {})
+        void updater.ensureAutoSupport().catch(() => {})
         document.addEventListener('mousedown', onZoomMenuMouseDown)
         document.addEventListener('keydown', onZoomMenuKeyDown)
     })
@@ -884,15 +901,31 @@
                     >Version: {{ appVersion }}</span
                 >
                 <span
-                    v-if="appVersion && updater.status === 'available'"
+                    v-if="appVersion && showUpdateButton"
                     class="app-version-divider"
                     aria-hidden="true" />
                 <button
                     v-if="updater.status === 'available'"
                     class="toolbar-icon-button update-version-btn"
-                    :title="`Update available: ${updater.latestVersion} — open Settings`"
-                    @click="handleUpdateVersionClick">
+                    :title="updateButtonTitle"
+                    @click="handleUpdateButtonClick">
                     <i-codicon-desktop-download
+                        width="17"
+                        height="17" />
+                </button>
+                <button
+                    v-else-if="updater.status === 'downloading'"
+                    class="toolbar-icon-button update-version-btn"
+                    :title="`Downloading update… ${updater.progress}%`"
+                    @click="handleUpdateVersionClick">
+                    <ThinkSpinner compact />
+                </button>
+                <button
+                    v-else-if="updater.status === 'downloaded'"
+                    class="toolbar-icon-button update-version-btn"
+                    :title="updateButtonTitle"
+                    @click="handleUpdateButtonClick">
+                    <i-lucide-check
                         width="17"
                         height="17" />
                 </button>

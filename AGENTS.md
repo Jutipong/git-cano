@@ -13,7 +13,7 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm lint` — oxlint + vue-tsc; run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
 - `pnpm build` — production build (`out/`)
-- `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows portable `.exe` → `release/`
+- `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
 - Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
   icons `build/icons/cano.png` + per-OS `cano.icns` / `cano.ico`, `asar: true` with maximum
   compression. `files` ships `out/**/*` + `package.json` only (excludes `out/tsbuild`,
@@ -399,16 +399,26 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   `updater.checkForUpdate()` compares `tag_name` against `window.api.getVersion()`
   (leading `v` stripped, numeric segments, release beats prerelease).
 - Sidebar update button (`Sidebar.vue`, `codicon:desktop-download`, green
-  `.update-version-btn`) renders only on `updater.status === 'available'` — never on
-  version-loaded alone; its divider is gated the same way. Click jumps to
-  Settings → General → Updates (`repoStore.toolsTab = 'general'`).
+  `.update-version-btn`) renders on `available` (Download), `downloading` (spinner
+  with % title) and `downloaded` (check = restart to install) — never on
+  version-loaded alone; its divider is gated the same way. On macOS
+  (`updateCanAuto() === false`) the button jumps to Settings → General → Updates
+  (`repoStore.toolsTab = 'general'`) for a manual download instead.
+- In-app download/install (`downloading` → `downloaded`) works only in the installed
+  Windows build: `src/main/updater.ts` wraps `electron-updater` (`autoDownload: false`,
+  progress/error events forwarded as `update:progress` / `update:downloaded` /
+  `update:error`), exposed via `update:*` IPC (`preload/index.ts`, typed in
+  `shared/types.ts`). `isAutoUpdateSupported()` is win32 + packaged;
+  everything else falls back to `update:openRelease`.
 - Cadence lives in `ui.updateCheckHours` (`0` = manual only, default 6); `App.vue`
   schedules one silent check 30s after launch plus the interval, rescheduled on change.
-- Release flow per version: bump `package.json` version → `pnpm dist:win` (Windows) /
-  `pnpm dist:mac` (Mac, arm64 dmg) → `git tag v<version>` → GitHub Release from that
-  tag with the `release/` assets uploaded (`release/` is gitignored, never committed).
-  Portable and unsigned macOS builds stay manual-download; auto-install is a future
-  `electron-updater` + NSIS phase.
+  `checkForUpdate()` never clobbers an in-flight download or a staged install.
+- Release flow per version: bump `package.json` version → `pnpm dist:win` (Windows:
+  Setup `.exe` via NSIS) / `pnpm dist:mac` (Mac, arm64 dmg) →
+  `git tag v<version>` → GitHub Release from that tag with the `release/` assets
+  uploaded (`release/` is gitignored, never committed). The `latest.yml` next to the
+  Setup `.exe` is required — it is the electron-updater feed. Unsigned macOS builds stay
+  manual-download (SmartScreen/Gatekeeper bypass stays in README).
 
 ## Conventions
 

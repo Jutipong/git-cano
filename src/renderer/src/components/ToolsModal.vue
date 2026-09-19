@@ -109,14 +109,21 @@
         void persistDefaultOpenDir('')
     }
 
-    // Manual update check against GitHub Releases (auto-update via electron-updater lands later).
+    // Update check against GitHub Releases; the installed Windows build (Setup .exe)
+    // additionally downloads/installs in-app via electron-updater (see stores/updater).
     // State lives in the shared updater store so the sidebar button reacts to the same result.
     const updater = useUpdaterStore()
+    void updater.ensureAutoSupport().catch(() => {})
     const updateChecking = computed(() => updater.status === 'checking')
     const updateStatus = computed<string | null>(() => {
         if (updater.status === 'checking') return 'Checking…'
-        if (updater.status === 'available' && updater.currentVersion)
-            return `Update available: v${updater.currentVersion} → ${updater.latestVersion}`
+        if (updater.status === 'downloading') return `Downloading… ${updater.progress}%`
+        if (updater.status === 'downloaded')
+            return `Ready to install ${updater.downloadedVersion || updater.latestVersion} — restart to apply`
+        if (updater.status === 'available' && updater.currentVersion) {
+            const base = `Update available: v${updater.currentVersion} → ${updater.latestVersion}`
+            return updater.error ? `${base} · last download failed: ${updater.error}` : base
+        }
         if (updater.status === 'up-to-date' && updater.currentVersion)
             return updater.latestVersion
                 ? `You're up to date (v${updater.currentVersion})`
@@ -126,6 +133,15 @@
     })
     function checkForUpdateManual() {
         void updater.checkForUpdate(true, notify)
+    }
+    function downloadUpdateManual() {
+        void updater.downloadUpdate(notify)
+    }
+    function installUpdateManual() {
+        void updater.installUpdate(notify)
+    }
+    function openReleaseManual() {
+        void updater.openRelease(notify)
     }
 
     const TABS = [
@@ -784,14 +800,55 @@
                                     compact />
                                 {{ updateChecking ? 'Checking…' : 'Check now' }}
                             </button>
+                            <button
+                                v-if="updater.status === 'available' && updater.canAuto !== false"
+                                class="btn small"
+                                title="Download the update in the background"
+                                @click="downloadUpdateManual()">
+                                <i-lucide-download
+                                    width="13"
+                                    height="13" />
+                                Download
+                            </button>
+                            <button
+                                v-if="updater.status === 'available' && updater.canAuto === false"
+                                class="btn small"
+                                title="Open the release page to download manually"
+                                @click="openReleaseManual()">
+                                <i-lucide-external-link
+                                    width="13"
+                                    height="13" />
+                                Download
+                            </button>
+                            <button
+                                v-if="updater.status === 'downloaded'"
+                                class="btn small"
+                                title="Restart the app to install the downloaded update"
+                                @click="installUpdateManual()">
+                                <i-lucide-refresh-cw
+                                    width="13"
+                                    height="13" />
+                                Restart to install
+                            </button>
                             <span
                                 v-if="updateStatus"
                                 class="setting-hint"
                                 >{{ updateStatus }}</span
                             >
                         </div>
+                        <div
+                            v-if="updater.status === 'downloading'"
+                            class="update-progress"
+                            role="progressbar"
+                            :aria-valuenow="updater.progress"
+                            aria-valuemin="0"
+                            aria-valuemax="100">
+                            <div
+                                class="update-progress-bar"
+                                :style="{ width: `${updater.progress}%` }" />
+                        </div>
                         <span class="setting-hint">
-                            Off = manual check only. Automatic install lands with the Setup .exe build; portable and macOS stay manual.
+                            Off = manual check only. The installed Windows app downloads and installs here; macOS downloads manually.
                         </span>
                     </div>
 
