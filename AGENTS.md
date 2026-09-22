@@ -399,7 +399,7 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 
 ## Updates & releases
 
-- Update checks hit `GET repos/Jutipong/open-git/releases/latest` from the renderer
+- Update checks hit `GET repos/Jutipong/git-cano/releases/latest` from the renderer
   (CSP `connect-src` in `src/renderer/index.html` must keep allowing `api.github.com`).
   `updater.checkForUpdate()` compares `tag_name` against `window.api.getVersion()`
   (leading `v` stripped, numeric segments, release beats prerelease).

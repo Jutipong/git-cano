@@ -1,6 +1,6 @@
 {
   "name": "git-cano",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "git-cano - a lightweight Git GUI with basic features",
   "author": "git-cano contributors",
   "license": "MIT",
@@ -104,7 +104,7 @@
       {
         "provider": "github",
         "owner": "Jutipong",
-        "repo": "open-git"
+        "repo": "git-cano"
       }
     ]
   }

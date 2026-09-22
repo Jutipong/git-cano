@@ -234,7 +234,7 @@ async function callModel(
                         'content-type': 'application/json',
                         authorization: `Bearer ${token}`,
                         ...(provider === 'openrouter'
-                            ? { 'HTTP-Referer': 'https://github.com/jutipong/open-git', 'X-Title': 'git-cano' }
+                            ? { 'HTTP-Referer': 'https://github.com/jutipong/git-cano', 'X-Title': 'git-cano' }
                             : {}),
                     },
                     body: JSON.stringify(buildBody(family, provider, modelId, systemPrompt, userPrompt, budget, effort)),

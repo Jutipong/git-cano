@@ -3,7 +3,7 @@ import { ref } from 'vue'
 
 export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error'
 
-const RELEASES_URL = 'https://api.github.com/repos/Jutipong/open-git/releases/latest'
+const RELEASES_URL = 'https://api.github.com/repos/Jutipong/git-cano/releases/latest'
 
 function compareVersions(a: string, b: string): number {
     const norm = (v: string) =>

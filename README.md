@@ -146,7 +146,7 @@ pnpm dev
 
 ## 📥 Install
 
-Download the latest release from **GitHub Releases** (`Jutipong/open-git`):
+Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 
 - 🪟 **Windows** — `git-cano-<version>-setup.exe`, run the installer (auto-updates in-app). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
 - 🍎 **macOS (Apple Silicon)** — open the `.dmg`, drag `Git Cano` into Applications. It's unsigned, so on first launch run:
