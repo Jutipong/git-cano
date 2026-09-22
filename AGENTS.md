@@ -197,6 +197,11 @@ Key files:
   `AppRadio` in a `v-for` must bind `:value="opt.value"` — without it no option ever matches
   and clicks emit the garbage value `"on"`. The local-changes choice lives in persisted
   `ui.localChangesMode` (default `stash`), shared by branch create and switch.
+  The global `.busy-overlay` (z-80) sits **below** `.confirm-dialog-overlay` (z-90), so a create
+  modal that stays open during `withBusy` must show its own loading: swap the primary button's
+  icon for a compact `ThinkSpinner` with a phase label (`Creating…`/`Pushing…`/`Saving…`) and
+  disable its inputs (plus `AppCheckbox` via its `disabled` prop) — never raise the busy overlay,
+  it would bury `ErrorDialog` (also z-90).
 - **Settings-family modals keep their own structure**: `ToolsModal.vue` (620px, teal identity,
   dense `btn small` buttons, section cards) and `GraphSettingsModal.vue` (400px) stay on
   `.rebase-modal`/`.modal-overlay` — only the create forms use the confirm family. Their text

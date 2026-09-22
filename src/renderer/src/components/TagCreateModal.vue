@@ -7,6 +7,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import AppCheckbox from './AppCheckbox.vue'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     const props = defineProps<{
         commit: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -18,6 +19,7 @@
     const name = ref('')
     const existing = ref<string[]>([])
     const busy = ref(false)
+    const phase = ref<'create' | 'push'>('create')
     const error = ref('')
     const ui = useUiStore()
     const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
@@ -64,19 +66,31 @@
             return
         }
         busy.value = true
+        phase.value = 'create'
         error.value = ''
+        const transient = useUiTransientStore()
+        const push = ui.tagPushToOrigin
         try {
-            await useUiTransientStore().withBusy(() => window.api.createTag(trimmed, props.commit.hash ?? null), 'Creating tag…')
-            await repoStore.refresh()
-            if (ui.tagPushToOrigin) {
-                try {
-                    await useUiTransientStore().withBusy(() => window.api.pushTag(trimmed), 'Pushing tag…')
-                    notify(`Tag ${trimmed} created and pushed`, 'success')
-                } catch (pushErr) {
-                    notify(`Tag ${trimmed} created, but push failed: ${String(pushErr).replace(/^Error:\s*/, '')}`, 'error')
+            let pushError: string | null = null
+            await transient.withBusy(async () => {
+                await window.api.createTag(trimmed, props.commit.hash ?? null)
+                if (push) {
+                    transient.busy = 'Pushing tag…'
+                    phase.value = 'push'
+                    try {
+                        await window.api.pushTag(trimmed)
+                    } catch (pushErr) {
+                        pushError = String(pushErr).replace(/^Error:\s*/, '')
+                    }
                 }
-            } else {
+                await repoStore.refresh()
+            }, push ? 'Creating and pushing tag…' : 'Creating tag…')
+            if (!push) {
                 notify(`Tag ${trimmed} created`, 'success')
+            } else if (pushError) {
+                notify(`Tag ${trimmed} created, but push failed: ${pushError}`, 'error')
+            } else {
+                notify(`Tag ${trimmed} created and pushed`, 'success')
             }
             emit('close')
         } catch (err) {
@@ -109,11 +123,13 @@
                     autofocus
                     placeholder="Tag name"
                     spellcheck="false"
+                    :disabled="busy"
                     @input="error = ''"
                     @keydown.enter="submit()" />
                 <AppCheckbox
                     v-model="ui.tagPushToOrigin"
-                    class="prompt-option">
+                    class="prompt-option"
+                    :disabled="busy">
                     Push to origin
                 </AppCheckbox>
                 <div
@@ -138,10 +154,14 @@
                     class="btn primary"
                     :disabled="!name.trim() || busy"
                     @click="submit()">
+                    <ThinkSpinner
+                        v-if="busy"
+                        compact />
                     <i-lucide-check
+                        v-else
                         width="13"
                         height="13" />
-                    Create
+                    {{ busy ? (phase === 'push' ? 'Pushing…' : 'Creating…') : 'Create' }}
                 </button>
             </div>
         </div>

@@ -1,7 +1,9 @@
 import { app, shell, type BrowserWindow } from 'electron'
-import { autoUpdater } from 'electron-updater'
+import pkg, { type AppUpdater } from 'electron-updater'
 
 import { log } from './logger'
+
+const { autoUpdater } = pkg as unknown as { autoUpdater: AppUpdater }
 
 let getWin: () => BrowserWindow | null = () => null
 let started = false

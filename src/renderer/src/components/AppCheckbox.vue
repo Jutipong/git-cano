@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    defineProps<{ modelValue?: boolean }>()
+    defineProps<{ modelValue?: boolean; disabled?: boolean }>()
 
     const emit = defineEmits<{ (event: 'update:modelValue', value: boolean): void }>()
 
@@ -13,6 +13,7 @@
         <input
             type="checkbox"
             :checked="modelValue ?? false"
+            :disabled="disabled"
             @change="onChange" />
         <span
             class="check-box"

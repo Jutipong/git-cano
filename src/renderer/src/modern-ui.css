@@ -6856,6 +6856,11 @@ body {
     gap: 7px;
 }
 
+.cbx19:has(input[type='checkbox']:disabled) {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 /* keep the native input in the DOM (focusable) but invisible */
 .cbx19 input[type='checkbox'] {
     position: absolute;

@@ -5,6 +5,7 @@
 
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import ThinkSpinner from './ThinkSpinner.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -80,6 +81,7 @@
                     autofocus
                     placeholder="Stash message"
                     spellcheck="false"
+                    :disabled="busy"
                     @input="error = ''"
                     @keydown.enter="submit()" />
                 <div
@@ -104,10 +106,14 @@
                     class="btn primary"
                     :disabled="!message.trim() || isDuplicate || busy"
                     @click="submit()">
+                    <ThinkSpinner
+                        v-if="busy"
+                        compact />
                     <i-lucide-check
+                        v-else
                         width="13"
                         height="13" />
-                    Save
+                    {{ busy ? 'Saving…' : 'Save' }}
                 </button>
             </div>
         </div>
