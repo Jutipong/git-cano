@@ -307,7 +307,7 @@
                     if (combo) {
                         if (combo === ui.getShortcut('fetch')) {
                             event.preventDefault()
-                            void syncStore.fetch(repoStore.refresh)
+                            void syncStore.fetch(repoStore.refreshWithTags)
                             return
                         }
                         if (combo === ui.getShortcut('push')) {
@@ -317,7 +317,7 @@
                         }
                         if (combo === ui.getShortcut('pull')) {
                             event.preventDefault()
-                            void syncStore.pull(repoStore.refresh)
+                            void syncStore.pull(repoStore.refreshWithTags)
                             return
                         }
                     }

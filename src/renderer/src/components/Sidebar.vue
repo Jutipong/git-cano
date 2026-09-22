@@ -178,6 +178,18 @@
         }
     }
 
+    async function runWithTags(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
+        try {
+            await uiTransient.withBusy(async () => {
+                await fn()
+                await repoStore.refreshWithTags()
+            }, busyLabel)
+            notify(ok, 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
     async function runUndoable(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
         try {
             await uiTransient.withBusy(async () => {
@@ -279,7 +291,7 @@
                 danger: true,
             })
             if (!ok) return
-            void run(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
+            void runWithTags(() => window.api.deleteTag(tag.name), `Tag ${tag.name} deleted`)
             return
         }
         const result = await confirmDialogWithOption({
@@ -301,7 +313,7 @@
                         remoteError = String(error).replace(/^Error:\s*/, '')
                     }
                 }
-                await props.refresh()
+                await repoStore.refreshWithTags()
             })
             if (remoteError) notify(`Tag ${tag.name} deleted locally, but remote delete failed: ${remoteError}`, 'error')
             else notify(result.checked ? `Tag ${tag.name} deleted locally and on origin` : `Tag ${tag.name} deleted`, 'success')
@@ -321,10 +333,10 @@
         void run(() => window.api.pushBranch(branch.name), `Pushed ${branch.name}`)
     }
     function pullLocalBranch(branch: LocalBranchMenuState['branch']) {
-        void run(() => window.api.pullBranch(branch.name), `Pulled ${branch.name}`)
+        void runWithTags(() => window.api.pullBranch(branch.name), `Pulled ${branch.name}`)
     }
     function pullRebaseCurrentBranch(branch: LocalBranchMenuState['branch']) {
-        void run(() => window.api.pull(true), `Pulled ${branch.name} (rebase)`)
+        void runWithTags(() => window.api.pull(true), `Pulled ${branch.name} (rebase)`)
     }
     function rebaseOntoBranch(branch: LocalBranchMenuState['branch']) {
         emit('interactive-rebase', branch.name)
@@ -390,7 +402,7 @@
             })
             if (!ok) return
             pendingRemoteTag.value = tag.name
-            void run(() => window.api.pushTag(tag.name), `Tag ${tag.name} pushed`).finally(() => {
+            void runWithTags(() => window.api.pushTag(tag.name), `Tag ${tag.name} pushed`).finally(() => {
                 if (pendingRemoteTag.value === tag.name) pendingRemoteTag.value = null
             })
         })()
@@ -404,7 +416,7 @@
             })
             if (!ok) return
             pendingRemoteTag.value = tag.name
-            void run(() => window.api.deleteRemoteTag(tag.name), `Remote tag ${tag.name} deleted`).finally(() => {
+            void runWithTags(() => window.api.deleteRemoteTag(tag.name), `Remote tag ${tag.name} deleted`).finally(() => {
                 if (pendingRemoteTag.value === tag.name) pendingRemoteTag.value = null
             })
         })()

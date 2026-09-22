@@ -157,14 +157,14 @@
         const items: PaletteItem[] = []
         if (repoStore.repo) {
             items.push(
-                { id: 'pull', label: 'Pull', accent: 'blue', icon: ArrowDown, run: () => execute(() => syncStore.pull(repoStore.refresh)) },
+                { id: 'pull', label: 'Pull', accent: 'blue', icon: ArrowDown, run: () => execute(() => syncStore.pull(repoStore.refreshWithTags)) },
                 { id: 'push', label: 'Push', accent: 'green', icon: ArrowUp, run: () => execute(() => syncStore.push(repoStore.refresh)) },
                 {
                     id: 'fetch',
                     label: 'Fetch',
                     accent: 'orange',
                     icon: ArrowDownToLine,
-                    run: () => execute(() => syncStore.fetch(repoStore.refresh)),
+                    run: () => execute(() => syncStore.fetch(repoStore.refreshWithTags)),
                 }
             )
         }

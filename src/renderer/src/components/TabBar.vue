@@ -4,6 +4,7 @@
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ICatppuccinSearch from '~icons/catppuccin/search'
 
+    import { useRepoStore } from '../stores/repo'
     import { useSyncStore } from '../stores/sync'
     import { useUiStore } from '../stores/ui'
     import { formatCombo } from '../utils/shortcuts'
@@ -41,14 +42,15 @@
     const ui = useUiStore()
 
     const syncStore = useSyncStore()
+    const repoStore = useRepoStore()
     const syncBusy = computed(() => syncStore.busy)
 
     function actFetch() {
-        void syncStore.fetch(props.refresh)
+        void syncStore.fetch(repoStore.refreshWithTags)
     }
 
     function actPull() {
-        void syncStore.pull(props.refresh)
+        void syncStore.pull(repoStore.refreshWithTags)
     }
 
     function actPush() {

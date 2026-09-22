@@ -83,7 +83,7 @@
                         pushError = String(pushErr).replace(/^Error:\s*/, '')
                     }
                 }
-                await repoStore.refresh()
+                await repoStore.refreshWithTags()
             }, push ? 'Creating and pushing tag…' : 'Creating tag…')
             if (!push) {
                 notify(`Tag ${trimmed} created`, 'success')

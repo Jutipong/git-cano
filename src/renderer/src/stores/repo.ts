@@ -211,8 +211,11 @@ export const useRepoStore = defineStore('repo', () => {
         }
     }
 
-    async function refresh(precomputedStatus?: RepoStatus, switching = false) {
+    async function refresh(precomputedStatus?: RepoStatus, switching = false, withTags = false) {
         const targetPath = tabs.value[activeTab.value]?.path
+        // Tag reload is opt-in: tab switches always need fresh tags (single active list),
+        // other callers pass withTags only when the action actually touches tags.
+        const needTags = switching || withTags
         if (switching) {
             refreshingRepo.value = true
             loadingTags.value = true
@@ -237,12 +240,13 @@ export const useRepoStore = defineStore('repo', () => {
                     return window.api.log(limit)
                 }
             })()
+            const tagsPromise = needTags ? loadTags() : Promise.resolve(null)
             const [status, log, branches, state, tags, remote, focused] = await Promise.all([
                 precomputedStatus ? Promise.resolve(precomputedStatus) : window.api.status(),
                 logPromise,
                 window.api.branches(),
                 window.api.repoState(),
-                loadTags(),
+                tagsPromise,
                 window.api.hasRemote(),
                 solo ? window.api.soloFiles(solo, limit).catch(() => [] as string[]) : Promise.resolve(null),
             ])
@@ -254,13 +258,13 @@ export const useRepoStore = defineStore('repo', () => {
             hasMore.value = log.length >= limit
             repoState.value = state
             branchList.value = branches
-            tagList.value = tags
+            if (needTags && tags) tagList.value = tags
             hasRemote.value = remote
             loadedPath.value = status.path
             const index = tabs.value.findIndex(tab => tab.path === status.path)
             if (index >= 0) tabs.value[index].status = status
             // Remote tag lookup is network-bound; do not hold repository switching on it.
-            void loadRemoteTags(status.path)
+            if (needTags) void loadRemoteTags(status.path)
             return branches
         } catch (error) {
             // clear the loading overlay even on failure — the error dialog surfaces the problem
@@ -270,6 +274,14 @@ export const useRepoStore = defineStore('repo', () => {
         } finally {
             if (switching) refreshingRepo.value = false
         }
+    }
+
+    /**
+     * Full refresh that also reloads local + remote tags (fetch/pull/tag mutations/tab switches).
+     * Plain refresh() skips tags on purpose — most actions never touch them.
+     */
+    function refreshWithTags(precomputedStatus?: RepoStatus) {
+        return refresh(precomputedStatus, false, true)
     }
 
     /**
@@ -608,6 +620,7 @@ export const useRepoStore = defineStore('repo', () => {
         loadingRepo,
         addTab,
         refresh,
+        refreshWithTags,
         refreshStatusOnly,
         selectTab,
         setActive,
