@@ -158,7 +158,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 ## 🔄 Updates
 
 - **Settings → General → Updates**: pick how often the app checks GitHub Releases (`Off / 1h / 4h / 6h / 12h / 24h`, default `6h`), or press **Check now** anytime.
-- The download icon in the sidebar appears **only when a newer release is found** — clicking it jumps to Settings. Portable and macOS builds update by downloading the new file manually.
+- The update icons in the sidebar appear **only when a newer release is found** — an arrow-up icon to download the update, then a restart icon once downloaded (click = restart to install; on macOS it opens Settings for a manual download).
 
 ## 🗂️ How it's organized
 

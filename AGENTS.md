@@ -403,9 +403,9 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   (CSP `connect-src` in `src/renderer/index.html` must keep allowing `api.github.com`).
   `updater.checkForUpdate()` compares `tag_name` against `window.api.getVersion()`
   (leading `v` stripped, numeric segments, release beats prerelease).
-- Sidebar update button (`Sidebar.vue`, `codicon:desktop-download`, green
-  `.update-version-btn`) renders on `available` (Download), `downloading` (spinner
-  with % title) and `downloaded` (check = restart to install) — never on
+- Sidebar update button (`Sidebar.vue`, green `.update-version-btn`) renders on
+  `available` (`lucide:circle-arrow-up` = Download), `downloading` (spinner
+  with % title) and `downloaded` (`lucide:rotate-cw` = restart to install) — never on
   version-loaded alone; its divider is gated the same way. On macOS
   (`updateCanAuto() === false`) the button jumps to Settings → General → Updates
   (`repoStore.toolsTab = 'general'`) for a manual download instead.

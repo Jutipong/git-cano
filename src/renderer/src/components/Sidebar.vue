@@ -1,15 +1,16 @@
 <script setup lang="ts">
     import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
-    import ICodiconDesktopDownload from '~icons/codicon/desktop-download'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
     import ILucideChevronUp from '~icons/lucide/chevron-up'
+    import ILucideCircleArrowUp from '~icons/lucide/circle-arrow-up'
     import ILucideCloud from '~icons/lucide/cloud'
     import ILucideCloudOff from '~icons/lucide/cloud-off'
     import ILucideCrosshair from '~icons/lucide/crosshair'
     import ILucideGitBranch from '~icons/lucide/git-branch'
     import ILucideGlobe2 from '~icons/lucide/globe2'
+    import ILucideRotateCw from '~icons/lucide/rotate-cw'
     import ILucideSearch from '~icons/lucide/search'
     import ILucideSettings from '~icons/lucide/settings'
     import ILucideTag from '~icons/lucide/tag'
@@ -921,7 +922,7 @@
                     class="toolbar-icon-button update-version-btn"
                     :title="updateButtonTitle"
                     @click="handleUpdateButtonClick">
-                    <i-codicon-desktop-download
+                    <i-lucide-circle-arrow-up
                         width="17"
                         height="17" />
                 </button>
@@ -937,7 +938,7 @@
                     class="toolbar-icon-button update-version-btn"
                     :title="updateButtonTitle"
                     @click="handleUpdateButtonClick">
-                    <i-lucide-check
+                    <i-lucide-rotate-cw
                         width="17"
                         height="17" />
                 </button>
