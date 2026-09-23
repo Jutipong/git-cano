@@ -941,6 +941,9 @@
                         width="17"
                         height="17" />
                 </button>
+                <span
+                    class="app-version-divider"
+                    aria-hidden="true" />
                 <button
                     class="toolbar-icon-button"
                     :class="{ 'bisect-active': repoStore.repoState.bisectActive }"
