@@ -75,6 +75,11 @@
     const menu = ref<CommitMenuState | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
+    const sbw = ref(0)
+    function updateSbw() {
+        const el = scrollEl.value
+        sbw.value = el ? Math.max(0, el.offsetWidth - el.clientWidth) : 0
+    }
     const expandedHash = ref<string | null>(null)
 
     const expandedAbove = ref(false)
@@ -106,6 +111,22 @@
         }
     }
     onMounted(() => window.addEventListener('keydown', onKeydown))
+    // window resize alone misses in-app layout changes (zoom, panel drags),
+    // so observe the scroll container itself with a resize fallback
+    let sbwObserver: ResizeObserver | null = null
+    onMounted(() => {
+        updateSbw()
+        if (typeof ResizeObserver !== 'undefined' && scrollEl.value) {
+            sbwObserver = new ResizeObserver(updateSbw)
+            sbwObserver.observe(scrollEl.value)
+        } else {
+            window.addEventListener('resize', updateSbw)
+        }
+    })
+    onBeforeUnmount(() => {
+        sbwObserver?.disconnect()
+        window.removeEventListener('resize', updateSbw)
+    })
     onBeforeUnmount(() => {
         window.removeEventListener('keydown', onKeydown)
         if (scrollAnimation) cancelAnimationFrame(scrollAnimation)
@@ -134,6 +155,7 @@
     const rowHeights = computed(() => visibleCommits.value.map(rowHeightFor))
     const rowPrefix = computed(() => buildPrefix(rowHeights.value))
     const totalHeight = computed(() => rowPrefix.value[rowPrefix.value.length - 1] ?? 0)
+    watch(totalHeight, () => nextTick(updateSbw))
     const padTop = computed(() => rowPrefix.value[visibleRange.value[0]] ?? 0)
     const padBottom = computed(() => totalHeight.value - (rowPrefix.value[visibleRange.value[1]] ?? totalHeight.value))
     function rowTop(index: number): number {
@@ -643,7 +665,7 @@
 <template>
     <main
         class="graph-view"
-        :style="{ '--author-w': `${authorW}px`, '--date-w': `${dateW}px`, '--hash-w': `${hashW}px` }">
+        :style="{ '--author-w': `${authorW}px`, '--date-w': `${dateW}px`, '--hash-w': `${hashW}px`, '--sbw': `${sbw}px` }">
         <div class="graph-header">
             <span
                 class="graph-graph-header"
