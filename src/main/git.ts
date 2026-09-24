@@ -1305,9 +1305,9 @@ function parseMergeTreeOutput(stdout: string): MergeCheck {
 export async function mergeInto(source: string, target: string, mode: MergeMode = 'default'): Promise<string> {
     const { path: p, git: g } = getRepo()
     const status = await g.status()
+    if (status.files.length > 0) throw new Error('Commit or stash your changes before merging')
     if (status.current === target) {
-        const clean = status.files.length === 0
-        const headBefore = clean ? await g.revparse(['HEAD']).then(out => out.trim()).catch(() => null) : null
+        const headBefore = await g.revparse(['HEAD']).then(out => out.trim()).catch(() => null)
         const args: string[] = [source]
         if (mode === 'no-ff') args.push('--no-ff')
         else if (mode === 'ff-only') args.push('--ff-only')

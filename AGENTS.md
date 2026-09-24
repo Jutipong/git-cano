@@ -172,6 +172,12 @@ Key files:
   without changing the repository and show a blocking prompt to stash or commit manually. Do not
   auto-stash, discard, or add a continue-anyway path here. Once clean, run `cherryPickCheck()`,
   confirm, checkout a different target only after confirmation, then cherry-pick and refresh.
+- **Branch merge safety**: dragging a source branch onto a target branch uses the shared
+  `mergeBranchOnto()` flow in `App.vue`. It checks `RepoStatus.files` before
+  `mergeCheckConflicts()`; dirty worktrees stop without changing the repository and show the same
+  manual stash/commit prompt as cherry-pick. `mergeInto()` repeats the clean-worktree guard in the
+  main process as defense-in-depth; do not auto-stash, discard, or add a continue-anyway path.
+  After confirmation, execute the merge, refresh, and keep the existing conflict/Undo handling.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should
   follow the same pattern (`ref` + `persist.pick` + mousedown drag handler).
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides

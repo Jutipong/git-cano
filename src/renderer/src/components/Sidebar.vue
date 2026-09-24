@@ -25,7 +25,6 @@
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog, confirmDialogWithOption } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
-    import { notifyUndoable } from '../utils/undo'
     import CollapseAllButton from './CollapseAllButton.vue'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
     import LocalBranchContextMenu, { type LocalBranchMenuState } from './LocalBranchContextMenu.vue'
@@ -39,6 +38,7 @@
     const emit = defineEmits<{
         (e: 'interactive-rebase', baseRef: string): void
         (e: 'cherry-pick', hash: string, targetBranch: string): void
+        (e: 'merge-branch', source: string, targetBranch: string): void
         (
             e: 'create-tag',
             target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -188,19 +188,6 @@
             }, busyLabel)
             notify(ok, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        }
-    }
-
-    async function runUndoable(fn: () => Promise<unknown>, ok: string, busyLabel = 'Working…') {
-        try {
-            await uiTransient.withBusy(async () => {
-                await fn()
-                await props.refresh()
-            }, busyLabel)
-            await notifyUndoable(props.repo.path, ok)
-        } catch (error) {
-            await props.refresh().catch(() => {})
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
     }
@@ -458,7 +445,7 @@
         return [payload.slice(0, at), payload.slice(at + 1)]
     }
 
-    async function handleDrop(targetBranch: string, event: DragEvent) {
+    function handleDrop(targetBranch: string, event: DragEvent) {
         event.preventDefault()
         dropTarget.value = null
         if (uiTransient.busy) return
@@ -471,39 +458,7 @@
             if (!value.trim()) return
             emit('cherry-pick', value.trim(), targetBranch)
         } else if (kind === 'branch' && value !== targetBranch) {
-            let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
-            let willConflict = false
-            try {
-                const check = await uiTransient.withBusy(
-                    () => window.api.mergeCheckConflicts(value, targetBranch),
-                    `Checking merge of ${value} into ${targetBranch}…`
-                )
-                willConflict = check.conflicts.length > 0
-                status = !check.supported
-                    ? { kind: 'unknown', text: 'Conflict check unavailable (git too old)' }
-                    : willConflict
-                      ? { kind: 'warn', text: `Merge will cause conflicts — ${check.conflicts.length} file(s)` }
-                      : check.fastForward
-                        ? { kind: 'ok', text: 'Fast-forward — no conflicts possible' }
-                        : { kind: 'ok', text: 'Merge can be done without conflicts' }
-            } catch {
-                status = { kind: 'unknown', text: 'Conflict check unavailable' }
-            }
-            const ok = await confirmDialog({
-                title: 'Merge branch',
-                message: willConflict
-                    ? `Will checkout "${targetBranch}" to resolve conflicts.`
-                    : 'Merges without switching your current branch.',
-                flow: { from: value, to: targetBranch },
-                status,
-                confirmLabel: 'Merge',
-            })
-            if (!ok) return
-            void runUndoable(
-                () => window.api.mergeInto(value, targetBranch),
-                `Merged ${value} into ${targetBranch}`,
-                `Merging ${value} into ${targetBranch}…`
-            )
+            emit('merge-branch', value, targetBranch)
         }
     }
     function onDragOver(branchName: string, event: DragEvent) {

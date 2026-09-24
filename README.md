@@ -69,7 +69,7 @@ pnpm dev
 
 |      |                                                        |
 | ---- | ------------------------------------------------------ |
-| 🌱   | Create / checkout / rename / delete / merge / rebase — drag a branch onto a branch to merge, drag a commit onto a branch to cherry-pick; both cherry-pick entry points require a clean worktree; create/switch dialogs remember the local-changes choice |
+| 🌱   | Create / checkout / rename / delete / merge / rebase — drag a branch onto a branch to merge, drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice |
 | 🏷️   | Tag create / delete / push — create dialogs share one look with a branch/hash chip in the header, input stays focused on every reopen |
 | 🌐   | Remotes: add, edit, remove, test URLs                  |
 | ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token) — buttons show an inline spinner while busy |
@@ -185,5 +185,5 @@ src/
 
 - 🌙 Remote tag status needs `origin` + network — it loads in the background on purpose.
 - 📦 Releases ship as macOS `.dmg` (arm64) → `release/` via `pnpm dist:mac`, and Windows Setup `git-cano-<version>-setup.exe` via `pnpm dist:win` (NSIS, asar + maximum compression).
-- 🍒 Cherry-pick checks staged, unstaged, and untracked changes first; if any exist, it stops and asks you to stash or commit them manually before retrying. The commit context menu and drag-to-branch flow use the same safety check.
+- 🍒 Cherry-pick and branch merge check staged, unstaged, and untracked changes first; if any exist, they stop and ask you to stash or commit them manually before retrying. Cherry-pick and drag-to-branch flows use shared safety checks.
 - 🤖 Building with AI? Read [AGENTS.md](AGENTS.md) first!

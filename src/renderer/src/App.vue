@@ -411,6 +411,16 @@
             )
     }
 
+    async function showUncommittedChanges(count: number) {
+        const manage = await confirmDialog({
+            title: 'Uncommitted changes',
+            message: `This action requires a clean working tree. Stash or commit ${count} changed file(s), then try again.`,
+            status: { kind: 'warn', text: `${count} file(s) have uncommitted changes` },
+            confirmLabel: 'Create stash',
+        })
+        if (manage) stashCreateOpen.value = true
+    }
+
     async function cherryPickOnto(hash: string, targetBranch: string) {
         if (uiTransient.busy) return
         const short = hash.slice(0, 7)
@@ -422,14 +432,7 @@
             return
         }
         if (current.files.length > 0) {
-            const count = current.files.length
-            const manage = await confirmDialog({
-                title: 'Uncommitted changes',
-                message: `Cherry-pick requires a clean working tree. Stash or commit ${count} changed file(s), then try again.`,
-                status: { kind: 'warn', text: `${count} file(s) have uncommitted changes` },
-                confirmLabel: 'Create stash',
-            })
-            if (manage) stashCreateOpen.value = true
+            await showUncommittedChanges(current.files.length)
             return
         }
 
@@ -483,6 +486,60 @@
         const current = repoStore.repo?.branch
         if (!current) return
         void cherryPickOnto(commit.hash, current === 'HEAD (detached)' ? 'HEAD' : current)
+    }
+
+    async function mergeBranchOnto(source: string, targetBranch: string) {
+        if (uiTransient.busy) return
+        let current: RepoStatus
+        try {
+            current = await window.api.status()
+        } catch (error) {
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            return
+        }
+        if (current.files.length > 0) {
+            await showUncommittedChanges(current.files.length)
+            return
+        }
+
+        let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
+        let willConflict = false
+        try {
+            const check = await uiTransient.withBusy(
+                () => window.api.mergeCheckConflicts(source, targetBranch),
+                `Checking merge of ${source} into ${targetBranch}…`
+            )
+            willConflict = check.conflicts.length > 0
+            status = !check.supported
+                ? { kind: 'unknown', text: 'Conflict check unavailable (git too old)' }
+                : willConflict
+                  ? { kind: 'warn', text: `Merge will cause conflicts — ${check.conflicts.length} file(s)` }
+                  : check.fastForward
+                    ? { kind: 'ok', text: 'Fast-forward — no conflicts possible' }
+                    : { kind: 'ok', text: 'Merge can be done without conflicts' }
+        } catch {
+            status = { kind: 'unknown', text: 'Conflict check unavailable' }
+        }
+        const ok = await confirmDialog({
+            title: 'Merge branch',
+            message: willConflict
+                ? `Will checkout "${targetBranch}" to resolve conflicts.`
+                : 'Merges without switching your current branch.',
+            flow: { from: source, to: targetBranch },
+            status,
+            confirmLabel: 'Merge',
+        })
+        if (!ok) return
+        try {
+            await uiTransient.withBusy(async () => {
+                await window.api.mergeInto(source, targetBranch)
+                await repoStore.refresh()
+            }, `Merging ${source} into ${targetBranch}…`)
+            await notifyUndoable(current.path, `Merged ${source} into ${targetBranch}`)
+        } catch (error) {
+            await repoStore.refresh().catch(() => {})
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
     }
 
     async function revertCommit(commit: CommitNode) {
@@ -554,6 +611,7 @@
                     :refresh="repoStore.refresh"
                     @interactive-rebase="rebaseBase = $event"
                     @cherry-pick="cherryPickOnto"
+                    @merge-branch="mergeBranchOnto"
                     @create-tag="tagTarget = $event" />
                 <div
                     class="panel-splitter"
