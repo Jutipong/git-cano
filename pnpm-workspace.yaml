@@ -50,6 +50,7 @@ minimumReleaseAgeExclude:
   - oxfmt@0.65.0
   - oxlint@1.80.0
   - electron@44.0.0 || 44.1.0
+  - '@iconify-json/thesvg-color@1.2.13'
 
 peerDependencyRules:
   allowedVersions:
