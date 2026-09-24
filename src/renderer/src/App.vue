@@ -411,20 +411,78 @@
             )
     }
 
+    async function cherryPickOnto(hash: string, targetBranch: string) {
+        if (uiTransient.busy) return
+        const short = hash.slice(0, 7)
+        let current: RepoStatus
+        try {
+            current = await window.api.status()
+        } catch (error) {
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            return
+        }
+        if (current.files.length > 0) {
+            const count = current.files.length
+            const manage = await confirmDialog({
+                title: 'Uncommitted changes',
+                message: `Cherry-pick requires a clean working tree. Stash or commit ${count} changed file(s), then try again.`,
+                status: { kind: 'warn', text: `${count} file(s) have uncommitted changes` },
+                confirmLabel: 'Create stash',
+            })
+            if (manage) stashCreateOpen.value = true
+            return
+        }
+
+        const currentTarget = current.branch === 'HEAD (detached)' ? 'HEAD' : current.branch
+        const switching = targetBranch !== currentTarget
+        let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
+        let willConflict = false
+        try {
+            const check = await uiTransient.withBusy(
+                () => window.api.cherryPickCheck(hash, targetBranch),
+                `Checking cherry-pick onto ${targetBranch}…`
+            )
+            willConflict = check.conflicts.length > 0
+            status = !check.supported
+                ? { kind: 'unknown', text: 'Conflict check unavailable' }
+                : check.fastForward
+                  ? { kind: 'warn', text: 'Already in this branch — pick would come out empty' }
+                  : willConflict
+                    ? { kind: 'warn', text: `Cherry-pick will cause conflicts — ${check.conflicts.length} file(s)` }
+                    : { kind: 'ok', text: 'Can be picked without conflicts' }
+        } catch {
+            status = { kind: 'unknown', text: 'Conflict check unavailable' }
+        }
+        const ok = await confirmDialog({
+            title: 'Cherry-pick commit',
+            message: switching
+                ? willConflict
+                    ? `Will checkout "${targetBranch}" to resolve conflicts.`
+                    : `Will checkout "${targetBranch}" first, then pick ${short} onto it.`
+                : `Pick ${short} onto "${targetBranch}"?`,
+            flow: { from: short, to: targetBranch, label: 'cherry-pick' },
+            status,
+            confirmLabel: 'Cherry-pick',
+        })
+        if (!ok) return
+        try {
+            await uiTransient.withBusy(async () => {
+                if (switching) await window.api.checkout(targetBranch, 'keep')
+                await window.api.cherryPick(hash)
+                await repoStore.refresh()
+            }, `Cherry-picking onto ${targetBranch}…`)
+            await notifyUndoable(current.path, `Cherry-picked ${short} onto ${targetBranch}`)
+        } catch (error) {
+            // A conflict leaves unmerged files behind — refresh anyway so they paint instead of going stale.
+            await repoStore.refresh().catch(() => {})
+            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        }
+    }
+
     function cherryPickCommit(commit: CommitNode) {
-        void (async () => {
-            try {
-                await uiTransient.withBusy(async () => {
-                    await window.api.cherryPick(commit.hash)
-                    await repoStore.refresh()
-                }, 'Cherry-picking…')
-                await notifyUndoable(repoStore.repo?.path, `Cherry-picked ${commit.shortHash}`)
-            } catch (error) {
-                // Conflicts leave unmerged files behind — refresh so they paint instead of going stale.
-                await repoStore.refresh().catch(() => {})
-                uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
-            }
-        })()
+        const current = repoStore.repo?.branch
+        if (!current) return
+        void cherryPickOnto(commit.hash, current === 'HEAD (detached)' ? 'HEAD' : current)
     }
 
     async function revertCommit(commit: CommitNode) {
@@ -495,6 +553,7 @@
                     :repo="repo"
                     :refresh="repoStore.refresh"
                     @interactive-rebase="rebaseBase = $event"
+                    @cherry-pick="cherryPickOnto"
                     @create-tag="tagTarget = $event" />
                 <div
                     class="panel-splitter"

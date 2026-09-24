@@ -33,11 +33,12 @@
     import TagContextMenu, { type TagMenuState } from './TagContextMenu.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
-    import type { LocalChangesMode, MenuItem, RepoStatus } from '@shared/types'
+    import type { MenuItem, RepoStatus } from '@shared/types'
 
     const props = defineProps<{ repo: RepoStatus; refresh: () => Promise<unknown> }>()
     const emit = defineEmits<{
         (e: 'interactive-rebase', baseRef: string): void
+        (e: 'cherry-pick', hash: string, targetBranch: string): void
         (
             e: 'create-tag',
             target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -457,60 +458,6 @@
         return [payload.slice(0, at), payload.slice(at + 1)]
     }
 
-    /** Cherry-pick `hash` onto `targetBranch`, checking out first when it isn't current. Always refreshes so conflicts paint. */
-    async function cherryPickOnto(hash: string, targetBranch: string) {
-        const short = hash.slice(0, 7)
-        const switching = targetBranch !== props.repo.branch
-        let mode: LocalChangesMode = 'keep'
-        if (switching) {
-            const resolved = await resolveCheckoutMode(targetBranch)
-            if (!resolved) return
-            mode = resolved
-        }
-        let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
-        let willConflict = false
-        try {
-            const check = await uiTransient.withBusy(
-                () => window.api.cherryPickCheck(hash, targetBranch),
-                `Checking cherry-pick onto ${targetBranch}…`
-            )
-            willConflict = check.conflicts.length > 0
-            status = !check.supported
-                ? { kind: 'unknown', text: 'Conflict check unavailable' }
-                : check.fastForward
-                  ? { kind: 'warn', text: 'Already in this branch — pick would come out empty' }
-                  : willConflict
-                    ? { kind: 'warn', text: `Cherry-pick will cause conflicts — ${check.conflicts.length} file(s)` }
-                    : { kind: 'ok', text: 'Can be picked without conflicts' }
-        } catch {
-            status = { kind: 'unknown', text: 'Conflict check unavailable' }
-        }
-        const ok = await confirmDialog({
-            title: 'Cherry-pick commit',
-            message: switching
-                ? willConflict
-                    ? `Will checkout "${targetBranch}" to resolve conflicts.`
-                    : `Will checkout "${targetBranch}" first, then pick ${short} onto it.`
-                : `Pick ${short} onto "${targetBranch}"?`,
-            flow: { from: short, to: targetBranch, label: 'cherry-pick' },
-            status,
-            confirmLabel: 'Cherry-pick',
-        })
-        if (!ok) return
-        try {
-            await uiTransient.withBusy(async () => {
-                if (switching) await window.api.checkout(targetBranch, mode)
-                await window.api.cherryPick(hash)
-                await props.refresh()
-            }, `Cherry-picking onto ${targetBranch}…`)
-            await notifyUndoable(props.repo.path, `Cherry-picked ${short} onto ${targetBranch}`)
-        } catch (error) {
-            // A conflict leaves unmerged files behind — refresh anyway so they paint instead of going stale.
-            await props.refresh().catch(() => {})
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        }
-    }
-
     async function handleDrop(targetBranch: string, event: DragEvent) {
         event.preventDefault()
         dropTarget.value = null
@@ -522,7 +469,7 @@
         if (kind === 'commit') {
             // Dragging a commit onto a branch cherry-picks it there (hard reset stays in the commit context menu).
             if (!value.trim()) return
-            void cherryPickOnto(value.trim(), targetBranch)
+            emit('cherry-pick', value.trim(), targetBranch)
         } else if (kind === 'branch' && value !== targetBranch) {
             let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
             let willConflict = false

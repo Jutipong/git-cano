@@ -166,6 +166,12 @@ Key files:
   the row via `.above` when there is not enough room below — keep that behavior.
 - **Commit selection** affects Changes/DiffView but there is no separate details panel —
   do not reintroduce one; extend the Changes panel instead.
+- **Cherry-pick safety**: both the commit context menu (`Cherry-pick onto HEAD`) and dragging a
+  commit onto a branch use the shared `cherryPickOnto()` flow in `App.vue`. It checks
+  `RepoStatus.files` (staged, unstaged, and untracked) before the dry-run; if dirty, it must stop
+  without changing the repository and show a blocking prompt to stash or commit manually. Do not
+  auto-stash, discard, or add a continue-anyway path here. Once clean, run `cherryPickCheck()`,
+  confirm, checkout a different target only after confirmation, then cherry-pick and refresh.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should
   follow the same pattern (`ref` + `persist.pick` + mousedown drag handler).
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
