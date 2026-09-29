@@ -318,6 +318,12 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   `callModel()` logs the chosen family/endpoint at debug level (never the token).
   `extractContent()` for `responses` prefers the `type: 'message'` output item so a
   reasoning summary can't become the commit message.
+- **OpenCode Go session header**: every Go request sends `x-opencode-session` (one
+  `randomUUID()` per generate call, reused across the effort-fallback retries) plus a
+  `git-cano/<version>` user agent — Go's docs require non-OpenCode clients to identify
+  the conversation for routing and prompt caching. Dropping either one makes Go fail with
+  "Request is missing x-opencode-session". OpenRouter requests keep their own
+  `HTTP-Referer` / `X-Title` headers instead.
 - **Budgets**: commit generation uses 512 output tokens; on a persistent length cutoff
   (after the `minimal → low → none` effort fallbacks) it retries once with a doubled
   budget (cap 2048). `testConnection()` uses production-like conditions (128 tokens,

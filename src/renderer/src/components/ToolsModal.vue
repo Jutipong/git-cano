@@ -1641,12 +1641,6 @@
                         </template>
                         <span class="spacer" />
                         <button
-                            class="btn small"
-                            :disabled="aiTesting"
-                            @click="emit('close')">
-                            Close
-                        </button>
-                        <button
                             class="btn primary small"
                             :disabled="aiTesting"
                             @click="saveAi()">

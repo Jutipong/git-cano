@@ -84,6 +84,7 @@ pnpm dev
 - 📝 Generate from **staged** changes, or auto-commit / auto-commit + push
 - 👁️ Commit box shows the active model + auto-commit mode inline (green / orange / red dot, full name in tooltip)
 - ⚡ `minimal` reasoning effort = fast responses
+- 🧭 OpenCode Go requests identify the session so Go can route and cache them reliably
 - 🎨 Optional auto-format before generating
 
 ### 🎨 Themes & branding

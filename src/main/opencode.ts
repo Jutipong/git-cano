@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
@@ -217,6 +218,10 @@ async function callModel(
         canceler = new AbortController()
         inflight.set(opts.cancelKey, canceler)
     }
+    // OpenCode Go requires non-OpenCode clients to identify a conversation so it can
+    // route and cache prompts: one stable x-opencode-session id per generate call,
+    // reused across the effort-fallback retries below, plus our own user agent.
+    const sessionId = randomUUID()
     try {
         let budgetDoubled = false
         for (let i = 0; i < EFFORT_FALLBACK.length; i++) {
@@ -235,7 +240,7 @@ async function callModel(
                         authorization: `Bearer ${token}`,
                         ...(provider === 'openrouter'
                             ? { 'HTTP-Referer': 'https://github.com/jutipong/git-cano', 'X-Title': 'git-cano' }
-                            : {}),
+                            : { 'user-agent': `git-cano/${app.getVersion()}`, 'x-opencode-session': sessionId }),
                     },
                     body: JSON.stringify(buildBody(family, provider, modelId, systemPrompt, userPrompt, budget, effort)),
                     signal,
