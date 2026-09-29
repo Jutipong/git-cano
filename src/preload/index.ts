@@ -78,6 +78,11 @@ const api = {
         ipcRenderer.on('update:error', listener)
         return () => ipcRenderer.removeListener('update:error', listener)
     },
+    onChangelogOpen: (callback: () => void): (() => void) => {
+        const listener = () => callback()
+        ipcRenderer.on('changelog:open', listener)
+        return () => ipcRenderer.removeListener('changelog:open', listener)
+    },
     status: (): Promise<RepoStatus> => call('repo:status'),
     log: (limit?: number): Promise<CommitNode[]> => call('repo:log', limit),
     logCached: (limit?: number): Promise<CommitNode[] | null> => call('repo:logCached', limit),

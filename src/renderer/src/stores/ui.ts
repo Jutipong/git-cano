@@ -142,6 +142,8 @@ export const useUiStore = defineStore(
             if (!REFRESH_INTERVAL_OPTIONS.includes(refreshInterval.value)) refreshInterval.value = DEFAULT_REFRESH_INTERVAL
         })
         const updateCheckHours = ref(DEFAULT_UPDATE_CHECK_HOURS)
+        /** App version seen on the previous launch. A mismatch on startup means the app was just updated. */
+        const lastSeenVersion = ref('')
         watchEffect(() => {
             if (!UPDATE_CHECK_HOURS_OPTIONS.includes(updateCheckHours.value))
                 updateCheckHours.value = DEFAULT_UPDATE_CHECK_HOURS
@@ -341,6 +343,7 @@ export const useUiStore = defineStore(
             localChangesMode,
             refreshInterval,
             updateCheckHours,
+            lastSeenVersion,
             toastDurationSec,
             fontSize,
             zoom,
@@ -383,6 +386,7 @@ export const useUiStore = defineStore(
                 'localChangesMode',
                 'refreshInterval',
                 'updateCheckHours',
+                'lastSeenVersion',
                 'toastDurationSec',
                 'fontSize',
                 'zoom',

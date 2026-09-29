@@ -4,6 +4,14 @@ import { ref } from 'vue'
 export type UpdaterStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error'
 
 const RELEASES_URL = 'https://api.github.com/repos/Jutipong/git-cano/releases/latest'
+const RELEASE_TAG_URL = 'https://api.github.com/repos/Jutipong/git-cano/releases/tags/v'
+
+export interface ReleaseNote {
+    version: string
+    name: string
+    body: string
+    htmlUrl: string
+}
 
 function compareVersions(a: string, b: string): number {
     const norm = (v: string) =>
@@ -43,6 +51,11 @@ export const useUpdaterStore = defineStore('updater', () => {
     const downloadedVersion = ref('')
     /** Null until the main process answers — true only for installed Windows. */
     const canAuto = ref<boolean | null>(null)
+    /** Changelog modal visibility — the single flag behind the auto-open, Settings and Window menu. */
+    const changelogOpen = ref(false)
+    /** Release notes of the installed version, loaded on demand. Null = not loaded or unavailable. */
+    const notes = ref<ReleaseNote | null>(null)
+    const notesLoading = ref(false)
     let eventsStarted = false
 
     async function checkForUpdate(announce = false, notify?: (m: string, t?: 'success' | 'error') => void): Promise<void> {
@@ -107,6 +120,37 @@ export const useUpdaterStore = defineStore('updater', () => {
         })
     }
 
+    /**
+     * Release notes for the running version, from the GitHub release body.
+     * Cached per version; a failure leaves `notes` null so the modal can say so
+     * instead of raising an error dialog.
+     */
+    async function loadChangelog(version?: string): Promise<void> {
+        if (notesLoading.value) return
+        const tag = (version || currentVersion.value || '').trim()
+        if (!tag) return
+        // `notes.version` keeps the raw tag ("v1.0.4") for display, so compare without the prefix.
+        if (notes.value && notes.value.version.replace(/^v/i, '') === tag.replace(/^v/i, '')) return
+        notesLoading.value = true
+        try {
+            const res = await fetch(`${RELEASE_TAG_URL}${encodeURIComponent(tag)}`, {
+                headers: { Accept: 'application/vnd.github+json' },
+            })
+            if (!res.ok) throw new Error(`GitHub responded ${res.status}`)
+            const data = (await res.json()) as { tag_name?: string; name?: string; body?: string; html_url?: string }
+            notes.value = {
+                version: String(data.tag_name ?? tag),
+                name: String(data.name ?? tag),
+                body: String(data.body ?? ''),
+                htmlUrl: typeof data.html_url === 'string' ? data.html_url : '',
+            }
+        } catch {
+            notes.value = null
+        } finally {
+            notesLoading.value = false
+        }
+    }
+
     /** Manual fallback for macOS / dev — opens the release page in a browser. */
     async function openRelease(notify?: (m: string, t?: 'success' | 'error') => void): Promise<void> {
         if (!releaseUrl.value) {
@@ -162,9 +206,13 @@ export const useUpdaterStore = defineStore('updater', () => {
         progress,
         downloadedVersion,
         canAuto,
+        changelogOpen,
+        notes,
+        notesLoading,
         checkForUpdate,
         ensureAutoSupport,
         startUpdateEvents,
+        loadChangelog,
         downloadUpdate,
         installUpdate,
         openRelease,

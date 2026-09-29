@@ -788,6 +788,15 @@
                         <div class="tools-actions">
                             <button
                                 class="btn small"
+                                title="Show the release notes of the installed version"
+                                @click="updater.changelogOpen = true">
+                                <i-lucide-sparkles
+                                    width="13"
+                                    height="13" />
+                                What's new
+                            </button>
+                            <button
+                                class="btn small"
                                 :disabled="updateChecking"
                                 title="Check GitHub Releases for a newer version now"
                                 @click="checkForUpdateManual()">

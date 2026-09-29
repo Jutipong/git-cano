@@ -6682,6 +6682,51 @@ body {
     font-size: 12px;
 }
 
+/* What's new modal — release notes shown after an update (plain text, never v-html) */
+
+.changelog-modal {
+    width: min(520px, 94vw);
+    border-radius: var(--radius-card);
+}
+
+.changelog-body {
+    padding: 16px 20px;
+    overflow: auto;
+    max-height: min(52vh, 460px);
+}
+
+.changelog-loading {
+    display: flex;
+    justify-content: center;
+    padding: 18px 0 22px;
+}
+
+.changelog-text {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.changelog-empty {
+    margin: 0;
+    padding: 8px 0 6px;
+    color: var(--text-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.changelog-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 11px 20px 16px;
+    border-top: 1px solid var(--line-soft);
+}
+
 /* ── Command palette ─────────────────────────────────────────────────── */
 
 .palette-overlay {

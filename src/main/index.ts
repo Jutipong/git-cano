@@ -141,6 +141,13 @@ import type { LocalChangesMode, MergeMode } from '@shared/types'
 
 let win: BrowserWindow | null = null
 
+const REPO_URL = 'https://github.com/Jutipong/git-cano'
+
+/** Push a fire-and-forget message to the renderer window (menu items use this). */
+function sendToRenderer(channel: string, payload?: unknown): void {
+    if (win && !win.isDestroyed()) win.webContents.send(channel, payload)
+}
+
 onRepoChanged(repoPath => {
     if (win && !win.isDestroyed()) win.webContents.send('repo:changed', repoPath)
 })
@@ -480,11 +487,33 @@ function startDir(): string | undefined {
  * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead.
  * Ctrl/Cmd+W is also freed from the native Close-window role so it closes the active repo tab instead
  * (window close stays available via Ctrl/Cmd+Shift+W).
+ *
+ * The Window menu is hand-written on both platforms (the stock `windowMenu` role can't be extended)
+ * and carries only the app's own items: What's new, and About Git Cano → the repository.
  */
 function setupMenu(): void {
     const isMac = process.platform === 'darwin'
+    // macOS app menu, hand-written so the stock About dialog can be hidden —
+    // the app links to its repository from Window → About Git Cano instead.
+    // No separator right after the hidden About, or a stray line shows at the top.
+    const appMenu: MenuItemConstructorOptions = {
+        label: app.name,
+        submenu: [
+            { role: 'about', visible: false },
+            { role: 'services' },
+            { type: 'separator' },
+            { role: 'hide' },
+            { role: 'hideOthers' },
+            { role: 'unhide' },
+            { type: 'separator' },
+            { role: 'quit' },
+        ],
+    }
+    // Keep the Close role alive but invisible on Windows/Linux — removing the item
+    // outright would take the Ctrl/Cmd+Shift+W close-window accelerator with it.
+    const hiddenClose: MenuItemConstructorOptions = { role: 'close', accelerator: 'CommandOrControl+Shift+W', visible: false }
     const template: MenuItemConstructorOptions[] = [
-        ...(isMac ? [{ role: 'appMenu' } as const] : []),
+        ...(isMac ? [appMenu] : []),
         // File → Close owns Cmd+W on macOS — rebind it so Cmd+W reaches the renderer.
         isMac
             ? { label: 'File', submenu: [{ role: 'close', accelerator: 'Command+Shift+W' }] }
@@ -500,17 +529,15 @@ function setupMenu(): void {
                 { role: 'togglefullscreen' },
             ],
         },
-        // Window → Close owns Ctrl+W on Windows/Linux — rebind it the same way.
-        isMac
-            ? { role: 'windowMenu' }
-            : {
-                  label: 'Window',
-                  submenu: [
-                      { role: 'minimize' },
-                      { role: 'zoom' },
-                      { role: 'close', accelerator: 'CommandOrControl+Shift+W' },
-                  ],
-              },
+        // Hand-written Window menu (both platforms) so it can carry the app's own items.
+        {
+            label: 'Window',
+            submenu: [
+                { label: "What's new", click: () => sendToRenderer('changelog:open') },
+                { label: 'About Git Cano', click: () => void shell.openExternal(REPO_URL) },
+                ...(isMac ? [] : [hiddenClose]),
+            ],
+        },
     ]
     Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }

@@ -430,6 +430,26 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - Cadence lives in `ui.updateCheckHours` (`0` = manual only, default 6); `App.vue`
   schedules one silent check 30s after launch plus the interval, rescheduled on change.
   `checkForUpdate()` never clobbers an in-flight download or a staged install.
+- **What's new modal** (`ChangelogModal.vue`, styles in `modern-ui.css` `.changelog-*`):
+  the persisted `ui.lastSeenVersion` is compared against `window.api.getVersion()` on
+  launch — a mismatch on a non-empty value means the app was just updated, so
+  `updater.changelogOpen` flips and the modal opens once. A blank value is a fresh
+  install and must never open it. Notes come from the GitHub release body
+  (`loadChangelog()` → `releases/tags/v<version>`, cached per version, failure leaves
+  `notes` null and the modal says so — never an `ErrorDialog`). `changelogOpen` is the
+  single flag behind all three entry points: the auto-open, Settings → General →
+  Updates, and the native Window menu. Body text is rendered as plain text inside a
+  `pre-wrap` block via `utils/changelog.ts` `stripMarkdown()` — never `v-html`, never add
+  a markdown library. Its footer follows the app-standard action row (`.changelog-actions`:
+  `border-top` separator, `align-items: center`, plain `btn` + `btn primary`) — do not go
+  back to `btn small`, the 27px pill squeezes the 13px icon out of alignment with the label.
+- The native Window menu is hand-written in `setupMenu()` (`main/index.ts`) on both
+  platforms, because the stock `windowMenu` role can't be extended; it holds only
+  What's new and About Git Cano → the repo. macOS's app menu is hand-written too, with
+  `{ role: 'about', visible: false }` to hide the stock About dialog. On Windows/Linux
+  the Close role stays as a `visible: false` item purely to keep the
+  `Cmd/Ctrl+Shift+W` close-window accelerator registered — dropping it outright would
+  take the shortcut with it.
 - Release flow per version: bump `package.json` version → `pnpm dist:win` (Windows:
   Setup `.exe` via NSIS) / `pnpm dist:mac` (Mac, arm64 dmg) →
   `git tag v<version>` → GitHub Release from that tag with the `release/` assets

@@ -9,6 +9,7 @@
 
     import canoIcon from './assets/cano.svg'
     import BlameModal from './components/BlameModal.vue'
+    import ChangelogModal from './components/ChangelogModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
     import CommandPalette from './components/CommandPalette.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
@@ -54,6 +55,7 @@
     const auth = useAuthStore()
     const wsStore = useWorkspaceStore()
     const syncStore = useSyncStore()
+    const updater = useUpdaterStore()
     const {
         tabs,
         activeTab,
@@ -173,7 +175,6 @@
         // Silent update check: first run 30s after launch, then every updateCheckHours.
         // 0 = manual only. Only flips the shared updater state — the sidebar button
         // appears solely when a newer release is found.
-        const updater = useUpdaterStore()
         let updateTimer: ReturnType<typeof setTimeout> | null = null
         let updateInterval: ReturnType<typeof setInterval> | null = null
         function clearUpdateTimers() {
@@ -199,6 +200,19 @@
         startUpdateSchedule()
         watch(() => ui.updateCheckHours, startUpdateSchedule)
         onUnmounted(clearUpdateTimers)
+
+        // First launch after an update: the app version no longer matches the one we saw last time.
+        // A blank lastSeenVersion is a fresh install, not an update — never show the changelog then.
+        void window.api
+            .getVersion()
+            .then(current => {
+                if (ui.lastSeenVersion && ui.lastSeenVersion !== current) updater.changelogOpen = true
+                ui.lastSeenVersion = current
+            })
+            .catch(() => {})
+
+        // Window menu → What's new
+        onUnmounted(window.api.onChangelogOpen(() => (updater.changelogOpen = true)))
 
         // double-Shift detection for the command palette (two taps within the window)
         const DOUBLE_SHIFT_MS = 400
@@ -753,6 +767,9 @@
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
             @open-repo="openNewRepo" />
+        <ChangelogModal
+            v-if="updater.changelogOpen"
+            @close="updater.changelogOpen = false" />
         <ShortcutsModal
             v-if="repoStore.shortcutsOpen"
             @close="repoStore.shortcutsOpen = false" />
