@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
-import { isFreeZenId, toGoModel } from '@shared/models'
+import { toGoModel } from '@shared/models'
 import { app } from 'electron'
 
 import { formatRepoIfConfigured, getChangesContext } from './git'
@@ -12,8 +12,6 @@ import type { AiConfig, AiContextScope, AiProvider, AiProviderConfig, AiTestResu
 
 const BASE_URL = 'https://opencode.ai/zen/go/v1'
 const GO_MODELS_URL = `${BASE_URL}/models`
-/** Pay-as-you-go Zen catalog — same id-only shape; free lineup is discovered here live. */
-const ZEN_MODELS_URL = 'https://opencode.ai/zen/v1/models'
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 const OPENROUTER_MODELS_URL = `${OPENROUTER_BASE_URL}/models`
 const CONFIG_FILE = 'opencode.json'
@@ -422,24 +420,15 @@ export async function listModels(provider: AiProvider, token: string): Promise<G
                 if (!Array.isArray(json?.data)) return []
                 return json.data.map(model => (typeof model.id === 'string' ? model.id : '')).filter(Boolean)
             } catch {
-                // One catalog failing must not discard the other.
                 return []
             }
         }
-        // Subscription catalog first; the free lineup is discovered live from the
-        // Zen catalog (same provider family — everything is stored under this
-        // provider only, never mixed into other providers).
-        const [goIds, zenIds] = await Promise.all([fetchIds(GO_MODELS_URL), fetchIds(ZEN_MODELS_URL)])
-        const seen = new Set(goIds)
-        const merged = [...goIds]
-        for (const id of zenIds) {
-            if (!seen.has(id) && isFreeZenId(id)) {
-                seen.add(id)
-                merged.push(id)
-            }
-        }
-        if (merged.length === 0) return lastKnownModels('opencode-go')
-        return merged.map(toGoModel)
+        // OpenCode Go catalog only; the Zen catalog is intentionally not merged in
+        // (its free lineup is blocked for third-party clients and would not route
+        // through the Go endpoint).
+        const goIds = await fetchIds(GO_MODELS_URL)
+        if (goIds.length === 0) return lastKnownModels('opencode-go')
+        return goIds.map(toGoModel)
     } catch {
         return lastKnownModels('opencode-go')
     } finally {

@@ -81,6 +81,7 @@ pnpm dev
 > 🪄 Let AI write the boring part!
 
 - 🔌 OpenCode Go or OpenRouter providers
+- 📋 The model picker lists exactly your **OpenCode Go catalog** — free Go models are badged **Free** (the Zen catalog is never mixed in)
 - 📝 Generate from **staged** changes, or auto-commit / auto-commit + push
 - 👁️ Commit box shows the active model + auto-commit mode inline (green / orange / red dot, full name in tooltip)
 - ⚡ `minimal` reasoning effort = fast responses

@@ -333,9 +333,12 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   truncation (`truncateForPrompt()`) cuts on a line boundary. Empty model replies are
   logged raw to the log file but shown to the user as a clean message.
   `cleanModelMessage()` strips fences plus one layer of surrounding quotes/backticks.
-- **Model catalogs**: offline fallback is per-provider (`lastKnownModels(provider)` —
-  OpenRouter falls back to its own persisted list, not `[]`). Free-Zen detection lives
-  only in `isFreeZenId()` (`shared/models.ts`) — never re-implement the suffix check.
+- **Model catalogs**: OpenCode Go lists exactly the Go catalog (`GO_MODELS_URL`); the Zen
+  catalog is deliberately never merged in — its free lineup is blocked for third-party
+  clients (403 "only from within OpenCode") and would not route through the Go endpoint.
+  Free-tier detection (`-free` suffix) lives only in `isFreeZenId()` (`shared/models.ts`)
+  — never re-implement it. Offline fallback is per-provider (`lastKnownModels(provider)` —
+  OpenRouter falls back to its own persisted list, not `[]`).
 - **Format-before-generate** (`formatRepoIfConfigured()`): the formatter only touches
   the worktree, so it runs only for scope `'all'` (auto commit modes, where a later
   `stageAll()` picks the formatted result up). For `'staged'` (Generate Only) it is

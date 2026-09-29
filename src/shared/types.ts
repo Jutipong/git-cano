@@ -227,7 +227,7 @@ export interface AiTestResult {
 export interface GoModel {
     id: string
     name: string
-    /** Free-tier model (Zen free lineup or zero-price OpenRouter) — shows a Free badge. */
+    /** Free-tier model (Go catalog free lineup or zero-price OpenRouter) — shows a Free badge. */
     free?: boolean
 }
 
