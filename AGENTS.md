@@ -40,6 +40,15 @@ Key files:
 - `src/renderer/src/utils/shortcuts.ts` — single source of truth for keyboard shortcuts
 - `src/renderer/src/components/` — one Vue SFC per panel/modal
 
+## Git environment (simple-git)
+
+`src/main/git.ts` injects credentials/config per command (`authGitEnv()` via `withAuthEnv`). simple-git v4
+adds an environment guard that rejects any injected `git_*` key not listed in
+`SAFE_UNSAFE_OPTIONS.allowEnvironment` ("blocked by the environment guard") — the older `unsafe.*` flags
+cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND`,
+`GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_0` / `GIT_CONFIG_VALUE_0`, `GIT_EDITOR`. Both `createGit()` and
+`plainGit()` share `SAFE_UNSAFE_OPTIONS`; when adding a new injected env var, add it there too.
+
 ## Repository loading and performance
 
 - `repo.ts` loads local repository data (status, history, branches, and remote existence) before marking the repo as loaded. Local tags + remote tag status are opt-in (`refresh(..., withTags)` via `refreshWithTags()`): tab switches always include them, as do tag mutations and fetch/pull — everything else skips them so routine refreshes spawn no tag commands.

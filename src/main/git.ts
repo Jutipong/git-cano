@@ -52,6 +52,10 @@ const branchCache = new Map<string, { local: BranchInfo[]; remote: BranchInfo[] 
  * - GIT_CONFIG_COUNT/KEY/VALUE — GitHub token extraheader → allowUnsafeConfigEnvCount + allowUnsafeConfigPaths
  * - GIT_EDITOR ('true') — non-interactive rebase steps → allowUnsafeEditor
  * - GIT_ASKPASS / SSH_ASKPASS — inherited from the desktop environment (e.g. VS Code) → allowUnsafeAskPass
+ *
+ * Simple-git v4 adds a second guard (`allowEnvironment`): every `git_*` env var is checked on spawn — vars merely inherited are stripped
+ * silently, but any we inject ourselves throw unless listed here. So this mirrors the envs set above plus the ambient GIT_CONFIG_* the
+ * desktop environment (e.g. VS Code) puts in `process.env`.
  */
 const SAFE_UNSAFE_OPTIONS = {
     unsafe: {
@@ -61,6 +65,7 @@ const SAFE_UNSAFE_OPTIONS = {
         allowUnsafeConfigPaths: true,
         allowUnsafeEditor: true,
     },
+    allowEnvironment: ['GIT_SSH_COMMAND', 'GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0', 'GIT_EDITOR'],
 } as unknown as Partial<SimpleGitOptions>
 
 function createGit(dir: string): SimpleGit {
