@@ -15,8 +15,8 @@
     "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
     "format": "oxfmt --write --ignore-path .oxfmtignore",
     "rebuild:native": "node scripts/rebuild-native.mjs",
-    "dist:mac": "electron-vite build && node scripts/rebuild-native.mjs && electron-builder --mac dmg",
-    "dist:win": "electron-vite build && node scripts/rebuild-native.mjs && electron-builder --win nsis",
+    "dist:mac": "electron-vite build && node scripts/rebuild-native.mjs && electron-builder --mac dmg --arm64",
+    "dist:win": "electron-vite build && node scripts/rebuild-native.mjs && electron-builder --win nsis --x64",
     "uplib": "pnpm update --latest"
   },
   "dependencies": {
