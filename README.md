@@ -84,7 +84,8 @@ pnpm dev
 - 🪟 Docked terminal panel under the commit graph — toggle it from the toolbar button next to the settings gear, the command palette (`Terminal`), or <kbd>Ctrl</kbd>+<kbd>`</kbd>
 - 🗂️ **One shell per repo** — each repo tab keeps its own shell and scrollback while you switch tabs
 - 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel)
-- ⬜ Full-height mode covers the graph but leaves **Changes visible**; drag the top edge to resize (memory-only, resets per launch)
+- ⬜ **Full-height mode** — the panel becomes a card aligned with the sidebar / graph / Changes columns: it covers the sidebar and graph but leaves the **repo tabs** and the **Changes panel** visible, and it stays open while you switch repos (a repo without a terminal collapses it)
+- ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
 - 🔒 Nothing is persisted — closing the panel/tab kills its shell, and a workspace switch closes every shell
 - 📦 Powered by xterm.js + node-pty (prebuilt for Windows & macOS; a missing native build disables only the terminal)
 

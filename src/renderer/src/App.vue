@@ -764,7 +764,7 @@
                                         :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
                                         :style="
                                             isExpandedTerminal(path)
-                                                ? { right: `${ui.rightPanelWidth + 14}px` }
+                                                ? { right: `${ui.rightPanelWidth + 12}px` }
                                                 : { height: `${repoStore.terminalHeight}px` }
                                         "
                                         @close="closeTerminalPanel"

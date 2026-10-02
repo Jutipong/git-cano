@@ -514,10 +514,16 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   and the panel's ✕, because the shell and its scrollback die. When the shell ends on its own
   (exit / Ctrl+D / crash) the panel closes itself with no confirm and no toast — same result as a
   manual close, so there is no restart button. Reopening via the toggle spawns a fresh shell.
-- **Full height covers the sidebar + tab bar** like DiffView (Teleport to `.app` + absolute
-  `right: rightPanelWidth + 14px`, z-index 9 — below DiffView's 10) so the Changes panel stays
-  visible. Do not turn it into a centered/modal card; the inline `right` offset is what keeps
-  the file-change pane usable.
+- **Full height is a card that lines up with the other columns, never covering the tab bar**
+  (Teleport to `.app` + absolute `top: 60px` — the 48px tab bar plus `.app-body`'s 6px margin —
+  `left: 6px` / `bottom: 6px` matching `.app`'s padding, an inline `right: rightPanelWidth + 12px`
+  (6px app padding + the 6px `.panel-splitter` gap, so the card clears the right pane like the
+  graph does), plus the same border/`--radius-card`/shadow as
+  `.center-column` and `.right-pane`). The repo tabs stay clickable so the user can switch repos
+  with the terminal expanded. Expanded deliberately survives a tab switch and only collapses when the
+  target repo has no terminal (the `terminalActive` watcher). The Changes panel stays visible; do
+  not turn it into a centered/modal card — the inline `right` offset is what keeps the
+  file-change pane usable.
 - **node-pty is a native module**: keep it external in `electron.vite.config.ts`, in
   `asarUnpack` and in `pnpm-workspace.yaml` (`allowBuilds` / `onlyBuiltDependencies`);
   `scripts/rebuild-native.mjs` rebuilds it for the Electron ABI on postinstall and before each

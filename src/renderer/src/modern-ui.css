@@ -5259,17 +5259,21 @@ body {
     border-top: 1px solid var(--line-soft);
 }
 
-/* Expanded: teleported to `.app` so it covers the sidebar + tab bar like DiffView,
-   while the inline `right` keeps the Changes panel visible. */
+/* Expanded: teleported to `.app` and styled as a card that lines up with the other columns —
+   left/bottom match `.app`'s 6px padding, top starts where `.app-body` does (48px tab bar + the
+   body's 6px margin), and the inline `right: rightPanelWidth + 12px` (app padding + the 6px
+   `.panel-splitter` gap) clears the right pane. Same border/radius/shadow as the cards. */
 .terminal-panel.terminal-overlay {
     position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
+    top: 60px;
+    bottom: 6px;
+    left: 6px;
     z-index: 9;
     height: auto;
-    border-top: none;
-    box-shadow: 4px 0 16px var(--shadow);
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
+    box-shadow: 0 3px 14px var(--shadow);
 }
 
 .terminal-header {

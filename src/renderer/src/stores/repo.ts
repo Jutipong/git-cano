@@ -338,8 +338,8 @@ export const useRepoStore = defineStore('repo', () => {
         selectedCommit.value = null
         selectedStash.value = null
         soloBranch.value = null
-        // Expanded is per-view, not per-repo — a tab switch always returns to the normal layout.
-        terminalExpanded.value = false
+        // Expanded intentionally survives a tab switch (multi-repo workflows keep the big terminal):
+        // the terminalActive watcher collapses it only when the target repo has no terminal.
         syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
         // Stale-while-revalidate: paint the cached log and branch list for this repo instantly
