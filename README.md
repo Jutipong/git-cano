@@ -58,7 +58,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | ✅  | Commit & amend with a friendly title-length counter — risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer timed Undo |
 | 🟣  | Squash a HEAD range — `Shift+click` a range in the graph, right-click to squash N into 1 (skipping is impossible by design) |
 | ↔️  | Unified / side-by-side diffs with word-level change highlights (marked words use readable text color — add/del rows carry an accent bar), each split pane has its own synced horizontal scrollbar, image diffs, binary detection |
-| 👁️  | Preview `.md` (rendered) and `.json` (pretty-printed) — right-click a file → Preview, read-only in a diff-sized overlay (working tree, a commit's file, or a stash's file) |
+| 👁️  | Preview `.md` (rendered) and `.json` (pretty-printed) — right-click a file or use the **Preview** button in the diff header, read-only in a diff-sized overlay (working tree, a commit's file, or a stash's file) |
 | 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens) |
 | 🕰️  | Reflog viewer — timeline of every HEAD move with per-action colors, restore any entry (undoable) |
 
@@ -83,7 +83,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 - 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel). The toggle only shows/hides; it never kills a running shell
 - ⬜ **Full-height mode** — the panel becomes a card aligned with the sidebar / graph / Changes columns: it covers the sidebar and graph but leaves the **repo tabs** and the **Changes panel** visible, and it stays open while you switch repos (a repo without a terminal collapses it)
 - ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
-- 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; window zoom still scales it
+- 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; type any installed family name (e.g. a Nerd Font) manually and it applies as you type, while window zoom still scales it
 - 🔒 Nothing is persisted — closing a shell ends its pty, and a workspace switch closes every shell
 - 📦 Powered by xterm.js + node-pty — ships ABI-stable N-API prebuilds for Windows & macOS, so the terminal needs **no Python or C++ toolchain**; a missing native binary disables only the terminal
 

@@ -33,7 +33,7 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, sanitizeTerminalFontFamily, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -160,6 +160,36 @@
     const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
     const TERMINAL_SIZE_OPTIONS = TERMINAL_FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
+
+    /** Manual terminal font family field: a draft string that applies automatically shortly after
+     *  typing stops (no Enter needed), immediately on blur/Enter, and flushes when the modal closes —
+     *  Escape-closing must never silently drop a typed family. */
+    const terminalFontFamilyDraft = ref(ui.terminalFontFamily)
+    const terminalFontInput = ref<HTMLInputElement | null>(null)
+    let terminalFontCommitTimer: number | null = null
+    watch(
+        () => ui.terminalFontFamily,
+        value => {
+            // Don't clobber what the user is still typing — the debounced commit writes the same
+            // sanitized value anyway, and chip/reset changes blur the input first.
+            if (document.activeElement === terminalFontInput.value) return
+            terminalFontFamilyDraft.value = value
+        }
+    )
+    function commitTerminalFontFamily() {
+        if (terminalFontCommitTimer !== null) {
+            window.clearTimeout(terminalFontCommitTimer)
+            terminalFontCommitTimer = null
+        }
+        const clean = sanitizeTerminalFontFamily(terminalFontFamilyDraft.value)
+        terminalFontFamilyDraft.value = clean
+        ui.terminalFontFamily = clean
+    }
+    function scheduleTerminalFontFamilyCommit() {
+        if (terminalFontCommitTimer !== null) window.clearTimeout(terminalFontCommitTimer)
+        terminalFontCommitTimer = window.setTimeout(commitTerminalFontFamily, 400)
+    }
+    onBeforeUnmount(commitTerminalFontFamily)
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
@@ -772,6 +802,20 @@
                                 {{ option.label }}
                             </button>
                         </div>
+                        <label class="ai-field terminal-font-manual">
+                            <span>Custom family — any installed font</span>
+                            <div class="ai-token-row">
+                                <input
+                                    ref="terminalFontInput"
+                                    v-model="terminalFontFamilyDraft"
+                                    type="text"
+                                    placeholder="App default"
+                                    autocomplete="off"
+                                    spellcheck="false"
+                                    @input="scheduleTerminalFontFamilyCommit"
+                                    @change="commitTerminalFontFamily" />
+                            </div>
+                        </label>
                         <span class="setting-label">Font size</span>
                         <div class="setting-choice-row">
                             <button
@@ -784,7 +828,7 @@
                                 {{ option.label }}
                             </button>
                         </div>
-                        <p class="tools-section-hint">The terminal keeps its own font — changing the app font size leaves it untouched. Window zoom still scales it.</p>
+                        <p class="tools-section-hint">The terminal keeps its own font — changing the app font size leaves it untouched. Window zoom still scales it. Type any installed family name and it applies automatically.</p>
                     </div>
 
                     <div class="tools-actions tools-reset-row">

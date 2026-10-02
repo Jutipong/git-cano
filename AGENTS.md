@@ -135,8 +135,11 @@ full guarded list lives in `@simple-git/argv-parser`).
 - **File preview** (`FilePreviewModal.vue`): read-only rendered view for `.md/.markdown/.mdown`
   (via `marked` + `DOMPurify`-sanitized `v-html`) and pretty-printed `.json` (regex token colors,
   raw fallback on parse failure). Opened from the file context menu (`Preview` item in
-  `FileContextMenu.vue`, gated by extension; untracked files are previewable — the content comes
-  from the working tree), mounted exactly like `DiffView` (direct child of
+  `FileContextMenu.vue`) and from the **DiffView header** (`Preview` text button next to the view
+  controls) — both gate on the shared `isPreviewablePath()` (`utils/preview.ts`), and the DiffView
+  button additionally hides when the viewed revision no longer has the file (all-`del` diff body).
+  Untracked files are previewable — the content comes from the working tree. The modal is mounted
+  exactly like `DiffView` (direct child of
   `.app` with `diff-overlay` + fullscreen toggle). Content comes from the `file:content` /
   `file:commitContent` / `stash:fileContent` IPC trio in `main/git.ts` (1 MB cap, binary guard) —
   never from the diff lines. The modal stays mounted while open and reloads on any
@@ -555,6 +558,11 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - **The terminal has its own font, decoupled from the app-wide `fontSize`**: `ui.terminalFontFamily`
   (`''` = follow `--font-mono`) and `ui.terminalFontSize` (chips + `stepTerminalFontSize`, the
   header `A−`/`A+` buttons) are persisted in `stores/ui.ts` and edited in Settings → Terminal.
+  The family also takes a manually typed name (Settings → Terminal):
+  `sanitizeTerminalFontFamily` strips quotes/backslashes/newlines and never reject-and-resets custom
+  names. The field auto-applies ~400ms after typing stops (and on blur/Enter) and flushes on modal
+  close — Escape-closing must never drop a typed family; the size stays preset-only
+  (`stepTerminalFontSize` steps through `TERMINAL_FONT_SIZE_OPTIONS`, default 14).
   `ui.fontSize` and `ui.zoom` both ride on `<html> { zoom: zoomScale × fontScale }`, so xterm is
   handed `ui.terminalFontPx` (`terminalFontSize / fontScale`) instead of the raw value: changing the
   UI font size must not move the terminal, while app zoom (`Ctrl+±`) still scales it on purpose.

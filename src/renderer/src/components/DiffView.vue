@@ -3,6 +3,7 @@
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucideColumns2 from '~icons/lucide/columns2'
+    import ILucideEye from '~icons/lucide/eye'
     import ILucideHistory from '~icons/lucide/history'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
@@ -23,6 +24,7 @@
         type TextRange,
         type LineRenderContext,
     } from '../utils/highlight'
+    import { isPreviewablePath } from '../utils/preview'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
@@ -35,7 +37,7 @@
         stashHash?: string
     }
     const props = defineProps<Props>()
-    const emit = defineEmits<{ (e: 'close'): void }>()
+    const emit = defineEmits<{ (e: 'close'): void; (e: 'show-preview', path: string): void }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const ui = useUiStore()
@@ -310,6 +312,20 @@
     })
 
     const displayName = computed(() => props.file?.path.split('/').pop() ?? '')
+
+    /**
+     * Preview button — markdown/JSON only, and only while the file exists in the viewed revision: a
+     * diff whose body is all deletions means the file is gone from that tree (deleted by the
+     * commit/stash or removed from the worktree), so previewing it could only fail.
+     */
+    const previewable = computed(() => {
+        if (!props.file || !isPreviewablePath(props.file.path)) return false
+        // Keep the button out while the diff loads: a deleted file's lines are empty mid-flight and
+        // would briefly look previewable before the all-`del` body arrives.
+        if (loading.value) return false
+        const body = lines.value.filter(line => line.type !== 'hunk' && line.type !== 'meta')
+        return !(body.length > 0 && body.every(line => line.type === 'del'))
+    })
 
     /**
      * Snapshot fallback (ALL FILES on an unchanged file, in workdir/commit/stash): the main process rendered the full blob as context lines
@@ -1043,6 +1059,16 @@
                             height="15" />
                     </button>
                 </div>
+                <button
+                    v-if="previewable"
+                    class="btn small diff-preview-btn"
+                    title="Preview file (rendered markdown / pretty-printed JSON)"
+                    @click="emit('show-preview', file.path)">
+                    <i-lucide-eye
+                        width="13"
+                        height="13" />
+                    Preview
+                </button>
                 <div class="segmented diff-header-actions">
                     <button
                         class="icon-btn"

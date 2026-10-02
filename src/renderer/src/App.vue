@@ -871,7 +871,8 @@
             :commit-hash="selectedStash ? undefined : (selectedCommit?.hash ?? undefined)"
             :stash-hash="selectedStash?.hash ?? undefined"
             :refresh="repoStore.refresh"
-            @close="selectedFile = null" />
+            @close="selectedFile = null"
+            @show-preview="previewFile = $event" />
         <RebaseEditor
             v-if="rebaseBase"
             :base-ref="rebaseBase"

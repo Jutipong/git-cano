@@ -9,6 +9,7 @@
     import ScanSearch from '~icons/lucide/scan-search'
 
     import type { ToastKind } from '../stores/uiTransient'
+    import { isPreviewablePath } from '../utils/preview'
 
     export interface FileMenuState {
         x: number
@@ -44,13 +45,7 @@
     /** Read-only preview supports rendered markdown and pretty-printed JSON. */
     const isPreviewable = computed(() => {
         if (!props.menu || props.menu.directory || props.menu.deleted) return false
-        const path = props.menu.path.toLowerCase()
-        return (
-            path.endsWith('.md') ||
-            path.endsWith('.markdown') ||
-            path.endsWith('.mdown') ||
-            path.endsWith('.json')
-        )
+        return isPreviewablePath(props.menu.path)
     })
 
     function onDocMouseDown(event: MouseEvent) {

@@ -72,8 +72,8 @@ export const DEFAULT_ZOOM = 100
  * Terminal font size options, in px (before app zoom). The terminal owns its own size and is
  * deliberately NOT tied to `fontSize` — only app zoom scales it (see `terminalFontPx`).
  */
-export const TERMINAL_FONT_SIZE_OPTIONS = [10, 11, 12, 13, 14, 16, 18, 20]
-export const DEFAULT_TERMINAL_FONT_SIZE = 13
+export const TERMINAL_FONT_SIZE_OPTIONS = [10, 11, 12, 13, 14, 15, 16, 18, 20]
+export const DEFAULT_TERMINAL_FONT_SIZE = 14
 
 /** Terminal font family choices. `''` = follow the app's `--font-mono` stack (default). */
 export const TERMINAL_FONT_OPTIONS = [
@@ -95,6 +95,18 @@ export const TERMINAL_FONT_OPTIONS = [
     { value: 'Courier New', label: 'Courier New' },
 ] as const
 export const DEFAULT_TERMINAL_FONT_FAMILY = ''
+
+/** Longest custom family name accepted from Settings — a font name, not a fallback stack. */
+const TERMINAL_FONT_FAMILY_MAX = 64
+
+/** Keep a typed family safe for xterm's `"<name>", monospace` shorthand (no quotes/backslashes/newlines). */
+export function sanitizeTerminalFontFamily(value: string): string {
+    return value
+        .replace(/["'\\]/g, '')
+        .replace(/[\r\n\t]+/g, ' ')
+        .trim()
+        .slice(0, TERMINAL_FONT_FAMILY_MAX)
+}
 
 /** Code viewer font size (Blame / File History diff) — adjustable with Ctrl+wheel. */
 export const CODE_FONT_SIZE_MIN = 9
@@ -186,15 +198,17 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
         })
-        /** Terminal font — its own family and size, independent of the app-wide `fontSize`. */
+        /** Terminal font — its own family and size, independent of the app-wide `fontSize`. The family
+         *  takes a manually typed name (Settings → Terminal), so its guard sanitizes instead of
+         *  rejecting values outside the preset list; the size stays preset-only. */
         const terminalFontSize = ref(DEFAULT_TERMINAL_FONT_SIZE)
         watchEffect(() => {
             if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value)) terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
         })
         const terminalFontFamily = ref<string>(DEFAULT_TERMINAL_FONT_FAMILY)
         watchEffect(() => {
-            if (!TERMINAL_FONT_OPTIONS.some(option => option.value === terminalFontFamily.value))
-                terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
+            const clean = sanitizeTerminalFontFamily(terminalFontFamily.value)
+            if (clean !== terminalFontFamily.value) terminalFontFamily.value = clean
         })
 
         /** App zoom and UI font size both ride on `<html> { zoom }`; keep the factors separate so the

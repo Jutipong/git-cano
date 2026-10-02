@@ -97,8 +97,8 @@
                     :disabled="atCap"
                     @click="emit('add-tab')">
                     <i-lucide-plus
-                        width="13"
-                        height="13" />
+                        width="14"
+                        height="14" />
                 </button>
             </span>
             <span class="terminal-actions">

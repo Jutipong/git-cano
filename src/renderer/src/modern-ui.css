@@ -1686,6 +1686,12 @@ body {
     gap: 6px;
 }
 
+/* DiffView header: text button that opens the read-only preview (markdown / JSON) — the file's own
+   header is the natural place for it, next to the view controls. */
+.diff-header .diff-preview-btn {
+    flex: 0 0 auto;
+}
+
 .diff-search {
     display: flex;
     flex: 0 0 auto;
@@ -5280,8 +5286,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 30px;
-    flex: 0 0 30px;
+    height: 34px;
+    flex: 0 0 34px;
     padding: 0 12px;
     color: var(--text-muted);
 }
@@ -5301,7 +5307,7 @@ body {
     flex: 1 1 auto;
     min-width: 0;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     overflow: hidden;
 }
 
@@ -5330,13 +5336,13 @@ body {
 
 .terminal-tab-label {
     min-width: 0;
-    padding: 3px 4px 3px 9px;
+    padding: 3px 5px 3px 10px;
     overflow: hidden;
     color: var(--text-muted);
     background: transparent;
     border: none;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 12px;
     letter-spacing: 0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -5351,9 +5357,9 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 16px;
-    height: 16px;
-    min-height: 16px;
+    width: 18px;
+    height: 18px;
+    min-height: 18px;
     margin-right: 2px;
     padding: 0;
     color: var(--text-muted);
@@ -5367,11 +5373,11 @@ body {
 }
 
 /* CloseXIcon's shared .close-x-svg is absolutely positioned against a positioned ancestor — pin it
-   to this 16px button instead, or the (invisible) ring swallows every click in the panel. */
+   to this 18px button instead, or the (invisible) ring swallows every click in the panel. */
 .terminal-tab-close .close-x-svg {
     position: static;
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
 }
 
 /* Keep the ✕ of the showing tab visible — it is the only way to kill it. */
@@ -5389,9 +5395,9 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 20px;
-    height: 18px;
-    min-height: 18px;
+    width: 24px;
+    height: 20px;
+    min-height: 20px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -5963,6 +5969,11 @@ body {
 .tools-body select {
     padding: 7px 12px;
     border-radius: var(--radius-pill);
+}
+
+/* Settings → Terminal manual font family field: a narrow pill so it reads as an input next to the preset chips. */
+.terminal-font-manual .ai-token-row input {
+    max-width: 240px;
 }
 
 .setting-toggle {
