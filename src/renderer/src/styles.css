@@ -2530,12 +2530,6 @@ mark {
     color: var(--red);
 }
 
-.toolbar-icon-button.bisect-active {
-    color: var(--orange);
-    background: rgba(237, 179, 93, 0.1);
-    border-color: rgba(237, 179, 93, 0.35);
-}
-
 .rebase-paused {
     display: flex;
     align-items: center;

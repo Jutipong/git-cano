@@ -31,7 +31,6 @@ import type {
     RepoStatus,
     StashEntry,
     UndoPreview,
-    WorktreeInfo,
     AiContextScope,
     ConflictVersions,
 } from '@shared/types'
@@ -199,10 +198,6 @@ export function setActiveRepo(dir: string): void {
     if (!repoInstances.has(dir)) throw new Error(`Repository "${dir}" is not open`)
     activeRepoPath = dir
     log('info', 'repo', `active -> ${dir}`)
-}
-
-export function listOpenRepos(): string[] {
-    return [...repoInstances.keys()]
 }
 
 export function closeRepo(dir?: string): void {
@@ -620,18 +615,6 @@ export async function discardUnstaged(): Promise<void> {
     const { git: g } = getRepo()
     const status = await g.status()
     if (status.files.some(f => f.working_dir !== '?')) await g.checkout(['--', '.'])
-}
-
-export async function discardUntracked(): Promise<void> {
-    const { git: g } = getRepo()
-    const status = await g.status()
-    if (status.files.some(f => f.working_dir === '?')) await g.clean(['f', 'd'])
-}
-
-export async function commit(message: string): Promise<string> {
-    const { git: g } = getRepo()
-    const res = await g.commit(message)
-    return res.commit
 }
 
 export async function getDiff(file: string, staged: boolean, context?: number): Promise<DiffLine[]> {
@@ -1480,12 +1463,10 @@ export function getRepoState(): RepoState {
     const merging = fs.existsSync(path.join(gitDir, 'MERGE_HEAD'))
     const rebasing = fs.existsSync(path.join(gitDir, 'rebase-merge')) || fs.existsSync(path.join(gitDir, 'rebase-apply'))
     const cherryPicking = fs.existsSync(path.join(gitDir, 'CHERRY_PICK_HEAD'))
-    const bisectActive = fs.existsSync(path.join(gitDir, 'BISECT_START')) || fs.existsSync(path.join(gitDir, 'BISECT_LOG'))
     return {
         merging,
         rebasing,
         cherryPicking,
-        bisectActive,
         mergeSource: merging ? mergeSourceName(gitDir) : null,
         cherryPickSource: cherryPicking ? cherryPickSourceName(gitDir) : null,
     }
@@ -1548,26 +1529,6 @@ export async function continueMerge(): Promise<void> {
 export async function abortMerge(): Promise<void> {
     const { git: g } = getRepo()
     await g.raw(['merge', '--abort'])
-}
-
-export async function rebaseOnto(ref: string): Promise<string> {
-    const { path: p, git: g } = getRepo()
-    const clean = (await g.status()).files.length === 0
-    const headBefore = await g
-        .revparse(['HEAD'])
-        .then(out => out.trim())
-        .catch(() => null)
-    try {
-        await g.raw(['rebase', ref])
-        if (clean && headBefore) {
-            pushUndo({ label: 'rebase', doneMessage: 'Rebase undone', repoPath: p, kind: 'reset', headBefore, resetMode: 'hard' })
-        }
-        return `Rebased onto ${ref}`
-    } catch {
-        const state = await getRepoState()
-        if (state.rebasing || state.merging) throw new Error('Rebase stopped due to conflicts. Resolve them, then continue.')
-        throw new Error('Rebase failed')
-    }
 }
 
 export async function rebaseAbort(): Promise<void> {
@@ -1642,11 +1603,6 @@ export async function resetTo(target: string, mode: 'soft' | 'mixed' | 'hard'): 
             resetMode: mode,
         })
     }
-}
-
-export async function renameBranch(oldName: string, newName: string): Promise<void> {
-    const { git: g } = getRepo()
-    await g.raw(['branch', '-m', oldName, newName])
 }
 
 /**
@@ -1856,11 +1812,6 @@ export async function commitMessage(message: string, amend: boolean, dir?: strin
     return res.commit
 }
 
-export async function getLastCommitMessage(): Promise<string> {
-    const { git: g } = getRepo()
-    return (await g.raw(['log', '-1', '--format=%B'])).trim()
-}
-
 /**
  * Undo journal for risky operations (commit/amend/reset/drop-stash). Each entry remembers the
  * pre-op state explicitly; the reflog is only the backstop — git never GCs the objects promptly,
@@ -1995,11 +1946,6 @@ export async function deleteTag(name: string): Promise<void> {
     await g.raw(['tag', '-d', name])
 }
 
-export async function pushTags(): Promise<string> {
-    await withAuthEnv(git => git.push(['origin', '--tags']))
-    return 'Tags pushed'
-}
-
 export async function pushTag(name: string): Promise<string> {
     await withAuthEnv(git => git.push(['origin', `refs/tags/${name.trim()}`]))
     return `Tag ${name.trim()} pushed`
@@ -2069,11 +2015,6 @@ export async function addRemote(name: string, url: string): Promise<void> {
     const { git: g } = getRepo()
     if (!name.trim() || !url.trim()) throw new Error('Name and URL are required')
     await g.raw(['remote', 'add', name.trim(), url.trim()])
-}
-
-export async function removeRemote(name: string): Promise<void> {
-    const { git: g } = getRepo()
-    await g.raw(['remote', 'remove', name])
 }
 
 export async function setRemoteUrl(name: string, url: string): Promise<void> {
@@ -2418,66 +2359,3 @@ export async function abortPausedRebase(): Promise<void> {
     fs.promises.unlink(backupFile).catch(() => {})
 }
 
-export async function bisectStart(badRef: string, goodRef?: string): Promise<void> {
-    const { git: g } = getRepo()
-    const args = ['bisect', 'start', badRef]
-    if (goodRef?.trim()) args.push(goodRef.trim())
-    await g.raw(args)
-}
-
-export async function bisectMark(kind: 'good' | 'bad' | 'skip'): Promise<void> {
-    const { git: g } = getRepo()
-    await g.raw(['bisect', kind])
-}
-
-export async function bisectReset(): Promise<void> {
-    const { git: g } = getRepo()
-    await g.raw(['bisect', 'reset'])
-}
-
-export async function listWorktrees(): Promise<WorktreeInfo[]> {
-    const { git: g } = getRepo()
-    const text = await g.raw(['worktree', 'list', '--porcelain'])
-    const result: WorktreeInfo[] = []
-    let currentWt: Partial<WorktreeInfo> = {}
-    for (const line of text.split('\n')) {
-        if (line.startsWith('worktree ')) {
-            if (currentWt.path) result.push(finalizeWorktree(currentWt))
-            currentWt = { path: line.slice('worktree '.length) }
-        } else if (line.startsWith('HEAD ')) currentWt.head = line.slice(5)
-        else if (line.startsWith('branch ')) currentWt.branch = line.slice('branch refs/heads/'.length)
-    }
-    if (currentWt.path) result.push(finalizeWorktree(currentWt))
-    return result
-}
-function finalizeWorktree(wt: Partial<WorktreeInfo>): WorktreeInfo {
-    return { path: wt.path ?? '', head: wt.head ?? '', branch: wt.branch ?? null }
-}
-
-export async function addWorktree(dir: string, newBranch?: string): Promise<void> {
-    const { git: g } = getRepo()
-    if (!dir.trim()) throw new Error('Path is required')
-    const args = ['worktree', 'add']
-    if (newBranch?.trim()) args.push('-b', newBranch.trim())
-    args.push(dir.trim())
-    if (newBranch?.trim()) args.push('HEAD')
-    await g.raw(args)
-}
-
-export async function removeWorktree(dir: string): Promise<void> {
-    const { git: g } = getRepo()
-    await g.raw(['worktree', 'remove', dir])
-}
-
-export function listSubmodules(): string[] {
-    const { path: p } = getRepo()
-    const modulesFile = path.join(p, '.gitmodules')
-    if (!fs.existsSync(modulesFile)) return []
-    const content = fs.readFileSync(modulesFile, 'utf8')
-    return [...content.matchAll(/submodule "([^"]+)"/g)].map(match => match[1])
-}
-
-export async function updateSubmodules(): Promise<string> {
-    await withAuthEnv(git => git.submoduleUpdate(['--init', '--recursive']))
-    return 'Submodules updated'
-}

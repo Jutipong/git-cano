@@ -40,12 +40,10 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 
 const api = {
     pickAndOpen: (): Promise<RepoStatus | null> => call('repo:pickAndOpen'),
-    init: (): Promise<RepoStatus | null> => call('repo:init'),
     pickDirectory: (): Promise<string | null> => call('repo:pickDir'),
     clone: (url: string, dest?: string): Promise<RepoStatus | null> => call('repo:clone', url, dest),
     openPath: (dir: string): Promise<RepoStatus> => call('repo:openPath', dir),
     setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
-    listRepos: (): Promise<string[]> => call('repo:list'),
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
@@ -100,7 +98,6 @@ const api = {
     saveResolvedFile: (file: string, content: string): Promise<void> => call('conflict:save', file, content),
     continueMerge: (): Promise<void> => call('merge:continue'),
     abortMerge: (): Promise<void> => call('merge:abort'),
-    rebaseOnto: (ref: string): Promise<string> => call('rebase:onto', ref),
     rebaseAbort: (): Promise<void> => call('rebase:abort'),
     rebaseContinue: (): Promise<void> => call('rebase:continue'),
     rebasePlan: (ref: string): Promise<CommitNode[]> => call('rebase:plan', ref),
@@ -116,7 +113,6 @@ const api = {
     cherryPickContinue: (): Promise<void> => call('cherryPick:continue'),
     cherryPickAbort: (): Promise<void> => call('cherryPick:abort'),
     resetTo: (target: string, mode: 'soft' | 'mixed' | 'hard'): Promise<void> => call('ref:reset', target, mode),
-    renameBranch: (oldName: string, newName: string): Promise<void> => call('branch:rename', oldName, newName),
     commitFileDiff: (hash: string, file: string, context?: number): Promise<DiffLine[]> => call('file:commitDiff', hash, file, context),
     getCommitFileMeta: (hash: string, file: string): Promise<DiffMeta> => call('file:commitMeta', hash, file),
     getCommitImageVersion: (hash: string, file: string): Promise<string | null> => call('file:commitImage', hash, file),
@@ -132,11 +128,8 @@ const api = {
     unstageAll: (): Promise<void> => call('file:unstageAll'),
     discardFile: (p: string): Promise<void> => call('file:discard', p),
     discardUnstaged: (): Promise<void> => call('file:discardUnstaged'),
-    discardUntracked: (): Promise<void> => call('file:discardUntracked'),
 
-    commit: (msg: string): Promise<string> => call('commit:create', msg),
     commitWithAmend: (msg: string, amend: boolean, repoPath?: string): Promise<string> => call('commit:message', msg, amend, repoPath),
-    lastCommitMessage: (): Promise<string> => call('commit:lastMessage'),
     undoPeek: (repoPath?: string): Promise<UndoPreview | null> => call('git:undoPeek', repoPath ?? null),
     undoById: (id: number, repoPath?: string): Promise<string> => call('git:undo', id, repoPath ?? null),
 
@@ -171,39 +164,24 @@ const api = {
     tags: (): Promise<{ name: string; hash: string }[]> => call('tag:list'),
     createTag: (name: string, hash?: string | null, message?: string): Promise<void> => call('tag:create', name, hash ?? null, message),
     deleteTag: (name: string): Promise<void> => call('tag:delete', name),
-    pushTags: (): Promise<string> => call('tag:push'),
     pushTag: (name: string): Promise<string> => call('tag:pushOne', name),
     remoteTags: (): Promise<string[]> => call('tag:remoteList'),
     deleteRemoteTag: (name: string): Promise<string> => call('tag:remoteDelete', name),
 
     remotesFull: (): Promise<{ name: string; url: string }[]> => call('remote:listFull'),
     addRemote: (name: string, url: string): Promise<void> => call('remote:addNew', name, url),
-    removeRemote: (name: string): Promise<void> => call('remote:removeOne', name),
     setRemoteUrl: (name: string, url: string): Promise<void> => call('remote:setUrl', name, url),
     testRemoteUrl: (url: string): Promise<RemoteTestResult> => call('remote:testUrl', url),
 
     rawPatch: (file: string, staged: boolean): Promise<string> => call('patch:raw', file, staged),
-    applyPatch: (patch: string, target: 'index' | 'worktree', reverse: boolean): Promise<void> =>
-        call('patch:apply', patch, target, reverse),
     stageHunks: (file: string, stagedView: boolean, hunks: number[], reverse: boolean): Promise<void> =>
         call('patch:stageHunks', file, stagedView, hunks, reverse),
 
     fileHistory: (file: string): Promise<CommitNode[]> => call('file:history', file),
     blame: (file: string, rev?: string): Promise<BlameLine[]> => call('file:blame', file, rev ?? null),
 
-    bisectStart: (bad: string, good?: string): Promise<void> => call('bisect:start', bad, good),
-    bisectMark: (kind: 'good' | 'bad' | 'skip'): Promise<void> => call('bisect:mark', kind),
-    bisectReset: (): Promise<void> => call('bisect:reset'),
-
-    worktrees: (): Promise<{ path: string; head: string; branch: string | null }[]> => call('worktree:listAll'),
-    addWorktree: (dir: string, branch?: string): Promise<void> => call('worktree:addNew', dir, branch),
-    removeWorktree: (dir: string): Promise<void> => call('worktree:removeOne', dir),
-    submodules: (): Promise<string[]> => call('submodule:list'),
-    updateSubmodules: (): Promise<string> => call('submodule:update'),
-
     recentList: (): Promise<string[]> => call('recent:list'),
     recentAdd: (p: string): Promise<boolean> => call('recent:add', p),
-    recentRemove: (p: string): Promise<boolean> => call('recent:remove', p),
 
     clientLog: (level: 'info' | 'warn' | 'error', message: string): void => {
         ipcRenderer.send('app:log', level, message)

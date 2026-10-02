@@ -23,13 +23,11 @@ import {
     checkoutRemoteWithOptions,
     checkCherryPickConflicts,
     closeRepo,
-    commit,
     createBranchWithOptions,
     deleteBranch,
     deleteRemoteBranch,
     discard,
     discardUnstaged,
-    discardUntracked,
     fetchAll,
     getCommitDetails,
     getDiff,
@@ -56,7 +54,6 @@ import {
     checkoutCommit,
     getRepoState,
     setActiveRepo,
-    listOpenRepos,
     getDiffMeta,
     getImageVersion,
     checkoutSide,
@@ -66,14 +63,12 @@ import {
     saveResolvedFile,
     continueMerge,
     abortMerge,
-    rebaseOnto,
     rebaseAbort,
     rebaseContinue,
     cherryPick,
     cherryPickContinue,
     cherryPickAbort,
     resetTo,
-    renameBranch,
     getCommitFileDiff,
     getCommitFileMeta,
     getCommitImageVersion,
@@ -99,35 +94,23 @@ import {
     commitMessage,
     undoById,
     peekUndo,
-    getLastCommitMessage,
     listTags,
     createTag,
     deleteTag,
-    pushTags,
     pushTag,
     listRemoteTags,
     deleteRemoteTag,
     listRemotes,
     addRemote,
-    removeRemote,
     setRemoteUrl,
     testRemoteUrl,
     getRawPatch,
     stageHunks,
     sshTestHost,
-    applyPatch,
     getFileHistory,
     getBlame,
     executeRebasePlan,
     abortPausedRebase,
-    bisectStart,
-    bisectMark,
-    bisectReset,
-    listWorktrees,
-    addWorktree,
-    removeWorktree,
-    listSubmodules,
-    updateSubmodules,
     listFiles,
     addIgnoreRule,
     plainGit,
@@ -581,16 +564,6 @@ app.whenReady().then(() => {
         if (res.canceled || !res.filePaths[0]) return null
         return openRepo(res.filePaths[0])
     })
-    handle('repo:init', async () => {
-        const res = await dialog.showOpenDialog({
-            title: 'Choose folder for new repository',
-            properties: ['openDirectory', 'createDirectory'],
-            defaultPath: startDir(),
-        })
-        if (res.canceled || !res.filePaths[0]) return null
-        await plainGit(res.filePaths[0]).init()
-        return openRepo(res.filePaths[0])
-    })
     handle('repo:pickDir', async () => {
         const res = await dialog.showOpenDialog({
             title: 'Choose destination folder for clone',
@@ -620,7 +593,6 @@ app.whenReady().then(() => {
     })
     handle('repo:openPath', (_dir: string) => openRepo(_dir as string))
     handle('repo:setActive', (_dir: string) => setActiveRepo(_dir as string))
-    handle('repo:list', () => listOpenRepos())
     handle('repo:status', () => {
         requireRepo()
         return getStatus()
@@ -713,10 +685,6 @@ app.whenReady().then(() => {
         requireRepo()
         return abortMerge()
     })
-    handle('rebase:onto', (ref: string) => {
-        requireRepo()
-        return rebaseOnto(ref as string)
-    })
     handle('rebase:abort', () => {
         requireRepo()
         return rebaseAbort()
@@ -748,10 +716,6 @@ app.whenReady().then(() => {
     handle('ref:reset', (target: string, mode: 'soft' | 'mixed' | 'hard') => {
         requireRepo()
         return resetTo(target as string, mode as 'soft' | 'mixed' | 'hard')
-    })
-    handle('branch:rename', (oldName: string, newName: string) => {
-        requireRepo()
-        return renameBranch(oldName as string, newName as string)
     })
     handle('file:commitDiff', (hash: string, file: string, context?: number) => {
         requireRepo()
@@ -798,15 +762,6 @@ app.whenReady().then(() => {
         requireRepo()
         return discardUnstaged()
     })
-    handle('file:discardUntracked', () => {
-        requireRepo()
-        return discardUntracked()
-    })
-    handle('commit:create', (message: string) => {
-        requireRepo()
-        return commit(message as string)
-    })
-
     handle('branch:list', () => {
         requireRepo()
         return listBranches()
@@ -901,10 +856,6 @@ app.whenReady().then(() => {
         requireRepo()
         return commitMessage(message as string, amend as boolean, typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
-    handle('commit:lastMessage', () => {
-        requireRepo()
-        return getLastCommitMessage()
-    })
     handle('git:undoPeek', (_dir?: string) => {
         requireRepo()
         return peekUndo(typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
@@ -924,10 +875,6 @@ app.whenReady().then(() => {
     handle('tag:delete', (name: string) => {
         requireRepo()
         return deleteTag(name as string)
-    })
-    handle('tag:push', () => {
-        requireRepo()
-        return pushTags()
     })
     handle('tag:pushOne', (name: string) => {
         requireRepo()
@@ -949,10 +896,6 @@ app.whenReady().then(() => {
         requireRepo()
         return addRemote(name as string, url as string)
     })
-    handle('remote:removeOne', (name: string) => {
-        requireRepo()
-        return removeRemote(name as string)
-    })
     handle('remote:setUrl', (name: string, url: string) => {
         requireRepo()
         return setRemoteUrl(name as string, url as string)
@@ -963,10 +906,6 @@ app.whenReady().then(() => {
     handle('patch:raw', (file: string, staged: boolean) => {
         requireRepo()
         return getRawPatch(file as string, staged as boolean)
-    })
-    handle('patch:apply', (patch: string, target: 'index' | 'worktree', reverse: boolean) => {
-        requireRepo()
-        return applyPatch(patch as string, target as 'index' | 'worktree', reverse as boolean)
     })
     handle('patch:stageHunks', (file: string, stagedView: boolean, hunks: number[], reverse: boolean) => {
         requireRepo()
@@ -980,39 +919,6 @@ app.whenReady().then(() => {
         requireRepo()
         return getBlame(file as string, typeof rev === 'string' && rev.trim() ? rev : undefined)
     })
-    handle('bisect:start', (bad: string, good?: string) => {
-        requireRepo()
-        return bisectStart(bad as string, good as string | undefined)
-    })
-    handle('bisect:mark', (kind: 'good' | 'bad' | 'skip') => {
-        requireRepo()
-        return bisectMark(kind as 'good' | 'bad' | 'skip')
-    })
-    handle('bisect:reset', () => {
-        requireRepo()
-        return bisectReset()
-    })
-    handle('worktree:listAll', () => {
-        requireRepo()
-        return listWorktrees()
-    })
-    handle('worktree:addNew', (dir: string, branch?: string) => {
-        requireRepo()
-        return addWorktree(dir as string, branch as string | undefined)
-    })
-    handle('worktree:removeOne', (dir: string) => {
-        requireRepo()
-        return removeWorktree(dir as string)
-    })
-    handle('submodule:list', () => {
-        requireRepo()
-        return listSubmodules()
-    })
-    handle('submodule:update', () => {
-        requireRepo()
-        return updateSubmodules()
-    })
-
     handle('stash:list', () => {
         requireRepo()
         return listStashes()
@@ -1064,17 +970,6 @@ app.whenReady().then(() => {
         fs.writeFileSync(file, JSON.stringify(list))
         return true
     })
-    handle('recent:remove', (_p: string) => {
-        const file = path.join(app.getPath('userData'), 'recent.json')
-        let list: string[] = []
-        try {
-            list = JSON.parse(fs.readFileSync(file, 'utf8')) as string[]
-        } catch {}
-        list = list.filter(x => x !== _p)
-        fs.writeFileSync(file, JSON.stringify(list))
-        return true
-    })
-
     handleSensitive('ai:getConfig', () => getConfig())
     handleSensitive('ai:saveConfig', (_cfg: unknown) => saveConfig(_cfg as never))
     handleSensitive('ai:test', (provider: string, token: string, modelId: string) =>

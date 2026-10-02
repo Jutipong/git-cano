@@ -36,10 +36,6 @@
 
     const activeCount = computed(() => entries.value?.filter(entry => entry.command !== 'drop').length ?? 0)
 
-    watch(pausedMessage, value => {
-        if (!value) return
-    })
-
     async function loadPlan() {
         try {
             const commits = await window.api.rebasePlan(props.baseRef)
@@ -55,6 +51,8 @@
             error.value = String(error_).replace(/^Error:\s*/, '')
         }
     }
+
+    watch(() => props.baseRef, loadPlan, { immediate: true })
 
     async function executePlan(plan: Entry[], resume: boolean) {
         running.value = true

@@ -31,8 +31,6 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
     fetch: 'Ctrl+Shift+ArrowDown',
 }
 
-export const SYNC_SHORTCUT_IDS: SyncShortcutId[] = ['fetch', 'pull', 'push']
-
 /** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
 export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'settings' | 'commandPalette'
 
@@ -122,9 +120,3 @@ export function isReservedCombo(combo: string, effective: Partial<Record<string,
     return false
 }
 
-/** Key combos for a shortcut id, formatted for the current platform. */
-export function keysFor(id: string): string[] {
-    const def = SHORTCUTS.find(s => s.id === id)
-    if (!def) return []
-    return isMac ? def.mac : def.win
-}

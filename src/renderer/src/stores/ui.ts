@@ -27,8 +27,6 @@ export const REPO_TAB_COLOR_OPTIONS = [
     { value: 'purple', label: 'Purple', hex: '#bf5af2' },
 ] as const
 
-export type RepoTabColor = (typeof REPO_TAB_COLOR_OPTIONS)[number]['value']
-
 export type CommitColumn = 'author' | 'hash' | 'date'
 
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
@@ -284,10 +282,6 @@ export const useUiStore = defineStore(
             shortcutOverrides.value = {}
         }
 
-        function toggleSection(key: 'local' | 'tags' | 'remote' | 'stashes') {
-            sidebarSections.value[key] = !sidebarSections.value[key]
-        }
-
         function resetCommitColumns() {
             commitColumns.value = { ...COMMIT_COLUMN_DEFAULTS }
             commitDateFormat.value = 'dd/MM/yyyy HH:mm'
@@ -359,7 +353,6 @@ export const useUiStore = defineStore(
             effectiveShortcuts,
             setShortcut,
             resetShortcuts,
-            toggleSection,
             resetCommitColumns,
             resetAppearance,
             resetGeneral,

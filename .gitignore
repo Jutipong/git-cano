@@ -27,3 +27,4 @@ coverage/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+/PLAN.md

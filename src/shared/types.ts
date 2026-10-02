@@ -61,10 +61,6 @@ export interface ConflictVersions {
 
 export type GitignoreRuleKind = 'file' | 'extension' | 'directory'
 
-export interface ApiError {
-    message: string
-}
-
 export interface CommitFile {
     path: string
     status: string
@@ -111,7 +107,6 @@ export interface RepoState {
     merging: boolean
     rebasing: boolean
     cherryPicking: boolean
-    bisectActive: boolean
     /** While merging: the branch (or short hash) being merged in — the "theirs" side. */
     mergeSource?: string | null
     /** While cherry-picking: short hash of the commit being picked — the "theirs" side. */
@@ -170,23 +165,6 @@ export interface SquashPlan {
     commits: CommitNode[]
     defaultMessage: string
     dirty: boolean
-}
-
-export interface TagInfo {
-    name: string
-    hash: string
-}
-
-export interface RemoteInfo {
-    name: string
-    fetchUrl: string
-    pushUrl: string
-}
-
-export interface WorktreeInfo {
-    path: string
-    head: string
-    branch: string | null
 }
 
 export interface BlameLine {

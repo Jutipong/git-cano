@@ -58,8 +58,6 @@
     const LIGHT_RETRO_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#4A4A4A', '#1F6B5E', '#713C4D']
     /* Vivid avatar colors: deliberately spaced apart and without yellow. */
     const AVATAR_COLORS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
-    /** Dusty avatars to match the light-retro lane palette. */
-    const LIGHT_RETRO_AVATAR_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#333333', '#1F6B5E', '#713C4D']
     const laneW = 32
     const rowH = 30
     const rowHChip = 48
@@ -346,10 +344,6 @@
         if (ui.theme === 'terminal') return TERMINAL_COLORS
         if (ui.theme === 'light-retro') return LIGHT_RETRO_COLORS
         return COLORS
-    }
-
-    function avatarPalette(): string[] {
-        return ui.theme === 'light-retro' ? LIGHT_RETRO_AVATAR_COLORS : AVATAR_COLORS
     }
 
     function nodeColor(commit: CommitNode) {

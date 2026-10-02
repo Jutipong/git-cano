@@ -38,7 +38,7 @@ pnpm dev
 
 |     |                                                                         |
 | --- | ----------------------------------------------------------------------- |
-| 📁  | Open, initialize & clone repositories                                   |
+| 📁  | Open & clone repositories                                               |
 | 🗂️  | Multiple repos open at once as tabs                                     |
 | 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder; switcher button shows text only, no icon |
 | 💾  | Session & recent-repo restore on startup                                |
@@ -69,11 +69,11 @@ pnpm dev
 
 |      |                                                        |
 | ---- | ------------------------------------------------------ |
-| 🌱   | Create / checkout / rename / delete / merge / rebase — right-click a branch to merge it into the current one (or drag a branch onto a branch), drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice |
+| 🌱   | Create / checkout / delete / merge / rebase — right-click a branch to merge it into the current one (or drag a branch onto a branch), drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice |
 | 🏷️   | Tag create / delete / push — create dialogs share one look with a branch/hash chip in the header, input stays focused on every reopen |
-| 🌐   | Remotes: add, edit, remove, test URLs                  |
+| 🌐   | Remotes: add, edit, test URLs                  |
 | ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token) — buttons show an inline spinner while busy |
-| 📦   | Stashes, worktrees, submodules, bisect assistant       |
+| 📦   | Stashes                                                |
 | 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes |
 
 ### 🤖 AI Commit Messages _(optional)_

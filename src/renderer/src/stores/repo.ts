@@ -87,7 +87,7 @@ export const useRepoStore = defineStore('repo', () => {
     const commitAuthor = ref('')
     const commitDate = ref('')
     const stashFiles = ref<CommitFile[]>([])
-    const repoState = ref<RepoState>({ merging: false, rebasing: false, cherryPicking: false, bisectActive: false })
+    const repoState = ref<RepoState>({ merging: false, rebasing: false, cherryPicking: false })
     const loadedSession = loadSavedSession()
     const session = ref<PersistedSession>(loadedSession.session)
     let legacyMigrationPending = loadedSession.fromLegacy
@@ -389,11 +389,6 @@ export const useRepoStore = defineStore('repo', () => {
         syncSession()
     }
 
-    async function openPath(path: string) {
-        if (useUiTransientStore().busy) return
-        addTab(await window.api.openPath(path))
-    }
-
     async function init() {
         restoringSession = true
         let paths: string[] = []
@@ -626,7 +621,6 @@ export const useRepoStore = defineStore('repo', () => {
         setActive,
         reorderTabs,
         closeTab,
-        openPath,
         init,
         loadMore,
         switchWorkspace,
