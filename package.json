@@ -71,6 +71,7 @@
     "icon": "build/icons/cano.png",
     "asar": true,
     "compression": "maximum",
+    "npmRebuild": false,
     "files": [
       "out/**/*",
       "package.json",

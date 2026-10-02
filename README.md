@@ -85,7 +85,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 - ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
 - 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; window zoom still scales it
 - 🔒 Nothing is persisted — closing a shell ends its pty, and a workspace switch closes every shell
-- 📦 Powered by xterm.js + node-pty (prebuilt for Windows & macOS; a missing native build disables only the terminal)
+- 📦 Powered by xterm.js + node-pty — ships ABI-stable N-API prebuilds for Windows & macOS, so the terminal needs **no Python or C++ toolchain**; a missing native binary disables only the terminal
 
 ### 🤖 AI Commit Messages _(optional)_
 
@@ -167,6 +167,8 @@ pnpm approve-builds electron esbuild node-pty
 pnpm dev
 ```
 
+> 💡 node-pty ships prebuilt N-API binaries for Windows & macOS, so the terminal works without Python or Visual Studio Build Tools — `pnpm install` prepares it automatically.
+
 > 🎉 That's it — pick a repository and start exploring!
 
 ## 🛠️ Commands
@@ -178,6 +180,7 @@ pnpm dev
 | `pnpm typecheck` | 🔍 Type checking (vue-tsc + tsc)        |
 | `pnpm lint`      | 🧹 oxlint + vue-tsc                     |
 | `pnpm format`    | 💅 Format with oxfmt                    |
+| `pnpm rebuild:native` | 🧩 Prepare node-pty's native binary (uses the prebuilt N-API binary) |
 | `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`            |
 | `pnpm dist:win`  | 🪟 Windows Setup `.exe` → `release/` |
 

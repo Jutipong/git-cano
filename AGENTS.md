@@ -13,14 +13,19 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm lint` — oxlint + vue-tsc; run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
 - `pnpm build` — production build (`out/`)
-- `pnpm rebuild:native` — rebuild node-pty for the Electron ABI (runs automatically on postinstall
-  and before every dist; a failure only disables the terminal)
+- `pnpm rebuild:native` — prepare node-pty's native binary for Electron (runs automatically on
+  postinstall and before every dist; a failure only disables the terminal). node-pty 1.1 ships
+  ABI-stable N-API prebuilds, so the current platform's `prebuilds/` binary is used as-is and no
+  Python/MSVC toolchain is needed; `@electron/rebuild` is only the fallback when no prebuild exists
 - `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
 - Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
   icons `build/icons/cano.png` + per-OS `cano.icns` / `cano.ico`, `asar: true` with maximum
   compression. `files` ships `out/**/*` + `package.json` only (excludes `out/tsbuild`,
   `*.map`, `*.md`, `LICENSE*`). New platform assets must follow the same png/icns/ico triple.
   `asarUnpack` keeps `node_modules/node-pty/**` outside the archive (native binaries).
+  `npmRebuild: false` stops electron-builder from running its own `@electron/rebuild` (which
+  compiles from source and needs Python/MSVC) — node-pty ships ABI-stable N-API prebuilds that are
+  packaged as-is. Do not remove it unless the prebuild strategy changes.
 
 ## Architecture
 
@@ -571,8 +576,10 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   keeps the file-change pane usable.
 - **node-pty is a native module**: keep it external in `electron.vite.config.ts`, in
   `asarUnpack` and in `pnpm-workspace.yaml` (`allowBuilds` / `onlyBuiltDependencies`);
-  `scripts/rebuild-native.mjs` rebuilds it for the Electron ABI on postinstall and before each
-  dist. It is loaded lazily so a missing build only disables the terminal.
+  `scripts/rebuild-native.mjs` prepares it on postinstall and before each
+  dist: it prefers node-pty's ABI-stable N-API prebuild for the current platform and only falls
+  back to an `@electron/rebuild` from-source compile (Python + MSVC) when no prebuild exists. It is
+  loaded lazily so a missing binary only disables the terminal.
 - `baseEnv()` in `main/git.ts` strips `GUARDED_AMBIENT_ENV_KEYS` (EDITOR, VISUAL, PAGER, GIT_*)
   before simple-git runs: v4's `allowEnvironment` guard throws on any guarded var present in the
   injected env, and `baseEnv()` injects the whole process env. Do not remove that list or repos
