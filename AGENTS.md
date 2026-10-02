@@ -462,6 +462,12 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   HEAD..oldest pick with gaps auto-filled, so skipping is structurally impossible — never add
   a control that breaks contiguity. The context menu (`CommitContextMenu.vue`,
   `squashCount`) only shows Squash when the scope has ≥2 commits.
+- The scope is measured on the current branch's **HEAD chain** (`headChain` / `chainIndex` in
+  `GraphView.vue`: from HEAD following `parents[0]`), never the raw graph index. `getLog` lists
+  every ref (`--branches --remotes --tags`), so row 0 is not necessarily HEAD — index-based
+  counting let HEAD / other-branch rows offer Squash, which then failed in `getSquashPlan`
+  ("Select an older commit" / "Only commits on the current branch can be squashed"). Commits
+  off the chain (including merged-branch commits) get no Squash, matching the merge rejection.
 - Modal (`SquashModal.vue`, styles in `modern-ui.css` `.squash-*`): lists the exact range
   newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
   with the FilePanel-style soft length counter, and blocks on a dirty worktree.

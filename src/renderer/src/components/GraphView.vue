@@ -248,49 +248,74 @@
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
         select(commit)
-        const clickedIdx = fullRowIndex.value.get(commit.hash) ?? -1
-        if (squashOldestIdx.value >= 0 && clickedIdx >= 0 && clickedIdx <= squashOldestIdx.value) {
-            const oldest = props.commits[squashOldestIdx.value]!
-            menu.value = { x: event.clientX, y: event.clientY, commit: oldest, squashCount: squashOldestIdx.value + 1 }
+        const clickedIdx = chainIndex.value.get(commit.hash) ?? -1
+        if (squashOldestChainIdx.value >= 0 && clickedIdx >= 0 && clickedIdx <= squashOldestChainIdx.value) {
+            const oldest = headChain.value[squashOldestChainIdx.value]!
+            menu.value = { x: event.clientX, y: event.clientY, commit: oldest, squashCount: squashOldestChainIdx.value + 1 }
         } else {
             clearSquashPicks()
-            menu.value = { x: event.clientX, y: event.clientY, commit, squashCount: clickedIdx + 1 }
+            // Only commits below HEAD on the current branch can be squashed — HEAD itself has nothing to squash.
+            const count = clickedIdx > 0 ? clickedIdx + 1 : 0
+            menu.value = { x: event.clientX, y: event.clientY, commit, squashCount: count }
         }
     }
 
-    /** Multi-select for squash: Shift+click extends a range from the last pick (or the */
-    /** Open commit). The scope is always HEAD..oldest pick with gaps auto-filled, so */
-    /** Skipping commits is structurally impossible. */
+    /**
+     * Multi-select for squash: Shift+click extends a range from the last pick (or the
+     * open commit). The scope is HEAD..oldest pick on the CURRENT branch — the graph lists
+     * every ref (`log --branches --remotes --tags`), so index 0 is not necessarily HEAD and
+     * other-branch rows must never enter the range. The chain follows first parents, matching
+     * what `getSquashPlan` accepts (merge commits are rejected).
+     */
     const squashPicks = ref<string[]>([])
-    const fullRowIndex = computed(() => new Map(props.commits.map((commit, index) => [commit.hash as string, index])))
-    const squashOldestIdx = computed(() => {
+    const commitByHash = computed(() => new Map(props.commits.map(commit => [commit.hash as string, commit])))
+    const headHash = computed(
+        () => props.commits.find(commit => commit.refs.some(ref => ref === 'HEAD' || ref.startsWith('HEAD -> ')))?.hash ?? null
+    )
+    const headChain = computed(() => {
+        const chain: CommitNode[] = []
+        const seen = new Set<string>()
+        let current = headHash.value
+        while (current && !seen.has(current)) {
+            const commit = commitByHash.value.get(current)
+            if (!commit) break
+            chain.push(commit)
+            seen.add(current)
+            current = commit.parents[0] ?? null
+        }
+        return chain
+    })
+    const chainIndex = computed(() => new Map(headChain.value.map((commit, index) => [commit.hash as string, index])))
+    const squashOldestChainIdx = computed(() => {
         let max = -1
         for (const hash of squashPicks.value) {
-            const index = fullRowIndex.value.get(hash)
+            const index = chainIndex.value.get(hash)
             if (index !== undefined && index > max) max = index
         }
         return max
     })
-    const squashCount = computed(() => (squashOldestIdx.value >= 0 ? squashOldestIdx.value + 1 : 0))
+    const squashCount = computed(() => (squashOldestChainIdx.value >= 0 ? squashOldestChainIdx.value + 1 : 0))
 
     function inSquashScope(commit: CommitNode): boolean {
-        if (squashOldestIdx.value < 0) return false
-        const index = fullRowIndex.value.get(commit.hash)
-        return index !== undefined && index <= squashOldestIdx.value
+        if (squashOldestChainIdx.value < 0) return false
+        const index = chainIndex.value.get(commit.hash)
+        return index !== undefined && index <= squashOldestChainIdx.value
     }
 
     function rangeSquashPick(commit: CommitNode) {
         if (uiTransient.busy) return
         const anchorHash = squashPicks.value.at(-1) ?? selectedHash.value
-        const anchorIdx = anchorHash ? (fullRowIndex.value.get(anchorHash) ?? -1) : -1
-        const targetIdx = fullRowIndex.value.get(commit.hash) ?? -1
-        if (anchorIdx < 0 || targetIdx < 0) {
+        const anchorIdx = anchorHash ? (chainIndex.value.get(anchorHash) ?? -1) : -1
+        const targetIdx = chainIndex.value.get(commit.hash) ?? -1
+        // Not on the current branch's HEAD chain — squash cannot include it.
+        if (targetIdx < 0) return
+        if (anchorIdx < 0) {
             if (!squashPicks.value.includes(commit.hash)) squashPicks.value = [...squashPicks.value, commit.hash]
             return
         }
         const span = new Set(squashPicks.value)
         const [lo, hi] = anchorIdx < targetIdx ? [anchorIdx, targetIdx] : [targetIdx, anchorIdx]
-        for (let index = lo; index <= hi; index++) span.add(props.commits[index]!.hash)
+        for (let index = lo; index <= hi; index++) span.add(headChain.value[index]!.hash)
         squashPicks.value = [...span]
     }
 
