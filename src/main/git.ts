@@ -34,6 +34,7 @@ import type {
     UndoPreview,
     AiContextScope,
     ConflictVersions,
+    FileContent,
 } from '@shared/types'
 import type { FSWatcher } from 'node:fs'
 
@@ -1754,6 +1755,52 @@ export async function getCommitImageVersion(hash: string, file: string): Promise
         return snapshot.length ? `data:${mime};base64,${snapshot.toString('base64')}` : null
     } catch {
         return null
+    }
+}
+
+/** Max bytes read for read-only preview (markdown / JSON) — larger files report tooLarge. */
+const PREVIEW_MAX_BYTES = 1024 * 1024
+
+function toFileContent(buf: Buffer | null): FileContent {
+    if (!buf) return { content: null, binary: false, tooLarge: false }
+    if (buf.length > PREVIEW_MAX_BYTES) return { content: null, binary: false, tooLarge: true }
+    if (buf.subarray(0, 8000).includes(0)) return { content: null, binary: true, tooLarge: false }
+    return { content: buf.toString('utf8'), binary: false, tooLarge: false }
+}
+
+/** Working-tree (or index when staged) content for read-only preview. */
+export async function getWorkdirFileContent(file: string, staged: boolean): Promise<FileContent> {
+    const { path: p } = getRepo()
+    try {
+        const buf = staged
+            ? await gitBinaryBuffer(p, ['cat-file', '-p', `:${file}`])
+            : await fs.promises.readFile(path.join(p, file))
+        return toFileContent(buf)
+    } catch {
+        return { content: null, binary: false, tooLarge: false }
+    }
+}
+
+/** Blob content at a commit for read-only preview. */
+export async function getCommitFileContent(hash: string, file: string): Promise<FileContent> {
+    const { path: p } = getRepo()
+    try {
+        return toFileContent(await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`]))
+    } catch {
+        return { content: null, binary: false, tooLarge: false }
+    }
+}
+
+/** Blob content in a stash (untracked files live in the 3rd parent) for read-only preview. */
+export async function getStashFileContent(hash: string, file: string): Promise<FileContent> {
+    const { path: p } = getRepo()
+    try {
+        const buf = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`]).catch(() =>
+            gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}^3:${file}`])
+        )
+        return toFileContent(buf)
+    } catch {
+        return { content: null, binary: false, tooLarge: false }
     }
 }
 

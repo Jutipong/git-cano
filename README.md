@@ -15,22 +15,18 @@ A lightweight, open-source Git GUI for **Windows & macOS** — review history �
 
 ---
 
-## 🚀 Quick Start
+## 📥 Install
 
-**Need:** [Node.js](https://nodejs.org) 🟢 · [pnpm](https://pnpm.io) 10+ 📦 · Git in `PATH` 🌿
+Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 
-```bash
-# 1️⃣ Install dependencies
-pnpm install
-
-# 2️⃣ Allow build scripts (first time only)
-pnpm approve-builds electron esbuild node-pty
-
-# 3️⃣ Run it! (hot reload 🔥)
-pnpm dev
-```
-
-> 🎉 That's it — pick a repository and start exploring!
+- 🪟 **Windows** — `git-cano-<version>-setup.exe`, run the installer (auto-updates in-app). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
+- 🍎 **macOS (Apple Silicon only)** — the `.dmg` is unsigned and manual-download (no in-app auto-update):
+  1. Open the `.dmg`, drag `Git Cano` into Applications.
+  2. Clear the quarantine flag (first install only):
+     ```bash
+     xattr -cr /Applications/Git\ Cano.app
+     ```
+  3. Right-click `Git Cano` → Open (only needed once).
 
 ## ✨ What can it do?
 
@@ -62,6 +58,7 @@ pnpm dev
 | ✅  | Commit & amend with a friendly title-length counter — risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer timed Undo |
 | 🟣  | Squash a HEAD range — `Shift+click` a range in the graph, right-click to squash N into 1 (skipping is impossible by design) |
 | ↔️  | Unified / side-by-side diffs with word-level change highlights (marked words use readable text color — add/del rows carry an accent bar), each split pane has its own synced horizontal scrollbar, image diffs, binary detection |
+| 👁️  | Preview `.md` (rendered) and `.json` (pretty-printed) — right-click a file → Preview, read-only in a diff-sized overlay (working tree, a commit's file, or a stash's file) |
 | 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens) |
 | 🕰️  | Reflog viewer — timeline of every HEAD move with per-action colors, restore any entry (undoable) |
 
@@ -82,11 +79,12 @@ pnpm dev
 > 🖥️ A real shell, right where you review history.
 
 - 🪟 Docked terminal panel under the commit graph — toggle it from the toolbar button next to the settings gear, the command palette (`Terminal`), or <kbd>Ctrl</kbd>+<kbd>`</kbd>
-- 🗂️ **One shell per repo** — each repo tab keeps its own shell and scrollback while you switch tabs
-- 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel)
+- 🗂️ **Up to 4 shells per repo** — each tab keeps its own shell and scrollback, `+` adds one, and a tab's ✕ closes just that shell (with confirmation); the panel ✕ closes them all
+- 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel). The toggle only shows/hides; it never kills a running shell
 - ⬜ **Full-height mode** — the panel becomes a card aligned with the sidebar / graph / Changes columns: it covers the sidebar and graph but leaves the **repo tabs** and the **Changes panel** visible, and it stays open while you switch repos (a repo without a terminal collapses it)
 - ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
-- 🔒 Nothing is persisted — closing the panel/tab kills its shell, and a workspace switch closes every shell
+- 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; window zoom still scales it
+- 🔒 Nothing is persisted — closing a shell ends its pty, and a workspace switch closes every shell
 - 📦 Powered by xterm.js + node-pty (prebuilt for Windows & macOS; a missing native build disables only the terminal)
 
 ### 🤖 AI Commit Messages _(optional)_
@@ -144,9 +142,32 @@ pnpm dev
 | ❌ Close / cancel        | `Esc`                 | `Esc`                    |
 | 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0`    | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
 
-> ✏️ Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
+> ✏️ Fetch, Pull, Push, Open repo, Clone repo, Search commits, Toggle terminal, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
 
 </details>
+
+## 🔄 Updates
+
+- **Settings → General → Updates**: pick how often the app checks GitHub Releases (`Off / 1h / 2h / 4h / 6h / 12h / 24h`, default `2h`), or press **Check now** anytime.
+- The update icons in the sidebar appear **only when a newer release is found** — an arrow-up icon to download the update, then a restart icon once downloaded (click = restart to install; on macOS it opens Settings for a manual download).
+- 🆕 The **first launch after an update** shows a **What's new** modal with that version's release notes. Reopen it anytime from **Settings → General → Updates → What's new** or the **Window → What's new** menu. Release notes come from the GitHub release body; without a network connection the modal says so instead of failing.
+
+## 🚀 Run from source (developers)
+
+**Need:** [Node.js](https://nodejs.org) 🟢 · [pnpm](https://pnpm.io) 10+ 📦 · Git in `PATH` 🌿
+
+```bash
+# 1️⃣ Install dependencies
+pnpm install
+
+# 2️⃣ Allow build scripts (first time only)
+pnpm approve-builds electron esbuild node-pty
+
+# 3️⃣ Run it! (hot reload 🔥)
+pnpm dev
+```
+
+> 🎉 That's it — pick a repository and start exploring!
 
 ## 🛠️ Commands
 
@@ -159,23 +180,6 @@ pnpm dev
 | `pnpm format`    | 💅 Format with oxfmt                    |
 | `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`            |
 | `pnpm dist:win`  | 🪟 Windows Setup `.exe` → `release/` |
-
-## 📥 Install
-
-Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
-
-- 🪟 **Windows** — `git-cano-<version>-setup.exe`, run the installer (auto-updates in-app). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
-- 🍎 **macOS (Apple Silicon)** — open the `.dmg`, drag `Git Cano` into Applications. It's unsigned, so on first launch run:
-  ```bash
-  xattr -cr /Applications/Git\ Cano.app
-  ```
-  then Right-click → Open (only needed once).
-
-## 🔄 Updates
-
-- **Settings → General → Updates**: pick how often the app checks GitHub Releases (`Off / 1h / 2h / 4h / 6h / 12h / 24h`, default `2h`), or press **Check now** anytime.
-- The update icons in the sidebar appear **only when a newer release is found** — an arrow-up icon to download the update, then a restart icon once downloaded (click = restart to install; on macOS it opens Settings for a manual download).
-- 🆕 The **first launch after an update** shows a **What's new** modal with that version's release notes. Reopen it anytime from **Settings → General → Updates → What's new** or the **Window → What's new** menu. Release notes come from the GitHub release body; without a network connection the modal says so instead of failing.
 
 ## 🗂️ How it's organized
 

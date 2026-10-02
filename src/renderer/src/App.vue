@@ -9,6 +9,7 @@
 
     import canoIcon from './assets/cano.svg'
     import BlameModal from './components/BlameModal.vue'
+    import FilePreviewModal from './components/FilePreviewModal.vue'
     import ChangelogModal from './components/ChangelogModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
     import CommandPalette from './components/CommandPalette.vue'
@@ -37,7 +38,7 @@
     import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAiStore } from './stores/ai'
     import { useAuthStore } from './stores/auth'
-    import { useRepoStore } from './stores/repo'
+    import { useRepoStore, MAX_TERMINALS_PER_REPO } from './stores/repo'
     import { useSyncStore } from './stores/sync'
     import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
@@ -69,6 +70,7 @@
         rebaseBase,
         historyFile,
         blameFile,
+        previewFile,
         toolsOpen,
         booted,
         switchingWorkspace,
@@ -76,13 +78,17 @@
     const repo = computed(() => repoStore.repo)
 
     /**
-     * Repo paths that currently have a terminal panel. Each gets its OWN TerminalPanel instance
-     * (keyed by path) so its xterm buffer + pty stay alive while another tab is active — switching
-     * tabs only toggles visibility, it never reuses another repo's shell.
+     * Repo paths that own at least one shell. Each gets its OWN TerminalPanel instance (keyed by
+     * path) so its xterm buffers + pty stay alive while another tab is active or while the panel is
+     * toggled away — hiding only stops painting, and killing is the ✕ buttons' job alone.
      */
-    const terminalPaths = computed(() => repoStore.tabs.map(tab => tab.path).filter(path => repoStore.terminalOpen[path]))
+    const terminalPaths = computed(() => repoStore.tabs.map(tab => tab.path).filter(path => repoStore.terminalExists(path)))
     /** Path of the repo whose terminal is on screen (the active tab). */
     const activeRepoPath = computed(() => repo?.value?.path ?? null)
+    /** True while this repo's panel is the one on screen (active tab, not toggled away). */
+    function isTerminalVisible(path: string): boolean {
+        return path === activeRepoPath.value && repoStore.terminalVisible
+    }
     /** True only for the active repo's terminal while it is expanded. */
     function isExpandedTerminal(path: string): boolean {
         return repoStore.terminalExpanded && path === activeRepoPath.value
@@ -259,7 +265,7 @@
             }
             if (uiTransient.busy) return
             if (event.key === 'Escape') {
-                if (historyFile.value || blameFile.value) return
+                if (historyFile.value || blameFile.value || previewFile.value) return
                 if (selectedConflict.value) selectedConflict.value = null
                 else if (selectedFile.value) selectedFile.value = null
                 else if (selectedCommit.value) selectedCommit.value = null
@@ -327,8 +333,8 @@
                 target?.select()
                 return
             }
-            // Toggle the bottom terminal panel for the active repo (Ctrl+`).
-            if (combo === 'Ctrl+`' && repoStore.repo) {
+            // Toggle the bottom terminal panel for the active repo (customizable, default Ctrl+`).
+            if (combo && combo === ui.getShortcut('terminal') && repoStore.repo) {
                 event.preventDefault()
                 void toggleTerminal()
                 return
@@ -430,25 +436,53 @@
         window.addEventListener('mouseup', onEnd)
     }
 
-    /** Ask to close the terminal — the shell and its scrollback die, so this always confirms. */
+    /** Ask to close every shell of the active repo — they all die, so this always confirms. */
     async function confirmCloseTerminal(): Promise<void> {
         const path = repoStore.tabs[repoStore.activeTab]?.path
         if (!path) return
+        const count = repoStore.repoTerminals(path)?.ids.length ?? 0
+        if (!count) return
         const ok = await confirmDialog({
-            title: 'Close terminal',
-            message: 'Closing the terminal will end its shell session and clear its scrollback.',
+            title: count > 1 ? `Close ${count} terminals` : 'Close terminal',
+            message:
+                count > 1
+                    ? `Closing these ${count} terminals will end their shell sessions and clear their scrollback.`
+                    : 'Closing the terminal will end its shell session and clear its scrollback.',
+            confirmLabel: count > 1 ? `Close ${count} terminals` : 'Close terminal',
+            danger: true,
+        })
+        if (ok) repoStore.closeRepoTerminals(path)
+    }
+
+    /** Ask to close one terminal tab — its shell and scrollback die, so this always confirms. */
+    async function confirmCloseTerminalTab(path: string, id: string): Promise<void> {
+        const index = (repoStore.repoTerminals(path)?.ids.indexOf(id) ?? -1) + 1
+        if (index < 1) return
+        const ok = await confirmDialog({
+            title: `Close terminal ${index}`,
+            message: 'Closing this terminal will end its shell session and clear its scrollback.',
             confirmLabel: 'Close terminal',
             danger: true,
         })
-        if (ok) repoStore.closeTerminal(path)
+        if (ok) repoStore.closeTerminalTab(path, id)
     }
 
-    /** Toggle the active repo's terminal panel; closing needs a confirm because the shell dies. */
+    /** Panel `+` — spawn another shell for this repo, up to the per-repo cap. */
+    function addTerminalTab(path: string) {
+        if (!repoStore.openTerminalTab(path)) {
+            uiTransient.notify(`Maximum ${MAX_TERMINALS_PER_REPO} terminals per repo`, 'warning')
+        }
+    }
+
+    /**
+     * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has
+     * none, otherwise show or hide the panel. It never kills anything — the ✕ buttons own that.
+     */
     async function toggleTerminal() {
         const path = repoStore.tabs[repoStore.activeTab]?.path
         if (!path) return
-        if (repoStore.terminalActive) {
-            await confirmCloseTerminal()
+        if (repoStore.terminalExists(path)) {
+            repoStore.toggleTerminalPanel(path)
             return
         }
         const available = await window.api.terminalAvailable().catch(() => false)
@@ -456,20 +490,21 @@
             uiTransient.notify('Terminal is unavailable — the native module could not be loaded', 'error')
             return
         }
-        repoStore.setTerminalOpen(path, true)
+        repoStore.openTerminalTab(path)
     }
 
-    /** The X in the terminal header goes through the same confirm as the toolbar toggle. */
+    /** The X in the terminal header kills every shell of this repo, behind a confirm. */
     function closeTerminalPanel() {
         void confirmCloseTerminal()
     }
 
     /**
-     * The shell ended on its own (exit / Ctrl+D / crash) — close the panel exactly like a manual
-     * close but without the confirm: the process is already gone, so there is nothing to end.
+     * One shell ended on its own (exit / Ctrl+D / crash) — drop just that tab, exactly like a manual
+     * close but without the confirm: the process is already gone, so there is nothing to end. When it
+     * was the repo's last terminal the panel unmounts with it.
      */
-    function handleTerminalExit(path: string) {
-        repoStore.closeTerminal(path)
+    function handleTerminalExit(path: string, id: string) {
+        repoStore.closeTerminalTab(path, id)
     }
 
     /** Expand the terminal over the whole center column (graph hidden) or restore its height. */
@@ -730,11 +765,11 @@
                     <div class="app-body">
                         <div class="center-column">
                             <GraphView
-                                v-show="!repoStore.terminalActive || !repoStore.terminalExpanded"
+                                v-show="!repoStore.terminalVisible || !repoStore.terminalExpanded"
                                 :commits="commits"
                                 :has-more="hasMore"
                                 :commit-open="!!selectedCommit || !!selectedStash"
-                                :hide-to-top="!!(selectedFile || selectedConflict || historyFile || blameFile)"
+                                :hide-to-top="!!(selectedFile || selectedConflict || historyFile || blameFile || previewFile)"
                                 @select-commit="selectCommit"
                                 @load-more="repoStore.loadMore()"
                                 @checkout="checkoutCommit"
@@ -747,7 +782,7 @@
                                 @reset-hard="commit => resetTo(commit, 'hard')"
                                 @toggle-terminal="toggleTerminal" />
                             <div
-                                v-if="repoStore.terminalActive && !repoStore.terminalExpanded"
+                                v-if="repoStore.terminalVisible && !repoStore.terminalExpanded"
                                 class="terminal-splitter"
                                 @mousedown="beginTerminalResize" />
                             <template
@@ -757,18 +792,20 @@
                                     to=".app"
                                     :disabled="!isExpandedTerminal(path)">
                                     <TerminalPanel
-                                        v-show="path === activeRepoPath"
+                                        v-show="isTerminalVisible(path)"
                                         :repo-path="path"
                                         :expanded="isExpandedTerminal(path)"
-                                        :visible="path === activeRepoPath"
+                                        :visible="isTerminalVisible(path)"
                                         :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
                                         :style="
                                             isExpandedTerminal(path)
                                                 ? { right: `${ui.rightPanelWidth + 12}px` }
                                                 : { height: `${repoStore.terminalHeight}px` }
                                         "
+                                        @add-tab="addTerminalTab(path)"
                                         @close="closeTerminalPanel"
-                                        @exit="handleTerminalExit(path)"
+                                        @close-tab="id => confirmCloseTerminalTab(path, id)"
+                                        @exit="id => handleTerminalExit(path, id)"
                                         @toggle-expand="toggleTerminalExpand" />
                                 </Teleport>
                             </template>
@@ -792,6 +829,7 @@
                                 @select="selectFilePanel"
                                 @show-history="historyFile = $event"
                                 @show-blame="blameFile = $event"
+                                @show-preview="previewFile = $event"
                                 @close-commit="closeCommitView" />
                         </div>
                     </div>
@@ -864,6 +902,14 @@
             :style="{ right: `${ui.rightPanelWidth + 14}px` }"
             :file="blameFile"
             @close="blameFile = null" />
+        <FilePreviewModal
+            v-if="previewFile"
+            class="diff-overlay"
+            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :file="previewFile"
+            :commit-hash="selectedStash ? undefined : (selectedCommit?.hash ?? undefined)"
+            :stash-hash="selectedStash?.hash ?? undefined"
+            @close="previewFile = null" />
         <TagCreateModal
             v-if="tagTarget"
             :commit="tagTarget"

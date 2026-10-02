@@ -445,6 +445,12 @@
     }
     const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
 
+    /** The toolbar button spawns the first shell, then just shows/hides — only ✕ ever kills. */
+    const terminalToggleTitle = computed(() => {
+        if (repoStore.terminalVisible) return 'Hide terminal'
+        return repoStore.terminalSpawned ? 'Show terminal' : 'Open terminal'
+    })
+
     const AUTHOR_MIN_W = 88
     const AUTHOR_MAX_W = 220
     const DATE_MIN_W = 76
@@ -759,8 +765,8 @@
                 </button>
                 <button
                     class="icon-btn graph-terminal-btn"
-                    :class="{ active: repoStore.terminalActive }"
-                    :title="repoStore.terminalActive ? 'Hide terminal' : 'Show terminal'"
+                    :class="{ active: repoStore.terminalVisible }"
+                    :title="terminalToggleTitle"
                     @click="emit('toggle-terminal')">
                     <i-lucide-terminal
                         width="14"

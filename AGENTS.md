@@ -127,6 +127,16 @@ full guarded list lives in `@simple-git/argv-parser`).
   `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
   close (✕). In split mode each pane keeps its own horizontal scrollbar, synced both ways
   via `onPaneScrollX` — do not hide one side again.
+- **File preview** (`FilePreviewModal.vue`): read-only rendered view for `.md/.markdown/.mdown`
+  (via `marked` + `DOMPurify`-sanitized `v-html`) and pretty-printed `.json` (regex token colors,
+  raw fallback on parse failure). Opened from the file context menu (`Preview` item in
+  `FileContextMenu.vue`, gated by extension; untracked files are previewable — the content comes
+  from the working tree), mounted exactly like `DiffView` (direct child of
+  `.app` with `diff-overlay` + fullscreen toggle). Content comes from the `file:content` /
+  `file:commitContent` / `stash:fileContent` IPC trio in `main/git.ts` (1 MB cap, binary guard) —
+  never from the diff lines. The modal stays mounted while open and reloads on any
+  `file`/`commitHash`/`stashHash` prop change (seq-guarded); markdown links never navigate the app
+  window — http(s) opens via `app:openExternal` in the OS browser, everything else stays inert.
 - **Diff line highlighting** (`utils/highlight.ts` + `DiffView.vue`): word-level marks come
   from `markChangedLines()`, which pairs each `del` with its most similar `add` inside one
   block via weighted token LCS (letters/digits weigh 1, punctuation/whitespace 0.3) and only
@@ -169,7 +179,7 @@ full guarded list lives in `@simple-git/argv-parser`).
   (160ms, cancels an in-flight animation, jumps instantly under 120px): GraphView's
   `animateScrollTo` mirrors DiffView's `animateBodyScrollTo` — keep them in sync.
   While a diff overlay covers the graph (DiffView / ConflictView / FileHistoryModal /
-  BlameModal), App.vue passes `hide-to-top` to GraphView so the graph button hides:
+  BlameModal / FilePreviewModal), App.vue passes `hide-to-top` to GraphView so the graph button hides:
   the overlay leaves a ~14px sliver on the right edge where it would otherwise peek
   out beside the diff's own button.
 - **Selected commit node** (`.node-ring.selected`, styles in `modern-ui.css`) is a
@@ -221,7 +231,11 @@ full guarded list lives in `@simple-git/argv-parser`).
   tinted background, hover intensifies — see `.commit-close-btn` in `styles.css`). Reuse that
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
   The circle and the ✕ are drawn by the `CloseXIcon.vue` component (single SVG, always
-  concentric) — don't swap it back for a plain `<i-lucide-x>` icon.
+  concentric) — don't swap it back for a plain `<i-lucide-x>` icon. Its `.close-x-svg` is
+  `position: absolute; inset: 0`, so any new parent must be a positioned box (`position: relative`,
+  as `.commit-close-btn` is) or the invisible ring stretches over the whole panel and swallows every
+  click. Tiny variants (e.g. the terminal tab's ✕) additionally pin it with
+  `.close-x-svg { position: static; width/height: N }`.
 - **Modal text inputs** take focus programmatically: `v-if` modals (`TagCreateModal.vue`,
   `StashCreateModal.vue`, `CloneRepoModal.vue`) use `useTemplateRef` + `nextTick(() => el?.focus())`
   in `onMounted` — native `autofocus` alone only focuses the first open, never the reopen.
@@ -244,13 +258,15 @@ full guarded list lives in `@simple-git/argv-parser`).
   dense `btn small` buttons, section cards) and `GraphSettingsModal.vue` (400px) stay on
   `.rebase-modal`/`.modal-overlay` — only the create forms use the confirm family. Their text
   inputs/selects still speak the same pill language (`7px 12px`, `var(--radius-pill)`), header
-  icons are `17px`, and the readonly column checks match the `18px` checkbox boxes.
+  icons are `17px`, and the readonly column checks match the `18px` checkbox boxes. Its tab strip is
+  a single non-wrapping row of equal-width pills (`flex: 1 1 0`, 92px each at 620px) — a seventh
+  tab needs a measured width check, not a guess.
 
 ## Keyboard shortcuts
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Clone repo, Close tab, Search commits, Open settings, Command palette, Show shortcuts — with
+  Clone repo, Close tab, Search commits, Toggle terminal, Open settings, Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
   `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
@@ -263,7 +279,7 @@ full guarded list lives in `@simple-git/argv-parser`).
   arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips,
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
-  Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
+  Fetch, Pull, Push, Open repo, Clone repo, Search commits, Toggle terminal, Open settings, Command
   palette. Click Change… under macOS or Windows then press keys (`Esc` cancels, capture listener
   while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab) or other customized ids
@@ -281,7 +297,7 @@ full guarded list lives in `@simple-git/argv-parser`).
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
-  history; diff search when a diff is open), Terminal toggle `` Ctrl+` `` (fixed, see
+  history; diff search when a diff is open), Terminal toggle ``Ctrl+` `` (customizable, see
   "Terminal panel"), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
   dialogs `Enter`/`Esc`, app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel,
@@ -490,40 +506,69 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 
 ## Terminal panel
 
-- **One shell per repo, opt-in**: `TerminalPanel.vue` (xterm.js, lazy-loaded chunk) is mounted
-  only for paths flagged in `repoStore.terminalOpen` — a repo that was never toggled on spawns
-  nothing. The toggle lives in the GraphView toolbar next to the settings gear
-  (`graph-terminal-btn`, `emit('toggle-terminal')`), in the command palette (`Terminal` item →
-  `emit('toggle-terminal')` → App.vue, distinct from `Open in: Terminal` which opens the
-  external OS terminal) and on the fixed `Ctrl+\`` shortcut; all three go
-  through `toggleTerminal()` in `App.vue`.
-- **State is memory-only, never persisted**: `terminalOpen`, `terminalExpanded` and
-  `terminalHeight` (default 260) reset on every launch. `terminalHeight` is a plain store ref
-  (not in `ui.ts`/localStorage) — do not persist it.
-- **One TerminalPanel instance per repo** (`v-for` over `terminalPaths`, keyed by path, `v-show`
-  for the active one) — never a single shared instance with a changing `repo-path`, or Vue reuses
-  the component and two repos end up sharing one xterm/pty. Hidden panels stay mounted so each
-  repo keeps its own scrollback; `resizePty()` skips zero-size (hidden) panels.
-- **pty lifetime is owned by the main process** (`main/terminal.ts`, `Map<repoPath, pty>`):
-  `repo:close` disposes, `before-quit`/`quit` disposes all. Unmounting a panel deliberately does
-  NOT kill the pty — unmounting also happens transiently while `tabs` is rebuilt. **A workspace
-  switch always calls `closeAllTerminals()` first** (all flags cleared + every pty disposed,
-  including repos shared by both workspaces); terminals never survive it. `closeTerminal()` is the
-  only other explicit disposal path (manual close and shell exit both go through it).
-- **Closing always confirms** (`confirmCloseTerminal()` in `App.vue`) — both the toolbar toggle
-  and the panel's ✕, because the shell and its scrollback die. When the shell ends on its own
-  (exit / Ctrl+D / crash) the panel closes itself with no confirm and no toast — same result as a
-  manual close, so there is no restart button. Reopening via the toggle spawns a fresh shell.
+- **Shells are opt-in, per repo, up to `MAX_TERMINALS_PER_REPO` (4)**: `repoStore.terminals` maps
+  repo path → `{ ids, activeId, hidden }`. The panel is mounted only for repos with at least one
+  id (`terminalPaths` filters on `terminalExists`); the header tab strip adds more (`openTerminalTab`,
+  `+` disables at the cap) and a tab's number is its 1-based index in `ids`. Tab labels are
+  `<n> <shell name>` (one `terminal:shell` IPC per panel).
+- **Terminal ids are the pty key and live in the store**: `main/terminal.ts` holds
+  `Map<terminalId, session>` and every payload (`TerminalData` / `TerminalExit`) plus
+  `terminalCreate/Write/Resize/Dispose` carries the id. Ids come from a monotonic counter in the
+  store and are **never generated inside a component** — the panel remounts transiently while
+  `tabs` rebuilds, and a fresh id there would spawn a second shell instead of finding the live one
+  (`createTerminal` reuses by id and resizes). Never key a session by repo path again: one repo can
+  hold four shells.
+- **The toolbar toggle shows/hides; only ✕ kills**: the GraphView `graph-terminal-btn`
+  (`emit('toggle-terminal')`), the command palette (`Terminal` item → App.vue `toggleTerminal()`,
+  distinct from `Open in: Terminal` which opens the external OS terminal) and the customizable ``Ctrl+` ``
+  shortcut all go through `toggleTerminal()` → `toggleTerminalPanel(path)`: no shells → spawn the
+  first one, otherwise show/hide. Hiding keeps every pty running (and `v-show` keeps the panel
+  mounted so scrollback survives); it never disposes anything. Button titles are three-state
+  (`Open terminal` / `Show terminal` / `Hide terminal`, see `terminalSpawned` / `terminalVisible`).
+- **Kill paths, in order of confirmation**: a tab's ✕ → `confirmCloseTerminalTab()` (always
+  confirms) → `closeTerminalTab()`, which hands focus to the tab that took its place (else the one
+  before it); the panel's ✕ → `confirmCloseTerminal()` (count-aware title) →
+  `closeRepoTerminals()` kills all of the repo's shells at once; a shell ending on its own (exit /
+  Ctrl+D / crash) → `handleTerminalExit()` → `closeTerminalTab()` with **no** confirm or toast,
+  since the process is already gone. Closing the last shell deletes the repo's entry, which
+  unmounts the panel and clears `terminalExpanded`. Repo tab close uses `forgetRepoTerminals()`
+  (state only — `repo:close` already killed every pty via `disposeTerminalsForRepo`).
+- **State is memory-only, never persisted**: `terminals`, `terminalExpanded` and `terminalHeight`
+  (default 260) reset on every launch. `terminalHeight` is a plain store ref (not in `ui.ts`/
+  localStorage) — do not persist it.
+- **pty lifetime is owned by the main process** (`main/terminal.ts`): `repo:close` disposes every
+  session of that repo, `before-quit`/`quit` disposes all. Unmounting a panel or a view deliberately
+  does NOT kill a pty — unmounting also happens transiently while `tabs` is rebuilt. **A workspace
+  switch always calls `closeAllTerminals()` first** (every id disposed + state cleared, including
+  repos shared by both workspaces); terminals never survive it.
+- **One panel per repo, one view per shell**: `v-for` over `terminalPaths` keyed by path (never a
+  single shared instance with a changing `repo-path`, or Vue reuses the component and two repos end
+  up sharing one xterm/pty), and inside it `v-for` over the repo's ids rendering `TerminalView.vue`
+  (one xterm + one pty each, siblings `v-show`-hidden so every scrollback survives). Clicking a tab
+  calls `activate()`, which shows it and hands it the keyboard via the view's exposed `focus()`.
+  `resizePty()` skips zero-size (hidden) hosts, so the `visible` watcher refits on the way back in.
+- **The terminal has its own font, decoupled from the app-wide `fontSize`**: `ui.terminalFontFamily`
+  (`''` = follow `--font-mono`) and `ui.terminalFontSize` (chips + `stepTerminalFontSize`, the
+  header `A−`/`A+` buttons) are persisted in `stores/ui.ts` and edited in Settings → Terminal.
+  `ui.fontSize` and `ui.zoom` both ride on `<html> { zoom: zoomScale × fontScale }`, so xterm is
+  handed `ui.terminalFontPx` (`terminalFontSize / fontScale`) instead of the raw value: changing the
+  UI font size must not move the terminal, while app zoom (`Ctrl+±`) still scales it on purpose.
+  Never reintroduce a hardcoded font size or a `--font-mono` read with no opt-out here.
+- **Live font changes refit on the next frame**: `TerminalView.vue` watches
+  `[terminalFontFamily, terminalFontSize, fontSize]`, assigns `term.options`, then refits inside
+  `requestAnimationFrame` — xterm re-measures the cell box on a debounced task, so calling `fit()`
+  immediately solves cols/rows from the stale cell size. Every open view (all repos, all tabs)
+  reacts to the shared store; hidden ones no-op in `resizePty()` and refit from the `visible` watcher.
 - **Full height is a card that lines up with the other columns, never covering the tab bar**
   (Teleport to `.app` + absolute `top: 60px` — the 48px tab bar plus `.app-body`'s 6px margin —
   `left: 6px` / `bottom: 6px` matching `.app`'s padding, an inline `right: rightPanelWidth + 12px`
   (6px app padding + the 6px `.panel-splitter` gap, so the card clears the right pane like the
   graph does), plus the same border/`--radius-card`/shadow as
   `.center-column` and `.right-pane`). The repo tabs stay clickable so the user can switch repos
-  with the terminal expanded. Expanded deliberately survives a tab switch and only collapses when the
-  target repo has no terminal (the `terminalActive` watcher). The Changes panel stays visible; do
-  not turn it into a centered/modal card — the inline `right` offset is what keeps the
-  file-change pane usable.
+  with the terminal expanded. Expanded deliberately survives a tab switch and only collapses when
+  the panel isn't visible (the `terminalVisible` watcher — hiding counts as not visible). The Changes
+  panel stays visible; do not turn it into a centered/modal card — the inline `right` offset is what
+  keeps the file-change pane usable.
 - **node-pty is a native module**: keep it external in `electron.vite.config.ts`, in
   `asarUnpack` and in `pnpm-workspace.yaml` (`allowBuilds` / `onlyBuiltDependencies`);
   `scripts/rebuild-native.mjs` rebuilds it for the Electron ABI on postinstall and before each

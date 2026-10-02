@@ -51,6 +51,13 @@ export interface DiffMeta {
     image: boolean
 }
 
+/** Full file content for read-only preview (markdown / JSON) — null content when missing. */
+export interface FileContent {
+    content: string | null
+    binary: boolean
+    tooLarge: boolean
+}
+
 /** The three unmerged stages of a conflicted file (`:1:` base, `:2:` ours, `:3:` theirs). */
 export interface ConflictVersions {
     ours: string | null
@@ -259,14 +266,17 @@ export interface UpdateProgress {
     total: number
 }
 
-/** Payload pushed to the renderer on `terminal:data` — one shell output chunk for a repo. */
+/** Payload pushed to the renderer on `terminal:data` — one shell output chunk for a terminal. */
 export interface TerminalData {
+    /** Identifies the shell inside its repo — a repo may hold several (see `terminalId` on create). */
+    terminalId: string
     repoPath: string
     data: string
 }
 
-/** Payload pushed to the renderer on `terminal:exit` — the repo's shell ended. */
+/** Payload pushed to the renderer on `terminal:exit` — that shell ended. */
 export interface TerminalExit {
+    terminalId: string
     repoPath: string
     exitCode: number
     signal?: number

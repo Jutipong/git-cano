@@ -8,8 +8,10 @@ import type { IPty } from 'node-pty'
 
 type PtyModule = { spawn: (file: string, args: string[] | string, options: unknown) => IPty }
 
-/** One interactive shell per repo path — the panel is single-tab, so a plain 1:1 map is enough. */
+/** One interactive shell per terminal tab — a repo can hold several, so sessions are keyed by id. */
 interface TerminalSession {
+    id: string
+    repoPath: string
     pty: IPty
     cols: number
     rows: number
@@ -58,15 +60,17 @@ function clampRows(rows: number): number {
 }
 
 /**
- * Starts (or returns) the shell for a repo. `rows`/`cols` come from the renderer's xterm so the
- * first paint is already correctly sized. Reusing an existing session is the whole point of the
- * per-repo model: switching tabs and back keeps the same shell + scrollback alive.
+ * Starts (or returns) the shell for a terminal id. `rows`/`cols` come from the renderer's xterm so
+ * the first paint is already correctly sized. Reusing an existing session is the whole point of the
+ * stable-id model: a panel that remounts (the repo tabs rebuild mid-switch) re-sends the same id and
+ * gets its live shell + scrollback back instead of spawning a second one.
  */
-export function createTerminal(repoPath: string, cols: number, rows: number): void {
+export function createTerminal(terminalId: string, repoPath: string, cols: number, rows: number): void {
+    if (!terminalId) throw new Error('Terminal id is required')
     if (!repoPath || !fs.existsSync(repoPath)) throw new Error(`Repository path does not exist: ${repoPath}`)
-    const existing = sessions.get(repoPath)
+    const existing = sessions.get(terminalId)
     if (existing) {
-        resizeTerminal(repoPath, cols, rows)
+        resizeTerminal(terminalId, cols, rows)
         return
     }
 
@@ -79,18 +83,18 @@ export function createTerminal(repoPath: string, cols: number, rows: number): vo
     } as never)
 
     // Store the same clamped values the pty was created with, so the first resize comparison is honest.
-    const session: TerminalSession = { pty: ptyProcess, cols: clampCols(cols), rows: clampRows(rows) }
-    sessions.set(repoPath, session)
+    const session: TerminalSession = { id: terminalId, repoPath, pty: ptyProcess, cols: clampCols(cols), rows: clampRows(rows) }
+    sessions.set(terminalId, session)
 
-    ptyProcess.onData(data => onData?.({ repoPath, data }))
+    ptyProcess.onData(data => onData?.({ terminalId, repoPath, data }))
     ptyProcess.onExit(({ exitCode, signal }) => {
-        // Only clear if this is still the live session for the path (a fast reopen
+        // Only clear if this is still the live session for the id (a fast reopen
         // may have replaced it before the old shell's exit event lands).
-        if (sessions.get(repoPath) === session) sessions.delete(repoPath)
-        onExit?.({ repoPath, exitCode, signal })
+        if (sessions.get(terminalId) === session) sessions.delete(terminalId)
+        onExit?.({ terminalId, repoPath, exitCode, signal })
     })
 
-    log('info', 'terminal', `spawn ${path.basename(repoPath)} (${defaultShell()})`)
+    log('info', 'terminal', `spawn ${terminalId} in ${path.basename(repoPath)} (${defaultShell()})`)
 }
 
 function terminalEnv(): Record<string, string> {
@@ -107,12 +111,12 @@ function terminalEnv(): Record<string, string> {
     return env
 }
 
-export function writeTerminal(repoPath: string, data: string): void {
-    sessions.get(repoPath)?.pty.write(data)
+export function writeTerminal(terminalId: string, data: string): void {
+    sessions.get(terminalId)?.pty.write(data)
 }
 
-export function resizeTerminal(repoPath: string, cols: number, rows: number): void {
-    const session = sessions.get(repoPath)
+export function resizeTerminal(terminalId: string, cols: number, rows: number): void {
+    const session = sessions.get(terminalId)
     if (!session) return
     const safeCols = clampCols(cols)
     const safeRows = clampRows(rows)
@@ -124,15 +128,32 @@ export function resizeTerminal(repoPath: string, cols: number, rows: number): vo
     } catch {}
 }
 
-/** Kills and drops the shell for a repo. Called when the user closes the panel or the tab. */
-export function disposeTerminal(repoPath: string): void {
-    const session = sessions.get(repoPath)
+/** Kills and drops one shell (its tab ✕, or the panel closing every terminal of a repo). */
+export function disposeTerminal(terminalId: string): void {
+    const session = sessions.get(terminalId)
     if (!session) return
-    sessions.delete(repoPath)
+    sessions.delete(terminalId)
     try {
         session.pty.kill()
     } catch {}
-    log('info', 'terminal', `dispose ${path.basename(repoPath)}`)
+    log('info', 'terminal', `dispose ${terminalId} (${path.basename(session.repoPath)})`)
+}
+
+/**
+ * Kills every shell of a repo. Called when the repo tab closes — the renderer forgets its terminal
+ * state too, so this is the authority that no pty is ever orphaned.
+ */
+export function disposeTerminalsForRepo(repoPath: string): void {
+    let killed = 0
+    for (const session of sessions.values()) {
+        if (session.repoPath !== repoPath) continue
+        sessions.delete(session.id)
+        killed++
+        try {
+            session.pty.kill()
+        } catch {}
+    }
+    if (killed) log('info', 'terminal', `dispose ${killed} terminal(s) in ${path.basename(repoPath)}`)
 }
 
 /** Kills every shell — app quit. Scrollback/pty are never persisted, so this is a clean slate. */

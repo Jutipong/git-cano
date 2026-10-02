@@ -1,6 +1,7 @@
 <script setup lang="ts">
     import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
     import ChevronRight from '~icons/lucide/chevron-right'
+    import Eye from '~icons/lucide/eye'
     import File from '~icons/lucide/file'
     import Files from '~icons/lucide/files'
     import Folder from '~icons/lucide/folder'
@@ -26,6 +27,7 @@
         (e: 'close'): void
         (e: 'show-history', path: string): void
         (e: 'show-blame', path: string): void
+        (e: 'show-preview', path: string): void
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const root = ref<HTMLElement | null>(null)
@@ -36,7 +38,19 @@
         const path = props.menu?.path ?? ''
         const name = path.split('/').pop() ?? ''
         const dot = name.lastIndexOf('.')
-        return dot > 0 && dot < name.length - 1 ? `.${name.slice(dot + 1)}` : null
+        return dot > 0 && dot < name.length - 1 ? `.${name.slice(dot + 1).toLowerCase()}` : null
+    })
+
+    /** Read-only preview supports rendered markdown and pretty-printed JSON. */
+    const isPreviewable = computed(() => {
+        if (!props.menu || props.menu.directory || props.menu.deleted) return false
+        const path = props.menu.path.toLowerCase()
+        return (
+            path.endsWith('.md') ||
+            path.endsWith('.markdown') ||
+            path.endsWith('.mdown') ||
+            path.endsWith('.json')
+        )
     })
 
     function onDocMouseDown(event: MouseEvent) {
@@ -63,13 +77,16 @@
         }
     }
 
-    function act(kind: 'history' | 'blame') {
+    function act(kind: 'history' | 'blame' | 'preview') {
         const menu = props.menu
-        if (!menu || menu.directory || menu.untracked) return
-        if (kind === 'blame' && menu.deleted) return
+        if (!menu || menu.directory) return
+        if (kind === 'history' && menu.untracked) return
+        if (kind === 'blame' && (menu.untracked || menu.deleted)) return
+        if (kind === 'preview' && menu.deleted) return
         emit('close')
         if (kind === 'history') emit('show-history', menu.path)
-        else emit('show-blame', menu.path)
+        else if (kind === 'blame') emit('show-blame', menu.path)
+        else emit('show-preview', menu.path)
     }
 
     async function addIgnoreRule(rule: string) {
@@ -122,6 +139,18 @@
                 width="13"
                 height="13" />
             Blame
+        </button>
+        <button
+            v-if="isPreviewable"
+            class="file-context-menu-item"
+            :disabled="menu.directory || menu.deleted"
+            :title="menu.deleted ? 'Deleted files cannot be previewed (no longer in working tree)' : ''"
+            @click="act('preview')">
+            <Eye
+                class="file-context-menu-icon"
+                width="13"
+                height="13" />
+            Preview
         </button>
         <div class="file-context-menu-separator" />
         <div class="file-context-menu-wrap">

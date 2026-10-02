@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 
 import type { LocalChangesMode } from '@shared/types'
 
@@ -67,6 +67,34 @@ export const DEFAULT_FONT_SIZE = 14
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
 export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
 export const DEFAULT_ZOOM = 100
+
+/**
+ * Terminal font size options, in px (before app zoom). The terminal owns its own size and is
+ * deliberately NOT tied to `fontSize` — only app zoom scales it (see `terminalFontPx`).
+ */
+export const TERMINAL_FONT_SIZE_OPTIONS = [10, 11, 12, 13, 14, 16, 18, 20]
+export const DEFAULT_TERMINAL_FONT_SIZE = 13
+
+/** Terminal font family choices. `''` = follow the app's `--font-mono` stack (default). */
+export const TERMINAL_FONT_OPTIONS = [
+    { value: '', label: 'App default' },
+    { value: 'SF Mono', label: 'SF Mono' },
+    { value: 'Menlo', label: 'Menlo' },
+    { value: 'Monaco', label: 'Monaco' },
+    { value: 'Cascadia Code', label: 'Cascadia Code' },
+    { value: 'Cascadia Mono', label: 'Cascadia Mono' },
+    { value: 'Consolas', label: 'Consolas' },
+    { value: 'JetBrains Mono', label: 'JetBrains Mono' },
+    { value: 'Fira Code', label: 'Fira Code' },
+    { value: 'Hack', label: 'Hack' },
+    { value: 'Iosevka', label: 'Iosevka' },
+    { value: 'DejaVu Sans Mono', label: 'DejaVu Sans Mono' },
+    { value: 'Ubuntu Mono', label: 'Ubuntu Mono' },
+    { value: 'MesloLGS NF', label: 'MesloLGS NF' },
+    { value: 'JetBrainsMono Nerd Font', label: 'JetBrainsMono NF' },
+    { value: 'Courier New', label: 'Courier New' },
+] as const
+export const DEFAULT_TERMINAL_FONT_FAMILY = ''
 
 /** Code viewer font size (Blame / File History diff) — adjustable with Ctrl+wheel. */
 export const CODE_FONT_SIZE_MIN = 9
@@ -158,6 +186,33 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
         })
+        /** Terminal font — its own family and size, independent of the app-wide `fontSize`. */
+        const terminalFontSize = ref(DEFAULT_TERMINAL_FONT_SIZE)
+        watchEffect(() => {
+            if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value)) terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+        })
+        const terminalFontFamily = ref<string>(DEFAULT_TERMINAL_FONT_FAMILY)
+        watchEffect(() => {
+            if (!TERMINAL_FONT_OPTIONS.some(option => option.value === terminalFontFamily.value))
+                terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
+        })
+
+        /** App zoom and UI font size both ride on `<html> { zoom }`; keep the factors separate so the
+         *  terminal can divide out only the font-size one. */
+        const fontScale = computed(() => fontSize.value / DEFAULT_FONT_SIZE)
+        const zoomScale = computed(() => zoom.value / DEFAULT_ZOOM)
+
+        /** px to hand xterm so the terminal renders at exactly `terminalFontSize` on screen: the
+         *  root zoom scale multiplies every px, so the `fontSize` factor is divided back out. App
+         *  zoom is intentionally kept — zooming the window still enlarges the terminal. */
+        const terminalFontPx = computed(() => terminalFontSize.value / fontScale.value)
+
+        /** Step through TERMINAL_FONT_SIZE_OPTIONS one slot (terminal header A− / A+). */
+        function stepTerminalFontSize(direction: number) {
+            const idx = TERMINAL_FONT_SIZE_OPTIONS.indexOf(terminalFontSize.value)
+            terminalFontSize.value =
+                TERMINAL_FONT_SIZE_OPTIONS[Math.min(TERMINAL_FONT_SIZE_OPTIONS.length - 1, Math.max(0, idx + direction))]
+        }
         const codeFontSize = ref(DEFAULT_CODE_FONT_SIZE)
         const repoTabColors = ref<Record<string, string>>({})
         // migrate the first shipped default so existing persisted stores pick up the new default
@@ -258,6 +313,7 @@ export const useUiStore = defineStore(
                 openRepo: getShortcut('openRepo', platform),
                 cloneRepo: getShortcut('cloneRepo', platform),
                 searchCommits: getShortcut('searchCommits', platform),
+                terminal: getShortcut('terminal', platform),
                 settings: getShortcut('settings', platform),
                 commandPalette: getShortcut('commandPalette', platform),
             }
@@ -310,12 +366,16 @@ export const useUiStore = defineStore(
             toastDurationSec.value = DEFAULT_TOAST_DURATION_SEC
         }
 
+        function resetTerminal() {
+            terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+            terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
+        }
+
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
         watchEffect(() => {
-            const scale = (zoom.value / DEFAULT_ZOOM) * (fontSize.value / DEFAULT_FONT_SIZE)
-            document.documentElement.style.zoom = String(scale)
+            document.documentElement.style.zoom = String(zoomScale.value * fontScale.value)
         })
 
         return {
@@ -342,6 +402,10 @@ export const useUiStore = defineStore(
             fontSize,
             zoom,
             stepZoom,
+            terminalFontSize,
+            terminalFontFamily,
+            terminalFontPx,
+            stepTerminalFontSize,
             codeFontSize,
             zoomCodeFontSize,
             repoTabColors,
@@ -356,6 +420,7 @@ export const useUiStore = defineStore(
             resetCommitColumns,
             resetAppearance,
             resetGeneral,
+            resetTerminal,
             setTheme,
             setRepoTabColor,
         }
@@ -383,6 +448,8 @@ export const useUiStore = defineStore(
                 'toastDurationSec',
                 'fontSize',
                 'zoom',
+                'terminalFontSize',
+                'terminalFontFamily',
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',

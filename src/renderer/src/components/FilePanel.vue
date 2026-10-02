@@ -58,6 +58,7 @@
         (e: 'select', sel: { path: string; staged: boolean } | null): void
         (e: 'show-history', path: string): void
         (e: 'show-blame', path: string): void
+        (e: 'show-preview', path: string): void
         (e: 'close-commit'): void
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -1224,7 +1225,8 @@
                 :refresh="refreshPanel"
                 @close="menu = null"
                 @show-history="path => emit('show-history', path)"
-                @show-blame="path => emit('show-blame', path)" />
+                @show-blame="path => emit('show-blame', path)"
+                @show-preview="path => emit('show-preview', path)" />
         </div>
 
         <div class="commit-box">

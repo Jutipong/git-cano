@@ -73,6 +73,9 @@ import {
     getCommitFileDiff,
     getCommitFileMeta,
     getCommitImageVersion,
+    getWorkdirFileContent,
+    getCommitFileContent,
+    getStashFileContent,
     getRebasePlan,
     startInteractiveRebase,
     getSquashPlan,
@@ -122,6 +125,7 @@ import {
     createTerminal,
     disposeAllTerminals,
     disposeTerminal,
+    disposeTerminalsForRepo,
     onTerminalData,
     onTerminalExit,
     resizeTerminal,
@@ -614,35 +618,41 @@ app.whenReady().then(() => {
     handle('repo:close', (_dir?: string) => {
         // Resolve the target exactly like closeRepo() does, so a no-arg close still kills the shell.
         const target = typeof _dir === 'string' && _dir ? _dir : getActiveRepoPath()
-        // Drop the repo's shell with the repo — the renderer's open/closed flag is per-repo
-        // and memory-only, so a closed tab must not leave a pty process behind.
-        if (target) disposeTerminal(target)
+        // Drop every shell of the repo with the repo — the renderer's terminal state is memory-only,
+        // so a closed tab must not leave a pty process behind (a repo can hold several terminals).
+        if (target) disposeTerminalsForRepo(target)
         closeRepo(target ?? undefined)
         return isOpen()
     })
-    handle('terminal:create', (_dir: string, cols?: number, rows?: number) => {
+    handle('terminal:create', (id: string, dir: string, cols?: number, rows?: number) => {
         createTerminal(
-            String(_dir),
+            String(id),
+            String(dir),
             typeof cols === 'number' ? cols : 80,
             typeof rows === 'number' ? rows : 24
         )
         return true
     })
-    handle('terminal:write', (_dir: string, data: string) => {
-        writeTerminal(String(_dir), String(data))
+    handle('terminal:write', (id: string, data: string) => {
+        writeTerminal(String(id), String(data))
         return true
     })
-    handle('terminal:resize', (_dir: string, cols: number, rows: number) => {
-        resizeTerminal(String(_dir), Number(cols), Number(rows))
+    handle('terminal:resize', (id: string, cols: number, rows: number) => {
+        resizeTerminal(String(id), Number(cols), Number(rows))
         return true
     })
-    handle('terminal:dispose', (_dir: string) => {
-        disposeTerminal(String(_dir))
+    handle('terminal:dispose', (id: string) => {
+        disposeTerminal(String(id))
         return true
     })
     handle('terminal:available', () => terminalAvailable())
     handle('terminal:shell', () => terminalShellName())
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
+    handle('app:openExternal', (url: string) => {
+        const target = String(url ?? '').trim()
+        if (!/^https?:\/\//i.test(target)) throw new Error('Only http(s) links can be opened externally')
+        return shell.openExternal(target)
+    })
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
     handle('app:getOpenInTargets', (dir: string) => getOpenInTargets(dir as string))
@@ -769,6 +779,18 @@ app.whenReady().then(() => {
     handle('file:commitImage', (hash: string, file: string) => {
         requireRepo()
         return getCommitImageVersion(hash as string, file as string)
+    })
+    handle('file:content', (file: string, staged: boolean) => {
+        requireRepo()
+        return getWorkdirFileContent(file as string, staged as boolean)
+    })
+    handle('file:commitContent', (hash: string, file: string) => {
+        requireRepo()
+        return getCommitFileContent(hash as string, file as string)
+    })
+    handle('stash:fileContent', (hash: string, file: string) => {
+        requireRepo()
+        return getStashFileContent(hash as string, file as string)
     })
     handle('file:list', (hash?: string) => {
         requireRepo()

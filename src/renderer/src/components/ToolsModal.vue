@@ -22,6 +22,7 @@
     import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import ILucideSparkles from '~icons/lucide/sparkles'
     import Sun from '~icons/lucide/sun'
+    import ILucideTerminal from '~icons/lucide/terminal'
     import ILucideTrash2 from '~icons/lucide/trash-2'
     import ILucideUserRound from '~icons/lucide/user-round'
     import ILucideUsers from '~icons/lucide/users'
@@ -32,7 +33,7 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -54,7 +55,7 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts'
+        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts' | 'terminal'
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -146,6 +147,7 @@
 
     const TABS = [
         { key: 'appearance', label: 'Appearance' },
+        { key: 'terminal', label: 'Terminal' },
         { key: 'general', label: 'General' },
         { key: 'auth', label: 'Remotes' },
         { key: 'ai', label: 'AI' },
@@ -157,6 +159,7 @@
     const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
     const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
+    const TERMINAL_SIZE_OPTIONS = TERMINAL_FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
@@ -361,6 +364,7 @@
         openRepo: 'Open repo',
         cloneRepo: 'Clone repo',
         searchCommits: 'Search commits',
+        terminal: 'Toggle terminal',
         settings: 'Open settings',
         commandPalette: 'Command palette',
     }
@@ -655,6 +659,10 @@
                         v-if="tabItem.key === 'appearance'"
                         width="13"
                         height="13" />
+                    <i-lucide-terminal
+                        v-else-if="tabItem.key === 'terminal'"
+                        width="13"
+                        height="13" />
                     <i-lucide-sliders-horizontal
                         v-else-if="tabItem.key === 'general'"
                         width="13"
@@ -736,6 +744,55 @@
                             class="btn danger small"
                             title="Restore appearance settings to defaults"
                             @click="resetAppearance()">
+                            <i-lucide-rotate-ccw
+                                width="13"
+                                height="13" />
+                            Reset to defaults
+                        </button>
+                    </div>
+                </template>
+
+                <template v-else-if="tab === 'terminal'">
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-terminal
+                                width="13"
+                                height="13" />
+                            Terminal font
+                        </strong>
+                        <span class="setting-label">Font family</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in TERMINAL_FONT_OPTIONS"
+                                :key="option.value || 'default'"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.terminalFontFamily === option.value }"
+                                @click="ui.terminalFontFamily = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                        <span class="setting-label">Font size</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in TERMINAL_SIZE_OPTIONS"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.terminalFontSize === option.value }"
+                                @click="ui.terminalFontSize = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">The terminal keeps its own font — changing the app font size leaves it untouched. Window zoom still scales it.</p>
+                    </div>
+
+                    <div class="tools-actions tools-reset-row">
+                        <span class="spacer" />
+                        <button
+                            class="btn danger small"
+                            title="Restore terminal settings to defaults"
+                            @click="ui.resetTerminal()">
                             <i-lucide-rotate-ccw
                                 width="13"
                                 height="13" />
@@ -942,29 +999,6 @@
                             Lets git cache worktree state (fsmonitor + untracked cache) so refreshes are much faster. Writes to each opened
                             repository's local git config; takes effect the next time the repo is opened.
                         </span>
-                    </div>
-
-                    <div class="tools-section">
-                        <strong class="tools-section-title">Commit message</strong>
-                        <span class="setting-label">Format before generating</span>
-                        <div class="setting-choice-row">
-                            <button
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.formatBeforeGenerate }"
-                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
-                                <i-lucide-check
-                                    v-if="ui.formatBeforeGenerate"
-                                    width="13"
-                                    height="13" />
-                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
-                            </button>
-                        </div>
-                        <p class="tools-section-hint">
-                            When enabled, the repository's format command runs first if it has an
-                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is. Formatting worktree files cannot affect a
-                            staged-only message, so it applies to the Auto Commit modes and is skipped for Generate Only.
-                        </p>
                     </div>
 
                     <div class="tools-actions tools-reset-row">
@@ -1617,6 +1651,28 @@
                                 autocomplete="off" />
                         </label>
                         <p class="tools-section-hint">Appended to the built-in style rules on every generation.</p>
+                    </div>
+                    <div class="tools-section">
+                        <strong class="tools-section-title">Commit message</strong>
+                        <span class="setting-label">Format before generating</span>
+                        <div class="setting-choice-row">
+                            <button
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.formatBeforeGenerate }"
+                                @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
+                                <i-lucide-check
+                                    v-if="ui.formatBeforeGenerate"
+                                    width="13"
+                                    height="13" />
+                                {{ ui.formatBeforeGenerate ? 'On' : 'Off' }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">
+                            When enabled, the repository's format command runs first if it has an
+                            <code>.oxfmtrc.json</code>; otherwise the message is generated as-is. Formatting worktree files cannot affect a
+                            staged-only message, so it applies to the Auto Commit modes and is skipped for Generate Only.
+                        </p>
                     </div>
                     <div class="tools-actions">
                         <template v-if="selectedProvider !== 'none'">

@@ -9,6 +9,9 @@ import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEn
 
 const PAGE_SIZE = 500
 
+/** Shells a single repo may hold at once (the terminal panel's `+` button stops here). */
+export const MAX_TERMINALS_PER_REPO = 4
+
 export interface RepoTab {
     path: string
     name: string
@@ -101,6 +104,8 @@ export const useRepoStore = defineStore('repo', () => {
     const rebaseBase = ref<string | null>(null)
     const historyFile = ref<string | null>(null)
     const blameFile = ref<string | null>(null)
+    /** Read-only preview (markdown / JSON) — path only, revision comes from selected commit/stash. */
+    const previewFile = ref<string | null>(null)
     const toolsOpen = ref(false)
     /** Whether the reflog recovery viewer is open. */
     const reflogOpen = ref(false)
@@ -109,25 +114,36 @@ export const useRepoStore = defineStore('repo', () => {
     /** Whether the command palette overlay is open. */
     const commandPaletteOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'ai'>('appearance')
+    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'ai' | 'terminal'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
     /** Branch soloed in the graph (GitKraken-style focus) — view-only filter, never persisted. */
     const soloBranch = ref<string | null>(null)
     /** Files touched by the soloed branch's visible commits (Focus dimming) — null when not soloed. */
     const soloFiles = ref<string[] | null>(null)
+    /** Terminal tabs of one repo: the shells it owns, which one is on screen, and whether the panel is hidden. */
+    interface RepoTerminals {
+        /** Terminal ids in creation order — a tab's label is its 1-based index. */
+        ids: string[]
+        activeId: string | null
+        /** Toggled away from the graph toolbar: the shells keep running, the panel is just not painted. */
+        hidden: boolean
+    }
+
     /**
-     * Which repos currently have the bottom terminal panel open. Memory-only (never persisted):
-     * a closed app starts with no terminal anywhere, and the pty for each open repo is killed
-     * on tab close / app quit. Repos never toggled on have no session and no panel at all.
+     * Terminals per repo path. Memory-only (never persisted): a closed app starts with no terminal
+     * anywhere, and every pty is killed on tab close / workspace switch / app quit. A repo with no
+     * entry has no session and no panel at all.
      */
-    const terminalOpen = ref<Record<string, boolean>>({})
+    const terminals = ref<Record<string, RepoTerminals>>({})
+    /** Monotonic id source — ids are never reused, so a remounted panel finds its live shell again. */
+    let terminalSeq = 0
     /** Height (px) of the bottom terminal panel — memory-only UI pref, resets to the default each launch. */
     const TERMINAL_DEFAULT_HEIGHT = 260
     const terminalHeight = ref(TERMINAL_DEFAULT_HEIGHT)
     /**
      * True while the terminal is expanded to fill the center column (graph hidden). Memory-only,
-     * per active view — reset on tab switch and whenever the panel is closed.
+     * per active view — reset on tab switch and whenever the panel is closed or hidden.
      */
     const terminalExpanded = ref(false)
     let tagLoadingRequests = 0
@@ -339,7 +355,7 @@ export const useRepoStore = defineStore('repo', () => {
         selectedStash.value = null
         soloBranch.value = null
         // Expanded intentionally survives a tab switch (multi-repo workflows keep the big terminal):
-        // the terminalActive watcher collapses it only when the target repo has no terminal.
+        // the terminalVisible watcher collapses it only when the target repo's panel isn't on screen.
         syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
         // Stale-while-revalidate: paint the cached log and branch list for this repo instantly
@@ -370,8 +386,8 @@ export const useRepoStore = defineStore('repo', () => {
         const wasActive = index === activeTab.value
         const stillOpen = await window.api.closeRepo(tab.path).catch(() => false)
         const remaining = tabs.value.filter((_, i) => i !== index)
-        // The pty is killed by the main process on repo:close; drop the renderer flag too.
-        setTerminalOpen(tab.path, false)
+        // Every pty of the repo is killed by the main process on repo:close; drop the renderer state too.
+        forgetRepoTerminals(tab.path)
         tabs.value = remaining
         activeTab.value = Math.max(0, activeTab.value > index ? activeTab.value - 1 : Math.min(activeTab.value, remaining.length - 1))
         if (!stillOpen) {
@@ -492,49 +508,143 @@ export const useRepoStore = defineStore('repo', () => {
         await refresh()
     }
 
-    /** True when the active repo has its terminal panel toggled on. */
-    const terminalActive = computed(() => {
-        const path = tabs.value[activeTab.value]?.path
-        return !!path && !!terminalOpen.value[path]
-    })
-
-    // Expanded is only meaningful while the active repo's terminal exists — clearing the tabs
-    // (workspace switch) or switching to a repo without a terminal must never leave the graph hidden.
-    watch(terminalActive, active => {
-        if (!active) terminalExpanded.value = false
-    })
-
-    /** Toggle the terminal panel for a repo. Opening only flags it — the panel mounts and spawns. */
-    function setTerminalOpen(path: string, open: boolean) {
-        if (!path) return
-        if (open) terminalOpen.value = { ...terminalOpen.value, [path]: true }
-        else {
-            const next = { ...terminalOpen.value }
-            delete next[path]
-            terminalOpen.value = next
-        }
+    /** Terminal state of a repo (undefined when it owns no shell). */
+    function repoTerminals(path: string): RepoTerminals | undefined {
+        return path ? terminals.value[path] : undefined
     }
 
-    /** Close the panel AND kill its shell (used by the confirmed close and by tab close). */
-    function closeTerminal(path: string) {
-        setTerminalOpen(path, false)
-        terminalExpanded.value = false
-        if (path) void window.api.terminalDispose(path).catch(() => {})
+    /** True when the repo has at least one live shell (its panel stays mounted even while hidden). */
+    function terminalExists(path: string): boolean {
+        return (repoTerminals(path)?.ids.length ?? 0) > 0
+    }
+
+    /** Active repo's terminals — GraphView uses this for the toolbar button's title/active state. */
+    const terminalSpawned = computed(() => terminalExists(tabs.value[activeTab.value]?.path ?? ''))
+
+    /** True while the active repo's terminal panel is on screen (has a shell and isn't toggled away). */
+    const terminalVisible = computed(() => {
+        const state = repoTerminals(tabs.value[activeTab.value]?.path ?? '')
+        return !!state && state.ids.length > 0 && !state.hidden
+    })
+
+    // Expanded is only meaningful while the panel is actually visible — hiding it (or switching to a
+    // repo without a terminal) must never leave the graph hidden behind an invisible panel.
+    watch(terminalVisible, visible => {
+        if (!visible) terminalExpanded.value = false
+    })
+
+    function setRepoTerminals(path: string, state: RepoTerminals | null) {
+        if (!path) return
+        const next = { ...terminals.value }
+        if (state) next[path] = state
+        else delete next[path]
+        terminals.value = next
     }
 
     /**
-     * Workspace switches are a hard reset for shells: every open terminal is closed and its pty
-     * killed — including repos shared by both workspaces. Terminals are memory-only by design.
+     * Adds a shell tab for a repo (panel `+`). Returns its id, or null once the repo is at
+     * MAX_TERMINALS_PER_REPO. Only flags it — the mounted panel spawns the pty for that id.
      */
-    function closeAllTerminals() {
-        const paths = Object.keys(terminalOpen.value)
-        if (!paths.length) {
+    function openTerminalTab(path: string): string | null {
+        const state = repoTerminals(path)
+        if (!path || (state && state.ids.length >= MAX_TERMINALS_PER_REPO)) return null
+        const id = `t${++terminalSeq}`
+        setRepoTerminals(path, {
+            ids: state ? [...state.ids, id] : [id],
+            activeId: id,
+            hidden: false,
+        })
+        return id
+    }
+
+    /** Which of a repo's terminals the panel shows. */
+    function setActiveTerminal(path: string, id: string) {
+        const state = repoTerminals(path)
+        if (!state || state.activeId === id || !state.ids.includes(id)) return
+        setRepoTerminals(path, { ...state, activeId: id })
+    }
+
+    /**
+     * Kills one shell (its tab ✕, or the shell exiting on its own). When the last one goes the repo
+     * loses its entry entirely, which unmounts the panel — the header ✕ / tab ✕ both confirm first,
+     * a self-exiting shell does not (the process is already gone).
+     */
+    function closeTerminalTab(path: string, id: string) {
+        const state = repoTerminals(path)
+        const index = state?.ids.indexOf(id) ?? -1
+        if (!state || index < 0) return
+        void window.api.terminalDispose(id).catch(() => {})
+        const ids = state.ids.filter(existing => existing !== id)
+        if (!ids.length) {
+            setRepoTerminals(path, null)
             terminalExpanded.value = false
             return
         }
-        terminalOpen.value = {}
+        // Hand focus to the tab that slid into this one's place, else the one before it.
+        const activeId = state.activeId === id ? ids[Math.min(index, ids.length - 1)] : state.activeId
+        setRepoTerminals(path, { ...state, ids, activeId })
+    }
+
+    /** Show the panel again without touching the shells. */
+    function showTerminals(path: string) {
+        const state = repoTerminals(path)
+        if (!state || !state.hidden) return
+        setRepoTerminals(path, { ...state, hidden: false })
+    }
+
+    /** Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them. */
+    function hideTerminals(path: string) {
+        const state = repoTerminals(path)
+        if (!state || state.hidden) return
+        setRepoTerminals(path, { ...state, hidden: true })
         terminalExpanded.value = false
-        for (const path of paths) void window.api.terminalDispose(path).catch(() => {})
+    }
+
+    /**
+     * The graph toolbar button / Ctrl+` / palette "Terminal": create the first shell when the repo
+     * has none, otherwise just show or hide the panel. It never kills anything — the ✕ buttons own that.
+     */
+    function toggleTerminalPanel(path: string) {
+        const state = repoTerminals(path)
+        if (!state) {
+            openTerminalTab(path)
+            return
+        }
+        if (state.hidden) showTerminals(path)
+        else hideTerminals(path)
+    }
+
+    /** Kills every shell of a repo (the panel's ✕ after its confirm). */
+    function closeRepoTerminals(path: string) {
+        const state = repoTerminals(path)
+        if (!state) return
+        for (const id of state.ids) void window.api.terminalDispose(id).catch(() => {})
+        setRepoTerminals(path, null)
+        terminalExpanded.value = false
+    }
+
+    /**
+     * Drops a repo's terminal state without IPC — the main process already killed every pty for it
+     * on `repo:close`, so the renderer must not pretend the shells are still around.
+     */
+    function forgetRepoTerminals(path: string) {
+        if (!repoTerminals(path)) return
+        setRepoTerminals(path, null)
+        terminalExpanded.value = false
+    }
+
+    /**
+     * Workspace switches are a hard reset for shells: every terminal of every repo is closed and its
+     * pty killed — including repos shared by both workspaces. Terminals are memory-only by design.
+     */
+    function closeAllTerminals() {
+        const states = Object.values(terminals.value)
+        terminalExpanded.value = false
+        if (!states.length) return
+        for (const state of states) {
+            for (const id of state.ids) void window.api.terminalDispose(id).catch(() => {})
+        }
+        terminals.value = {}
     }
 
     /** Expand/collapse the terminal over the center column. Collapsing restores the remembered height. */
@@ -661,13 +771,23 @@ export const useRepoStore = defineStore('repo', () => {
         soloBranch,
         soloFiles,
         setSolo,
-        terminalOpen,
-        terminalActive,
+        terminals,
+        terminalVisible,
+        terminalSpawned,
         terminalHeight,
         terminalExpanded,
-        setTerminalOpen,
+        repoTerminals,
+        terminalExists,
         setTerminalExpanded,
-        closeTerminal,
+        openTerminalTab,
+        setActiveTerminal,
+        closeTerminalTab,
+        showTerminals,
+        hideTerminals,
+        toggleTerminalPanel,
+        closeRepoTerminals,
+        forgetRepoTerminals,
+        closeAllTerminals,
         commitFiles,
         loadingCommitDetails,
         commitMessage,
@@ -678,6 +798,7 @@ export const useRepoStore = defineStore('repo', () => {
         rebaseBase,
         historyFile,
         blameFile,
+        previewFile,
         toolsOpen,
         toolsTab,
         reflogOpen,

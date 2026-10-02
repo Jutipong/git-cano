@@ -33,7 +33,7 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
 }
 
 /** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
-export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'settings' | 'commandPalette'
+export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'terminal' | 'settings' | 'commandPalette'
 
 export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'fetch',
@@ -42,6 +42,7 @@ export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'openRepo',
     'cloneRepo',
     'searchCommits',
+    'terminal',
     'settings',
     'commandPalette',
 ]
@@ -68,6 +69,7 @@ export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     openRepo: 'Ctrl+O',
     cloneRepo: 'Ctrl+N',
     searchCommits: 'Ctrl+F',
+    terminal: 'Ctrl+`',
     settings: 'Ctrl+,',
     commandPalette: 'Ctrl+P',
 }
