@@ -57,6 +57,8 @@ const api = {
     terminalWrite: (id: string, data: string): Promise<boolean> => call('terminal:write', id, data),
     terminalResize: (id: string, cols: number, rows: number): Promise<boolean> => call('terminal:resize', id, cols, rows),
     terminalDispose: (id: string): Promise<boolean> => call('terminal:dispose', id),
+    /** Boot-time sweep: kills every pty a previous renderer session left behind. */
+    terminalDisposeAll: (): Promise<boolean> => call('terminal:disposeAll'),
     terminalAvailable: (): Promise<boolean> => call('terminal:available'),
     terminalShell: (): Promise<string> => call('terminal:shell'),
     onTerminalData: (callback: (payload: TerminalData) => void): (() => void) => {

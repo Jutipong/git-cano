@@ -32,7 +32,7 @@
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
 
-    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void; (e: 'toggle-terminal'): void; (e: 'kill-all-terminals'): void }>()
+    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void; (e: 'toggle-terminal'): void; (e: 'terminate-all-terminals'): void }>()
 
     const repoStore = useRepoStore()
     const uiTransient = useUiTransientStore()
@@ -232,19 +232,19 @@
                       } satisfies PaletteItem,
                   ]
                 : []),
-            // Not repo-gated on purpose: shells parked in another workspace still count, and killing
-            // them all is exactly the escape hatch a workspace switch no longer provides.
+            // Not repo-gated on purpose: shells parked in another workspace still count, and
+            // terminating them all is exactly the escape hatch a workspace switch no longer provides.
             ...(repoStore.terminalCount > 0
                 ? [
                       {
-                          id: 'terminal-kill-all',
-                          label: 'Kill all terminals',
-                          hint: `End ${repoStore.terminalCount} shell${repoStore.terminalCount > 1 ? 's' : ''} in every repo`,
+                          id: 'terminal-terminate-all',
+                          label: 'Terminate all terminals',
+                          hint: `Terminate ${repoStore.terminalCount} terminal${repoStore.terminalCount > 1 ? 's' : ''} in every repo`,
                           icon: Trash2,
                           accent: 'red',
                           run: () => {
                               close()
-                              emit('kill-all-terminals')
+                              emit('terminate-all-terminals')
                           },
                       } satisfies PaletteItem,
                   ]

@@ -130,6 +130,8 @@ export const useRepoStore = defineStore('repo', () => {
         hidden: boolean
         /** Custom tab labels by terminal id (right-click → Rename). Memory-only, like the shells. */
         names: Record<string, string>
+        /** Creation-time tab numbers by terminal id — the "<n> <shell>" label never moves on reorder. */
+        numbers: Record<string, number>
     }
 
     /**
@@ -427,6 +429,10 @@ export const useRepoStore = defineStore('repo', () => {
 
     async function init() {
         restoringSession = true
+        // Terminal state is memory-only, so a booting renderer owns no shells: any live pty in the
+        // main process is an orphan from a previous renderer session (reload / crash) — invisible,
+        // and it would collide with this session's ids. Clear them before any terminal can open.
+        void window.api.terminalDisposeAll().catch(() => {})
         let paths: string[] = []
         try {
             const wsSession = ws.getSession(ws.active)
@@ -525,7 +531,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     /**
      * Every live shell across every repo — including repos parked in another workspace. The command
-     * palette's "Kill all terminals" is gated on this, and its confirm dialog counts with it.
+     * palette's "Terminate all terminals" is gated on this, and its confirm dialog counts with it.
      */
     const terminalCount = computed(() => Object.values(terminals.value).reduce((total, state) => total + state.ids.length, 0))
     /** How many repos own at least one shell (the palette item's hint). */
@@ -576,13 +582,28 @@ export const useRepoStore = defineStore('repo', () => {
         const state = repoTerminals(path)
         if (!path || (state && state.ids.length >= MAX_TERMINALS_PER_REPO)) return null
         const id = `t${++terminalSeq}`
+        // The tab number is assigned here, once, and never re-derived from the tab's position: dragging
+        // a tab must not relabel it. The smallest free number keeps the set tidy (1..N for N tabs).
+        const used = new Set(Object.values(state?.numbers ?? {}))
+        let number = 1
+        while (used.has(number)) number++
         setRepoTerminals(path, {
             ids: state ? [...state.ids, id] : [id],
             activeId: id,
             hidden: false,
             names: state?.names ?? {},
+            numbers: { ...state?.numbers, [id]: number },
         })
         return id
+    }
+
+    /** Creation-time tab number of a shell (the "<n> <shell>" label) — stable across drag-reorder. */
+    function terminalNumber(path: string, id: string): number {
+        const state = repoTerminals(path)
+        const stored = state?.numbers[id]
+        if (stored) return stored
+        // State written before `numbers` existed (or a mid-flight panel): fall back to the position.
+        return (state?.ids.indexOf(id) ?? -1) + 1
     }
 
     /**
@@ -639,10 +660,13 @@ export const useRepoStore = defineStore('repo', () => {
         }
         // Hand focus to the tab that slid into this one's place, else the one before it.
         const activeId = state.activeId === id ? ids[Math.min(index, ids.length - 1)] : state.activeId
-        // Ids are never reused, but drop the label anyway so a closed tab leaves nothing behind.
+        // Ids are never reused, but drop the label and the number anyway so a closed tab leaves
+        // nothing behind — its number becomes the smallest free one for the next shell.
         const names = { ...state.names }
         delete names[id]
-        setRepoTerminals(path, { ...state, ids, activeId, names })
+        const numbers = { ...state.numbers }
+        delete numbers[id]
+        setRepoTerminals(path, { ...state, ids, activeId, names, numbers })
     }
 
     /** Show the panel again without touching the shells. */
@@ -696,7 +720,7 @@ export const useRepoStore = defineStore('repo', () => {
 
     /**
      * Kills every shell of every repo, including the ones parked in another workspace — the user-driven
-     * escape hatch behind the command palette's "Kill all terminals". Workspace switches never call
+     * escape hatch behind the command palette's "Terminate all terminals". Workspace switches never call
      * this: they leave shells alone and keep their panels mounted (see `switchWorkspace`).
      */
     function closeAllTerminals() {
@@ -850,6 +874,7 @@ export const useRepoStore = defineStore('repo', () => {
         terminalExists,
         setTerminalExpanded,
         openTerminalTab,
+        terminalNumber,
         renameTerminal,
         reorderTerminals,
         setActiveTerminal,

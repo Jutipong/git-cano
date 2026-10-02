@@ -645,6 +645,13 @@ app.whenReady().then(() => {
         disposeTerminal(String(id))
         return true
     })
+    // Called once by a booting renderer: terminal state is memory-only, so any live session at that
+    // point is an orphan from a previous renderer session (a reload/crash leaves ptys behind — this
+    // process owns them). Killing them keeps the shell list clean and the renderer's id counter safe.
+    handle('terminal:disposeAll', () => {
+        disposeAllTerminals()
+        return true
+    })
     handle('terminal:available', () => terminalAvailable())
     handle('terminal:shell', () => terminalShellName())
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))

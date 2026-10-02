@@ -33,7 +33,7 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, sanitizeTerminalFontFamily, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, sanitizeTerminalFontFamily, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -158,8 +158,8 @@
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
     const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
+    /** Shared by Appearance → Font size and Terminal → Font size (the terminal picks from the same list). */
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
-    const TERMINAL_SIZE_OPTIONS = TERMINAL_FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
 
     /** Manual terminal font family field: a draft string that applies automatically shortly after
      *  typing stops (no Enter needed), immediately on blur/Enter, and flushes when the modal closes —
@@ -809,7 +809,7 @@
                                     ref="terminalFontInput"
                                     v-model="terminalFontFamilyDraft"
                                     type="text"
-                                    placeholder="App default"
+                                    placeholder="Default"
                                     autocomplete="off"
                                     spellcheck="false"
                                     @input="scheduleTerminalFontFamilyCommit"
@@ -819,7 +819,7 @@
                         <span class="setting-label">Font size</span>
                         <div class="setting-choice-row">
                             <button
-                                v-for="option in TERMINAL_SIZE_OPTIONS"
+                                v-for="option in FONT_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"

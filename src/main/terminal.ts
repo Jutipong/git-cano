@@ -70,8 +70,20 @@ export function createTerminal(terminalId: string, repoPath: string, cols: numbe
     if (!repoPath || !fs.existsSync(repoPath)) throw new Error(`Repository path does not exist: ${repoPath}`)
     const existing = sessions.get(terminalId)
     if (existing) {
-        resizeTerminal(terminalId, cols, rows)
-        return
+        if (existing.repoPath === repoPath) {
+            resizeTerminal(terminalId, cols, rows)
+            return
+        }
+        // Reuse is only ever safe for the same repo. The renderer's id counter restarts whenever the
+        // renderer reloads while ptys (owned here) keep running, so a stale id can point at another
+        // repo's shell — reusing it would show the wrong repo's terminal. Kill the stale session and
+        // spawn a fresh shell for the repo that is asking. (The renderer also clears orphans on boot.)
+        log(
+            'warn',
+            'terminal',
+            `id ${terminalId} belonged to ${path.basename(existing.repoPath)} — respawning for ${path.basename(repoPath)}`
+        )
+        disposeTerminal(terminalId)
     }
 
     const ptyProcess = loadPty().spawn(defaultShell(), [], {
@@ -158,6 +170,7 @@ export function disposeTerminalsForRepo(repoPath: string): void {
 
 /** Kills every shell — app quit. Scrollback/pty are never persisted, so this is a clean slate. */
 export function disposeAllTerminals(): void {
+    if (sessions.size) log('info', 'terminal', `dispose all ${sessions.size} terminal(s)`)
     for (const session of sessions.values()) {
         try {
             session.pty.kill()

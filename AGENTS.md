@@ -515,14 +515,26 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 ## Terminal panel
 
 - **Shells are opt-in, per repo, up to `MAX_TERMINALS_PER_REPO` (4)**: `repoStore.terminals` maps
-  repo path → `{ ids, activeId, hidden }`. The panel is mounted only for repos with at least one
+  repo path → `{ ids, activeId, hidden, names, numbers }`. The panel is mounted only for repos with at least one
   id (`terminalPaths` filters on `terminalExists`); the header tab strip adds more (`openTerminalTab`,
-  `+` disables at the cap) and a tab's number is its 1-based index in `ids`. Tab labels are
+  `+` disables at the cap) and a tab's number is assigned at creation (`RepoTerminals.numbers[id]`,
+  the smallest free number at that moment) and **never** re-derived from its position — dragging a
+  tab to another slot must not relabel it; only the order follows `ids`. `terminalNumber(path, id)`
+  is the single reader (tab label, tooltip, menu title, close confirm). Tab labels are
   `<n> <shell name>` (one `terminal:shell` IPC per panel). The pills are deliberately mouse-sized
-  (`modern-ui.css` `.terminal-tab`: `flex: 1 1 88px`, up to 132px, shrinking below the basis only
-  when a narrow center column forces it; `.terminal-tab-label` stretches to fill the pill so the
-  click handler covers the whole tab) — do not go back to `flex: 0 1 auto` text-sized pills, and
-  keep a `cursor: pointer` on the label / ✕ / `+`.
+  **and** content-sized (`modern-ui.css` `.terminal-tab`: `flex: 0 1 auto`, `min-width: 88px`,
+  `max-width: 240px`) — the 88px floor is the click target, the pill then grows with the label so a
+  renamed tab or a long shell name stays readable; never drop the floor back to a text-sized pill,
+  and keep a `cursor: pointer` on the label / ✕ / `+`. `.terminal-tab-label` stretches to fill the
+  pill so the click handler covers the whole tab. The `+` sits directly after the last tab because
+  the reorder strip (`.terminal-tab-track`) hugs its tabs (`flex: 0 0 auto`, no shrink) — growing
+  the strip again pushes `+` to the far edge of the header. Because the floor is hard, a row that
+  cannot fit its tabs **scrolls sideways** (`.terminal-tabs` is `overflow-x: auto` with a hidden
+  scrollbar, like the repo tab bar) instead of clipping `+`. Reordering animates through the same
+  `.tab-move` FLIP class as the repo tabs, which is why `transform` has to stay in `.terminal-tab`'s
+  own `transition` list — `.tab-move` is defined earlier in `modern-ui.css` and loses the cascade to
+  `.terminal-tab` (equal specificity, later rule wins), so dropping `transform` there makes the move
+  jump instead of slide.
 - **Terminal ids are the pty key and live in the store**: `main/terminal.ts` holds
   `Map<terminalId, session>` and every payload (`TerminalData` / `TerminalExit`) plus
   `terminalCreate/Write/Resize/Dispose` carries the id. Ids come from a monotonic counter in the
@@ -530,6 +542,14 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   `tabs` rebuilds, and a fresh id there would spawn a second shell instead of finding the live one
   (`createTerminal` reuses by id and resizes). Never key a session by repo path again: one repo can
   hold four shells.
+- **An id only ever belongs to one repo**: the renderer's counter restarts whenever the renderer
+  reloads while the ptys (owned by main) keep running, so `createTerminal` must **not** reuse a
+  session whose `repoPath` differs — it warns, disposes the stale session and spawns a fresh shell
+  for the repo that asked, otherwise a repo silently attaches to another repo's terminal. For the
+  same reason a booting renderer calls `terminal:disposeAll` from `init()`: its terminal state is
+  memory-only, so every live pty at that moment is an invisible orphan from a previous renderer
+  session (and the id collision it would cause). Never drop that sweep without replacing it with an
+  equivalent orphan/id-collision guard.
 - **The toolbar toggle shows/hides; only ✕ kills**: the GraphView `graph-terminal-btn`
   (`emit('toggle-terminal')`), the command palette (`Terminal` item → App.vue `toggleTerminal()`,
   distinct from `Open in: Terminal` which opens the external OS terminal) and the customizable ``Ctrl+` ``
@@ -565,11 +585,11 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   switch kills nothing**: `switchWorkspace` only recycles repos that own no shell, so a repo that
   still has one stays registered in the main process (git instance + watcher) with its panel mounted
   and its scrollback intact — such a repo is *parked* (no tab points at it). A parked repo whose last
-  shell dies (✕, panel ✕, self-exit, or the kill-all below) is closed via `closeParkedRepo()` from the
+  shell dies (✕, panel ✕, self-exit, or the terminate-all below) is closed via `closeParkedRepo()` from the
   terminal-kill paths, so main's registry never grows; a switch alone would never collect it because it
   only walks the open tabs. The escape hatch for parked shells is the command palette's
-  `Kill all terminals` → `closeAllTerminals()` (gated on `terminalCount`, confirmed by
-  `confirmKillAllTerminals`, which names the invisible ones via `terminalParkedCount`) — never call
+  `Terminate all terminals` → `closeAllTerminals()` (gated on `terminalCount`, confirmed by
+  `confirmTerminateAllTerminals`, which names the invisible ones via `terminalParkedCount`) — never call
   `closeAllTerminals()` from a switch again.
 - **One panel per repo, one view per shell**: `v-for` over `terminalPaths` keyed by path (never a
   single shared instance with a changing `repo-path`, or Vue reuses the component and two repos end
@@ -580,14 +600,27 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   `terminalPaths` comes from the store's `terminals` map, **not** from `tabs` — a repo parked in
   another workspace keeps its panel mounted (hidden by `isTerminalVisible`, which stays tied to the
   active tab). Do not re-filter it by `tabs`; that unmounts the panel and throws the scrollback away.
+- **The app shell must stay mounted while any shell is alive**: `switchWorkspace` empties `tabs`
+  before it reopens the destination, so `repo` (and therefore `v-if="repo"`) goes null mid-switch.
+  `App.vue` renders the shell on `repo || terminalCount > 0` and hides it with `v-show="!!repo"`
+  instead — a `v-if` there unmounts every `TerminalPanel` and disposes their xterms, which loses the
+  scrollback of every parked shell while the pty survives (the shell *looks* brand new when you come
+  back). Anything inside that subtree that reads `repo` must be nullable (`repo?.files ?? []`,
+  `Sidebar` is `v-if="repo"`, `FilePanel.loadAllFiles()` bails when there is no active repo) — keep it
+  that way rather than tightening the guard back to `v-if="repo"`.
 - **The terminal has its own font, decoupled from the app-wide `fontSize`**: `ui.terminalFontFamily`
-  (`''` = follow `--font-mono`) and `ui.terminalFontSize` (chips + `stepTerminalFontSize`, the
-  header `A−`/`A+` buttons) are persisted in `stores/ui.ts` and edited in Settings → Terminal.
-  The family also takes a manually typed name (Settings → Terminal):
+  (`''` = follow `--font-mono`) and `ui.terminalFontSize` are persisted in `stores/ui.ts` and edited
+  in Settings → Terminal. The family offers exactly four presets (`TERMINAL_FONT_OPTIONS` — Default,
+  Cascadia Code NF, JetBrains Mono NF, Maple Mono NF) **plus** a manually typed name:
   `sanitizeTerminalFontFamily` strips quotes/backslashes/newlines and never reject-and-resets custom
   names. The field auto-applies ~400ms after typing stops (and on blur/Enter) and flushes on modal
-  close — Escape-closing must never drop a typed family; the size stays preset-only
-  (`stepTerminalFontSize` steps through `TERMINAL_FONT_SIZE_OPTIONS`, default 14).
+  close — Escape-closing must never drop a typed family. Preset values are the real installed family
+  names, and a preset may carry a `stack` (`TerminalFontOption.stack`) for families that shipped under
+  two names — Nerd Fonts v3 uses `JetBrainsMono NF`, v2 `JetBrainsMono Nerd Font`.
+  `TerminalView.terminalFontFamily()` appends the app's `--font-mono` stack to every choice, so a
+  family that is not installed falls back to the app default instead of a generic `monospace`.
+  The size shares its chip list with Appearance → Font size (`FONT_SIZE_OPTIONS`, default 14) and
+  `stepTerminalFontSize` (the header `A−`/`A+` buttons) walks that same list.
   `ui.fontSize` and `ui.zoom` both ride on `<html> { zoom: zoomScale × fontScale }`, so xterm is
   handed `ui.terminalFontPx` (`terminalFontSize / fontScale`) instead of the raw value: changing the
   UI font size must not move the terminal, while app zoom (`Ctrl+±`) still scales it on purpose.

@@ -301,7 +301,9 @@
         const mode = props.mode
         const commitHash = props.commitHash
         const repoPath = repoStore.repo?.path
-        if (ui.fileFilterMode !== 'all') {
+        // No active repo (a workspace switch empties the tab bar while the panel stays mounted):
+        // `listFiles` targets whatever repo main considers active — never ask for a stale one.
+        if (ui.fileFilterMode !== 'all' || !repoPath) {
             allPaths.value = []
             return
         }

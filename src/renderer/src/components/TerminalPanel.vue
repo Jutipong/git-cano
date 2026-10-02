@@ -5,7 +5,7 @@
     import ILucidePlus from '~icons/lucide/plus'
 
     import { useRepoStore, MAX_TERMINALS_PER_REPO } from '../stores/repo'
-    import { useUiStore, TERMINAL_FONT_SIZE_OPTIONS } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
     import TerminalTabContextMenu, { type TerminalTabMenuState } from './TerminalTabContextMenu.vue'
     import TerminalView from './TerminalView.vue'
@@ -41,19 +41,19 @@
         shellName.value = await window.api.terminalShell().catch(() => 'shell')
     })
 
-    /** Header A− / A+ step through TERMINAL_FONT_SIZE_OPTIONS; disable whichever end is exhausted. */
+    /** Header A− / A+ step through FONT_SIZE_OPTIONS (shared with Appearance); disable at either end. */
     const fontStep = computed(() => {
-        const idx = TERMINAL_FONT_SIZE_OPTIONS.indexOf(ui.terminalFontSize)
+        const idx = FONT_SIZE_OPTIONS.indexOf(ui.terminalFontSize)
         return {
             shrink: idx <= 0,
-            grow: idx < 0 || idx >= TERMINAL_FONT_SIZE_OPTIONS.length - 1,
+            grow: idx < 0 || idx >= FONT_SIZE_OPTIONS.length - 1,
             title: `Terminal text — ${ui.terminalFontSize}px`,
         }
     })
 
-    /** 1-based tab number: a tab's position in the repo's id list. */
+    /** The tab's creation-time number — it labels the tab and must not change when tabs are reordered. */
     function tabNumber(id: string): number {
-        return terminalIds.value.indexOf(id) + 1
+        return repoStore.terminalNumber(props.repoPath, id)
     }
 
     /** A renamed tab shows just its name; an unnamed one keeps the positional "<n> <shell>" label. */

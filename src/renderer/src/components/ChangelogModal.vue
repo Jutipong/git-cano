@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { computed, onBeforeUnmount, onMounted } from 'vue'
+    import ILucideExternalLink from '~icons/lucide/external-link'
 
     import { useUpdaterStore } from '../stores/updater'
     import { stripMarkdown } from '../utils/changelog'

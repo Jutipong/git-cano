@@ -2,7 +2,7 @@
     import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ILucideTriangleAlert from '~icons/lucide/triangle-alert'
 
-    import { useUiStore } from '../stores/ui'
+    import { useUiStore, TERMINAL_FONT_OPTIONS } from '../stores/ui'
 
     import '@xterm/xterm/css/xterm.css'
 
@@ -59,14 +59,18 @@
     }
 
     /**
-     * The terminal's own font stack: its own family choice, or the app's `--font-mono` when set to
-     * "App default". xterm feeds this straight into the canvas font shorthand, so a multi-word family
-     * name has to be quoted.
+     * The terminal's own font stack: a preset (which may carry its own stack, e.g. the two Nerd Fonts
+     * family names), a custom family typed in Settings, or the app's `--font-mono` for the default.
+     * The app stack is always appended, so a font that is not installed falls back to the app default
+     * instead of a generic `monospace`. xterm feeds this straight into the canvas font shorthand, so
+     * multi-word family names have to be quoted.
      */
     function terminalFontFamily() {
+        const appMono = getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim() || 'monospace'
         const chosen = ui.terminalFontFamily.trim()
-        if (chosen) return `"${chosen}", monospace`
-        return getComputedStyle(document.documentElement).getPropertyValue('--font-mono').trim() || 'monospace'
+        if (!chosen) return appMono
+        const preset = TERMINAL_FONT_OPTIONS.find(option => option.value && option.value === chosen)
+        return `${preset?.stack ?? `"${chosen}"`}, ${appMono}`
     }
 
     async function setup() {

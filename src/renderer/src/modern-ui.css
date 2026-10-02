@@ -5301,24 +5301,34 @@ body {
 }
 
 /* Terminal tabs live in the header row: one pill per shell ("1 zsh"), a ✕ that kills just that
-   shell, and `+` to spawn another one up to MAX_TERMINALS_PER_REPO. The pills are sized for the
-   mouse: they share the row's spare width (capped so a lone shell doesn't stretch across the panel)
-   and the label button fills the pill, so almost the whole tab switches shells. Tabs are draggable
-   (reorder) and right-clickable (rename/close), like the repo tab bar. */
+   shell, and `+` to spawn another one up to MAX_TERMINALS_PER_REPO, sitting right after the last
+   tab. A pill is at least 88px (the mouse target) and grows with its label up to 240px, so a
+   renamed tab or a long shell name is readable instead of cut at the minimum; the label button
+   fills the pill, so almost the whole tab switches shells. When the row cannot fit its tabs the
+   strip scrolls sideways (hidden scrollbar, like the repo tab bar) rather than clipping the `+`.
+   Tabs are draggable (reorder) and right-clickable (rename/close). */
 .terminal-tabs {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
     align-items: center;
     gap: 8px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+.terminal-tabs::-webkit-scrollbar {
+    display: none;
 }
 
 /* The reorderable strip inside `.terminal-tabs` — a TransitionGroup, so it carries the `.tab-move`
-   FLIP class, and `+` stays outside it (an unkeyed child would break the move animation). */
+   FLIP class, and `+` stays outside it (an unkeyed child would break the move animation). It hugs
+   its tabs and never shrinks (`flex: 0 0 auto`), so `+` sits right after the last one, the tabs keep
+   their content width, and any overflow becomes the strip's horizontal scroll range. */
 .terminal-tab-track {
     display: flex;
-    flex: 1 1 auto;
+    flex: 0 0 auto;
     min-width: 0;
     align-items: center;
     gap: 8px;
@@ -5326,19 +5336,22 @@ body {
 
 .terminal-tab {
     display: inline-flex;
-    /* Prefer a mouse-sized pill (88px basis, capped at 132px) but allow shrinking below the basis
-       when the center column is squeezed by the sidebar / right-pane minimums — 4 tabs overlapping
-       the `+` button is worse than a cramped but clickable label. */
-    flex: 1 1 88px;
-    min-width: 0;
-    max-width: 132px;
+    /* Content-sized pill: 88px floor for the mouse target, 240px cap so one long name cannot take
+       over the row. The floor is a hard minimum — a squeezed row scrolls instead of shrinking. */
+    flex: 0 1 auto;
+    min-width: 88px;
+    max-width: 240px;
     align-items: center;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
+    /* `transform` must be declared here: the shared `.tab-move` FLIP rule sits earlier in this file
+       and loses the cascade to this rule (equal specificity, later wins), so the drag-reorder
+       animation would otherwise jump instead of sliding — same timing as the repo tabs. */
     transition:
         color 0.15s ease,
-        background 0.15s ease;
+        background 0.15s ease,
+        transform 0.2s ease;
 }
 
 .terminal-tab:hover {

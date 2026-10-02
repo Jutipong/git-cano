@@ -69,31 +69,36 @@ export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
 export const DEFAULT_ZOOM = 100
 
 /**
- * Terminal font size options, in px (before app zoom). The terminal owns its own size and is
- * deliberately NOT tied to `fontSize` — only app zoom scales it (see `terminalFontPx`).
+ * Terminal font size — the SAME chip list as the app's Appearance → Font size (`FONT_SIZE_OPTIONS`).
+ * The terminal still owns its own value (it is not tied to `fontSize`; only app zoom scales it, see
+ * `terminalFontPx`), it just picks from the shared options.
  */
-export const TERMINAL_FONT_SIZE_OPTIONS = [10, 11, 12, 13, 14, 15, 16, 18, 20]
-export const DEFAULT_TERMINAL_FONT_SIZE = 14
+export const DEFAULT_TERMINAL_FONT_SIZE = DEFAULT_FONT_SIZE
 
-/** Terminal font family choices. `''` = follow the app's `--font-mono` stack (default). */
-export const TERMINAL_FONT_OPTIONS = [
-    { value: '', label: 'App default' },
-    { value: 'SF Mono', label: 'SF Mono' },
-    { value: 'Menlo', label: 'Menlo' },
-    { value: 'Monaco', label: 'Monaco' },
-    { value: 'Cascadia Code', label: 'Cascadia Code' },
-    { value: 'Cascadia Mono', label: 'Cascadia Mono' },
-    { value: 'Consolas', label: 'Consolas' },
-    { value: 'JetBrains Mono', label: 'JetBrains Mono' },
-    { value: 'Fira Code', label: 'Fira Code' },
-    { value: 'Hack', label: 'Hack' },
-    { value: 'Iosevka', label: 'Iosevka' },
-    { value: 'DejaVu Sans Mono', label: 'DejaVu Sans Mono' },
-    { value: 'Ubuntu Mono', label: 'Ubuntu Mono' },
-    { value: 'MesloLGS NF', label: 'MesloLGS NF' },
-    { value: 'JetBrainsMono Nerd Font', label: 'JetBrainsMono NF' },
-    { value: 'Courier New', label: 'Courier New' },
-] as const
+/**
+ * Terminal font family presets. `''` = follow the app's `--font-mono` stack (the default). Values are
+ * the real installed family names: Nerd Fonts v3 registers "JetBrainsMono NF" while v2 used
+ * "JetBrainsMono Nerd Font", so that preset carries a `stack` covering both. A preset that is not
+ * installed falls back to the app's mono stack (TerminalView appends it), and any other family stays
+ * reachable through the custom field in Settings → Terminal (`sanitizeTerminalFontFamily`).
+ */
+export interface TerminalFontOption {
+    value: string
+    label: string
+    /** Extra family names this preset should fall back through before the app's own mono stack. */
+    stack?: string
+}
+
+export const TERMINAL_FONT_OPTIONS: readonly TerminalFontOption[] = [
+    { value: '', label: 'Default' },
+    { value: 'Cascadia Code NF', label: 'Cascadia Code NF' },
+    {
+        value: 'JetBrainsMono NF',
+        label: 'JetBrains Mono NF',
+        stack: '"JetBrainsMono NF", "JetBrainsMono Nerd Font"',
+    },
+    { value: 'Maple Mono NF', label: 'Maple Mono NF' },
+]
 export const DEFAULT_TERMINAL_FONT_FAMILY = ''
 
 /** Longest custom family name accepted from Settings — a font name, not a fallback stack. */
@@ -200,10 +205,13 @@ export const useUiStore = defineStore(
         })
         /** Terminal font — its own family and size, independent of the app-wide `fontSize`. The family
          *  takes a manually typed name (Settings → Terminal), so its guard sanitizes instead of
-         *  rejecting values outside the preset list; the size stays preset-only. */
+         *  rejecting values outside the preset list; the size picks from the shared
+         *  `FONT_SIZE_OPTIONS` list (same chips as Appearance). */
         const terminalFontSize = ref(DEFAULT_TERMINAL_FONT_SIZE)
         watchEffect(() => {
-            if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value)) terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+            // Shared list with Appearance → Font size; a value left over from the old terminal-only
+            // list (10/11/18/20) falls back to the default.
+            if (!FONT_SIZE_OPTIONS.includes(terminalFontSize.value)) terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
         })
         const terminalFontFamily = ref<string>(DEFAULT_TERMINAL_FONT_FAMILY)
         watchEffect(() => {
@@ -221,11 +229,10 @@ export const useUiStore = defineStore(
          *  zoom is intentionally kept — zooming the window still enlarges the terminal. */
         const terminalFontPx = computed(() => terminalFontSize.value / fontScale.value)
 
-        /** Step through TERMINAL_FONT_SIZE_OPTIONS one slot (terminal header A− / A+). */
+        /** Step through FONT_SIZE_OPTIONS one slot (terminal header A− / A+). */
         function stepTerminalFontSize(direction: number) {
-            const idx = TERMINAL_FONT_SIZE_OPTIONS.indexOf(terminalFontSize.value)
-            terminalFontSize.value =
-                TERMINAL_FONT_SIZE_OPTIONS[Math.min(TERMINAL_FONT_SIZE_OPTIONS.length - 1, Math.max(0, idx + direction))]
+            const idx = FONT_SIZE_OPTIONS.indexOf(terminalFontSize.value)
+            terminalFontSize.value = FONT_SIZE_OPTIONS[Math.min(FONT_SIZE_OPTIONS.length - 1, Math.max(0, idx + direction))]
         }
         const codeFontSize = ref(DEFAULT_CODE_FONT_SIZE)
         const repoTabColors = ref<Record<string, string>>({})

@@ -460,9 +460,9 @@
 
     /**
      * Ask to end EVERY shell in EVERY repo — including the ones parked in another workspace, which is
-     * exactly what the command palette's "Kill all terminals" is for. It always confirms.
+     * exactly what the command palette's "Terminate all terminals" is for. It always confirms.
      */
-    async function confirmKillAllTerminals(): Promise<void> {
+    async function confirmTerminateAllTerminals(): Promise<void> {
         const count = repoStore.terminalCount
         if (!count) return
         const repos = repoStore.terminalRepoCount
@@ -484,7 +484,8 @@
 
     /** Ask to close one terminal tab — its shell and scrollback die, so this always confirms. */
     async function confirmCloseTerminalTab(path: string, id: string): Promise<void> {
-        const index = (repoStore.repoTerminals(path)?.ids.indexOf(id) ?? -1) + 1
+        // The tab's own number, not its position — the confirm must name what the label shows.
+        const index = repoStore.terminalNumber(path, id)
         if (index < 1) return
         const ok = await confirmDialog({
             title: `Close terminal ${index}`,
@@ -760,7 +761,14 @@
             '--sidebar-width': `${ui.sidebarWidth}px`,
             '--right-panel-width': `${ui.rightPanelWidth}px`,
         }">
-        <template v-if="repo">
+        <!--
+            The app shell also stays mounted while no repo is active but a shell is still alive
+            (`terminalCount > 0`): `switchWorkspace` empties `tabs` before it reopens the destination,
+            and `v-if="repo"` alone would unmount this whole subtree — every TerminalPanel with it —
+            throwing away the xterm scrollback of every parked shell. `v-show` hides it instead, so
+            the panels (and their buffers) survive a switch and only the empty state is on screen.
+        -->
+        <template v-if="repo || repoStore.terminalCount > 0">
             <TabBar
                 :tabs="tabs"
                 :active-index="activeTab"
@@ -771,8 +779,11 @@
                 @reorder="(from, to) => repoStore.reorderTabs(from, to)"
                 @create-stash="stashCreateOpen = true"
                 @clone="cloneOpen = true" />
-            <div class="app-shell">
+            <div
+                v-show="!!repo"
+                class="app-shell">
                 <Sidebar
+                    v-if="repo"
                     :repo="repo"
                     :refresh="repoStore.refresh"
                     @interactive-rebase="rebaseBase = $event"
@@ -845,7 +856,7 @@
                             class="right-pane"
                             :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
                             <FilePanel
-                                :files="selectedStash ? repoStore.stashFiles : selectedCommit ? repoStore.commitFiles : repo.files"
+                                :files="selectedStash ? repoStore.stashFiles : selectedCommit ? repoStore.commitFiles : (repo?.files ?? [])"
                                 :mode="selectedStash ? 'stash' : selectedCommit ? 'commit' : 'workdir'"
                                 :loading="repoStore.loadingCommitDetails"
                                 :commit-hash="selectedStash?.hash ?? selectedCommit?.hash"
@@ -967,7 +978,7 @@
             @close="repoStore.commandPaletteOpen = false"
             @open-repo="openNewRepo"
             @toggle-terminal="toggleTerminal"
-            @kill-all-terminals="confirmKillAllTerminals" />
+            @terminate-all-terminals="confirmTerminateAllTerminals" />
         <ChangelogModal
             v-if="updater.changelogOpen"
             @close="updater.changelogOpen = false" />

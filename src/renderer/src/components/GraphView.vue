@@ -114,18 +114,22 @@
     // window resize alone misses in-app layout changes (zoom, panel drags),
     // so observe the scroll container itself with a resize fallback
     let sbwObserver: ResizeObserver | null = null
+    const onViewportResize = () => {
+        updateSbw()
+        updateVisibleRange()
+    }
     onMounted(() => {
         updateSbw()
         if (typeof ResizeObserver !== 'undefined' && scrollEl.value) {
-            sbwObserver = new ResizeObserver(updateSbw)
+            sbwObserver = new ResizeObserver(onViewportResize)
             sbwObserver.observe(scrollEl.value)
         } else {
-            window.addEventListener('resize', updateSbw)
+            window.addEventListener('resize', onViewportResize)
         }
     })
     onBeforeUnmount(() => {
         sbwObserver?.disconnect()
-        window.removeEventListener('resize', updateSbw)
+        window.removeEventListener('resize', onViewportResize)
     })
     onBeforeUnmount(() => {
         window.removeEventListener('keydown', onKeydown)
@@ -197,20 +201,31 @@
 
     let loadMoreArmed = true
     const showToTop = ref(false)
+    /**
+     * Re-solve the rendered window from the container's live height. Must also run when the container
+     * is resized without a scroll (terminal splitter drag, terminal expand/collapse, and the app shell
+     * being hidden during a workspace switch), or the list stays cut at the old height — but never
+     * while it has no box (hidden shell), where `clientHeight` is 0 and the window would collapse.
+     */
+    function updateVisibleRange() {
+        const el = scrollEl.value
+        if (!el || el.clientHeight === 0) return
+        const prefix = rowPrefix.value
+        const n = visibleCommits.value.length
+        if (!prefix.length || n === 0) {
+            visibleRange.value = [0, 0]
+            return
+        }
+        const atTop = indexAtOffset(prefix, el.scrollTop)
+        const atBottom = indexAtOffset(prefix, el.scrollTop + el.clientHeight)
+        visibleRange.value = [Math.max(0, atTop - 15), Math.min(n, atBottom + 1 + 15)]
+    }
     function onScroll() {
         hideTip()
         const el = scrollEl.value
         if (!el) return
         showToTop.value = el.scrollTop > rowH * 20
-        const prefix = rowPrefix.value
-        const n = visibleCommits.value.length
-        if (!prefix.length || n === 0) {
-            visibleRange.value = [0, 0]
-        } else {
-            const atTop = indexAtOffset(prefix, el.scrollTop)
-            const atBottom = indexAtOffset(prefix, el.scrollTop + el.clientHeight)
-            visibleRange.value = [Math.max(0, atTop - 15), Math.min(n, atBottom + 1 + 15)]
-        }
+        updateVisibleRange()
         const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - rowH * 10
         if (props.hasMore && nearBottom && loadMoreArmed) {
             loadMoreArmed = false
