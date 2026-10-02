@@ -123,17 +123,19 @@ export const useRepoStore = defineStore('repo', () => {
     const soloFiles = ref<string[] | null>(null)
     /** Terminal tabs of one repo: the shells it owns, which one is on screen, and whether the panel is hidden. */
     interface RepoTerminals {
-        /** Terminal ids in creation order — a tab's label is its 1-based index. */
+        /** Terminal ids in tab order — an unnamed tab's label is its 1-based index here. */
         ids: string[]
         activeId: string | null
         /** Toggled away from the graph toolbar: the shells keep running, the panel is just not painted. */
         hidden: boolean
+        /** Custom tab labels by terminal id (right-click → Rename). Memory-only, like the shells. */
+        names: Record<string, string>
     }
 
     /**
      * Terminals per repo path. Memory-only (never persisted): a closed app starts with no terminal
-     * anywhere, and every pty is killed on tab close / workspace switch / app quit. A repo with no
-     * entry has no session and no panel at all.
+     * anywhere, and every pty is killed on tab close / app quit. A workspace switch keeps shells
+     * alive (the repo is parked — see `closeParkedRepo`). A repo with no entry has no panel at all.
      */
     const terminals = ref<Record<string, RepoTerminals>>({})
     /** Monotonic id source — ids are never reused, so a remounted panel finds its live shell again. */
@@ -521,6 +523,19 @@ export const useRepoStore = defineStore('repo', () => {
     /** Active repo's terminals — GraphView uses this for the toolbar button's title/active state. */
     const terminalSpawned = computed(() => terminalExists(tabs.value[activeTab.value]?.path ?? ''))
 
+    /**
+     * Every live shell across every repo — including repos parked in another workspace. The command
+     * palette's "Kill all terminals" is gated on this, and its confirm dialog counts with it.
+     */
+    const terminalCount = computed(() => Object.values(terminals.value).reduce((total, state) => total + state.ids.length, 0))
+    /** How many repos own at least one shell (the palette item's hint). */
+    const terminalRepoCount = computed(() => Object.values(terminals.value).filter(state => state.ids.length > 0).length)
+    /** Shells whose repo is parked in another workspace — no open tab points at them (the confirm's note). */
+    const terminalParkedCount = computed(() => {
+        const open = new Set(tabs.value.map(tab => tab.path))
+        return Object.entries(terminals.value).reduce((total, [path, state]) => (open.has(path) ? total : total + state.ids.length), 0)
+    })
+
     /** True while the active repo's terminal panel is on screen (has a shell and isn't toggled away). */
     const terminalVisible = computed(() => {
         const state = repoTerminals(tabs.value[activeTab.value]?.path ?? '')
@@ -542,6 +557,18 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     /**
+     * A workspace switch parks a repo that owns a shell: it stays registered in the main process so
+     * the pty survives, even though no tab points at it. Once its last shell is gone nothing needs
+     * that git instance anymore, and no later switch would ever collect it (they only walk the open
+     * tabs) — so close it here instead of letting main's registry grow. Repos in the tab bar are
+     * left alone: their tab owns their lifecycle (`closeTab` closes them explicitly).
+     */
+    function closeParkedRepo(path: string) {
+        if (!path || tabs.value.some(tab => tab.path === path)) return
+        void window.api.closeRepo(path).catch(() => {})
+    }
+
+    /**
      * Adds a shell tab for a repo (panel `+`). Returns its id, or null once the repo is at
      * MAX_TERMINALS_PER_REPO. Only flags it — the mounted panel spawns the pty for that id.
      */
@@ -553,8 +580,37 @@ export const useRepoStore = defineStore('repo', () => {
             ids: state ? [...state.ids, id] : [id],
             activeId: id,
             hidden: false,
+            names: state?.names ?? {},
         })
         return id
+    }
+
+    /**
+     * Renames one shell tab (right-click → Rename). An empty name clears it, so the tab goes back to
+     * its positional "<n> <shell>" label. Names are plain labels — they never reach the pty.
+     */
+    function renameTerminal(path: string, id: string, name: string) {
+        const state = repoTerminals(path)
+        if (!state || !state.ids.includes(id)) return
+        const trimmed = name.trim()
+        const names = { ...state.names }
+        if (trimmed) names[id] = trimmed
+        else delete names[id]
+        setRepoTerminals(path, { ...state, names })
+    }
+
+    /**
+     * Moves a shell tab to another slot (drag & drop in the header). `activeId` is an id, not an
+     * index, so the visible shell never changes — only the numbering of unnamed tabs.
+     */
+    function reorderTerminals(path: string, from: number, to: number) {
+        const state = repoTerminals(path)
+        if (!state || from === to) return
+        if (from < 0 || to < 0 || from >= state.ids.length || to >= state.ids.length) return
+        const ids = [...state.ids]
+        const [moved] = ids.splice(from, 1)
+        ids.splice(to, 0, moved)
+        setRepoTerminals(path, { ...state, ids })
     }
 
     /** Which of a repo's terminals the panel shows. */
@@ -577,12 +633,16 @@ export const useRepoStore = defineStore('repo', () => {
         const ids = state.ids.filter(existing => existing !== id)
         if (!ids.length) {
             setRepoTerminals(path, null)
+            closeParkedRepo(path)
             terminalExpanded.value = false
             return
         }
         // Hand focus to the tab that slid into this one's place, else the one before it.
         const activeId = state.activeId === id ? ids[Math.min(index, ids.length - 1)] : state.activeId
-        setRepoTerminals(path, { ...state, ids, activeId })
+        // Ids are never reused, but drop the label anyway so a closed tab leaves nothing behind.
+        const names = { ...state.names }
+        delete names[id]
+        setRepoTerminals(path, { ...state, ids, activeId, names })
     }
 
     /** Show the panel again without touching the shells. */
@@ -620,6 +680,7 @@ export const useRepoStore = defineStore('repo', () => {
         if (!state) return
         for (const id of state.ids) void window.api.terminalDispose(id).catch(() => {})
         setRepoTerminals(path, null)
+        closeParkedRepo(path)
         terminalExpanded.value = false
     }
 
@@ -634,10 +695,12 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     /**
-     * Workspace switches are a hard reset for shells: every terminal of every repo is closed and its
-     * pty killed — including repos shared by both workspaces. Terminals are memory-only by design.
+     * Kills every shell of every repo, including the ones parked in another workspace — the user-driven
+     * escape hatch behind the command palette's "Kill all terminals". Workspace switches never call
+     * this: they leave shells alone and keep their panels mounted (see `switchWorkspace`).
      */
     function closeAllTerminals() {
+        const paths = Object.keys(terminals.value)
         const states = Object.values(terminals.value)
         terminalExpanded.value = false
         if (!states.length) return
@@ -645,6 +708,7 @@ export const useRepoStore = defineStore('repo', () => {
             for (const id of state.ids) void window.api.terminalDispose(id).catch(() => {})
         }
         terminals.value = {}
+        for (const path of paths) closeParkedRepo(path)
     }
 
     /** Expand/collapse the terminal over the center column. Collapsing restores the remembered height. */
@@ -663,11 +727,14 @@ export const useRepoStore = defineStore('repo', () => {
             const currentPaths = tabs.value.map(tab => tab.path)
             const saved = ws.getSession(name) ?? { paths: [], active: 0 }
             const targetPaths = new Set(saved.paths)
-            // Terminals never survive a workspace switch — close them all before repos are recycled.
-            closeAllTerminals()
-            // Keep repositories shared by both workspaces open; only close repos that are no longer needed.
+            // A workspace switch never kills a shell. Repos that still own one stay registered in the
+            // main process (git instance + watcher) with their panel mounted, so the pty, whatever it
+            // is running and its scrollback all survive — only the active tab's panel is on screen.
+            // Repos with no shell are recycled exactly as before.
             await Promise.all(
-                currentPaths.filter(path => !targetPaths.has(path)).map(path => window.api.closeRepo(path).catch(() => false))
+                currentPaths
+                    .filter(path => !targetPaths.has(path) && !terminalExists(path))
+                    .map(path => window.api.closeRepo(path).catch(() => false))
             )
             tabs.value = []
             activeTab.value = 0
@@ -774,12 +841,17 @@ export const useRepoStore = defineStore('repo', () => {
         terminals,
         terminalVisible,
         terminalSpawned,
+        terminalCount,
+        terminalRepoCount,
+        terminalParkedCount,
         terminalHeight,
         terminalExpanded,
         repoTerminals,
         terminalExists,
         setTerminalExpanded,
         openTerminalTab,
+        renameTerminal,
+        reorderTerminals,
         setActiveTerminal,
         closeTerminalTab,
         showTerminals,

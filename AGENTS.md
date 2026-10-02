@@ -69,7 +69,7 @@ full guarded list lives in `@simple-git/argv-parser`).
 - `repo.ts` loads local repository data (status, history, branches, and remote existence) before marking the repo as loaded. Local tags + remote tag status are opt-in (`refresh(..., withTags)` via `refreshWithTags()`): tab switches always include them, as do tag mutations and fetch/pull — everything else skips them so routine refreshes spawn no tag commands.
 - Remote tag status is network-bound and must stay outside the awaited refresh batch. `loadRemoteTags()` runs it in the background, keeps a loading state for the TAGS section, and ignores results from an inactive repo.
 - `listRemoteTags()` uses a separate `plainGit()` instance so the background network request does not block local Git commands. Do not add a cache or put this request back into the main refresh `Promise.all()` without a deliberate product decision.
-- Workspace switches close only repositories that are not present in the destination workspace, open target repositories concurrently, and pass the already-computed active-repo status into `selectTab()` to avoid a duplicate `git status`.
+- Workspace switches close only repositories that are not present in the destination workspace **and own no terminal** (a repo that still has a shell stays registered so its pty and scrollback survive — see "Terminal panel"), open target repositories concurrently, and pass the already-computed active-repo status into `selectTab()` to avoid a duplicate `git status`.
 - Keep the local loading indicators honest: local tags and remote tag status have separate loading states, and local tags should remain visible while remote status is loading.
 
 ## UI model
@@ -518,7 +518,11 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   repo path → `{ ids, activeId, hidden }`. The panel is mounted only for repos with at least one
   id (`terminalPaths` filters on `terminalExists`); the header tab strip adds more (`openTerminalTab`,
   `+` disables at the cap) and a tab's number is its 1-based index in `ids`. Tab labels are
-  `<n> <shell name>` (one `terminal:shell` IPC per panel).
+  `<n> <shell name>` (one `terminal:shell` IPC per panel). The pills are deliberately mouse-sized
+  (`modern-ui.css` `.terminal-tab`: `flex: 1 1 88px`, up to 132px, shrinking below the basis only
+  when a narrow center column forces it; `.terminal-tab-label` stretches to fill the pill so the
+  click handler covers the whole tab) — do not go back to `flex: 0 1 auto` text-sized pills, and
+  keep a `cursor: pointer` on the label / ✕ / `+`.
 - **Terminal ids are the pty key and live in the store**: `main/terminal.ts` holds
   `Map<terminalId, session>` and every payload (`TerminalData` / `TerminalExit`) plus
   `terminalCreate/Write/Resize/Dispose` carries the id. Ids come from a monotonic counter in the
@@ -543,18 +547,39 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   (state only — `repo:close` already killed every pty via `disposeTerminalsForRepo`).
 - **State is memory-only, never persisted**: `terminals`, `terminalExpanded` and `terminalHeight`
   (default 260) reset on every launch. `terminalHeight` is a plain store ref (not in `ui.ts`/
-  localStorage) — do not persist it.
+  localStorage) — do not persist it. That includes a tab's custom **name** (`names[id]`).
+- **Shell tabs are renamable and reorderable** (`RepoTerminals.names`, memory-only like the rest):
+  right-click a tab → `TerminalTabContextMenu.vue` (per-feature SFC, same contract as the other
+  menus: exported `*MenuState`, one `menu` prop, a typed emit per action) offers Rename… / Reset
+  name / Close terminal / Close all; rename edits the pill **inline** (right-click → Rename… or
+  double-click the label — `Enter` commits, `Esc`/blur cancels, `:draggable="!renamingId"` keeps a
+  drag from stealing the input). Dragging a tab reorders it through `reorderTerminals(path, from, to)`
+  (bounds-guarded splice; `activeId` is an id, so the visible shell never changes) with the repo tab
+  bar's live `dragover` mechanics and the shared `.tab-move` FLIP — the reorderable strip is its own
+  `TransitionGroup` (`.terminal-tab-track`) so `+` stays outside it. A named tab shows **just its
+  name**; `tabTitle()` keeps the number and the live shell in the tooltip, and unnamed tabs keep the
+  positional `<n> <shell>` label (so their numbers shift after a drag — that is intended).
 - **pty lifetime is owned by the main process** (`main/terminal.ts`): `repo:close` disposes every
   session of that repo, `before-quit`/`quit` disposes all. Unmounting a panel or a view deliberately
   does NOT kill a pty — unmounting also happens transiently while `tabs` is rebuilt. **A workspace
-  switch always calls `closeAllTerminals()` first** (every id disposed + state cleared, including
-  repos shared by both workspaces); terminals never survive it.
+  switch kills nothing**: `switchWorkspace` only recycles repos that own no shell, so a repo that
+  still has one stays registered in the main process (git instance + watcher) with its panel mounted
+  and its scrollback intact — such a repo is *parked* (no tab points at it). A parked repo whose last
+  shell dies (✕, panel ✕, self-exit, or the kill-all below) is closed via `closeParkedRepo()` from the
+  terminal-kill paths, so main's registry never grows; a switch alone would never collect it because it
+  only walks the open tabs. The escape hatch for parked shells is the command palette's
+  `Kill all terminals` → `closeAllTerminals()` (gated on `terminalCount`, confirmed by
+  `confirmKillAllTerminals`, which names the invisible ones via `terminalParkedCount`) — never call
+  `closeAllTerminals()` from a switch again.
 - **One panel per repo, one view per shell**: `v-for` over `terminalPaths` keyed by path (never a
   single shared instance with a changing `repo-path`, or Vue reuses the component and two repos end
   up sharing one xterm/pty), and inside it `v-for` over the repo's ids rendering `TerminalView.vue`
   (one xterm + one pty each, siblings `v-show`-hidden so every scrollback survives). Clicking a tab
   calls `activate()`, which shows it and hands it the keyboard via the view's exposed `focus()`.
   `resizePty()` skips zero-size (hidden) hosts, so the `visible` watcher refits on the way back in.
+  `terminalPaths` comes from the store's `terminals` map, **not** from `tabs` — a repo parked in
+  another workspace keeps its panel mounted (hidden by `isTerminalVisible`, which stays tied to the
+  active tab). Do not re-filter it by `tabs`; that unmounts the panel and throws the scrollback away.
 - **The terminal has its own font, decoupled from the app-wide `fontSize`**: `ui.terminalFontFamily`
   (`''` = follow `--font-mono`) and `ui.terminalFontSize` (chips + `stepTerminalFontSize`, the
   header `A−`/`A+` buttons) are persisted in `stores/ui.ts` and edited in Settings → Terminal.
@@ -602,9 +627,11 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - Sidebar update button (`Sidebar.vue`, green `.update-version-btn`) renders on
   `available` (`lucide:circle-arrow-up` = Download), `downloading` (spinner
   with % title) and `downloaded` (`lucide:rotate-cw` = restart to install) — never on
-  version-loaded alone; its divider is gated the same way. On macOS
-  (`updateCanAuto() === false`) the button jumps to Settings → General → Updates
-  (`repoStore.toolsTab = 'general'`) for a manual download instead.
+  version-loaded alone; its divider is gated the same way. On macOS and in dev
+  (`updateCanAuto() === false`) the button opens the GitHub release page directly
+  (`updater.openRelease()` → `update:openRelease`) — no Settings detour, so nothing may
+  deep-link `repoStore.toolsTab = 'general'`; the Updates section is reached via
+  Settings → General like any other tab.
 - In-app download/install (`downloading` → `downloaded`) works only in the installed
   Windows build: `src/main/updater.ts` wraps `electron-updater` (`autoDownload: false`,
   progress/error events forwarded as `update:progress` / `update:downloaded` /

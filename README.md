@@ -79,12 +79,12 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 > 🖥️ A real shell, right where you review history.
 
 - 🪟 Docked terminal panel under the commit graph — toggle it from the toolbar button next to the settings gear, the command palette (`Terminal`), or <kbd>Ctrl</kbd>+<kbd>`</kbd>
-- 🗂️ **Up to 4 shells per repo** — each tab keeps its own shell and scrollback, `+` adds one, and a tab's ✕ closes just that shell (with confirmation); the panel ✕ closes them all
+- 🗂️ **Up to 4 shells per repo** — each tab keeps its own shell and scrollback, `+` adds one; drag a tab to reorder it, double-click (or right-click) to rename it, and a tab's ✕ closes just that shell (with confirmation); the panel ✕ closes them all
 - 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel). The toggle only shows/hides; it never kills a running shell
 - ⬜ **Full-height mode** — the panel becomes a card aligned with the sidebar / graph / Changes columns: it covers the sidebar and graph but leaves the **repo tabs** and the **Changes panel** visible, and it stays open while you switch repos (a repo without a terminal collapses it)
 - ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
 - 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; type any installed family name (e.g. a Nerd Font) manually and it applies as you type, while window zoom still scales it
-- 🔒 Nothing is persisted — closing a shell ends its pty, and a workspace switch closes every shell
+- 🔒 Nothing is persisted — closing a shell ends its pty; a workspace switch never kills one (parked shells keep running with their scrollback), and the command palette's **Kill all terminals** is the escape hatch when you want them all gone
 - 📦 Powered by xterm.js + node-pty — ships ABI-stable N-API prebuilds for Windows & macOS, so the terminal needs **no Python or C++ toolchain**; a missing native binary disables only the terminal
 
 ### 🤖 AI Commit Messages _(optional)_
@@ -149,7 +149,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 ## 🔄 Updates
 
 - **Settings → General → Updates**: pick how often the app checks GitHub Releases (`Off / 1h / 2h / 4h / 6h / 12h / 24h`, default `2h`), or press **Check now** anytime.
-- The update icons in the sidebar appear **only when a newer release is found** — an arrow-up icon to download the update, then a restart icon once downloaded (click = restart to install; on macOS it opens Settings for a manual download).
+- The update icons in the sidebar appear **only when a newer release is found** — an arrow-up icon to download the update, then a restart icon once downloaded (click = restart to install; on macOS and in dev it opens the release page for a manual download).
 - 🆕 The **first launch after an update** shows a **What's new** modal with that version's release notes. Reopen it anytime from **Settings → General → Updates → What's new** or the **Window → What's new** menu. Release notes come from the GitHub release body; without a network connection the modal says so instead of failing.
 
 ## 🚀 Run from source (developers)

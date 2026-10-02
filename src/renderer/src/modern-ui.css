@@ -5301,20 +5301,37 @@ body {
 }
 
 /* Terminal tabs live in the header row: one pill per shell ("1 zsh"), a ✕ that kills just that
-   shell, and `+` to spawn another one up to MAX_TERMINALS_PER_REPO. */
+   shell, and `+` to spawn another one up to MAX_TERMINALS_PER_REPO. The pills are sized for the
+   mouse: they share the row's spare width (capped so a lone shell doesn't stretch across the panel)
+   and the label button fills the pill, so almost the whole tab switches shells. Tabs are draggable
+   (reorder) and right-clickable (rename/close), like the repo tab bar. */
 .terminal-tabs {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     overflow: hidden;
+}
+
+/* The reorderable strip inside `.terminal-tabs` — a TransitionGroup, so it carries the `.tab-move`
+   FLIP class, and `+` stays outside it (an unkeyed child would break the move animation). */
+.terminal-tab-track {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
 }
 
 .terminal-tab {
     display: inline-flex;
-    flex: 0 1 auto;
+    /* Prefer a mouse-sized pill (88px basis, capped at 132px) but allow shrinking below the basis
+       when the center column is squeezed by the sidebar / right-pane minimums — 4 tabs overlapping
+       the `+` button is worse than a cramped but clickable label. */
+    flex: 1 1 88px;
     min-width: 0;
+    max-width: 132px;
     align-items: center;
     background: transparent;
     border: 1px solid transparent;
@@ -5328,6 +5345,11 @@ body {
     background: var(--surface-hover);
 }
 
+.terminal-tab.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+}
+
 .terminal-tab.active {
     color: var(--teal);
     background: color-mix(in srgb, var(--teal) 13%, transparent);
@@ -5335,14 +5357,17 @@ body {
 }
 
 .terminal-tab-label {
+    flex: 1 1 auto;
+    align-self: stretch;
     min-width: 0;
-    padding: 3px 5px 3px 10px;
+    padding: 5px 8px 5px 14px;
     overflow: hidden;
     color: var(--text-muted);
     background: transparent;
     border: none;
+    cursor: pointer;
     font-family: var(--font-mono);
-    font-size: 12px;
+    font-size: 13px;
     letter-spacing: 0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -5352,20 +5377,41 @@ body {
     color: var(--teal);
 }
 
+/* Inline rename (right-click → Rename… or double-click the label) — takes the label's place inside
+   the pill, so the tab never changes size or position while being named. */
+.terminal-tab-input {
+    flex: 1 1 auto;
+    align-self: stretch;
+    min-width: 0;
+    padding: 5px 8px 5px 14px;
+    color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 13px;
+}
+
+.terminal-tab-input:focus {
+    border-color: var(--teal);
+}
+
 .terminal-tab-close {
     position: relative;
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 18px;
-    height: 18px;
-    min-height: 18px;
-    margin-right: 2px;
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    margin-right: 4px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
     border: none;
     border-radius: 50%;
+    cursor: pointer;
     opacity: 0;
     transition:
         opacity 0.15s ease,
@@ -5373,11 +5419,11 @@ body {
 }
 
 /* CloseXIcon's shared .close-x-svg is absolutely positioned against a positioned ancestor — pin it
-   to this 18px button instead, or the (invisible) ring swallows every click in the panel. */
+   to this button instead, or the (invisible) ring swallows every click in the panel. */
 .terminal-tab-close .close-x-svg {
     position: static;
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
 }
 
 /* Keep the ✕ of the showing tab visible — it is the only way to kill it. */
@@ -5395,14 +5441,15 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 24px;
-    height: 20px;
-    min-height: 20px;
+    width: 26px;
+    height: 24px;
+    min-height: 24px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
     border: none;
     border-radius: var(--radius-pill);
+    cursor: pointer;
 }
 
 .terminal-tab-add:hover:not(:disabled) {
@@ -5413,6 +5460,67 @@ body {
 .terminal-tab-add:disabled {
     opacity: 0.35;
     cursor: default;
+}
+
+/* Right-click menu for a shell tab. `position: fixed` so it is viewport-anchored in both panel modes
+   (inline and the teleported full-height card) — `.center-column` has no z-index, so it doesn't trap
+   the menu's z-index inside a stacking context of its own. */
+.terminal-tab-menu {
+    position: fixed;
+    z-index: 50;
+    min-width: 200px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
+    box-shadow: 0 18px 50px var(--shadow);
+}
+
+.terminal-tab-menu-title {
+    padding: 5px 11px 6px;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.terminal-tab-menu-item {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    padding: 7px 11px;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-size: 12px;
+    text-align: left;
+}
+
+.terminal-tab-menu-item:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+
+.terminal-tab-menu-item.danger {
+    color: var(--red);
+}
+
+.terminal-tab-menu-item.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.terminal-tab-menu-ic {
+    flex: 0 0 auto;
+    margin-right: 7px;
+}
+
+.terminal-tab-menu-separator {
+    height: 1px;
+    margin: 4px 6px;
+    background: var(--line-soft);
 }
 
 /* one TerminalView per shell — siblings stay mounted (scrollback survives), only the active paints */

@@ -81,8 +81,12 @@
      * Repo paths that own at least one shell. Each gets its OWN TerminalPanel instance (keyed by
      * path) so its xterm buffers + pty stay alive while another tab is active or while the panel is
      * toggled away — hiding only stops painting, and killing is the ✕ buttons' job alone.
+     *
+     * Driven by the store's terminal map, NOT by the open tabs: a repo parked in another workspace
+     * still owns its shells, so its panel stays mounted (hidden) and its scrollback survives a switch.
+     * `isTerminalVisible` keeps it off screen until that repo is the active tab again.
      */
-    const terminalPaths = computed(() => repoStore.tabs.map(tab => tab.path).filter(path => repoStore.terminalExists(path)))
+    const terminalPaths = computed(() => Object.keys(repoStore.terminals).filter(path => repoStore.terminalExists(path)))
     /** Path of the repo whose terminal is on screen (the active tab). */
     const activeRepoPath = computed(() => repo?.value?.path ?? null)
     /** True while this repo's panel is the one on screen (active tab, not toggled away). */
@@ -452,6 +456,30 @@
             danger: true,
         })
         if (ok) repoStore.closeRepoTerminals(path)
+    }
+
+    /**
+     * Ask to end EVERY shell in EVERY repo — including the ones parked in another workspace, which is
+     * exactly what the command palette's "Kill all terminals" is for. It always confirms.
+     */
+    async function confirmKillAllTerminals(): Promise<void> {
+        const count = repoStore.terminalCount
+        if (!count) return
+        const repos = repoStore.terminalRepoCount
+        // Shells whose repo is parked in another workspace — invisible, so name them explicitly.
+        const parked = repoStore.terminalParkedCount
+        const many = count > 1
+        const parkedNote = parked > 0 ? ` ${parked} of them belong to repos open in another workspace.` : ''
+        const ok = await confirmDialog({
+            title: many ? `Close all ${count} terminals` : 'Close terminal',
+            message: `Closing ${count} terminal${many ? 's' : ''} across ${repos} repo${repos > 1 ? 's' : ''} will end every shell session and clear their scrollback.${parkedNote}`,
+            confirmLabel: many ? `Close ${count} terminals` : 'Close terminal',
+            danger: true,
+        })
+        if (ok) {
+            repoStore.closeAllTerminals()
+            uiTransient.notify(`Closed ${count} terminal${many ? 's' : ''}`, 'success')
+        }
     }
 
     /** Ask to close one terminal tab — its shell and scrollback die, so this always confirms. */
@@ -938,7 +966,8 @@
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
             @open-repo="openNewRepo"
-            @toggle-terminal="toggleTerminal" />
+            @toggle-terminal="toggleTerminal"
+            @kill-all-terminals="confirmKillAllTerminals" />
         <ChangelogModal
             v-if="updater.changelogOpen"
             @close="updater.changelogOpen = false" />

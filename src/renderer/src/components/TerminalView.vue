@@ -168,8 +168,9 @@
         dataDisposer = null
         exitDisposer = null
         // The pty is NOT killed here: it is owned by the main process (repo:close, app quit) and by
-        // the store's close actions — which are also what workspace switches call, so no shell ever
-        // outlives them. Unmounting additionally happens transiently while `tabs` is rebuilt mid-switch.
+        // the store's close actions. A workspace switch keeps it alive on purpose (the panel stays
+        // mounted, parked, until the repo is a tab again), and unmounting happens transiently while
+        // `tabs` is rebuilt mid-switch.
         term?.dispose()
         term = null
         fit = null

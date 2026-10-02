@@ -55,22 +55,21 @@
     const showUpdateButton = computed(() => updater.status === 'available' || updater.status === 'downloading' || updater.status === 'downloaded')
     const updateButtonTitle = computed(() => {
         if (updater.status === 'downloaded') return `Restart to install ${updater.downloadedVersion || updater.latestVersion}`
-        if (updater.canAuto === false) return `Update available: ${updater.latestVersion} — open Settings`
+        // macOS / dev cannot auto-update — the click opens the release page, so don't promise a download.
+        if (updater.canAuto === false) return `Get update ${updater.latestVersion} — opens the release page`
         return `Download update ${updater.latestVersion}`
     })
-    function handleUpdateVersionClick() {
-        repoStore.toolsTab = 'general'
-        repoStore.toolsOpen = true
-    }
     async function handleUpdateButtonClick() {
         if (updater.status === 'downloaded') {
             void updater.installUpdate(notify)
             return
         }
         if (updater.status !== 'available') return
+        // macOS (and dev everywhere) has no electron-updater — the dmg is unsigned, so send
+        // the user straight to the release page instead of detouring through Settings.
         const auto = await updater.ensureAutoSupport()
         if (auto) void updater.downloadUpdate(notify)
-        else handleUpdateVersionClick()
+        else void updater.openRelease(notify)
     }
     const zoomMenuOpen = ref(false)
     const zoomMenuRoot = ref<HTMLElement | null>(null)
@@ -837,7 +836,7 @@
                     v-else-if="updater.status === 'downloading'"
                     class="toolbar-icon-button update-version-btn"
                     :title="`Downloading update… ${updater.progress}%`"
-                    @click="handleUpdateVersionClick">
+                    @click="handleUpdateButtonClick">
                     <ThinkSpinner compact />
                 </button>
                 <button
