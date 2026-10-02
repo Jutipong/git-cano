@@ -52,8 +52,8 @@ export const REFRESH_INTERVAL_OPTIONS = [3, 5, 10, 15, 20, 24, 30]
 export const DEFAULT_REFRESH_INTERVAL = 5
 
 /** Update-check interval options, in hours. 0 = off (manual check only). */
-export const UPDATE_CHECK_HOURS_OPTIONS = [0, 1, 4, 6, 12, 24]
-export const DEFAULT_UPDATE_CHECK_HOURS = 6
+export const UPDATE_CHECK_HOURS_OPTIONS = [0, 1, 2, 4, 6, 12, 24]
+export const DEFAULT_UPDATE_CHECK_HOURS = 2
 
 /** Toast auto-dismiss options, in seconds. */
 export const TOAST_DURATION_OPTIONS = [10, 20, 30, 40, 50, 60]

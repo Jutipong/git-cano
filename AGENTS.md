@@ -447,7 +447,7 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   `update:error`), exposed via `update:*` IPC (`preload/index.ts`, typed in
   `shared/types.ts`). `isAutoUpdateSupported()` is win32 + packaged;
   everything else falls back to `update:openRelease`.
-- Cadence lives in `ui.updateCheckHours` (`0` = manual only, default 6); `App.vue`
+- Cadence lives in `ui.updateCheckHours` (`0` = manual only, default 2); `App.vue`
   schedules one silent check 30s after launch plus the interval, rescheduled on change.
   `checkForUpdate()` never clobbers an in-flight download or a staged install.
 - **What's new modal** (`ChangelogModal.vue`, styles in `modern-ui.css` `.changelog-*`):
