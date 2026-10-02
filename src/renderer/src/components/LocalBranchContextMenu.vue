@@ -6,6 +6,7 @@
     import Crosshair from '~icons/lucide/crosshair'
     import GitBranch from '~icons/lucide/git-branch'
     import GitCommitVertical from '~icons/lucide/git-commit-vertical'
+    import GitMerge from '~icons/lucide/git-merge'
     import ListRestart from '~icons/lucide/list-restart'
     import Tag from '~icons/lucide/tag'
     import Trash2 from '~icons/lucide/trash2'
@@ -30,6 +31,7 @@
         (e: 'pullRebase', branch: LocalBranchMenuState['branch']): void
         (e: 'forcePush', branch: LocalBranchMenuState['branch']): void
         (e: 'rebaseOnto', branch: LocalBranchMenuState['branch']): void
+        (e: 'mergeInto', branch: LocalBranchMenuState['branch']): void
         (e: 'delete', branch: LocalBranchMenuState['branch']): void
         (e: 'createBranchHere', branch: LocalBranchMenuState['branch']): void
         (e: 'createTagHere', branch: LocalBranchMenuState['branch']): void
@@ -61,6 +63,7 @@
             | 'pullRebase'
             | 'forcePush'
             | 'rebaseOnto'
+            | 'mergeInto'
             | 'delete'
             | 'createBranchHere'
             | 'createTagHere'
@@ -75,6 +78,7 @@
         else if (kind === 'pullRebase') emit('pullRebase', branch)
         else if (kind === 'forcePush') emit('forcePush', branch)
         else if (kind === 'rebaseOnto') emit('rebaseOnto', branch)
+        else if (kind === 'mergeInto') emit('mergeInto', branch)
         else if (kind === 'delete') emit('delete', branch)
         else if (kind === 'createBranchHere') emit('createBranchHere', branch)
         else if (kind === 'createTagHere') emit('createTagHere', branch)
@@ -157,6 +161,17 @@
                 width="13"
                 height="13" />
             Pull (rebase)
+        </button>
+        <button
+            v-if="!menu.branch.current && menu.currentBranch && menu.currentBranch !== 'HEAD (detached)'"
+            class="local-branch-menu-item"
+            :disabled="menu.branch.detached"
+            @click="act('mergeInto')">
+            <GitMerge
+                class="local-branch-menu-ic"
+                width="13"
+                height="13" />
+            Merge {{ menu.branch.name }} into {{ menu.currentBranch }}
         </button>
         <button
             v-if="!menu.branch.current"

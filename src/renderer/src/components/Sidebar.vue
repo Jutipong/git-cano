@@ -330,6 +330,11 @@
     function rebaseOntoBranch(branch: LocalBranchMenuState['branch']) {
         emit('interactive-rebase', branch.name)
     }
+    function mergeIntoCurrentBranch(branch: LocalBranchMenuState['branch']) {
+        if (branch.current || branch.detached) return
+        if (props.repo.branch === 'HEAD (detached)') return
+        emit('merge-branch', branch.name, props.repo.branch)
+    }
     function forcePushBranch(branch: LocalBranchMenuState['branch']) {
         void (async () => {
             const ok = await confirmDialog({
@@ -870,6 +875,7 @@
             @pull-rebase="pullRebaseCurrentBranch"
             @force-push="forcePushBranch"
             @rebase-onto="rebaseOntoBranch"
+            @merge-into="mergeIntoCurrentBranch"
             @delete="deleteLocalBranch"
             @create-branch-here="createBranchHere"
             @create-tag-here="createTagHere"

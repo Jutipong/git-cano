@@ -69,7 +69,7 @@ pnpm dev
 
 |      |                                                        |
 | ---- | ------------------------------------------------------ |
-| 🌱   | Create / checkout / rename / delete / merge / rebase — drag a branch onto a branch to merge, drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice |
+| 🌱   | Create / checkout / rename / delete / merge / rebase — right-click a branch to merge it into the current one (or drag a branch onto a branch), drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice |
 | 🏷️   | Tag create / delete / push — create dialogs share one look with a branch/hash chip in the header, input stays focused on every reopen |
 | 🌐   | Remotes: add, edit, remove, test URLs                  |
 | ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token) — buttons show an inline spinner while busy |

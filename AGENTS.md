@@ -181,7 +181,9 @@ cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND
   without changing the repository and show a blocking prompt to stash or commit manually. Do not
   auto-stash, discard, or add a continue-anyway path here. Once clean, run `cherryPickCheck()`,
   confirm, checkout a different target only after confirmation, then cherry-pick and refresh.
-- **Branch merge safety**: dragging a source branch onto a target branch uses the shared
+- **Branch merge safety**: dragging a source branch onto a target branch, or right-clicking a
+  non-current local branch → `Merge <branch> into <current>` (`LocalBranchContextMenu.vue` →
+  `emit('merge-branch')` → `App.vue`), uses the shared
   `mergeBranchOnto()` flow in `App.vue`. It checks `RepoStatus.files` before
   `mergeCheckConflicts()`; dirty worktrees stop without changing the repository and show the same
   manual stash/commit prompt as cherry-pick. `mergeInto()` repeats the clean-worktree guard in the
