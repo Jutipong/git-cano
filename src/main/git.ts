@@ -84,11 +84,34 @@ function createGit(dir: string): SimpleGit {
  * Clean environment for local git operations — identical to the app's own env minus askpass variables inherited from the desktop
  * environment (e.g. VS Code), which simple-git blocks unless allowed. Auth credentials (SSH key / GitHub token) are NOT part of this; they
  * are injected per-command via `withAuthEnv`.
+ *
+ * simple-git v4's `allowEnvironment` guard throws when a git-sensitive env var is present in the env we inject — and `baseEnv()` injects the
+ * whole process env. So strip the ambient names the app never wants git to honor (the user's editor/pager, stray config paths). The ones
+ * `authGitEnv()` and the rebase helper inject themselves stay: they are listed in `allowEnvironment`.
  */
+const GUARDED_AMBIENT_ENV_KEYS = [
+    'EDITOR',
+    'VISUAL',
+    'PAGER',
+    'GIT_PAGER',
+    'GIT_CONFIG',
+    'GIT_CONFIG_GLOBAL',
+    'GIT_CONFIG_SYSTEM',
+    'GIT_CONFIG_PARAMETERS',
+    'GIT_EXEC_PATH',
+    'GIT_EXTERNAL_DIFF',
+    'GIT_PROXY_COMMAND',
+    'GIT_TEMPLATE_DIR',
+    'GIT_SSH',
+    // simple-git guards a bare `prefix` too (its full list is in @simple-git/argv-parser).
+    'PREFIX',
+]
+
 export function baseEnv(): NodeJS.ProcessEnv {
     const env = { ...process.env }
     delete env.GIT_ASKPASS
     delete env.SSH_ASKPASS
+    for (const key of GUARDED_AMBIENT_ENV_KEYS) delete env[key]
     return env
 }
 
@@ -272,6 +295,11 @@ function emitRepoChanged(dir: string): void {
 
 export function isOpen(): boolean {
     return activeRepoPath !== null
+}
+
+/** Path of the active repo, or null when none — lets callers clean up per-repo resources on close. */
+export function getActiveRepoPath(): string | null {
+    return activeRepoPath
 }
 
 export function getStatus(): Promise<RepoStatus> {

@@ -8,7 +8,6 @@
     import ArrowDown from '~icons/lucide/arrow-down'
     import ArrowDownToLine from '~icons/lucide/arrow-down-to-line'
     import ArrowUp from '~icons/lucide/arrow-up'
-    import ExternalLink from '~icons/lucide/external-link'
     import FolderGit2 from '~icons/lucide/folder-git2'
     import FolderOpen from '~icons/lucide/folder-open'
     import GitBranch from '~icons/lucide/git-branch'
@@ -17,6 +16,7 @@
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
     import Sparkles from '~icons/lucide/sparkles'
+    import Terminal from '~icons/lucide/terminal'
     import X from '~icons/lucide/x'
     import Kiro from '~icons/thesvg-color/kiro'
 
@@ -27,10 +27,11 @@
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { useWorkspaceStore } from '../stores/workspace'
     import { resolveCheckoutMode } from '../utils/checkout'
+    import { fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
 
-    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void }>()
+    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void; (e: 'toggle-terminal'): void }>()
 
     const repoStore = useRepoStore()
     const uiTransient = useUiTransientStore()
@@ -40,7 +41,7 @@
     const ws = useWorkspaceStore()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
-    type Mode = 'commands' | 'repo' | 'branch' | 'workspace' | 'ai' | 'openin'
+    type Mode = 'commands' | 'repo' | 'branch' | 'workspace'
     const mode = ref<Mode>('commands')
     const search = ref('')
     const active = ref(0)
@@ -61,7 +62,30 @@
         run: () => void
     }
 
-    onMounted(() => input.value?.focus())
+    onMounted(() => {
+        input.value?.focus()
+        loadOpenInTargets()
+    })
+
+    // The active repo can change while the palette is open (Ctrl+W closes a tab above the busy gate) —
+    // the flattened Open-in items must follow it.
+    watch(
+        () => repoStore.repo?.path,
+        () => loadOpenInTargets()
+    )
+
+    /** Preloads Open-in availability for the active repo so the flattened items can show immediately. */
+    function loadOpenInTargets() {
+        const repoPath = repoStore.repo?.path
+        if (!repoPath) return
+        openInPath.value = repoPath
+        openInTargets.value = peekOpenInTargets(repoPath)
+        void fetchOpenInTargets(repoPath)
+            .then(result => {
+                if (openInPath.value === repoPath) openInTargets.value = result
+            })
+            .catch(() => {})
+    }
 
     function close() {
         emit('close')
@@ -76,17 +100,6 @@
             void window.api
                 .branches()
                 .then(branches => (fetchedLocal.value = branches.local))
-                .catch(() => {})
-        }
-        if (next === 'openin' && repoStore.repo) {
-            const repoPath = repoStore.repo.path
-            openInPath.value = repoPath
-            openInTargets.value = null
-            void window.api
-                .getOpenInTargets(repoPath)
-                .then(result => {
-                    if (openInPath.value === repoPath) openInTargets.value = result
-                })
                 .catch(() => {})
         }
     }
@@ -171,17 +184,8 @@
         items.push(
             { id: 'repo', label: 'Repo…', hint: 'Switch repository tab', icon: FolderGit2, run: () => enterMode('repo') },
             { id: 'branch', label: 'Branch…', hint: 'Checkout branch', icon: GitBranch, run: () => enterMode('branch') },
-            ...(repoStore.repo
-                ? [
-                      {
-                          id: 'openin',
-                          label: 'Open in…',
-                          hint: 'Open repo in external app',
-                          icon: ExternalLink,
-                          run: () => enterMode('openin'),
-                      } satisfies PaletteItem,
-                  ]
-                : []),
+            // Flattened top-level commands: no "Open in…" / "AI…" sub-mode to drill into.
+            ...(repoStore.repo ? openInItems.value : []),
             ...(ws.names.length > 1
                 ? [
                       {
@@ -193,9 +197,7 @@
                       } satisfies PaletteItem,
                   ]
                 : []),
-            ...(aiCanRun.value
-                ? [{ id: 'ai', label: 'AI…', hint: 'Generate commit', icon: Sparkles, run: () => enterMode('ai') } satisfies PaletteItem]
-                : []),
+            ...(aiCanRun.value ? aiItems.value : []),
             {
                 id: 'openRepo',
                 label: 'Open repository',
@@ -215,6 +217,16 @@
                           run: () => {
                               close()
                               repoStore.reflogOpen = true
+                          },
+                      } satisfies PaletteItem,
+                      {
+                          id: 'terminal',
+                          label: 'Terminal',
+                          hint: 'Show/hide terminal panel',
+                          icon: Terminal,
+                          run: () => {
+                              close()
+                              emit('toggle-terminal')
                           },
                       } satisfies PaletteItem,
                   ]
@@ -270,17 +282,17 @@
     )
 
     const aiItems = computed<PaletteItem[]>(() => [
-        { id: 'aiGenerate', label: 'Generate message', accent: 'green', icon: Sparkles, run: () => requestAiRun('off') },
+        { id: 'aiGenerate', label: 'AI: Generate message', accent: 'green', icon: Sparkles, run: () => requestAiRun('off') },
         {
             id: 'aiGenerateCommit',
-            label: 'Generate message & commit',
+            label: 'AI: Generate message & commit',
             accent: 'orange',
             icon: Sparkles,
             run: () => requestAiRun('commit'),
         },
         {
             id: 'aiGenerateCommitPush',
-            label: 'Generate message & commit & push',
+            label: 'AI: Generate message & commit & push',
             accent: 'red',
             icon: Sparkles,
             run: () => requestAiRun('commit-push'),
@@ -291,23 +303,48 @@
     const openInItems = computed<PaletteItem[]>(() => {
         if (!repoStore.repo) return []
         const items: PaletteItem[] = [
-            { id: 'folder', label: 'Folder', icon: Folder, run: () => openExternal(path => window.api.openInFolder(path)) },
-            { id: 'terminal', label: 'Terminal', icon: Bash, run: () => openExternal(path => window.api.openTerminal(path)) },
-            { id: 'vscode', label: 'VS Code', icon: VisualStudioCode, run: () => openExternal(path => window.api.openInVSCode(path)) },
+            {
+                id: 'openin-folder',
+                label: 'Open in: Folder',
+                icon: Folder,
+                run: () => openExternal(path => window.api.openInFolder(path)),
+            },
+            {
+                id: 'openin-terminal',
+                label: 'Open in: Terminal',
+                icon: Bash,
+                run: () => openExternal(path => window.api.openTerminal(path)),
+            },
+            {
+                id: 'openin-vscode',
+                label: 'Open in: VS Code',
+                icon: VisualStudioCode,
+                run: () => openExternal(path => window.api.openInVSCode(path)),
+            },
         ]
         if (openInTargets.value?.kiro) {
-            items.push({ id: 'kiro', label: 'Kiro', icon: Kiro, run: () => openExternal(path => window.api.openInKiro(path)) })
+            items.push({
+                id: 'openin-kiro',
+                label: 'Open in: Kiro',
+                icon: Kiro,
+                run: () => openExternal(path => window.api.openInKiro(path)),
+            })
         }
         if (openInTargets.value?.visualStudio) {
             items.push({
-                id: 'visualstudio',
-                label: 'Visual Studio',
+                id: 'openin-visualstudio',
+                label: 'Open in: Visual Studio',
                 icon: VisualStudio,
                 run: () => openExternal(path => window.api.openInVisualStudio(path)),
             })
         }
         if (openInTargets.value?.rider) {
-            items.push({ id: 'rider', label: 'Rider', icon: Rider, run: () => openExternal(path => window.api.openInRider(path)) })
+            items.push({
+                id: 'openin-rider',
+                label: 'Open in: Rider',
+                icon: Rider,
+                run: () => openExternal(path => window.api.openInRider(path)),
+            })
         }
         return items
     })
@@ -319,11 +356,7 @@
               ? branchItems.value
               : mode.value === 'workspace'
                 ? workspaceItems.value
-                : mode.value === 'ai'
-                  ? aiItems.value
-                  : mode.value === 'openin'
-                    ? openInItems.value
-                    : commandItems.value
+                : commandItems.value
     )
 
     /** Like-style filter: case-insensitive substring match on the item label. */
@@ -341,16 +374,12 @@
         repo: 'Search repo…',
         branch: 'Search branch…',
         workspace: 'Search workspace…',
-        ai: 'Search AI command…',
-        openin: 'Search app…',
     }
     const EMPTY_TEXTS: Record<Mode, string> = {
         commands: 'No matching command',
         repo: 'No matching repository',
         branch: 'No matching branch',
         workspace: 'No matching workspace',
-        ai: 'No matching command',
-        openin: 'No matching app',
     }
     const placeholder = computed(() => PLACEHOLDERS[mode.value])
     const emptyText = computed(() => EMPTY_TEXTS[mode.value])
@@ -359,8 +388,6 @@
         repo: { icon: FolderGit2, label: 'Repo' },
         branch: { icon: GitBranch, label: 'Branch' },
         workspace: { icon: Layers, label: 'Workspace' },
-        ai: { icon: Sparkles, label: 'AI' },
-        openin: { icon: ExternalLink, label: 'Open in' },
     }
 
     function move(delta: number) {
@@ -406,7 +433,6 @@
                 <button
                     v-if="mode !== 'commands'"
                     class="palette-chip"
-                    :class="{ ai: mode === 'ai' }"
                     title="Back to commands"
                     @mousedown.prevent
                     @click="backToCommands">

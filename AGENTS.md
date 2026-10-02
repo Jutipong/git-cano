@@ -13,11 +13,14 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm lint` — oxlint + vue-tsc; run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
 - `pnpm build` — production build (`out/`)
+- `pnpm rebuild:native` — rebuild node-pty for the Electron ABI (runs automatically on postinstall
+  and before every dist; a failure only disables the terminal)
 - `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
 - Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
   icons `build/icons/cano.png` + per-OS `cano.icns` / `cano.ico`, `asar: true` with maximum
   compression. `files` ships `out/**/*` + `package.json` only (excludes `out/tsbuild`,
   `*.map`, `*.md`, `LICENSE*`). New platform assets must follow the same png/icns/ico triple.
+  `asarUnpack` keeps `node_modules/node-pty/**` outside the archive (native binaries).
 
 ## Architecture
 
@@ -29,6 +32,7 @@ add a new IPC handler in `main/index.ts`, expose it in `preload/index.ts`, and t
 Key files:
 
 - `src/main/git.ts` — all git operations (one exported function per operation)
+- `src/main/terminal.ts` — embedded per-repo shells (node-pty); see "Terminal panel" below
 - `src/main/opencode.ts` — AI commit-message generation (see "AI commit messages" below)
 - `src/preload/index.ts` — the `window.api` surface (keep names verb-first)
 - `src/renderer/src/stores/repo.ts` — repo tabs, selected commit/file, commit files
@@ -48,6 +52,12 @@ adds an environment guard that rejects any injected `git_*` key not listed in
 cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND`,
 `GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_0` / `GIT_CONFIG_VALUE_0`, `GIT_EDITOR`. Both `createGit()` and
 `plainGit()` share `SAFE_UNSAFE_OPTIONS`; when adding a new injected env var, add it there too.
+
+The guard also blocks guarded **ambient** vars (EDITOR, VISUAL, PAGER, PREFIX, GIT_CONFIG*…), and
+`baseEnv()` injects the whole process env — so any of them present on the user's machine makes
+`git status` throw "blocked by the environment guard" and `openRepo()` report "not a git
+repository". `GUARDED_AMBIENT_ENV_KEYS` strips them before every git call; do not remove it (the
+full guarded list lives in `@simple-git/argv-parser`).
 
 ## Repository loading and performance
 
@@ -86,10 +96,15 @@ cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND
   `ContextMenu.vue` is only for generic dropdown menus (e.g. remote branches in the
   sidebar and the `OpenInButton.vue` short-label menu: Folder / Terminal / VS Code,
   plus Kiro / Visual Studio / Rider when installed). The command palette mirrors
-  it via a repo-gated `Open in…` mode with the same items/conditions. Open-in Folder /
+  it with repo-gated top-level `Open in: <target>` items (no sub-mode to drill into)
+  and the same conditions; availability is cached per repo path for the session in
+  `utils/openIn.ts` (`peekOpenInTargets` / `fetchOpenInTargets`) and shared with
+  `OpenInButton.vue`, so the main-process scan runs once per repo.
+  Open-in Folder /
   Terminal use catppuccin `folder` / `bash` icons in both places.
   Palette command items must `close()` before acting/emitting (mode switches like
   Repo…/Branch… excepted) — otherwise the palette stays open over the next dialog.
+  AI actions (`AI: Generate …`) are flattened into the same list, gated by `aiCanRun`.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
@@ -266,7 +281,8 @@ cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
-  history; diff search when a diff is open), Shortcuts modal `?` (outside
+  history; diff search when a diff is open), Terminal toggle `` Ctrl+` `` (fixed, see
+  "Terminal panel"), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
   dialogs `Enter`/`Esc`, app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel,
   `Esc` to close diff/deselect.
@@ -471,6 +487,45 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - Modal (`SquashModal.vue`, styles in `modern-ui.css` `.squash-*`): lists the exact range
   newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
   with the FilePanel-style soft length counter, and blocks on a dirty worktree.
+
+## Terminal panel
+
+- **One shell per repo, opt-in**: `TerminalPanel.vue` (xterm.js, lazy-loaded chunk) is mounted
+  only for paths flagged in `repoStore.terminalOpen` — a repo that was never toggled on spawns
+  nothing. The toggle lives in the GraphView toolbar next to the settings gear
+  (`graph-terminal-btn`, `emit('toggle-terminal')`), in the command palette (`Terminal` item →
+  `emit('toggle-terminal')` → App.vue, distinct from `Open in: Terminal` which opens the
+  external OS terminal) and on the fixed `Ctrl+\`` shortcut; all three go
+  through `toggleTerminal()` in `App.vue`.
+- **State is memory-only, never persisted**: `terminalOpen`, `terminalExpanded` and
+  `terminalHeight` (default 260) reset on every launch. `terminalHeight` is a plain store ref
+  (not in `ui.ts`/localStorage) — do not persist it.
+- **One TerminalPanel instance per repo** (`v-for` over `terminalPaths`, keyed by path, `v-show`
+  for the active one) — never a single shared instance with a changing `repo-path`, or Vue reuses
+  the component and two repos end up sharing one xterm/pty. Hidden panels stay mounted so each
+  repo keeps its own scrollback; `resizePty()` skips zero-size (hidden) panels.
+- **pty lifetime is owned by the main process** (`main/terminal.ts`, `Map<repoPath, pty>`):
+  `repo:close` disposes, `before-quit`/`quit` disposes all. Unmounting a panel deliberately does
+  NOT kill the pty — unmounting also happens transiently while `tabs` is rebuilt. **A workspace
+  switch always calls `closeAllTerminals()` first** (all flags cleared + every pty disposed,
+  including repos shared by both workspaces); terminals never survive it. `closeTerminal()` is the
+  only other explicit disposal path (manual close and shell exit both go through it).
+- **Closing always confirms** (`confirmCloseTerminal()` in `App.vue`) — both the toolbar toggle
+  and the panel's ✕, because the shell and its scrollback die. When the shell ends on its own
+  (exit / Ctrl+D / crash) the panel closes itself with no confirm and no toast — same result as a
+  manual close, so there is no restart button. Reopening via the toggle spawns a fresh shell.
+- **Full height covers the sidebar + tab bar** like DiffView (Teleport to `.app` + absolute
+  `right: rightPanelWidth + 14px`, z-index 9 — below DiffView's 10) so the Changes panel stays
+  visible. Do not turn it into a centered/modal card; the inline `right` offset is what keeps
+  the file-change pane usable.
+- **node-pty is a native module**: keep it external in `electron.vite.config.ts`, in
+  `asarUnpack` and in `pnpm-workspace.yaml` (`allowBuilds` / `onlyBuiltDependencies`);
+  `scripts/rebuild-native.mjs` rebuilds it for the Electron ABI on postinstall and before each
+  dist. It is loaded lazily so a missing build only disables the terminal.
+- `baseEnv()` in `main/git.ts` strips `GUARDED_AMBIENT_ENV_KEYS` (EDITOR, VISUAL, PAGER, GIT_*)
+  before simple-git runs: v4's `allowEnvironment` guard throws on any guarded var present in the
+  injected env, and `baseEnv()` injects the whole process env. Do not remove that list or repos
+  stop opening for anyone with `EDITOR`/`VISUAL` set.
 
 ## Updates & releases
 

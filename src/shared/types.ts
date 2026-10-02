@@ -258,3 +258,16 @@ export interface UpdateProgress {
     transferred: number
     total: number
 }
+
+/** Payload pushed to the renderer on `terminal:data` — one shell output chunk for a repo. */
+export interface TerminalData {
+    repoPath: string
+    data: string
+}
+
+/** Payload pushed to the renderer on `terminal:exit` — the repo's shell ended. */
+export interface TerminalExit {
+    repoPath: string
+    exitCode: number
+    signal?: number
+}

@@ -2,6 +2,7 @@
     import { ref, watch } from 'vue'
 
     import { useUiTransientStore } from '../stores/uiTransient'
+    import { fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
     import ContextMenu, { type MenuState } from './ContextMenu.vue'
 
     import type { MenuItem, OpenInTargets } from '@shared/types'
@@ -14,9 +15,9 @@
     watch(
         () => props.path,
         repoPath => {
-            targets.value = null
-            window.api
-                .getOpenInTargets(repoPath)
+            // Shared session cache: the command palette reads the same entry, so neither UI re-scans.
+            targets.value = peekOpenInTargets(repoPath)
+            void fetchOpenInTargets(repoPath)
                 .then(result => {
                     if (props.path === repoPath) targets.value = result
                 })

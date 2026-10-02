@@ -17,6 +17,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'cloneRepo', label: 'Clone repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
     { id: 'closeTab', label: 'Close tab', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
     { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
+    { id: 'terminal', label: 'Toggle terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
     { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
     { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },

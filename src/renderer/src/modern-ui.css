@@ -5220,6 +5220,115 @@ body {
     color: var(--teal);
 }
 
+/* ── Bottom terminal panel ───────────────────────────────────────────────── */
+.graph-terminal-btn {
+    color: var(--text-secondary);
+}
+
+.graph-terminal-btn:hover {
+    color: var(--teal);
+}
+
+.graph-terminal-btn.active {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+}
+
+.terminal-splitter {
+    z-index: 4;
+    height: 5px;
+    flex: 0 0 5px;
+    margin: -2px 0;
+    background: transparent;
+    cursor: row-resize;
+}
+
+.terminal-splitter:hover,
+.terminal-splitter:active {
+    background: var(--teal);
+    opacity: 0.75;
+}
+
+.terminal-panel {
+    position: relative;
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--canvas);
+    border-top: 1px solid var(--line-soft);
+}
+
+/* Expanded: teleported to `.app` so it covers the sidebar + tab bar like DiffView,
+   while the inline `right` keeps the Changes panel visible. */
+.terminal-panel.terminal-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 9;
+    height: auto;
+    border-top: none;
+    box-shadow: 4px 0 16px var(--shadow);
+}
+
+.terminal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 30px;
+    flex: 0 0 30px;
+    padding: 0 12px;
+    color: var(--text-muted);
+}
+
+.terminal-title {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+}
+
+.terminal-shell {
+    color: var(--text-secondary);
+    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.terminal-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.terminal-host {
+    flex: 1;
+    min-height: 0;
+    padding: 6px 10px 10px;
+    overflow: hidden;
+}
+
+.terminal-host .xterm {
+    height: 100%;
+}
+
+.terminal-host .xterm-viewport {
+    background: transparent !important;
+}
+
+.terminal-error {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    padding: 8px 12px;
+    color: var(--red);
+    font-size: 12px;
+}
+
 .graph-hash-header {
     width: 70px;
 }
@@ -6880,17 +6989,6 @@ body {
 
 .palette-item.accent-red .palette-ic {
     color: var(--red);
-}
-
-/* AI chip uses the AI button's accent (orange) instead of the default teal */
-.palette-chip.ai {
-    color: var(--orange);
-    background: color-mix(in srgb, var(--orange) 15%, transparent);
-    border-color: color-mix(in srgb, var(--orange) 45%, var(--line-soft));
-}
-
-.palette-chip.ai:hover {
-    background: color-mix(in srgb, var(--orange) 25%, transparent);
 }
 
 /* ===== Animated checkbox (AppCheckbox.vue) — colors follow project theme ===== */

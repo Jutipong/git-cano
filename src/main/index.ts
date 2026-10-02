@@ -40,6 +40,7 @@ import {
     getStatusAccelerators,
     setStatusAccelerators,
     getStatus,
+    getActiveRepoPath,
     hasRemote,
     isOpen,
     listStashes,
@@ -117,6 +118,17 @@ import {
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
 import { cancelModelCall, generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
+import {
+    createTerminal,
+    disposeAllTerminals,
+    disposeTerminal,
+    onTerminalData,
+    onTerminalExit,
+    resizeTerminal,
+    terminalAvailable,
+    terminalShellName,
+    writeTerminal,
+} from './terminal'
 import { downloadUpdate, initAutoUpdater, installUpdate, isAutoUpdateSupported, openReleasePage } from './updater'
 
 import type { LocalChangesMode, MergeMode } from '@shared/types'
@@ -133,6 +145,9 @@ function sendToRenderer(channel: string, payload?: unknown): void {
 onRepoChanged(repoPath => {
     if (win && !win.isDestroyed()) win.webContents.send('repo:changed', repoPath)
 })
+
+onTerminalData(payload => sendToRenderer('terminal:data', payload))
+onTerminalExit(payload => sendToRenderer('terminal:exit', payload))
 
 function createWindow(): void {
     win = new BrowserWindow({
@@ -597,9 +612,36 @@ app.whenReady().then(() => {
         return getStatus()
     })
     handle('repo:close', (_dir?: string) => {
-        closeRepo(_dir as string | undefined)
+        // Resolve the target exactly like closeRepo() does, so a no-arg close still kills the shell.
+        const target = typeof _dir === 'string' && _dir ? _dir : getActiveRepoPath()
+        // Drop the repo's shell with the repo — the renderer's open/closed flag is per-repo
+        // and memory-only, so a closed tab must not leave a pty process behind.
+        if (target) disposeTerminal(target)
+        closeRepo(target ?? undefined)
         return isOpen()
     })
+    handle('terminal:create', (_dir: string, cols?: number, rows?: number) => {
+        createTerminal(
+            String(_dir),
+            typeof cols === 'number' ? cols : 80,
+            typeof rows === 'number' ? rows : 24
+        )
+        return true
+    })
+    handle('terminal:write', (_dir: string, data: string) => {
+        writeTerminal(String(_dir), String(data))
+        return true
+    })
+    handle('terminal:resize', (_dir: string, cols: number, rows: number) => {
+        resizeTerminal(String(_dir), Number(cols), Number(rows))
+        return true
+    })
+    handle('terminal:dispose', (_dir: string) => {
+        disposeTerminal(String(_dir))
+        return true
+    })
+    handle('terminal:available', () => terminalAvailable())
+    handle('terminal:shell', () => terminalShellName())
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
@@ -1009,3 +1051,7 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
 })
+
+// Shells are never persisted — kill every pty on quit so no orphan process survives.
+app.on('before-quit', () => disposeAllTerminals())
+app.on('quit', () => disposeAllTerminals())

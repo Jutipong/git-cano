@@ -116,6 +116,20 @@ export const useRepoStore = defineStore('repo', () => {
     const soloBranch = ref<string | null>(null)
     /** Files touched by the soloed branch's visible commits (Focus dimming) — null when not soloed. */
     const soloFiles = ref<string[] | null>(null)
+    /**
+     * Which repos currently have the bottom terminal panel open. Memory-only (never persisted):
+     * a closed app starts with no terminal anywhere, and the pty for each open repo is killed
+     * on tab close / app quit. Repos never toggled on have no session and no panel at all.
+     */
+    const terminalOpen = ref<Record<string, boolean>>({})
+    /** Height (px) of the bottom terminal panel — memory-only UI pref, resets to the default each launch. */
+    const TERMINAL_DEFAULT_HEIGHT = 260
+    const terminalHeight = ref(TERMINAL_DEFAULT_HEIGHT)
+    /**
+     * True while the terminal is expanded to fill the center column (graph hidden). Memory-only,
+     * per active view — reset on tab switch and whenever the panel is closed.
+     */
+    const terminalExpanded = ref(false)
     let tagLoadingRequests = 0
     let remoteTagRequest = 0
     const loadingRemoteTags = ref(false)
@@ -324,6 +338,8 @@ export const useRepoStore = defineStore('repo', () => {
         selectedCommit.value = null
         selectedStash.value = null
         soloBranch.value = null
+        // Expanded is per-view, not per-repo — a tab switch always returns to the normal layout.
+        terminalExpanded.value = false
         syncSession()
         await window.api.setActiveRepo(tab.path).catch(() => {})
         // Stale-while-revalidate: paint the cached log and branch list for this repo instantly
@@ -354,6 +370,8 @@ export const useRepoStore = defineStore('repo', () => {
         const wasActive = index === activeTab.value
         const stillOpen = await window.api.closeRepo(tab.path).catch(() => false)
         const remaining = tabs.value.filter((_, i) => i !== index)
+        // The pty is killed by the main process on repo:close; drop the renderer flag too.
+        setTerminalOpen(tab.path, false)
         tabs.value = remaining
         activeTab.value = Math.max(0, activeTab.value > index ? activeTab.value - 1 : Math.min(activeTab.value, remaining.length - 1))
         if (!stillOpen) {
@@ -474,6 +492,56 @@ export const useRepoStore = defineStore('repo', () => {
         await refresh()
     }
 
+    /** True when the active repo has its terminal panel toggled on. */
+    const terminalActive = computed(() => {
+        const path = tabs.value[activeTab.value]?.path
+        return !!path && !!terminalOpen.value[path]
+    })
+
+    // Expanded is only meaningful while the active repo's terminal exists — clearing the tabs
+    // (workspace switch) or switching to a repo without a terminal must never leave the graph hidden.
+    watch(terminalActive, active => {
+        if (!active) terminalExpanded.value = false
+    })
+
+    /** Toggle the terminal panel for a repo. Opening only flags it — the panel mounts and spawns. */
+    function setTerminalOpen(path: string, open: boolean) {
+        if (!path) return
+        if (open) terminalOpen.value = { ...terminalOpen.value, [path]: true }
+        else {
+            const next = { ...terminalOpen.value }
+            delete next[path]
+            terminalOpen.value = next
+        }
+    }
+
+    /** Close the panel AND kill its shell (used by the confirmed close and by tab close). */
+    function closeTerminal(path: string) {
+        setTerminalOpen(path, false)
+        terminalExpanded.value = false
+        if (path) void window.api.terminalDispose(path).catch(() => {})
+    }
+
+    /**
+     * Workspace switches are a hard reset for shells: every open terminal is closed and its pty
+     * killed — including repos shared by both workspaces. Terminals are memory-only by design.
+     */
+    function closeAllTerminals() {
+        const paths = Object.keys(terminalOpen.value)
+        if (!paths.length) {
+            terminalExpanded.value = false
+            return
+        }
+        terminalOpen.value = {}
+        terminalExpanded.value = false
+        for (const path of paths) void window.api.terminalDispose(path).catch(() => {})
+    }
+
+    /** Expand/collapse the terminal over the center column. Collapsing restores the remembered height. */
+    function setTerminalExpanded(expanded: boolean) {
+        terminalExpanded.value = expanded
+    }
+
     async function switchWorkspace(name: string) {
         if (useUiTransientStore().busy) return
         if (name === ws.active || !ws.names.includes(name)) return
@@ -485,6 +553,8 @@ export const useRepoStore = defineStore('repo', () => {
             const currentPaths = tabs.value.map(tab => tab.path)
             const saved = ws.getSession(name) ?? { paths: [], active: 0 }
             const targetPaths = new Set(saved.paths)
+            // Terminals never survive a workspace switch — close them all before repos are recycled.
+            closeAllTerminals()
             // Keep repositories shared by both workspaces open; only close repos that are no longer needed.
             await Promise.all(
                 currentPaths.filter(path => !targetPaths.has(path)).map(path => window.api.closeRepo(path).catch(() => false))
@@ -591,6 +661,13 @@ export const useRepoStore = defineStore('repo', () => {
         soloBranch,
         soloFiles,
         setSolo,
+        terminalOpen,
+        terminalActive,
+        terminalHeight,
+        terminalExpanded,
+        setTerminalOpen,
+        setTerminalExpanded,
+        closeTerminal,
         commitFiles,
         loadingCommitDetails,
         commitMessage,

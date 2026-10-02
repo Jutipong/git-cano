@@ -31,6 +31,7 @@
     import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
+    import TerminalPanel from './components/TerminalPanel.vue'
     import ThinkSpinner from './components/ThinkSpinner.vue'
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
@@ -73,6 +74,19 @@
         switchingWorkspace,
     } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
+
+    /**
+     * Repo paths that currently have a terminal panel. Each gets its OWN TerminalPanel instance
+     * (keyed by path) so its xterm buffer + pty stay alive while another tab is active — switching
+     * tabs only toggles visibility, it never reuses another repo's shell.
+     */
+    const terminalPaths = computed(() => repoStore.tabs.map(tab => tab.path).filter(path => repoStore.terminalOpen[path]))
+    /** Path of the repo whose terminal is on screen (the active tab). */
+    const activeRepoPath = computed(() => repo?.value?.path ?? null)
+    /** True only for the active repo's terminal while it is expanded. */
+    function isExpandedTerminal(path: string): boolean {
+        return repoStore.terminalExpanded && path === activeRepoPath.value
+    }
 
     /** Whole seconds left on a toast, shown as the countdown badge on its close button. */
     function countdownSeconds(t: { progress: number; durationMs: number }) {
@@ -313,6 +327,12 @@
                 target?.select()
                 return
             }
+            // Toggle the bottom terminal panel for the active repo (Ctrl+`).
+            if (combo === 'Ctrl+`' && repoStore.repo) {
+                event.preventDefault()
+                void toggleTerminal()
+                return
+            }
             // Push/Pull/Fetch.
             // Skipped while typing (Ctrl+Arrows = word jump), palette open (owns Arrows), or no repo.
             if (!repoStore.commandPaletteOpen && repoStore.repo) {
@@ -386,6 +406,75 @@
         document.body.style.userSelect = 'none'
         window.addEventListener('mousemove', onMove)
         window.addEventListener('mouseup', onEnd)
+    }
+
+    /** Vertical drag for the bottom terminal panel — pulls the top edge, so delta grows downward. */
+    function beginTerminalResize(event: MouseEvent) {
+        event.preventDefault()
+        const startY = event.clientY
+        const startHeight = repoStore.terminalHeight
+        const maxHeight = Math.max(160, Math.round(window.innerHeight * 0.7))
+        const onMove = (moveEvent: MouseEvent) => {
+            const delta = startY - moveEvent.clientY
+            repoStore.terminalHeight = Math.min(maxHeight, Math.max(120, startHeight + delta))
+        }
+        const onEnd = () => {
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onEnd)
+        }
+        document.body.style.cursor = 'row-resize'
+        document.body.style.userSelect = 'none'
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onEnd)
+    }
+
+    /** Ask to close the terminal — the shell and its scrollback die, so this always confirms. */
+    async function confirmCloseTerminal(): Promise<void> {
+        const path = repoStore.tabs[repoStore.activeTab]?.path
+        if (!path) return
+        const ok = await confirmDialog({
+            title: 'Close terminal',
+            message: 'Closing the terminal will end its shell session and clear its scrollback.',
+            confirmLabel: 'Close terminal',
+            danger: true,
+        })
+        if (ok) repoStore.closeTerminal(path)
+    }
+
+    /** Toggle the active repo's terminal panel; closing needs a confirm because the shell dies. */
+    async function toggleTerminal() {
+        const path = repoStore.tabs[repoStore.activeTab]?.path
+        if (!path) return
+        if (repoStore.terminalActive) {
+            await confirmCloseTerminal()
+            return
+        }
+        const available = await window.api.terminalAvailable().catch(() => false)
+        if (!available) {
+            uiTransient.notify('Terminal is unavailable — the native module could not be loaded', 'error')
+            return
+        }
+        repoStore.setTerminalOpen(path, true)
+    }
+
+    /** The X in the terminal header goes through the same confirm as the toolbar toggle. */
+    function closeTerminalPanel() {
+        void confirmCloseTerminal()
+    }
+
+    /**
+     * The shell ended on its own (exit / Ctrl+D / crash) — close the panel exactly like a manual
+     * close but without the confirm: the process is already gone, so there is nothing to end.
+     */
+    function handleTerminalExit(path: string) {
+        repoStore.closeTerminal(path)
+    }
+
+    /** Expand the terminal over the whole center column (graph hidden) or restore its height. */
+    function toggleTerminalExpand() {
+        repoStore.setTerminalExpanded(!repoStore.terminalExpanded)
     }
 
     async function run(label: string, fn: () => Promise<unknown>, busyLabel = 'Working…') {
@@ -641,6 +730,7 @@
                     <div class="app-body">
                         <div class="center-column">
                             <GraphView
+                                v-show="!repoStore.terminalActive || !repoStore.terminalExpanded"
                                 :commits="commits"
                                 :has-more="hasMore"
                                 :commit-open="!!selectedCommit || !!selectedStash"
@@ -654,7 +744,34 @@
                                 @squash="squashTarget = $event"
                                 @revert="revertCommit"
                                 @reset-soft="commit => resetTo(commit, 'soft')"
-                                @reset-hard="commit => resetTo(commit, 'hard')" />
+                                @reset-hard="commit => resetTo(commit, 'hard')"
+                                @toggle-terminal="toggleTerminal" />
+                            <div
+                                v-if="repoStore.terminalActive && !repoStore.terminalExpanded"
+                                class="terminal-splitter"
+                                @mousedown="beginTerminalResize" />
+                            <template
+                                v-for="path in terminalPaths"
+                                :key="path">
+                                <Teleport
+                                    to=".app"
+                                    :disabled="!isExpandedTerminal(path)">
+                                    <TerminalPanel
+                                        v-show="path === activeRepoPath"
+                                        :repo-path="path"
+                                        :expanded="isExpandedTerminal(path)"
+                                        :visible="path === activeRepoPath"
+                                        :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
+                                        :style="
+                                            isExpandedTerminal(path)
+                                                ? { right: `${ui.rightPanelWidth + 14}px` }
+                                                : { height: `${repoStore.terminalHeight}px` }
+                                        "
+                                        @close="closeTerminalPanel"
+                                        @exit="handleTerminalExit(path)"
+                                        @toggle-expand="toggleTerminalExpand" />
+                                </Teleport>
+                            </template>
                         </div>
                         <div
                             class="panel-splitter"
@@ -773,7 +890,8 @@
         <CommandPalette
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
-            @open-repo="openNewRepo" />
+            @open-repo="openNewRepo"
+            @toggle-terminal="toggleTerminal" />
         <ChangelogModal
             v-if="updater.changelogOpen"
             @close="updater.changelogOpen = false" />

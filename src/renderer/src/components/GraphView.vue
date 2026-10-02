@@ -10,6 +10,7 @@
     import ILucideSearch from '~icons/lucide/search'
     import ILucideSettings from '~icons/lucide/settings'
     import ILucideTag from '~icons/lucide/tag'
+    import ILucideTerminal from '~icons/lucide/terminal'
 
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
@@ -45,6 +46,7 @@
         (e: 'revert', commit: CommitNode): void
         (e: 'reset-soft', commit: CommitNode): void
         (e: 'reset-hard', commit: CommitNode): void
+        (e: 'toggle-terminal'): void
     }>()
 
     const FIRST_LANE_COLOR = '#F05272'
@@ -752,6 +754,15 @@
                     title="Commit history settings"
                     @click="showSettings = true">
                     <i-lucide-settings
+                        width="14"
+                        height="14" />
+                </button>
+                <button
+                    class="icon-btn graph-terminal-btn"
+                    :class="{ active: repoStore.terminalActive }"
+                    :title="repoStore.terminalActive ? 'Hide terminal' : 'Show terminal'"
+                    @click="emit('toggle-terminal')">
+                    <i-lucide-terminal
                         width="14"
                         height="14" />
                 </button>

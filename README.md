@@ -24,7 +24,7 @@ A lightweight, open-source Git GUI for **Windows & macOS** — review history �
 pnpm install
 
 # 2️⃣ Allow build scripts (first time only)
-pnpm approve-builds electron esbuild
+pnpm approve-builds electron esbuild node-pty
 
 # 3️⃣ Run it! (hot reload 🔥)
 pnpm dev
@@ -77,6 +77,17 @@ pnpm dev
 | 📦   | Stashes                                                |
 | 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes |
 
+### 💻 Terminal
+
+> 🖥️ A real shell, right where you review history.
+
+- 🪟 Docked terminal panel under the commit graph — toggle it from the toolbar button next to the settings gear, the command palette (`Terminal`), or <kbd>Ctrl</kbd>+<kbd>`</kbd>
+- 🗂️ **One shell per repo** — each repo tab keeps its own shell and scrollback while you switch tabs
+- 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel)
+- ⬜ Full-height mode covers the graph but leaves **Changes visible**; drag the top edge to resize (memory-only, resets per launch)
+- 🔒 Nothing is persisted — closing the panel/tab kills its shell, and a workspace switch closes every shell
+- 📦 Powered by xterm.js + node-pty (prebuilt for Windows & macOS; a missing native build disables only the terminal)
+
 ### 🤖 AI Commit Messages _(optional)_
 
 > 🪄 Let AI write the boring part!
@@ -124,6 +135,7 @@ pnpm dev
 | 📥 Clone repo            | `Ctrl+N`              | `Ctrl+N`                 |
 | ❎ Close tab             | `Ctrl+W`              | `Ctrl+W`                 |
 | 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
+| 💻 Toggle terminal       | `` Ctrl+` ``          | `` Ctrl+` ``             |
 | ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
 | ✨ Command palette       | `Ctrl+P` / `Shift×2`  | `Ctrl+P` / `Shift×2`     |
 | ⌨️ Show shortcuts        | `?`                   | `?`                      |
@@ -171,6 +183,7 @@ src/
 ├── 🖥️ main/              # Electron main process + ALL git operations
 │   ├── index.ts       #   Window + IPC handlers
 │   ├── git.ts         #   Git logic (simple-git)
+│   ├── terminal.ts    #   Embedded shells (node-pty)
 │   └── opencode.ts    #   AI commit-message generation
 ├── 🌉 preload/           # Secure window.api bridge
 ├── 📦 shared/            # Shared types + graph helpers

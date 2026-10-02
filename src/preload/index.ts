@@ -32,6 +32,8 @@ import type {
     OpenInTargets,
     RepoState,
     UpdateProgress,
+    TerminalData,
+    TerminalExit,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -48,6 +50,22 @@ const api = {
     setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
+    terminalCreate: (dir: string, cols: number, rows: number): Promise<boolean> => call('terminal:create', dir, cols, rows),
+    terminalWrite: (dir: string, data: string): Promise<boolean> => call('terminal:write', dir, data),
+    terminalResize: (dir: string, cols: number, rows: number): Promise<boolean> => call('terminal:resize', dir, cols, rows),
+    terminalDispose: (dir: string): Promise<boolean> => call('terminal:dispose', dir),
+    terminalAvailable: (): Promise<boolean> => call('terminal:available'),
+    terminalShell: (): Promise<string> => call('terminal:shell'),
+    onTerminalData: (callback: (payload: TerminalData) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, payload: TerminalData) => callback(payload)
+        ipcRenderer.on('terminal:data', listener)
+        return () => ipcRenderer.removeListener('terminal:data', listener)
+    },
+    onTerminalExit: (callback: (payload: TerminalExit) => void): (() => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, payload: TerminalExit) => callback(payload)
+        ipcRenderer.on('terminal:exit', listener)
+        return () => ipcRenderer.removeListener('terminal:exit', listener)
+    },
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
     openInKiro: (dir: string): Promise<void> => call('app:openInKiro', dir),
