@@ -1063,6 +1063,7 @@
                     <button
                         class="footer-btn footer-save"
                         :disabled="!canSave"
+                        @click="saveResolved()"
                         :title="canSave ? 'Write the resolved file and stage it' : 'Pick at least one side for every conflict'">
                         <i-lucide-save
                             width="12"
