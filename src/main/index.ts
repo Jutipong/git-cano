@@ -73,6 +73,7 @@ import {
     getCommitFileMeta,
     getCommitImageVersion,
     getRebasePlan,
+    startInteractiveRebase,
     getSquashPlan,
     squashCommits,
     listReflog,
@@ -109,8 +110,6 @@ import {
     sshTestHost,
     getFileHistory,
     getBlame,
-    executeRebasePlan,
-    abortPausedRebase,
     listFiles,
     addIgnoreRule,
     plainGit,
@@ -693,9 +692,9 @@ app.whenReady().then(() => {
         requireRepo()
         return rebaseContinue()
     })
-    handle('rebase:plan', (ref: string) => {
+    handle('rebase:plan', (ref: string, _dir?: string) => {
         requireRepo()
-        return getRebasePlan(ref as string)
+        return getRebasePlan(ref as string, typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
     handle('commit:cherryPick', (hash: string) => {
         requireRepo()
@@ -828,9 +827,9 @@ app.whenReady().then(() => {
         return hasRemote()
     })
 
-    handle('rebase:execute', (baseRef: string, entries, resume: boolean) => {
+    handle('rebase:start', (baseRef: string, entries, _dir?: string) => {
         requireRepo()
-        return executeRebasePlan(baseRef as string, entries as never[], Boolean(resume))
+        return startInteractiveRebase(baseRef as string, entries as never[], typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
     handle('squash:plan', (target: string) => {
         requireRepo()
@@ -847,10 +846,6 @@ app.whenReady().then(() => {
     handle('reflog:restore', (ref: string) => {
         requireRepo()
         return restoreReflog(ref as string)
-    })
-    handle('rebase:abortPaused', () => {
-        requireRepo()
-        return abortPausedRebase()
     })
     handle('commit:message', (message: string, amend: boolean, _dir?: string) => {
         requireRepo()

@@ -24,6 +24,7 @@ import type {
     MergeMode,
     RebaseEntry,
     RebaseOutcome,
+    RebaseContinueResult,
     ReflogEntry,
     SquashPlan,
     RemoteTestResult,
@@ -42,6 +43,8 @@ let activeRepoPath: string | null = null
 const logCache = new Map<string, { limit: number; commits: CommitNode[] }>()
 /** Last computed branch list per repo path — same stale-while-revalidate purpose as logCache (branches change slowly). */
 const branchCache = new Map<string, { local: BranchInfo[]; remote: BranchInfo[] }>()
+/** Original HEAD per repo path while an interactive rebase is paused, so completion can be journaled for Undo. */
+const interactiveRebases = new Map<string, string>()
 
 /**
  * Simple-git (>=3.24) blocks env vars / config it considers unsafe unless the matching `unsafe.*` flag is enabled. This app intentionally
@@ -64,7 +67,7 @@ const SAFE_UNSAFE_OPTIONS = {
         allowUnsafeConfigPaths: true,
         allowUnsafeEditor: true,
     },
-    allowEnvironment: ['GIT_SSH_COMMAND', 'GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0', 'GIT_EDITOR'],
+    allowEnvironment: ['GIT_SSH_COMMAND', 'GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0', 'GIT_EDITOR', 'GIT_SEQUENCE_EDITOR'],
 } as unknown as Partial<SimpleGitOptions>
 
 function createGit(dir: string): SimpleGit {
@@ -206,6 +209,7 @@ export function closeRepo(dir?: string): void {
     repoInstances.delete(target)
     // Drop its undo journal too — hashes from a previous life at the same path must not resurface.
     undoStacks.delete(target)
+    interactiveRebases.delete(target)
     // Keep the log cache for closed repos — it only costs a few hundred in-memory commits and
     // makes reopening (tab or workspace switch) paint instantly; selectTab always re-validates.
     unwatchRepo(target)
@@ -1532,23 +1536,38 @@ export async function abortMerge(): Promise<void> {
 }
 
 export async function rebaseAbort(): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
     g.env({ ...baseEnv(), GIT_EDITOR: 'true' })
     try {
         await g.raw(['rebase', '--abort'])
     } finally {
         g.env(baseEnv())
+        cleanupRebase(p)
     }
 }
 
-export async function rebaseContinue(): Promise<void> {
-    const { git: g } = getRepo()
-    g.env({ ...baseEnv(), GIT_EDITOR: 'true' })
+export async function rebaseContinue(): Promise<RebaseContinueResult> {
+    const { path: p, git: g } = getRepo()
+    const origHead = interactiveRebases.get(p)
+    const planFile = rebasePlanPath(p)
+    // Keep the helper env while an interactive rebase is paused: later reword/squash steps still
+    // need the message editor. A plain pull-rebase just keeps the non-interactive editor.
+    g.env(origHead && fs.existsSync(planFile) ? rebaseEditorEnv(planFile) : { ...baseEnv(), GIT_EDITOR: 'true' })
     try {
         await g.raw(['rebase', '--continue'])
+    } catch (error) {
+        if (!rebaseInProgress(p)) {
+            cleanupRebase(p)
+            throw error
+        }
+        return { completed: false, undoable: false }
     } finally {
         g.env(baseEnv())
     }
+    if (rebaseInProgress(p)) return { completed: false, undoable: false }
+    if (origHead) finishRebase(p, origHead)
+    else cleanupRebase(p)
+    return { completed: true, undoable: Boolean(origHead) }
 }
 
 export async function cherryPick(hash: string): Promise<void> {
@@ -1710,12 +1729,12 @@ export async function getCommitImageVersion(hash: string, file: string): Promise
     }
 }
 
-export async function getRebasePlan(baseRef: string): Promise<CommitNode[]> {
-    const { git: g } = getRepo()
+export async function getRebasePlan(baseRef: string, dir?: string): Promise<CommitNode[]> {
+    const { git: g } = dir ? getRepoFor(dir) : getRepo()
     const SEP = '\x1f'
     const REC = '\x1e'
     const fmt = ['%H', '%h', '%an', '%aI', '%s'].join(SEP)
-    const text = await g.raw(['log', '--reverse', `--pretty=format:${fmt}${REC}`, `${baseRef}..HEAD`, '--'])
+    const text = await g.raw(['log', '--no-merges', '--reverse', `--pretty=format:${fmt}${REC}`, `${baseRef}..HEAD`, '--'])
     return text
         .split(REC)
         .map(line => line.replace(/^\n/, ''))
@@ -2272,90 +2291,133 @@ export async function getBlame(file: string, rev?: string): Promise<BlameLine[]>
     return result
 }
 
-const BACKUP_FILE = 'git-cano-rebase-backup'
+/**
+ * Interactive rebase runs the real `git rebase -i` so squash/fixup/reword/drop/edit follow git's
+ * own semantics (and conflicts pause in place instead of aborting). We drive it by writing the
+ * todo ourselves: a tiny Node helper (run through `ELECTRON_RUN_AS_NODE`) acts as both the
+ * sequence editor (writes our todo) and the commit-message editor (writes the per-commit message
+ * for reword/squash, read from the command shown in COMMIT_EDITMSG's "Last command(s) done" block).
+ */
+const INTERACTIVE_REBASE_PLAN = 'git-cano-rebase-plan.json'
 
-function backupPath(): string {
-    const { path: p } = getRepo()
-    const gitDir = fs.existsSync(path.join(p, '.git')) ? path.join(p, '.git') : p
-    return path.join(gitDir, BACKUP_FILE)
+const REBASE_EDITOR_HELPER = String.raw`const fs = require('node:fs')
+const path = require('node:path')
+function readPlan() {
+    try { return JSON.parse(fs.readFileSync(process.env.GITCANO_REBASE_PLAN, 'utf8')) } catch { return null }
 }
-
-export async function executeRebasePlan(baseRef: string, entries: RebaseEntry[], resume: boolean): Promise<RebaseOutcome> {
-    const { path: p, git: g } = getRepo()
-
-    const backupFile = backupPath()
-    const status = await g.status()
-    const branch = status.current
-
-    let origHead: string
-    if (resume) {
-        if (!fs.existsSync(backupFile)) throw new Error('No paused rebase found')
-        origHead = fs.readFileSync(backupFile, 'utf8').trim()
-    } else {
-        if (!entries.length) throw new Error('Nothing to rebase')
-        // The plan starts with `reset --hard`, which would silently discard uncommitted work.
-        if (status.files.length > 0) throw new Error('Commit or stash your changes first')
-        origHead = await g.revparse(['HEAD'])
-        fs.writeFileSync(backupFile, origHead)
-        await g.raw(['reset', '--hard', baseRef])
-    }
-
-    const rollback = async () => {
-        await g.raw(['cherry-pick', '--abort']).catch(() => {})
-        await g.raw(['reset', '--hard', origHead]).catch(() => {})
-        if (branch && branch !== 'HEAD') await g.checkout(branch).catch(() => {})
-        fs.promises.unlink(backupFile).catch(() => {})
-    }
-
-    try {
-        for (const entry of entries) {
-            if (entry.command === 'drop') continue
-            // oxlint-disable-next-line no-await-in-loop
-            await g.raw(['cherry-pick', '--allow-empty', '--keep-redundant-commits', entry.hash])
-
-            switch (entry.command) {
-                case 'reword':
-                    // oxlint-disable-next-line no-await-in-loop
-                    await g.commit(entry.message || 'Reworded commit', undefined, { '--amend': null })
-                    break
-                case 'squash':
-                case 'fixup': {
-                    // oxlint-disable-next-line no-await-in-loop
-                    await g.raw(['reset', '--soft', 'HEAD~1'])
-                    // oxlint-disable-next-line no-await-in-loop
-                    if (entry.command === 'squash' && entry.message?.trim()) await g.commit(entry.message)
-                    // oxlint-disable-next-line no-await-in-loop
-                    else await g.raw(['commit', '--no-edit'])
-                    break
-                }
-                case 'edit':
-                    return { completed: false, message: `Paused at ${entry.hash.slice(0, 7)} for editing` }
-                case 'split':
-                    // oxlint-disable-next-line no-await-in-loop
-                    await g.raw(['reset', '--soft', 'HEAD~1'])
-                    return { completed: false, message: `Paused after unpacking ${entry.hash.slice(0, 7)} — its changes are staged` }
+const target = process.argv[2]
+const data = readPlan()
+if (target && data) {
+    const name = path.basename(target)
+    if (name === 'git-rebase-todo') {
+        fs.writeFileSync(target, data.todo, 'utf8')
+    } else if (name === 'COMMIT_EDITMSG' || name === 'message') {
+        const lines = fs.readFileSync(target, 'utf8').split('\n')
+        let inDone = false
+        let current = ''
+        for (const line of lines) {
+            if (/^#\s+Last commands? done/.test(line)) { inDone = true; continue }
+            if (inDone) {
+                // Only reword/squash carry a message. A squash followed by fixup(s) opens the editor
+                // once, and the block ends with the fixup — so keep the last reword/squash instead.
+                const match = line.match(/^#\s+(?:reword|squash)\s+([0-9a-f]{7,})\b/)
+                if (match) { current = match[1]; continue }
+                if (/^#\s+Next command/.test(line)) inDone = false
             }
         }
+        const messages = data.messages || {}
+        const key = current && Object.keys(messages).find(hash => hash === current || hash.startsWith(current) || current.startsWith(hash.slice(0, 7)))
+        if (key) fs.writeFileSync(target, messages[key] + '\n', 'utf8')
+    }
+}
+process.exit(0)
+`
 
-        fs.promises.unlink(backupFile).catch(() => {})
-        const replayed = entries.filter(e => e.command !== 'drop').length
-        pushUndo({ label: 'rebase', doneMessage: 'Rebase undone', repoPath: p, kind: 'reset', headBefore: origHead.trim(), resetMode: 'hard' })
-        return { completed: true, message: `Interactive rebase complete (${replayed} commits)` }
-    } catch {
-        await rollback()
-        throw new Error('Rebase failed — repository restored to its original state')
+function gitDirFor(repoPath: string): string {
+    return fs.existsSync(path.join(repoPath, '.git')) ? path.join(repoPath, '.git') : repoPath
+}
+
+function rebaseInProgress(repoPath: string): boolean {
+    const gitDir = gitDirFor(repoPath)
+    return fs.existsSync(path.join(gitDir, 'rebase-merge')) || fs.existsSync(path.join(gitDir, 'rebase-apply'))
+}
+
+function rebasePlanPath(repoPath: string): string {
+    return path.join(gitDirFor(repoPath), INTERACTIVE_REBASE_PLAN)
+}
+
+let rebaseEditorHelperFile: string | null = null
+function rebaseEditorCommand(): string {
+    if (!rebaseEditorHelperFile || !fs.existsSync(rebaseEditorHelperFile)) {
+        rebaseEditorHelperFile = path.join(os.tmpdir(), 'git-cano-rebase-editor.cjs')
+        fs.writeFileSync(rebaseEditorHelperFile, REBASE_EDITOR_HELPER, 'utf8')
+    }
+    // Forward slashes: git runs the editor through sh, where Windows backslashes would be escapes.
+    const quote = (value: string) => `"${value.replace(/\\/g, '/')}"`
+    return `${quote(process.execPath)} ${quote(rebaseEditorHelperFile)}`
+}
+
+function rebaseEditorEnv(planFile: string): NodeJS.ProcessEnv {
+    const editor = rebaseEditorCommand()
+    return {
+        ...baseEnv(),
+        ELECTRON_RUN_AS_NODE: '1',
+        GIT_SEQUENCE_EDITOR: editor,
+        GIT_EDITOR: editor,
+        GITCANO_REBASE_PLAN: planFile,
     }
 }
 
-export async function abortPausedRebase(): Promise<void> {
-    const { git: g } = getRepo()
-    const backupFile = backupPath()
-    if (!fs.existsSync(backupFile)) throw new Error('No paused rebase to abort')
-    const origHead = fs.readFileSync(backupFile, 'utf8').trim()
-    await g.raw(['cherry-pick', '--abort']).catch(() => {})
-    await g.raw(['reset', '--hard', origHead])
-    const status = await g.status()
-    if (status.current !== 'HEAD' && status.current) await g.checkout(status.current).catch(() => {})
-    fs.promises.unlink(backupFile).catch(() => {})
+function cleanupRebase(repoPath: string): void {
+    interactiveRebases.delete(repoPath)
+    fs.promises.unlink(rebasePlanPath(repoPath)).catch(() => {})
 }
+
+function finishRebase(repoPath: string, origHead: string): void {
+    pushUndo({ label: 'rebase', doneMessage: 'Rebase undone', repoPath, kind: 'reset', headBefore: origHead, resetMode: 'hard' })
+    cleanupRebase(repoPath)
+}
+
+export async function startInteractiveRebase(baseRef: string, entries: RebaseEntry[], dir?: string): Promise<RebaseOutcome> {
+    const { path: p, git: g } = dir ? getRepoFor(dir) : getRepo()
+    const base = baseRef.trim()
+    if (!base) throw new Error('A base branch is required')
+    if (!entries.length) throw new Error('Nothing to rebase')
+    // `git rebase` needs a clean tree and a free slot — refuse while another merge/rebase/cherry-pick is open.
+    const gitDir = gitDirFor(p)
+    if (rebaseInProgress(p) || fs.existsSync(path.join(gitDir, 'MERGE_HEAD')) || fs.existsSync(path.join(gitDir, 'CHERRY_PICK_HEAD'))) {
+        throw new Error('Finish or abort the current operation first')
+    }
+    if ((await g.status()).files.length > 0) throw new Error('Commit or stash your changes first')
+
+    const origHead = (await g.revparse(['HEAD'])).trim()
+    const planFile = rebasePlanPath(p)
+    const todo = `${entries.map(entry => `${entry.command} ${entry.hash}`).join('\n')}\n`
+    const messages: Record<string, string> = {}
+    for (const entry of entries) {
+        if ((entry.command === 'reword' || entry.command === 'squash') && entry.message?.trim()) messages[entry.hash] = entry.message.trim()
+    }
+    fs.writeFileSync(planFile, JSON.stringify({ todo, messages }), 'utf8')
+
+    interactiveRebases.set(p, origHead)
+    g.env(rebaseEditorEnv(planFile))
+    try {
+        await g.raw(['rebase', '-i', '--empty=keep', base])
+    } catch (error) {
+        // A conflict leaves the rebase state on disk — keep it so the user resolves it in the
+        // Changes panel. Only a failure with no rebase state is a real error.
+        if (!rebaseInProgress(p)) {
+            cleanupRebase(p)
+            throw error
+        }
+    } finally {
+        g.env(baseEnv())
+    }
+
+    if (rebaseInProgress(p)) return { completed: false, message: 'Rebase paused — resolve any conflicts, then Continue' }
+    finishRebase(p, origHead)
+    const replayed = entries.filter(entry => entry.command !== 'drop').length
+    return { completed: true, message: `Interactive rebase complete (${replayed} commits)` }
+}
+
 

@@ -146,7 +146,7 @@ export interface OpenInTargets {
     visualStudio: string | null
 }
 
-export type RebaseCommand = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop' | 'edit' | 'split'
+export type RebaseCommand = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop' | 'edit'
 
 export interface RebaseEntry {
     command: RebaseCommand
@@ -157,6 +157,13 @@ export interface RebaseEntry {
 export interface RebaseOutcome {
     completed: boolean
     message: string
+}
+
+/** Result of an interactive-rebase Continue — false while conflicts still block the rebase. */
+export interface RebaseContinueResult {
+    completed: boolean
+    /** True when completion journaled an Undo entry (interactive rebase); false for a pull-rebase. */
+    undoable: boolean
 }
 
 export interface SquashPlan {

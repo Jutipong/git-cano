@@ -1,12 +1,11 @@
 <script setup lang="ts">
-    import { computed, inject, ref, watch } from 'vue'
+    import { computed, ref, watch } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
-    import ILucidePauseCircle from '~icons/lucide/pause-circle'
-    import ILucidePlay from '~icons/lucide/play'
     import ILucidePlus from '~icons/lucide/plus'
     import ILucideTrash2 from '~icons/lucide/trash2'
 
+    import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore } from '../stores/uiTransient'
     import CloseXIcon from './CloseXIcon.vue'
 
@@ -22,23 +21,24 @@
     }
 
     const props = defineProps<{ baseRef: string }>()
-    const emit = defineEmits<{ (e: 'cancel'): void; (e: 'complete', message: string): void }>()
-    const notify = inject<(m: string) => void>('notify', () => {})
+    const emit = defineEmits<{ (e: 'cancel'): void; (e: 'done', message: string): void; (e: 'paused', message: string): void }>()
 
-    const COMMANDS: RebaseCommand[] = ['pick', 'reword', 'squash', 'fixup', 'edit', 'split', 'drop']
+    // Pin the repo the plan was loaded from: the modal can outlive a tab switch, and the rebase
+    // must never run against whichever repo happens to be active at Start time.
+    const repoPath = useRepoStore().repo?.path
+
+    const COMMANDS: RebaseCommand[] = ['pick', 'reword', 'squash', 'fixup', 'edit', 'drop']
     const EDITABLE_COMMANDS: RebaseCommand[] = ['reword', 'squash']
 
     const entries = ref<Entry[] | null>(null)
     const running = ref(false)
-    const pausedMessage = ref<string | null>(null)
-    const remaining = ref<Entry[]>([])
     const error = ref<string | null>(null)
 
     const activeCount = computed(() => entries.value?.filter(entry => entry.command !== 'drop').length ?? 0)
 
     async function loadPlan() {
         try {
-            const commits = await window.api.rebasePlan(props.baseRef)
+            const commits = await window.api.rebasePlan(props.baseRef, repoPath)
             entries.value = commits.map((commit: CommitNode) => ({
                 command: 'pick' as RebaseCommand,
                 hash: commit.hash,
@@ -54,45 +54,27 @@
 
     watch(() => props.baseRef, loadPlan, { immediate: true })
 
-    async function executePlan(plan: Entry[], resume: boolean) {
+    async function start() {
+        const plan = entries.value
+        if (!plan || running.value) return
         running.value = true
         error.value = null
         try {
             const outcome = await useUiTransientStore().withBusy(
                 () =>
-                    window.api.rebaseExecute(
+                    window.api.rebaseStart(
                         props.baseRef,
                         plan.map(entry => ({ command: entry.command, hash: entry.hash, message: entry.message })),
-                        resume
+                        repoPath
                     ),
-                resume ? 'Resuming rebase…' : 'Rebasing…'
+                'Rebasing…'
             )
-            if (outcome.completed) {
-                emit('complete', outcome.message)
-            } else {
-                pausedMessage.value = outcome.message
-                remaining.value = plan
-            }
+            if (outcome.completed) emit('done', outcome.message)
+            else emit('paused', outcome.message)
         } catch (error_) {
             error.value = String(error_).replace(/^Error:\s*/, '')
         } finally {
             running.value = false
-        }
-    }
-
-    function start() {
-        if (!entries.value) return
-        void executePlan(entries.value, false)
-    }
-    function continueRebase() {
-        void executePlan(remaining.value, true)
-    }
-    async function abortPaused() {
-        try {
-            await useUiTransientStore().withBusy(() => window.api.rebaseAbortPaused(), 'Aborting rebase…')
-            emit('complete', 'Rebase aborted — original state restored')
-        } catch (error_) {
-            error.value = String(error_).replace(/^Error:\s*/, '')
         }
     }
 
@@ -118,7 +100,6 @@
                 <code class="rebase-base">{{ baseRef }}</code>
                 <span class="spacer" />
                 <button
-                    v-if="!pausedMessage"
                     class="icon-btn danger commit-close-btn"
                     :disabled="running"
                     @click="emit('cancel')">
@@ -133,46 +114,19 @@
             </div>
 
             <div
-                v-if="pausedMessage"
-                class="rebase-paused">
-                <i-lucide-pause-circle
-                    width="18"
-                    height="18" />
-                <div>
-                    <strong>{{ pausedMessage }}</strong>
-                    <p>Make your changes and commit them normally (the commit box works), then press Continue.</p>
-                </div>
-                <span class="spacer" />
-                <button
-                    class="btn small danger"
-                    @click="abortPaused()">
-                    Abort
-                </button>
-                <button
-                    class="btn primary small"
-                    @click="continueRebase()">
-                    <i-lucide-play
-                        width="13"
-                        height="13" />
-                    Continue rebase
-                </button>
-            </div>
-
-            <div
-                v-if="!entries && !error && !pausedMessage"
+                v-if="!entries && !error"
                 class="rebase-loading">
                 Loading commits…
             </div>
             <div
-                v-if="entries && entries.length === 0 && !pausedMessage"
+                v-if="entries && entries.length === 0"
                 class="rebase-loading">
                 No commits between HEAD and {{ baseRef }}
             </div>
 
             <div
                 v-if="entries && entries.length > 0"
-                class="rebase-list"
-                :class="{ frozen: pausedMessage }">
+                class="rebase-list">
                 <div
                     v-for="(entry, index) in entries"
                     :key="entry.hash"
@@ -182,7 +136,7 @@
                         v-model="entry.command"
                         class="rebase-command"
                         :class="`c-${entry.command}`"
-                        :disabled="running || Boolean(pausedMessage)">
+                        :disabled="running">
                         <option
                             v-for="command in COMMANDS"
                             :key="command"
@@ -195,12 +149,12 @@
                         v-model="entry.message"
                         class="rebase-message"
                         :placeholder="entry.subject"
-                        :disabled="running || Boolean(pausedMessage) || !EDITABLE_COMMANDS.includes(entry.command)" />
+                        :disabled="running || !EDITABLE_COMMANDS.includes(entry.command)" />
                     <span class="rebase-author">{{ entry.author }}</span>
                     <button
                         class="icon-btn danger"
                         title="Move up"
-                        :disabled="running || Boolean(pausedMessage) || index === 0"
+                        :disabled="running || index === 0"
                         @click="move(index, -1)">
                         <i-lucide-arrow-up
                             width="13"
@@ -209,7 +163,7 @@
                     <button
                         class="icon-btn"
                         title="Move down"
-                        :disabled="running || Boolean(pausedMessage) || index === entries.length - 1"
+                        :disabled="running || index === entries.length - 1"
                         @click="move(index, 1)">
                         <i-lucide-arrow-down
                             width="13"
@@ -219,7 +173,7 @@
                         class="icon-btn"
                         :class="entry.command === 'drop' ? 'accent-icon' : 'danger'"
                         :title="entry.command === 'drop' ? 'Restore commit' : 'Drop commit'"
-                        :disabled="running || Boolean(pausedMessage)"
+                        :disabled="running"
                         @click="update(index, { command: entry.command === 'drop' ? 'pick' : 'drop' })">
                         <i-lucide-plus
                             v-if="entry.command === 'drop'"
@@ -233,10 +187,8 @@
                 </div>
             </div>
 
-            <div
-                v-if="!pausedMessage"
-                class="rebase-modal-footer">
-                <span class="rebase-hint"> edit: pause here to amend · split: uncommit &amp; stage changes to split into pieces </span>
+            <div class="rebase-modal-footer">
+                <span class="rebase-hint"> edit: pause here to amend · conflicts pause the rebase and are resolved in the Changes panel </span>
                 <span class="spacer" />
                 <button
                     class="btn small"

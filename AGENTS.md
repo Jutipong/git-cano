@@ -414,6 +414,43 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   the restore itself journals a hard `reset` entry so it stays undoable (with the usual
   dirty-tree retry guard).
 
+## Interactive rebase
+
+- The engine is the real `git rebase -i` (`startInteractiveRebase(baseRef, entries)` in
+  `main/git.ts`, `rebase:start` IPC → `window.api.rebaseStart`). Do NOT go back to replaying
+  commits with `cherry-pick` — that could not squash/fixup and replayed the whole plan on resume.
+- Repo pinning: `RebaseEditor.vue` captures `repoStore.repo?.path` when it opens and passes it to
+  `rebase:plan` / `rebase:start`; main resolves it via `getRepoFor(dir)`. The modal can outlive a
+  tab switch, so the rebase must never target whichever repo is active at Start time.
+- `startInteractiveRebase` refuses to run while another rebase/merge/cherry-pick is open
+  (`rebase-merge`/`rebase-apply`/`MERGE_HEAD`/`CHERRY_PICK_HEAD`) — otherwise `git rebase -i`
+  fails and the pause-detection would misreport it as a paused rebase.
+- The todo is written by us: a Node helper runs through `ELECTRON_RUN_AS_NODE` as both
+  `GIT_SEQUENCE_EDITOR` (writes `git-rebase-todo`) and `GIT_EDITOR` (writes the reword/squash
+  message). It reads the plan JSON (`.git/git-cano-rebase-plan.json`) via the `GITCANO_REBASE_PLAN`
+  env var — never name it `GIT_*`, simple-git's environment guard strips/blocks those.
+  `GIT_SEQUENCE_EDITOR` must stay in `SAFE_UNSAFE_OPTIONS.allowEnvironment`.
+- The message helper parses COMMIT_EDITMSG's "Last command(s) done" block and keeps the last
+  `reword|squash` line: a squash followed by fixup(s) opens the editor once and the block ends with
+  the fixup, so the last command is not the one carrying the message.
+- Conflict and `edit` pauses are detected by `rebase-merge`/`rebase-apply` existing after the call;
+  they are NOT an error — the rebase stays in progress and the Changes panel (`FilePanel.vue`,
+  which already handles `repoState.rebasing`) resolves/continues/aborts it. A failure with no rebase
+  state is a real error (plan cleaned up + thrown).
+- `edit` pauses with no conflicts: `FilePanel.vue` shows the commit box plus an Amend button
+  (`amendStoppedCommit` → `commitWithAmend(msg, true)`), because `git rebase --continue` on staged
+  changes makes a new commit, not an amend.
+- `split` was removed — `git rebase -i` has no such command. Offered commands: pick / reword /
+  squash / fixup / edit / drop.
+- `getRebasePlan` lists `--no-merges baseRef..HEAD`; merges are dropped by the rebase, matching
+  git's default (no `--rebase-merges`).
+- Undo is journaled only on completion: the interactive rebase records `origHead` in
+  `interactiveRebases` and pushes a hard `reset` entry when it finishes (in `start` or in
+  `rebase:continue`). `rebaseContinue` returns `{ completed, undoable }` so FilePanel offers Undo
+  only for the interactive rebase, never for a pull-rebase completion.
+- `RebaseEditor.vue` is a planner only: it emits `done` (completed → App shows the Undo toast) or
+  `paused` (conflicts/edit → modal closes, warning toast, FilePanel takes over).
+
 ## Squash
 
 - Squash is HEAD-range only: `getSquashPlan(target)` / `squashCommits(base, message)` in

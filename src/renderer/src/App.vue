@@ -721,11 +721,18 @@
             v-if="rebaseBase"
             :base-ref="rebaseBase"
             @cancel="rebaseBase = null"
-            @complete="
+            @done="
                 message => {
                     rebaseBase = null
                     void repoStore.refresh()
                     void notifyUndoable(repoStore.repo?.path, message)
+                }
+            "
+            @paused="
+                message => {
+                    rebaseBase = null
+                    void repoStore.refresh()
+                    uiTransient.notify(message, 'warning')
                 }
             " />
         <FileHistoryModal

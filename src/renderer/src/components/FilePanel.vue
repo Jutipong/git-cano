@@ -185,11 +185,45 @@
     function abortMerge() {
         void run(() => window.api.abortMerge(), 'Merge aborted', 'Aborting merge…')
     }
-    function continueRebase() {
-        void run(() => window.api.rebaseContinue(), 'Rebase continued', 'Continuing rebase…')
+    async function continueRebase() {
+        if (pending.value) return
+        pending.value = true
+        try {
+            const result = await uiTransient.withBusy(() => window.api.rebaseContinue(), 'Continuing rebase…')
+            await props.refresh()
+            await loadAllFiles()
+            if (result.completed) {
+                if (result.undoable) void notifyUndoable(repoStore.repo?.path, 'Rebase complete')
+                else notify('Rebase complete', 'success')
+            } else notify('Conflicts remain — resolve them and continue', 'warning')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            pending.value = false
+        }
     }
-    function abortRebase() {
-        void run(() => window.api.rebaseAbort(), 'Rebase aborted', 'Aborting rebase…')
+    async function abortRebase() {
+        if (pending.value) return
+        pending.value = true
+        try {
+            await uiTransient.withBusy(() => window.api.rebaseAbort(), 'Aborting rebase…')
+            await props.refresh()
+            await loadAllFiles()
+            notify('Rebase aborted', 'success')
+        } catch (error) {
+            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        } finally {
+            pending.value = false
+        }
+    }
+    async function amendStoppedCommit() {
+        const text = message.value.trim()
+        if (!text) {
+            notify('Enter a commit message to amend with', 'warning')
+            return
+        }
+        const ok = await run(() => window.api.commitWithAmend(text, true), 'Commit amended')
+        if (ok) message.value = ''
     }
     function continueCherryPick() {
         void run(() => window.api.cherryPickContinue(), 'Cherry-pick continued', 'Continuing cherry-pick…')
@@ -1221,7 +1255,7 @@
                     <span class="conflict-label">{{ abortLabel }}</span>
                 </button>
             </div>
-            <template v-else>
+            <template v-if="!inConflictFlow || (isRebasing && conflictedFiles.length === 0)">
                 <div
                     class="cb-resize-handle"
                     title="Drag to resize"
@@ -1332,6 +1366,17 @@
                                 width="14"
                                 height="14" />
                             {{ committing ? 'Committing…' : 'Commit & Push' }}
+                        </button>
+                        <button
+                            v-if="isRebasing && conflictedFiles.length === 0"
+                            class="btn"
+                            :disabled="pending || !message.trim()"
+                            title="Amend the commit the rebase stopped on"
+                            @click="amendStoppedCommit()">
+                            <i-lucide-rotate-ccw
+                                width="14"
+                                height="14" />
+                            Amend
                         </button>
                     </div>
                     <div
