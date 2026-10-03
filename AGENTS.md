@@ -235,6 +235,12 @@ full guarded list lives in `@simple-git/argv-parser`).
   warm-gray base — keep both legible on low-clarity Windows displays.
 - **Settings (`ToolsModal.vue`) has no Zoom control** — zoom lives only in the `App.vue`
   global handler (`⌘/Ctrl + − 0`, Ctrl/⌘+wheel). Do not re-add Zoom chips.
+- **Windows-only settings hide on macOS/Linux**: the terminal Shell presets (see "Terminal panel")
+  and General → Performance status accelerators render only when `isWindows`
+  (`utils/shortcuts.ts`), and main forces both off outside win32 (`resolveShell()` in
+  `main/terminal.ts`, `setStatusAccelerators()` in `main/git.ts`). A persisted `true`/preset value
+  must never take effect there — gate new Windows-only toggles the same way instead of leaving
+  them visible-but-inert.
 - **Close (✕) buttons** always use the `.icon-btn danger commit-close-btn` style (red ring +
   tinted background, hover intensifies — see `.commit-close-btn` in `styles.css`). Reuse that
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
@@ -608,6 +614,21 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   back). Anything inside that subtree that reads `repo` must be nullable (`repo?.files ?? []`,
   `Sidebar` is `v-if="repo"`, `FilePanel.loadAllFiles()` bails when there is no active repo) — keep it
   that way rather than tightening the guard back to `v-if="repo"`.
+- **The shell is configurable per app, not per tab — Windows only**: `ui.terminalShell`
+  (persisted, `''` = OS default) is sent with every `terminal:create` / `terminal:shell` call; the
+  main process resolves preset ids (`cmd` / `powershell` / `pwsh`) via `shellExecutable()` —
+  well-known install locations first, then a PATH scan with no process spawn — and throws a readable
+  error (shown inline by `TerminalView`) when the chosen shell is missing. `terminal:shells` feeds
+  Settings → Terminal the availability probe so uninstalled presets render disabled instead of
+  failing at spawn. `pwsh` (PowerShell 7+) is the recommendation for Thai/UTF-8. A pty cannot switch
+  shells, so a change only affects tabs opened afterwards; existing sessions are reused by id and
+  keep their process, and `createTerminal` returns the shell label it actually spawned (per-tab
+  labels stay honest when settings change mid-session). **macOS/Linux hide the whole Shell section**
+  (`isWindows` from `utils/shortcuts.ts`), `ui.terminalShell` is forced back to `''` there, and main
+  ignores the spec on non-win32 (`resolveShell` / `terminalShellName` always use the OS default,
+  `listTerminalShells` returns `[]`) — never make the presets work outside Windows without a product
+  decision. Keep the preset ids in sync with `SHELL_PRESET_IDS` in `main/terminal.ts` and
+  `TERMINAL_SHELL_OPTIONS` in `stores/ui.ts`.
 - **The terminal has its own font, decoupled from the app-wide `fontSize`**: `ui.terminalFontFamily`
   (`''` = follow `--font-mono`) and `ui.terminalFontSize` are persisted in `stores/ui.ts` and edited
   in Settings → Terminal. The family offers exactly four presets (`TERMINAL_FONT_OPTIONS` — Default,

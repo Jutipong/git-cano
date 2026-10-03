@@ -149,14 +149,15 @@ export function plainGit(dir = ''): SimpleGit {
 }
 
 /**
- * Opt-in Windows status accelerators (Settings → General → Performance). When enabled, each opened repo gets `core.fsmonitor` +
+ * Opt-in Windows-only status accelerators (Settings → General → Performance). When enabled, each opened repo gets `core.fsmonitor` +
  * `core.untrackedCache` written to its local config once per open — they make every subsequent `git status` dramatically faster on large
- * worktrees. Never fails the open: each config write is swallowed on old/quirky git versions.
+ * worktrees. Never fails the open: each config write is swallowed on old/quirky git versions. The setting is hidden on macOS/Linux and
+ * this gate keeps a persisted `true` from ever taking effect there.
  */
 let statusAcceleratorsEnabled = false
 
 export function setStatusAccelerators(enabled: boolean): void {
-    statusAcceleratorsEnabled = enabled
+    statusAcceleratorsEnabled = enabled && process.platform === 'win32'
 }
 
 export function getStatusAccelerators(): boolean {

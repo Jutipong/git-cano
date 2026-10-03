@@ -6085,6 +6085,19 @@ body {
     background: color-mix(in srgb, var(--green) 14%, transparent);
 }
 
+/* A preset the machine does not have (Settings → Terminal shell chips) — still visible so the list
+   never shifts, but clearly not selectable. */
+.setting-chip:disabled:not(.active) {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.setting-chip:disabled:not(.active):hover {
+    color: var(--text-secondary);
+    background: var(--surface-1);
+    border-color: var(--line-soft);
+}
+
 /* settings fields speak the same pill language as the create-form inputs */
 .tools-body input,
 .tools-body select {

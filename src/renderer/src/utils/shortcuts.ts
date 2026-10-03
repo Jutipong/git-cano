@@ -1,6 +1,8 @@
 /** Single source of truth for keyboard shortcuts — used by the global keydown handler and the ShortcutsModal. */
 
 export const isMac = /mac/i.test(navigator.platform)
+/** Windows-only features (e.g. the terminal shell presets) gate their UI on this. */
+export const isWindows = /win/i.test(navigator.platform)
 
 export interface ShortcutDef {
     id: string

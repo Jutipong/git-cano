@@ -7,6 +7,7 @@ import {
     SHORTCUT_DEFAULTS,
     SHORTCUT_PLATFORMS,
     currentPlatform,
+    isWindows,
     isValidSyncCombo,
     type CustomShortcutId,
     type ShortcutOverrideMap,
@@ -100,6 +101,19 @@ export const TERMINAL_FONT_OPTIONS: readonly TerminalFontOption[] = [
     { value: 'Maple Mono NF', label: 'Maple Mono NF' },
 ]
 export const DEFAULT_TERMINAL_FONT_FAMILY = ''
+
+/**
+ * Terminal shell presets. `''` = the OS default (cmd.exe on Windows, `$SHELL` elsewhere); the other
+ * ids are resolved in the main process (PATH + well-known install locations) and must stay in sync
+ * with `SHELL_PRESET_IDS` in `src/main/terminal.ts`. PowerShell 7+ (`pwsh`) renders Thai/UTF-8 best.
+ */
+export const TERMINAL_SHELL_OPTIONS = [
+    { value: '', label: 'Default' },
+    { value: 'cmd', label: 'Command Prompt' },
+    { value: 'powershell', label: 'Windows PowerShell' },
+    { value: 'pwsh', label: 'PowerShell 7+' },
+] as const
+export const DEFAULT_TERMINAL_SHELL = ''
 
 /** Longest custom family name accepted from Settings — a font name, not a fallback stack. */
 const TERMINAL_FONT_FAMILY_MAX = 64
@@ -217,6 +231,19 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             const clean = sanitizeTerminalFontFamily(terminalFontFamily.value)
             if (clean !== terminalFontFamily.value) terminalFontFamily.value = clean
+        })
+
+        /**
+         * Shell for NEW terminal tabs (`''` = OS default). Shells already spawned keep their process —
+         * a pty cannot switch shells — so this only affects tabs opened after the change.
+         */
+        const terminalShell = ref<string>(DEFAULT_TERMINAL_SHELL)
+        watchEffect(() => {
+            // The shell presets are Windows-only — on macOS/Linux the setting is hidden and always
+            // stays default (the main process ignores the spec there too).
+            if (!isWindows || !TERMINAL_SHELL_OPTIONS.some(option => option.value === terminalShell.value)) {
+                terminalShell.value = DEFAULT_TERMINAL_SHELL
+            }
         })
 
         /** App zoom and UI font size both ride on `<html> { zoom }`; keep the factors separate so the
@@ -390,6 +417,7 @@ export const useUiStore = defineStore(
         function resetTerminal() {
             terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
             terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
+            terminalShell.value = DEFAULT_TERMINAL_SHELL
         }
 
         watchEffect(() => {
@@ -425,6 +453,7 @@ export const useUiStore = defineStore(
             stepZoom,
             terminalFontSize,
             terminalFontFamily,
+            terminalShell,
             terminalFontPx,
             stepTerminalFontSize,
             codeFontSize,
@@ -471,6 +500,7 @@ export const useUiStore = defineStore(
                 'zoom',
                 'terminalFontSize',
                 'terminalFontFamily',
+                'terminalShell',
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',

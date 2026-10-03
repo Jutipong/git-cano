@@ -281,3 +281,12 @@ export interface TerminalExit {
     exitCode: number
     signal?: number
 }
+
+/** One preset shell reported by `terminal:shells` for Settings → Terminal (the `''` default is implicit). */
+export interface TerminalShellOption {
+    /** Preset id: `'cmd' | 'powershell' | 'pwsh'`. */
+    id: string
+    /** Resolved executable on this machine, or null when it is not installed. */
+    path: string | null
+    available: boolean
+}

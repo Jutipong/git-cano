@@ -19,7 +19,7 @@
         visible: boolean
     }>()
 
-    const emit = defineEmits<{ (e: 'exit'): void }>()
+    const emit = defineEmits<{ (e: 'exit'): void; (e: 'shell', name: string): void }>()
 
     const ui = useUiStore()
 
@@ -114,10 +114,13 @@
         })
 
         try {
-            await window.api.terminalCreate(props.terminalId, props.repoPath, term.cols, term.rows)
+            const shellLabel = await window.api.terminalCreate(props.terminalId, props.repoPath, term.cols, term.rows, ui.terminalShell)
             // The view can unmount while the create call is in flight (tab closed quickly) —
             // touching the disposed terminal after the await would throw.
             if (disposed || !term) return
+            // The shell the pty actually runs (a reused session keeps its original) — the panel labels
+            // the tab with it, so tabs spawned under different settings stay honestly labelled.
+            emit('shell', shellLabel)
             term.focus()
         } catch (error) {
             if (disposed) return

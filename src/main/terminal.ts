@@ -3,7 +3,7 @@ import * as path from 'node:path'
 
 import { log } from './logger'
 
-import type { TerminalData, TerminalExit } from '@shared/types'
+import type { TerminalData, TerminalExit, TerminalShellOption } from '@shared/types'
 import type { IPty } from 'node-pty'
 
 type PtyModule = { spawn: (file: string, args: string[] | string, options: unknown) => IPty }
@@ -13,6 +13,8 @@ interface TerminalSession {
     id: string
     repoPath: string
     pty: IPty
+    /** Basename of the spawned executable, for tab labels (`createTerminal` returns it). */
+    shell: string
     cols: number
     rows: number
 }
@@ -50,6 +52,110 @@ function defaultShell(): string {
     return process.env.SHELL || '/bin/bash'
 }
 
+/**
+ * A shell spec comes from Settings → Terminal: `''` (the OS default), a preset id (`cmd` /
+ * `powershell` / `pwsh`), or an absolute executable path.
+ */
+interface ResolvedShell {
+    file: string
+    args: string[]
+}
+
+/**
+ * The preset ids Settings offers — Windows-only, kept in sync with `TERMINAL_SHELL_OPTIONS` in
+ * renderer stores/ui.ts. macOS/Linux hide the setting and always spawn the OS default.
+ */
+const SHELL_PRESET_IDS = ['cmd', 'powershell', 'pwsh'] as const
+
+function existingPath(candidate: string | null | undefined): string | null {
+    if (!candidate) return null
+    try {
+        return fs.existsSync(candidate) ? candidate : null
+    } catch {
+        return null
+    }
+}
+
+function firstExisting(...candidates: (string | null | undefined)[]): string | null {
+    for (const candidate of candidates) {
+        const found = existingPath(candidate)
+        if (found) return found
+    }
+    return null
+}
+
+/** Scan PATH directories without spawning a process (no `where`/`which` round-trip). */
+function findOnPath(name: string): string | null {
+    for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+        if (!dir) continue
+        const found = existingPath(path.join(dir, name))
+        if (found) return found
+    }
+    return null
+}
+
+function envPath(root: string | undefined, ...segments: string[]): string | null {
+    return root ? path.join(root, ...segments) : null
+}
+
+/**
+ * Best-effort resolution of a preset shell, preferring the well-known install locations over PATH so a
+ * renamed/wrapped executable cannot shadow the real one. Never spawns anything — Settings calls this
+ * for its availability probe and `createTerminal` for the actual spawn.
+ */
+function shellExecutable(spec: string): string | null {
+    // The presets are Windows-only; on macOS/Linux the setting is hidden and ignored.
+    if (process.platform !== 'win32') return null
+    const root = process.env.SystemRoot || process.env.windir
+    switch (spec) {
+        case 'cmd':
+            return firstExisting(process.env.ComSpec, envPath(root, 'System32', 'cmd.exe')) ?? findOnPath('cmd.exe')
+        case 'powershell':
+            return (
+                firstExisting(envPath(root, 'System32', 'WindowsPowerShell', 'v1.0', 'powershell.exe')) ??
+                findOnPath('powershell.exe')
+            )
+        case 'pwsh':
+            return (
+                firstExisting(
+                    envPath(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe'),
+                    envPath(process.env.LOCALAPPDATA, 'Microsoft', 'WindowsApps', 'pwsh.exe')
+                ) ?? findOnPath('pwsh.exe')
+            )
+        default:
+            return null
+    }
+}
+
+/**
+ * Turn the configured spec into something node-pty can spawn. `''` keeps the historical OS default
+ * (`COMSPEC` on Windows); an unavailable preset throws a readable error that TerminalView shows
+ * inline instead of silently falling back to a different shell.
+ */
+function resolveShell(spec: string): ResolvedShell {
+    // Windows-only setting: elsewhere always spawn the OS default, whatever value was persisted.
+    if (process.platform !== 'win32') return { file: defaultShell(), args: [] }
+    const wanted = spec.trim()
+    if (!wanted) return { file: defaultShell(), args: [] }
+    const preset = shellExecutable(wanted)
+    if (preset) return { file: preset, args: [] }
+    // A directly typed path is still accepted (future custom field / hand-edited setting) when it exists.
+    if (!(SHELL_PRESET_IDS as readonly string[]).includes(wanted)) {
+        const direct = existingPath(wanted)
+        if (direct) return { file: direct, args: [] }
+    }
+    throw new Error(`Shell "${wanted}" not found — pick another shell in Settings → Terminal`)
+}
+
+/** Availability of the preset shells on this machine, for Settings → Terminal. Never spawns. */
+export function listTerminalShells(): TerminalShellOption[] {
+    if (process.platform !== 'win32') return []
+    return SHELL_PRESET_IDS.map(id => {
+        const file = shellExecutable(id)
+        return { id, path: file, available: file !== null }
+    })
+}
+
 /** xterm can briefly report 0 while a panel is hidden — never create/resize a pty with invalid dimensions. */
 function clampCols(cols: number): number {
     return Math.max(2, Math.floor(cols) || 80)
@@ -63,16 +169,18 @@ function clampRows(rows: number): number {
  * Starts (or returns) the shell for a terminal id. `rows`/`cols` come from the renderer's xterm so
  * the first paint is already correctly sized. Reusing an existing session is the whole point of the
  * stable-id model: a panel that remounts (the repo tabs rebuild mid-switch) re-sends the same id and
- * gets its live shell + scrollback back instead of spawning a second one.
+ * gets its live shell + scrollback back instead of spawning a second one. Returns the shell label
+ * (basename of the spawned executable) so tab labels reflect the shell that actually runs — a reused
+ * session keeps the shell it was spawned with, even when the setting has changed since.
  */
-export function createTerminal(terminalId: string, repoPath: string, cols: number, rows: number): void {
+export function createTerminal(terminalId: string, repoPath: string, cols: number, rows: number, shell = ''): string {
     if (!terminalId) throw new Error('Terminal id is required')
     if (!repoPath || !fs.existsSync(repoPath)) throw new Error(`Repository path does not exist: ${repoPath}`)
     const existing = sessions.get(terminalId)
     if (existing) {
         if (existing.repoPath === repoPath) {
             resizeTerminal(terminalId, cols, rows)
-            return
+            return existing.shell
         }
         // Reuse is only ever safe for the same repo. The renderer's id counter restarts whenever the
         // renderer reloads while ptys (owned here) keep running, so a stale id can point at another
@@ -86,7 +194,9 @@ export function createTerminal(terminalId: string, repoPath: string, cols: numbe
         disposeTerminal(terminalId)
     }
 
-    const ptyProcess = loadPty().spawn(defaultShell(), [], {
+    const resolved = resolveShell(shell)
+    const shellName = path.basename(resolved.file)
+    const ptyProcess = loadPty().spawn(resolved.file, resolved.args, {
         name: 'xterm-256color',
         cwd: repoPath,
         cols: clampCols(cols),
@@ -95,7 +205,14 @@ export function createTerminal(terminalId: string, repoPath: string, cols: numbe
     } as never)
 
     // Store the same clamped values the pty was created with, so the first resize comparison is honest.
-    const session: TerminalSession = { id: terminalId, repoPath, pty: ptyProcess, cols: clampCols(cols), rows: clampRows(rows) }
+    const session: TerminalSession = {
+        id: terminalId,
+        repoPath,
+        pty: ptyProcess,
+        shell: shellName,
+        cols: clampCols(cols),
+        rows: clampRows(rows),
+    }
     sessions.set(terminalId, session)
 
     ptyProcess.onData(data => onData?.({ terminalId, repoPath, data }))
@@ -106,7 +223,8 @@ export function createTerminal(terminalId: string, repoPath: string, cols: numbe
         onExit?.({ terminalId, repoPath, exitCode, signal })
     })
 
-    log('info', 'terminal', `spawn ${terminalId} in ${path.basename(repoPath)} (${defaultShell()})`)
+    log('info', 'terminal', `spawn ${terminalId} in ${path.basename(repoPath)} (${shellName})`)
+    return shellName
 }
 
 function terminalEnv(): Record<string, string> {
@@ -189,7 +307,10 @@ export function terminalAvailable(): boolean {
     }
 }
 
-/** Default shell label for display (e.g. the panel header). */
-export function terminalShellName(): string {
-    return defaultShell().split(/[\\/]/).pop() || defaultShell()
+/** Shell label for display (tab labels) — basename of the configured executable, OS default when unset. */
+export function terminalShellName(shell = ''): string {
+    // Windows-only setting: elsewhere the label is always the OS default.
+    const wanted = process.platform === 'win32' ? shell.trim() : ''
+    const file = wanted ? (shellExecutable(wanted) ?? existingPath(wanted) ?? wanted) : defaultShell()
+    return path.basename(file)
 }

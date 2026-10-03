@@ -35,6 +35,7 @@ import type {
     UpdateProgress,
     TerminalData,
     TerminalExit,
+    TerminalShellOption,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -52,15 +53,16 @@ const api = {
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
     openExternal: (url: string): Promise<void> => call('app:openExternal', url),
-    terminalCreate: (id: string, dir: string, cols: number, rows: number): Promise<boolean> =>
-        call('terminal:create', id, dir, cols, rows),
+    terminalCreate: (id: string, dir: string, cols: number, rows: number, shell: string): Promise<string> =>
+        call('terminal:create', id, dir, cols, rows, shell),
     terminalWrite: (id: string, data: string): Promise<boolean> => call('terminal:write', id, data),
     terminalResize: (id: string, cols: number, rows: number): Promise<boolean> => call('terminal:resize', id, cols, rows),
     terminalDispose: (id: string): Promise<boolean> => call('terminal:dispose', id),
     /** Boot-time sweep: kills every pty a previous renderer session left behind. */
     terminalDisposeAll: (): Promise<boolean> => call('terminal:disposeAll'),
     terminalAvailable: (): Promise<boolean> => call('terminal:available'),
-    terminalShell: (): Promise<string> => call('terminal:shell'),
+    terminalShell: (shell: string): Promise<string> => call('terminal:shell', shell),
+    terminalShells: (): Promise<TerminalShellOption[]> => call('terminal:shells'),
     onTerminalData: (callback: (payload: TerminalData) => void): (() => void) => {
         const listener = (_event: Electron.IpcRendererEvent, payload: TerminalData) => callback(payload)
         ipcRenderer.on('terminal:data', listener)

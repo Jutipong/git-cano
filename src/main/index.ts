@@ -126,6 +126,7 @@ import {
     disposeAllTerminals,
     disposeTerminal,
     disposeTerminalsForRepo,
+    listTerminalShells,
     onTerminalData,
     onTerminalExit,
     resizeTerminal,
@@ -557,8 +558,9 @@ app.whenReady().then(() => {
     setStatusAccelerators(readAppSettings().statusAccelerators === true)
     handle('app:getStatusAccelerators', () => getStatusAccelerators())
     handle('app:setStatusAccelerators', (_v: boolean) => {
-        const enabled = _v === true
-        setStatusAccelerators(enabled)
+        setStatusAccelerators(_v === true)
+        // Persist the effective value — the git.ts gate forces false outside Windows.
+        const enabled = getStatusAccelerators()
         writeAppSettings({ statusAccelerators: enabled })
         return enabled
     })
@@ -624,14 +626,15 @@ app.whenReady().then(() => {
         closeRepo(target ?? undefined)
         return isOpen()
     })
-    handle('terminal:create', (id: string, dir: string, cols?: number, rows?: number) => {
-        createTerminal(
+    handle('terminal:create', (id: string, dir: string, cols?: number, rows?: number, shell?: string) => {
+        // Returns the spawned shell's label so the renderer's tab labels can be per-shell.
+        return createTerminal(
             String(id),
             String(dir),
             typeof cols === 'number' ? cols : 80,
-            typeof rows === 'number' ? rows : 24
+            typeof rows === 'number' ? rows : 24,
+            typeof shell === 'string' ? shell : ''
         )
-        return true
     })
     handle('terminal:write', (id: string, data: string) => {
         writeTerminal(String(id), String(data))
@@ -653,7 +656,8 @@ app.whenReady().then(() => {
         return true
     })
     handle('terminal:available', () => terminalAvailable())
-    handle('terminal:shell', () => terminalShellName())
+    handle('terminal:shell', (shell?: string) => terminalShellName(typeof shell === 'string' ? shell : ''))
+    handle('terminal:shells', () => listTerminalShells())
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
     handle('app:openExternal', (url: string) => {
         const target = String(url ?? '').trim()

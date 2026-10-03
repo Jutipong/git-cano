@@ -38,8 +38,18 @@
     /** Shell name for the tab labels ("1 zsh") — one cheap IPC per panel, shared by all its tabs. */
     const shellName = ref('shell')
     onMounted(async () => {
-        shellName.value = await window.api.terminalShell().catch(() => 'shell')
+        shellName.value = await window.api.terminalShell(ui.terminalShell).catch(() => 'shell')
     })
+
+    /**
+     * Actual shell of each live pty, reported by its view after create. The panel-level `shellName`
+     * above is only the fallback for the split second before the first create resolves — a tab spawned
+     * under an older setting must keep showing its real shell, not the currently configured one.
+     */
+    const shellNames = ref<Record<string, string>>({})
+    function shellFor(id: string): string {
+        return shellNames.value[id] ?? shellName.value
+    }
 
     /** Header A− / A+ step through FONT_SIZE_OPTIONS (shared with Appearance); disable at either end. */
     const fontStep = computed(() => {
@@ -58,12 +68,12 @@
 
     /** A renamed tab shows just its name; an unnamed one keeps the positional "<n> <shell>" label. */
     function tabLabel(id: string): string {
-        return terminalState.value?.names[id] || `${tabNumber(id)} ${shellName.value}`
+        return terminalState.value?.names[id] || `${tabNumber(id)} ${shellFor(id)}`
     }
 
     /** The tooltip keeps the number and the real shell even when the label is a custom name. */
     function tabTitle(id: string): string {
-        const shell = shellName.value
+        const shell = shellFor(id)
         const name = terminalState.value?.names[id]
         return name ? `Terminal ${tabNumber(id)} — ${shell} — ${name}` : `Terminal ${tabNumber(id)} — ${shell}`
     }
@@ -120,16 +130,19 @@
             id,
             number: tabNumber(id),
             name: terminalState.value?.names[id] ?? '',
-            shell: shellName.value,
+            shell: shellFor(id),
             many: terminalIds.value.length > 1,
         }
     }
 
     // A tab that disappears mid-rename (✕, self-exit) must not leave the input hanging around; the
-    // menu goes with it too so its actions can't target a dead id.
+    // menu goes with it too so its actions can't target a dead id, and the shell label is dropped.
     watch(terminalIds, ids => {
         if (renamingId.value && !ids.includes(renamingId.value)) cancelRename()
         if (tabMenu.value && !ids.includes(tabMenu.value.id)) tabMenu.value = null
+        for (const known of Object.keys(shellNames.value)) {
+            if (!ids.includes(known)) delete shellNames.value[known]
+        }
     })
 
     // ── Drag to reorder (same mechanics as the repo tab bar) ────────────────────────────────────
@@ -278,6 +291,7 @@
                 :repo-path="repoPath"
                 :terminal-id="id"
                 :visible="visible && id === activeId"
+                @shell="name => (shellNames[id] = name)"
                 @exit="emit('exit', id)" />
         </div>
     </section>

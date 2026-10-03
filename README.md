@@ -84,6 +84,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 - ⬜ **Full-height mode** — the panel becomes a card aligned with the sidebar / graph / Changes columns: it covers the sidebar and graph but leaves the **repo tabs** and the **Changes panel** visible, and it stays open while you switch repos (a repo without a terminal collapses it)
 - ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
 - 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; pick a Nerd Font preset (Cascadia Code NF / JetBrains Mono NF / Maple Mono NF) or type any installed family name — it applies as you type, a missing family falls back to the app default, and window zoom still scales it
+- 🪟 **Pick your shell (Windows)** — Settings → Terminal offers Default / Command Prompt / Windows PowerShell / PowerShell 7+ (`pwsh`); **PowerShell 7 renders Thai/UTF-8 best**. Only shells installed on the machine are selectable, and the choice applies to newly opened tabs (running shells keep their process). The section is hidden on macOS.
 - 🔒 Nothing is persisted — closing a shell ends its pty; a workspace switch never kills one (parked shells keep running with their scrollback), and the command palette's **Terminate all terminals** is the escape hatch when you want them all gone
 - 📦 Powered by xterm.js + node-pty — ships ABI-stable N-API prebuilds for Windows & macOS, so the terminal needs **no Python or C++ toolchain**; a missing native binary disables only the terminal
 
@@ -116,7 +117,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 - ⚡ Local data loads first — the repo is usable immediately
 - 🌙 Remote tags load **in the background**, never block you
 - 🔄 Workspace switches reuse open repos (no double `git status`)
-- 🦥 Big repo? Optional `fsmonitor` + untracked cache in Settings → General
+- 🦥 Big repo? Optional `fsmonitor` + untracked cache in Settings → General (Windows only)
 
 ## ⌨️ Shortcuts
 

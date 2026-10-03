@@ -33,7 +33,7 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, sanitizeTerminalFontFamily, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TERMINAL_SHELL_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, sanitizeTerminalFontFamily, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -42,6 +42,7 @@
         formatComboMac,
         isReservedCombo,
         isValidSyncCombo,
+        isWindows,
         type CustomShortcutId,
         type ShortcutPlatform,
     } from '../utils/shortcuts'
@@ -190,6 +191,22 @@
         terminalFontCommitTimer = window.setTimeout(commitTerminalFontFamily, 400)
     }
     onBeforeUnmount(commitTerminalFontFamily)
+
+    /** Preset shell availability (Settings → Terminal), probed in main without spawning. `null` until loaded. */
+    const terminalShellPaths = ref<Record<string, string | null> | null>(null)
+    onMounted(async () => {
+        const list = await window.api.terminalShells().catch(() => [])
+        terminalShellPaths.value = Object.fromEntries(list.map(option => [option.id, option.path]))
+    })
+    /** The OS default is always available; a preset is disabled while the probe says it is not installed. */
+    function shellAvailable(value: string): boolean {
+        if (!value || !terminalShellPaths.value) return true
+        return terminalShellPaths.value[value] !== null
+    }
+    function shellTitle(value: string, label: string): string {
+        if (!value) return 'OS default shell'
+        return terminalShellPaths.value?.[value] ?? `${label} — not detected on this machine`
+    }
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
@@ -783,6 +800,32 @@
                 </template>
 
                 <template v-else-if="tab === 'terminal'">
+                    <div
+                        v-if="isWindows"
+                        class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-terminal
+                                width="13"
+                                height="13" />
+                            Shell
+                        </strong>
+                        <span class="setting-label">Shell for new terminal tabs</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in TERMINAL_SHELL_OPTIONS"
+                                :key="option.value || 'default'"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.terminalShell === option.value }"
+                                :disabled="!shellAvailable(option.value)"
+                                :title="shellTitle(option.value, option.label)"
+                                @click="ui.terminalShell = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">Applies to terminals opened after the change — running shells keep their process. PowerShell 7+ (pwsh) renders Thai/UTF-8 better than cmd. Presets that are not installed on this machine are disabled.</p>
+                    </div>
+
                     <div class="tools-section">
                         <strong class="tools-section-title">
                             <i-lucide-terminal
@@ -1026,7 +1069,9 @@
                         </span>
                     </div>
 
-                    <div class="tools-section">
+                    <div
+                        v-if="isWindows"
+                        class="tools-section">
                         <strong class="tools-section-title">
                             <i-lucide-zap
                                 width="13"
