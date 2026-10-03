@@ -105,6 +105,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 - 🌙 Remote tags load **in the background**, never block you
 - 🔄 Workspace switches reuse open repos (no double `git status`)
 - 🚀 Cached tab switches paint instantly — the "Loading repository…" overlay only appears when a repo actually needs to reload (150ms delay, 400ms minimum once shown)
+- 🌌 Commit graph is virtualized — only the rows on screen are rendered, with taller two-line rows for ref-heavy commits, so huge histories stay smooth
 - 🦥 Big repo? Optional `fsmonitor` + untracked cache in Settings → General (Windows only)
 
 ## ⌨️ Shortcuts

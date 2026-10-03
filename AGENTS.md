@@ -175,6 +175,11 @@ it repos stop opening for anyone with `EDITOR`/`VISUAL` set.
   `utils/virtual.ts`): commits with more than 5 refs get a two-line 48px row
   (chips above the message), everything else is 30px — keep every Y computation
   (nodeY, tints, ticks, spacers, focus scroll) on the prefix, never `index * rowH`.
+  The visible window is re-solved both from the container's live height (scroll +
+  `ResizeObserver`) and from the data itself (a `visibleCommits.length` watcher).
+  An empty commit list must never collapse the window: commits load after the first
+  `ResizeObserver` callback at boot, and zeroing the range there left the graph blank
+  until a window resize.
   The floating to-top button (`.to-top-btn`, styles in `styles.css`) appears after ~20
   rows of scroll in both the graph and the DiffView overlay (mounted in `.diff-main`
   with `right: 30px` to clear the minimap strip — `position: relative` on `.diff-main`

@@ -158,6 +158,12 @@
     const rowPrefix = computed(() => buildPrefix(rowHeights.value))
     const totalHeight = computed(() => rowPrefix.value[rowPrefix.value.length - 1] ?? 0)
     watch(totalHeight, () => nextTick(updateSbw))
+    // Data-driven re-solve: the log can arrive after the first ResizeObserver callback (repo still
+    // loading, search filter, solo, load-more), and a container resize would not fire again for it.
+    watch(
+        () => visibleCommits.value.length,
+        () => nextTick(updateVisibleRange)
+    )
     const padTop = computed(() => rowPrefix.value[visibleRange.value[0]] ?? 0)
     const padBottom = computed(() => totalHeight.value - (rowPrefix.value[visibleRange.value[1]] ?? totalHeight.value))
     function rowTop(index: number): number {
@@ -204,16 +210,15 @@
      * is resized without a scroll (window resize, panel width drag, and the app shell being hidden
      * during a workspace switch), or the list stays cut at the old height — but never while it has no
      * box (hidden shell), where `clientHeight` is 0 and the window would collapse.
+     * An empty list must not collapse the window either: commits load after the first
+     * ResizeObserver callback at boot, and the length watcher above re-solves it from there.
      */
     function updateVisibleRange() {
         const el = scrollEl.value
         if (!el || el.clientHeight === 0) return
         const prefix = rowPrefix.value
         const n = visibleCommits.value.length
-        if (!prefix.length || n === 0) {
-            visibleRange.value = [0, 0]
-            return
-        }
+        if (n === 0) return
         const atTop = indexAtOffset(prefix, el.scrollTop)
         const atBottom = indexAtOffset(prefix, el.scrollTop + el.clientHeight)
         visibleRange.value = [Math.max(0, atTop - 15), Math.min(n, atBottom + 1 + 15)]
