@@ -5197,12 +5197,20 @@ body {
     }
 }
 
-.splash-enter-active,
-.splash-leave-active {
-    transition: opacity 0.45s ease;
+/* The splash covers the screen instantly when it (re)appears. The boot splash is the first
+   paint and never runs an enter transition anyway; a workspace switch must be covered before
+   `switchWorkspace` empties the tabs, or a fast switch leaves the teardown visible through a
+   half-faded veil. Only the leave keeps its fade. */
+.splash-enter-active {
+    transition: none;
 }
 
-.splash-enter-from,
+.splash-leave-active {
+    transition: opacity 0.45s ease;
+    /* the app is ready underneath — let clicks through while it fades out */
+    pointer-events: none;
+}
+
 .splash-leave-to {
     opacity: 0;
 }

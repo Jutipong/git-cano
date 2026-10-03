@@ -227,6 +227,15 @@ it repos stop opening for anyone with `EDITOR`/`VISUAL` set.
   Anything inside that subtree must read `repo` defensively (`repo?.files ?? []`, `Sidebar` is
   `v-if="repo"`, `FilePanel.loadAllFiles()` bails when there is no active repo) — keep it that way
   rather than tightening the guard back to `v-if="repo"`.
+- **Workspace-switch splash**: the boot splash doubles as the switch cover (`splashVisible` includes
+  `switchingWorkspace`). Its enter must stay instant — `.splash-enter-active { transition: none }`
+  with no `.splash-enter-from` opacity: the boot splash is the first paint and never animates in,
+  so the 450ms fade-in only ever ran on switches, where a fast switch interrupts it and exposes the
+  teardown (tabs wiped → empty state) through a half-faded veil. `switchWorkspace` holds the flag
+  for at least `SWITCH_SPLASH_MIN_MS` (400ms) so a quick switch reads as a cover, not a one-frame
+  flash; `.splash-leave-active` keeps the 450ms fade plus `pointer-events: none` (the app is ready
+  underneath), and the empty state is hidden while switching (`v-if="!repo && !switchingWorkspace"`).
+  Do not re-add the enter fade or drop the minimum.
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
   `12px` radius; rows/buttons use pill (`999px`) shapes — except the `terminal` theme, which

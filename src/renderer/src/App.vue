@@ -694,7 +694,7 @@
             </div>
         </template>
         <div
-            v-if="!repo"
+            v-if="!repo && !switchingWorkspace"
             class="app-empty">
             <span class="app-empty-icon">
                 <img
