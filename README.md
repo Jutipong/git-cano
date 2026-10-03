@@ -197,4 +197,5 @@ src/
 - 📦 Releases ship as macOS `.dmg` (arm64) → `release/` via `pnpm dist:mac`, and Windows Setup `git-cano-<version>-setup.exe` via `pnpm dist:win` (NSIS, asar + maximum compression).
 - 🍒 Cherry-pick and branch merge check staged, unstaged, and untracked changes first; if any exist, they stop and ask you to stash or commit them manually before retrying. Cherry-pick and drag-to-branch flows use shared safety checks.
 - 🔐 Push / pull / fetch / clone keep working even when launched from VS Code or a terminal that exports `GIT_CONFIG_*` / `GIT_SSH_COMMAND` — the app injects its own credentials without tripping simple-git's environment guard.
+- 🏷️ A tag and a branch can share a name — tags in the sidebar keep their real name (`backup`, not `tags/backup`), so delete / push / remote-delete always hit the right ref, and branch pull/push refs stay unambiguous.
 - 🤖 Building with AI? Read [AGENTS.md](AGENTS.md) first!

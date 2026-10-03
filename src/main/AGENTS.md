@@ -23,6 +23,19 @@ repository". `GUARDED_AMBIENT_ENV_KEYS` strips them before every git call; do no
 full guarded list lives in `@simple-git/argv-parser`). Keep that strip inside `baseEnv()` — without
 it repos stop opening for anyone with `EDITOR`/`VISUAL` set.
 
+## Ref names (ambiguous short names)
+
+When a branch and a tag share a name (e.g. `backup`), Git's short ref names get ambiguous, and that leaks
+into every command fed a name from the UI:
+
+- `%(refname:short)` stops being the bare name — the tag comes back as `tags/backup` (branch `heads/backup`).
+  `listTags()` must use `%(refname:lstrip=2)` so the name always strips exactly `refs/tags/` and round-trips
+  through `git tag -d` / `git push refs/tags/<name>`. Never feed a `refname:short` result back to Git as a name.
+- Qualify branch refs with `refs/heads/<name>` in `rev-parse`, `merge-base`, and push refspecs — a bare
+  `backup` warns `refname 'backup' is ambiguous`, and `git push origin backup` fails with "matches more than one".
+- Do NOT qualify `@{upstream}`: `refs/heads/<name>@{upstream}` is a fatal "no such branch". `@{upstream}`
+  resolves through `branch.<name>.*` config and only accepts the bare branch name (it is not ambiguous on its own).
+
 ## AI commit messages
 
 All AI logic lives in `src/main/opencode.ts` (renderer never calls model APIs directly;

@@ -1406,7 +1406,7 @@ export async function push(force = false, dir?: string): Promise<string> {
     const branch = status.current
     const tracking = status.tracking
     if (tracking) await authedPush(force ? ['--force-with-lease'] : [])
-    else await authedPush(['--set-upstream', 'origin', branch as string, ...(force ? ['--force-with-lease'] : [])])
+    else await authedPush(['--set-upstream', 'origin', `refs/heads/${branch as string}`, ...(force ? ['--force-with-lease'] : [])])
     return force ? 'Force-pushed successfully' : 'Pushed successfully'
 }
 
@@ -1429,7 +1429,7 @@ export async function pushBranch(name: string, force = false): Promise<string> {
         await withAuthEnv(git => git.push([remote, `refs/heads/${name}:refs/heads/${remoteBranch}`, ...flags]))
         return force ? `${name} force-pushed` : `${name} pushed`
     }
-    await withAuthEnv(git => git.push(['--set-upstream', 'origin', name, ...flags]))
+    await withAuthEnv(git => git.push(['--set-upstream', 'origin', `refs/heads/${name}`, ...flags]))
     return force ? `${name} force-pushed` : `${name} pushed`
 }
 
@@ -1447,9 +1447,9 @@ export async function pullBranch(name: string): Promise<string> {
     const slash = upstream.indexOf('/')
     if (slash <= 0) throw new Error(`Invalid upstream for "${name}": ${upstream}`)
     await withAuthEnv(git => git.fetch([upstream.slice(0, slash), upstream.slice(slash + 1)]))
-    const oldTip = (await g.raw(['rev-parse', name])).trim()
+    const oldTip = (await g.raw(['rev-parse', `refs/heads/${name}`])).trim()
     const fetched = (await g.raw(['rev-parse', 'FETCH_HEAD'])).trim()
-    const base = (await g.raw(['merge-base', name, 'FETCH_HEAD'])).trim()
+    const base = (await g.raw(['merge-base', `refs/heads/${name}`, 'FETCH_HEAD'])).trim()
     if (fetched === oldTip) return `${name} already up to date`
     if (base === oldTip) {
         await g.raw(['update-ref', `refs/heads/${name}`, 'FETCH_HEAD', oldTip])
@@ -2015,7 +2015,10 @@ export async function listTags(): Promise<TagRef[]> {
         'refs/tags',
         '--sort=refname', // tiebreak for equal dates
         '--sort=-creatordate', // primary: newest → oldest by creation date
-        `--format=%(refname:short)${SEP}%(*objectname)${SEP}%(objectname)`,
+        // `%(refname:short)` disambiguates against same-named branches (tag `backup` →
+        // `tags/backup`), and that name then fails `git tag -d`. `lstrip=2` always strips
+        // exactly `refs/tags/`, so the name round-trips through delete/push unchanged.
+        `--format=%(refname:lstrip=2)${SEP}%(*objectname)${SEP}%(objectname)`,
     ])
     return text
         .split('\n')
