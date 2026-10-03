@@ -10,7 +10,6 @@
     import ILucideSearch from '~icons/lucide/search'
     import ILucideSettings from '~icons/lucide/settings'
     import ILucideTag from '~icons/lucide/tag'
-    import ILucideTerminal from '~icons/lucide/terminal'
 
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
@@ -46,7 +45,6 @@
         (e: 'revert', commit: CommitNode): void
         (e: 'reset-soft', commit: CommitNode): void
         (e: 'reset-hard', commit: CommitNode): void
-        (e: 'toggle-terminal'): void
     }>()
 
     const FIRST_LANE_COLOR = '#F05272'
@@ -203,9 +201,9 @@
     const showToTop = ref(false)
     /**
      * Re-solve the rendered window from the container's live height. Must also run when the container
-     * is resized without a scroll (terminal splitter drag, terminal expand/collapse, and the app shell
-     * being hidden during a workspace switch), or the list stays cut at the old height — but never
-     * while it has no box (hidden shell), where `clientHeight` is 0 and the window would collapse.
+     * is resized without a scroll (window resize, panel width drag, and the app shell being hidden
+     * during a workspace switch), or the list stays cut at the old height — but never while it has no
+     * box (hidden shell), where `clientHeight` is 0 and the window would collapse.
      */
     function updateVisibleRange() {
         const el = scrollEl.value
@@ -459,12 +457,6 @@
         return formatShortDate(iso)
     }
     const commitDatePattern = computed(() => ui.commitDateFormat.trim() || 'dd/MM/yyyy HH:mm')
-
-    /** The toolbar button spawns the first shell, then just shows/hides — only ✕ ever kills. */
-    const terminalToggleTitle = computed(() => {
-        if (repoStore.terminalVisible) return 'Hide terminal'
-        return repoStore.terminalSpawned ? 'Show terminal' : 'Open terminal'
-    })
 
     const AUTHOR_MIN_W = 88
     const AUTHOR_MAX_W = 220
@@ -775,15 +767,6 @@
                     title="Commit history settings"
                     @click="showSettings = true">
                     <i-lucide-settings
-                        width="14"
-                        height="14" />
-                </button>
-                <button
-                    class="icon-btn graph-terminal-btn"
-                    :class="{ active: repoStore.terminalVisible }"
-                    :title="terminalToggleTitle"
-                    @click="emit('toggle-terminal')">
-                    <i-lucide-terminal
                         width="14"
                         height="14" />
                 </button>

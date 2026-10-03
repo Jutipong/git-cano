@@ -74,20 +74,6 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | 📦   | Stashes                                                |
 | 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes |
 
-### 💻 Terminal
-
-> 🖥️ A real shell, right where you review history.
-
-- 🪟 Docked terminal panel under the commit graph — toggle it from the toolbar button next to the settings gear, the command palette (`Terminal`), or <kbd>Ctrl</kbd>+<kbd>`</kbd>
-- 🗂️ **Up to 4 shells per repo** — each tab keeps its own shell, scrollback and number (a tab numbered 3 stays "3" wherever you drag it); `+` adds one, drag a tab to reorder it, double-click (or right-click) to rename it, and a tab's ✕ closes just that shell (with confirmation); the panel ✕ closes them all
-- 🌱 Opens **only when you ask** — repos you never toggle stay at zero cost (no process, no panel). The toggle only shows/hides; it never kills a running shell
-- ⬜ **Full-height mode** — the panel becomes a card aligned with the sidebar / graph / Changes columns: it covers the sidebar and graph but leaves the **repo tabs** and the **Changes panel** visible, and it stays open while you switch repos (a repo without a terminal collapses it)
-- ↔️ Drag the top edge to resize the docked panel — height is memory-only and resets every launch
-- 🔤 **Its own font** — family and size live in Settings → Terminal (or the header's A− / A+), independent of the app font size; pick a Nerd Font preset (Cascadia Code NF / JetBrains Mono NF / Maple Mono NF) or type any installed family name — it applies as you type, a missing family falls back to the app default, and window zoom still scales it
-- 🪟 **Pick your shell (Windows)** — Settings → Terminal offers Default / Command Prompt / Windows PowerShell / PowerShell 7+ (`pwsh`); **PowerShell 7 renders Thai/UTF-8 best**. Only shells installed on the machine are selectable, and the choice applies to newly opened tabs (running shells keep their process). The section is hidden on macOS.
-- 🔒 Nothing is persisted — closing a shell ends its pty; a workspace switch never kills one (parked shells keep running with their scrollback), and the command palette's **Terminate all terminals** is the escape hatch when you want them all gone
-- 📦 Powered by xterm.js + node-pty — ships ABI-stable N-API prebuilds for Windows & macOS, so the terminal needs **no Python or C++ toolchain**; a missing native binary disables only the terminal
-
 ### 🤖 AI Commit Messages _(optional)_
 
 > 🪄 Let AI write the boring part!
@@ -135,7 +121,6 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | 📥 Clone repo            | `Ctrl+N`              | `Ctrl+N`                 |
 | ❎ Close tab             | `Ctrl+W`              | `Ctrl+W`                 |
 | 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
-| 💻 Toggle terminal       | `` Ctrl+` ``          | `` Ctrl+` ``             |
 | ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
 | ✨ Command palette       | `Ctrl+P` / `Shift×2`  | `Ctrl+P` / `Shift×2`     |
 | ⌨️ Show shortcuts        | `?`                   | `?`                      |
@@ -143,7 +128,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | ❌ Close / cancel        | `Esc`                 | `Esc`                    |
 | 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0`    | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
 
-> ✏️ Fetch, Pull, Push, Open repo, Clone repo, Search commits, Toggle terminal, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
+> ✏️ Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
 
 </details>
 
@@ -162,13 +147,11 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 pnpm install
 
 # 2️⃣ Allow build scripts (first time only)
-pnpm approve-builds electron esbuild node-pty
+pnpm approve-builds electron esbuild
 
 # 3️⃣ Run it! (hot reload 🔥)
 pnpm dev
 ```
-
-> 💡 node-pty ships prebuilt N-API binaries for Windows & macOS, so the terminal works without Python or Visual Studio Build Tools — `pnpm install` prepares it automatically.
 
 > 🎉 That's it — pick a repository and start exploring!
 
@@ -181,7 +164,6 @@ pnpm dev
 | `pnpm typecheck` | 🔍 Type checking (vue-tsc + tsc)        |
 | `pnpm lint`      | 🧹 oxlint + vue-tsc                     |
 | `pnpm format`    | 💅 Format with oxfmt                    |
-| `pnpm rebuild:native` | 🧩 Prepare node-pty's native binary (uses the prebuilt N-API binary) |
 | `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`            |
 | `pnpm dist:win`  | 🪟 Windows Setup `.exe` → `release/` |
 
@@ -192,7 +174,6 @@ src/
 ├── 🖥️ main/              # Electron main process + ALL git operations
 │   ├── index.ts       #   Window + IPC handlers
 │   ├── git.ts         #   Git logic (simple-git)
-│   ├── terminal.ts    #   Embedded shells (node-pty)
 │   └── opencode.ts    #   AI commit-message generation
 ├── 🌉 preload/           # Secure window.api bridge
 ├── 📦 shared/            # Shared types + graph helpers

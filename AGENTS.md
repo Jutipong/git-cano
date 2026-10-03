@@ -13,19 +13,13 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm lint` — oxlint + vue-tsc; run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
 - `pnpm build` — production build (`out/`)
-- `pnpm rebuild:native` — prepare node-pty's native binary for Electron (runs automatically on
-  postinstall and before every dist; a failure only disables the terminal). node-pty 1.1 ships
-  ABI-stable N-API prebuilds, so the current platform's `prebuilds/` binary is used as-is and no
-  Python/MSVC toolchain is needed; `@electron/rebuild` is only the fallback when no prebuild exists
 - `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
 - Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
   icons `build/icons/cano.png` + per-OS `cano.icns` / `cano.ico`, `asar: true` with maximum
   compression. `files` ships `out/**/*` + `package.json` only (excludes `out/tsbuild`,
   `*.map`, `*.md`, `LICENSE*`). New platform assets must follow the same png/icns/ico triple.
-  `asarUnpack` keeps `node_modules/node-pty/**` outside the archive (native binaries).
-  `npmRebuild: false` stops electron-builder from running its own `@electron/rebuild` (which
-  compiles from source and needs Python/MSVC) — node-pty ships ABI-stable N-API prebuilds that are
-  packaged as-is. Do not remove it unless the prebuild strategy changes.
+  There are no native modules left, so nothing needs `asarUnpack`; `npmRebuild: false` stays as a
+  cheap guard so electron-builder never reaches for a native rebuild toolchain on `pnpm dist:*`.
 
 ## Architecture
 
@@ -37,7 +31,6 @@ add a new IPC handler in `main/index.ts`, expose it in `preload/index.ts`, and t
 Key files:
 
 - `src/main/git.ts` — all git operations (one exported function per operation)
-- `src/main/terminal.ts` — embedded per-repo shells (node-pty); see "Terminal panel" below
 - `src/main/opencode.ts` — AI commit-message generation (see "AI commit messages" below)
 - `src/preload/index.ts` — the `window.api` surface (keep names verb-first)
 - `src/renderer/src/stores/repo.ts` — repo tabs, selected commit/file, commit files
@@ -55,21 +48,23 @@ Key files:
 adds an environment guard that rejects any injected `git_*` key not listed in
 `SAFE_UNSAFE_OPTIONS.allowEnvironment` ("blocked by the environment guard") — the older `unsafe.*` flags
 cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND`,
-`GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_0` / `GIT_CONFIG_VALUE_0`, `GIT_EDITOR`. Both `createGit()` and
+`GIT_CONFIG_COUNT` / `GIT_CONFIG_KEY_0` / `GIT_CONFIG_VALUE_0`, `GIT_EDITOR`,
+`GIT_SEQUENCE_EDITOR` (the interactive-rebase helper). Both `createGit()` and
 `plainGit()` share `SAFE_UNSAFE_OPTIONS`; when adding a new injected env var, add it there too.
 
 The guard also blocks guarded **ambient** vars (EDITOR, VISUAL, PAGER, PREFIX, GIT_CONFIG*…), and
 `baseEnv()` injects the whole process env — so any of them present on the user's machine makes
 `git status` throw "blocked by the environment guard" and `openRepo()` report "not a git
 repository". `GUARDED_AMBIENT_ENV_KEYS` strips them before every git call; do not remove it (the
-full guarded list lives in `@simple-git/argv-parser`).
+full guarded list lives in `@simple-git/argv-parser`). Keep that strip inside `baseEnv()` — without
+it repos stop opening for anyone with `EDITOR`/`VISUAL` set.
 
 ## Repository loading and performance
 
 - `repo.ts` loads local repository data (status, history, branches, and remote existence) before marking the repo as loaded. Local tags + remote tag status are opt-in (`refresh(..., withTags)` via `refreshWithTags()`): tab switches always include them, as do tag mutations and fetch/pull — everything else skips them so routine refreshes spawn no tag commands.
 - Remote tag status is network-bound and must stay outside the awaited refresh batch. `loadRemoteTags()` runs it in the background, keeps a loading state for the TAGS section, and ignores results from an inactive repo.
 - `listRemoteTags()` uses a separate `plainGit()` instance so the background network request does not block local Git commands. Do not add a cache or put this request back into the main refresh `Promise.all()` without a deliberate product decision.
-- Workspace switches close only repositories that are not present in the destination workspace **and own no terminal** (a repo that still has a shell stays registered so its pty and scrollback survive — see "Terminal panel"), open target repositories concurrently, and pass the already-computed active-repo status into `selectTab()` to avoid a duplicate `git status`.
+- Workspace switches close only repositories that are not present in the destination workspace, open target repositories concurrently, and pass the already-computed active-repo status into `selectTab()` to avoid a duplicate `git status`.
 - Keep the local loading indicators honest: local tags and remote tag status have separate loading states, and local tags should remain visible while remote status is loading.
 
 ## UI model
@@ -224,6 +219,14 @@ full guarded list lives in `@simple-git/argv-parser`).
   After confirmation, execute the merge, refresh, and keep the existing conflict/Undo handling.
 - Panel sizes live in the ui store and persist to localStorage; new resizable regions should
   follow the same pattern (`ref` + `persist.pick` + mousedown drag handler).
+- **The app shell must stay mounted while a workspace switch is in flight**: `switchWorkspace`
+  empties `tabs` before it reopens the destination, so `repo` goes null mid-switch. `App.vue`
+  therefore renders the shell on `repo || switchingWorkspace` and hides it with `v-show="!!repo"`
+  — a plain `v-if="repo"` unmounts the subtree, which throws away the Changes panel's
+  commit-message draft and the graph's scroll position every time the user switches workspace.
+  Anything inside that subtree must read `repo` defensively (`repo?.files ?? []`, `Sidebar` is
+  `v-if="repo"`, `FilePanel.loadAllFiles()` bails when there is no active repo) — keep it that way
+  rather than tightening the guard back to `v-if="repo"`.
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
   `12px` radius; rows/buttons use pill (`999px`) shapes — except the `terminal` theme, which
@@ -235,12 +238,10 @@ full guarded list lives in `@simple-git/argv-parser`).
   warm-gray base — keep both legible on low-clarity Windows displays.
 - **Settings (`ToolsModal.vue`) has no Zoom control** — zoom lives only in the `App.vue`
   global handler (`⌘/Ctrl + − 0`, Ctrl/⌘+wheel). Do not re-add Zoom chips.
-- **Windows-only settings hide on macOS/Linux**: the terminal Shell presets (see "Terminal panel")
-  and General → Performance status accelerators render only when `isWindows`
-  (`utils/shortcuts.ts`), and main forces both off outside win32 (`resolveShell()` in
-  `main/terminal.ts`, `setStatusAccelerators()` in `main/git.ts`). A persisted `true`/preset value
-  must never take effect there — gate new Windows-only toggles the same way instead of leaving
-  them visible-but-inert.
+- **Windows-only settings hide on macOS/Linux**: General → Performance status accelerators render
+  only when `isWindows` (`utils/shortcuts.ts`), and main forces them off outside win32
+  (`setStatusAccelerators()` in `main/git.ts`). A persisted `true` must never take effect there —
+  gate new Windows-only toggles the same way instead of leaving them visible-but-inert.
 - **Close (✕) buttons** always use the `.icon-btn danger commit-close-btn` style (red ring +
   tinted background, hover intensifies — see `.commit-close-btn` in `styles.css`). Reuse that
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.
@@ -248,7 +249,7 @@ full guarded list lives in `@simple-git/argv-parser`).
   concentric) — don't swap it back for a plain `<i-lucide-x>` icon. Its `.close-x-svg` is
   `position: absolute; inset: 0`, so any new parent must be a positioned box (`position: relative`,
   as `.commit-close-btn` is) or the invisible ring stretches over the whole panel and swallows every
-  click. Tiny variants (e.g. the terminal tab's ✕) additionally pin it with
+  click. A tiny variant must keep that positioned parent (`.commit-close-btn`) or pin the icon with
   `.close-x-svg { position: static; width/height: N }`.
 - **Modal text inputs** take focus programmatically: `v-if` modals (`TagCreateModal.vue`,
   `StashCreateModal.vue`, `CloneRepoModal.vue`) use `useTemplateRef` + `nextTick(() => el?.focus())`
@@ -273,14 +274,15 @@ full guarded list lives in `@simple-git/argv-parser`).
   `.rebase-modal`/`.modal-overlay` — only the create forms use the confirm family. Their text
   inputs/selects still speak the same pill language (`7px 12px`, `var(--radius-pill)`), header
   icons are `17px`, and the readonly column checks match the `18px` checkbox boxes. Its tab strip is
-  a single non-wrapping row of equal-width pills (`flex: 1 1 0`, 92px each at 620px) — a seventh
-  tab needs a measured width check, not a guess.
+  a single non-wrapping row of equal-width pills (`flex: 1 1 0`, ~112px each at 620px with the
+  current five tabs — Appearance / General / Remotes / AI / Shortcuts), so a sixth tab needs a
+  measured width check, not a guess.
 
 ## Keyboard shortcuts
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Clone repo, Close tab, Search commits, Toggle terminal, Open settings, Command palette, Show shortcuts — with
+  Clone repo, Close tab, Search commits, Open settings, Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
   `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
@@ -293,7 +295,7 @@ full guarded list lives in `@simple-git/argv-parser`).
   arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips,
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
-  Fetch, Pull, Push, Open repo, Clone repo, Search commits, Toggle terminal, Open settings, Command
+  Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
   palette. Click Change… under macOS or Windows then press keys (`Esc` cancels, capture listener
   while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab) or other customized ids
@@ -311,8 +313,7 @@ full guarded list lives in `@simple-git/argv-parser`).
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
-  history; diff search when a diff is open), Terminal toggle ``Ctrl+` `` (customizable, see
-  "Terminal panel"), Shortcuts modal `?` (outside
+  history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
   dialogs `Enter`/`Esc`, app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel,
   `Esc` to close diff/deselect.
@@ -517,160 +518,6 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 - Modal (`SquashModal.vue`, styles in `modern-ui.css` `.squash-*`): lists the exact range
   newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
   with the FilePanel-style soft length counter, and blocks on a dirty worktree.
-
-## Terminal panel
-
-- **Shells are opt-in, per repo, up to `MAX_TERMINALS_PER_REPO` (4)**: `repoStore.terminals` maps
-  repo path → `{ ids, activeId, hidden, names, numbers }`. The panel is mounted only for repos with at least one
-  id (`terminalPaths` filters on `terminalExists`); the header tab strip adds more (`openTerminalTab`,
-  `+` disables at the cap) and a tab's number is assigned at creation (`RepoTerminals.numbers[id]`,
-  the smallest free number at that moment) and **never** re-derived from its position — dragging a
-  tab to another slot must not relabel it; only the order follows `ids`. `terminalNumber(path, id)`
-  is the single reader (tab label, tooltip, menu title, close confirm). Tab labels are
-  `<n> <shell name>` (one `terminal:shell` IPC per panel). The pills are deliberately mouse-sized
-  **and** content-sized (`modern-ui.css` `.terminal-tab`: `flex: 0 1 auto`, `min-width: 88px`,
-  `max-width: 240px`) — the 88px floor is the click target, the pill then grows with the label so a
-  renamed tab or a long shell name stays readable; never drop the floor back to a text-sized pill,
-  and keep a `cursor: pointer` on the label / ✕ / `+`. `.terminal-tab-label` stretches to fill the
-  pill so the click handler covers the whole tab. The `+` sits directly after the last tab because
-  the reorder strip (`.terminal-tab-track`) hugs its tabs (`flex: 0 0 auto`, no shrink) — growing
-  the strip again pushes `+` to the far edge of the header. Because the floor is hard, a row that
-  cannot fit its tabs **scrolls sideways** (`.terminal-tabs` is `overflow-x: auto` with a hidden
-  scrollbar, like the repo tab bar) instead of clipping `+`. Reordering animates through the same
-  `.tab-move` FLIP class as the repo tabs, which is why `transform` has to stay in `.terminal-tab`'s
-  own `transition` list — `.tab-move` is defined earlier in `modern-ui.css` and loses the cascade to
-  `.terminal-tab` (equal specificity, later rule wins), so dropping `transform` there makes the move
-  jump instead of slide.
-- **Terminal ids are the pty key and live in the store**: `main/terminal.ts` holds
-  `Map<terminalId, session>` and every payload (`TerminalData` / `TerminalExit`) plus
-  `terminalCreate/Write/Resize/Dispose` carries the id. Ids come from a monotonic counter in the
-  store and are **never generated inside a component** — the panel remounts transiently while
-  `tabs` rebuilds, and a fresh id there would spawn a second shell instead of finding the live one
-  (`createTerminal` reuses by id and resizes). Never key a session by repo path again: one repo can
-  hold four shells.
-- **An id only ever belongs to one repo**: the renderer's counter restarts whenever the renderer
-  reloads while the ptys (owned by main) keep running, so `createTerminal` must **not** reuse a
-  session whose `repoPath` differs — it warns, disposes the stale session and spawns a fresh shell
-  for the repo that asked, otherwise a repo silently attaches to another repo's terminal. For the
-  same reason a booting renderer calls `terminal:disposeAll` from `init()`: its terminal state is
-  memory-only, so every live pty at that moment is an invisible orphan from a previous renderer
-  session (and the id collision it would cause). Never drop that sweep without replacing it with an
-  equivalent orphan/id-collision guard.
-- **The toolbar toggle shows/hides; only ✕ kills**: the GraphView `graph-terminal-btn`
-  (`emit('toggle-terminal')`), the command palette (`Terminal` item → App.vue `toggleTerminal()`,
-  distinct from `Open in: Terminal` which opens the external OS terminal) and the customizable ``Ctrl+` ``
-  shortcut all go through `toggleTerminal()` → `toggleTerminalPanel(path)`: no shells → spawn the
-  first one, otherwise show/hide. Hiding keeps every pty running (and `v-show` keeps the panel
-  mounted so scrollback survives); it never disposes anything. Button titles are three-state
-  (`Open terminal` / `Show terminal` / `Hide terminal`, see `terminalSpawned` / `terminalVisible`).
-- **Kill paths, in order of confirmation**: a tab's ✕ → `confirmCloseTerminalTab()` (always
-  confirms) → `closeTerminalTab()`, which hands focus to the tab that took its place (else the one
-  before it); the panel's ✕ → `confirmCloseTerminal()` (count-aware title) →
-  `closeRepoTerminals()` kills all of the repo's shells at once; a shell ending on its own (exit /
-  Ctrl+D / crash) → `handleTerminalExit()` → `closeTerminalTab()` with **no** confirm or toast,
-  since the process is already gone. Closing the last shell deletes the repo's entry, which
-  unmounts the panel and clears `terminalExpanded`. Repo tab close uses `forgetRepoTerminals()`
-  (state only — `repo:close` already killed every pty via `disposeTerminalsForRepo`).
-- **State is memory-only, never persisted**: `terminals`, `terminalExpanded` and `terminalHeight`
-  (default 260) reset on every launch. `terminalHeight` is a plain store ref (not in `ui.ts`/
-  localStorage) — do not persist it. That includes a tab's custom **name** (`names[id]`).
-- **Shell tabs are renamable and reorderable** (`RepoTerminals.names`, memory-only like the rest):
-  right-click a tab → `TerminalTabContextMenu.vue` (per-feature SFC, same contract as the other
-  menus: exported `*MenuState`, one `menu` prop, a typed emit per action) offers Rename… / Reset
-  name / Close terminal / Close all; rename edits the pill **inline** (right-click → Rename… or
-  double-click the label — `Enter` commits, `Esc`/blur cancels, `:draggable="!renamingId"` keeps a
-  drag from stealing the input). Dragging a tab reorders it through `reorderTerminals(path, from, to)`
-  (bounds-guarded splice; `activeId` is an id, so the visible shell never changes) with the repo tab
-  bar's live `dragover` mechanics and the shared `.tab-move` FLIP — the reorderable strip is its own
-  `TransitionGroup` (`.terminal-tab-track`) so `+` stays outside it. A named tab shows **just its
-  name**; `tabTitle()` keeps the number and the live shell in the tooltip, and unnamed tabs keep the
-  positional `<n> <shell>` label (so their numbers shift after a drag — that is intended).
-- **pty lifetime is owned by the main process** (`main/terminal.ts`): `repo:close` disposes every
-  session of that repo, `before-quit`/`quit` disposes all. Unmounting a panel or a view deliberately
-  does NOT kill a pty — unmounting also happens transiently while `tabs` is rebuilt. **A workspace
-  switch kills nothing**: `switchWorkspace` only recycles repos that own no shell, so a repo that
-  still has one stays registered in the main process (git instance + watcher) with its panel mounted
-  and its scrollback intact — such a repo is *parked* (no tab points at it). A parked repo whose last
-  shell dies (✕, panel ✕, self-exit, or the terminate-all below) is closed via `closeParkedRepo()` from the
-  terminal-kill paths, so main's registry never grows; a switch alone would never collect it because it
-  only walks the open tabs. The escape hatch for parked shells is the command palette's
-  `Terminate all terminals` → `closeAllTerminals()` (gated on `terminalCount`, confirmed by
-  `confirmTerminateAllTerminals`, which names the invisible ones via `terminalParkedCount`) — never call
-  `closeAllTerminals()` from a switch again.
-- **One panel per repo, one view per shell**: `v-for` over `terminalPaths` keyed by path (never a
-  single shared instance with a changing `repo-path`, or Vue reuses the component and two repos end
-  up sharing one xterm/pty), and inside it `v-for` over the repo's ids rendering `TerminalView.vue`
-  (one xterm + one pty each, siblings `v-show`-hidden so every scrollback survives). Clicking a tab
-  calls `activate()`, which shows it and hands it the keyboard via the view's exposed `focus()`.
-  `resizePty()` skips zero-size (hidden) hosts, so the `visible` watcher refits on the way back in.
-  `terminalPaths` comes from the store's `terminals` map, **not** from `tabs` — a repo parked in
-  another workspace keeps its panel mounted (hidden by `isTerminalVisible`, which stays tied to the
-  active tab). Do not re-filter it by `tabs`; that unmounts the panel and throws the scrollback away.
-- **The app shell must stay mounted while any shell is alive**: `switchWorkspace` empties `tabs`
-  before it reopens the destination, so `repo` (and therefore `v-if="repo"`) goes null mid-switch.
-  `App.vue` renders the shell on `repo || terminalCount > 0` and hides it with `v-show="!!repo"`
-  instead — a `v-if` there unmounts every `TerminalPanel` and disposes their xterms, which loses the
-  scrollback of every parked shell while the pty survives (the shell *looks* brand new when you come
-  back). Anything inside that subtree that reads `repo` must be nullable (`repo?.files ?? []`,
-  `Sidebar` is `v-if="repo"`, `FilePanel.loadAllFiles()` bails when there is no active repo) — keep it
-  that way rather than tightening the guard back to `v-if="repo"`.
-- **The shell is configurable per app, not per tab — Windows only**: `ui.terminalShell`
-  (persisted, `''` = OS default) is sent with every `terminal:create` / `terminal:shell` call; the
-  main process resolves preset ids (`cmd` / `powershell` / `pwsh`) via `shellExecutable()` —
-  well-known install locations first, then a PATH scan with no process spawn — and throws a readable
-  error (shown inline by `TerminalView`) when the chosen shell is missing. `terminal:shells` feeds
-  Settings → Terminal the availability probe so uninstalled presets render disabled instead of
-  failing at spawn. `pwsh` (PowerShell 7+) is the recommendation for Thai/UTF-8. A pty cannot switch
-  shells, so a change only affects tabs opened afterwards; existing sessions are reused by id and
-  keep their process, and `createTerminal` returns the shell label it actually spawned (per-tab
-  labels stay honest when settings change mid-session). **macOS/Linux hide the whole Shell section**
-  (`isWindows` from `utils/shortcuts.ts`), `ui.terminalShell` is forced back to `''` there, and main
-  ignores the spec on non-win32 (`resolveShell` / `terminalShellName` always use the OS default,
-  `listTerminalShells` returns `[]`) — never make the presets work outside Windows without a product
-  decision. Keep the preset ids in sync with `SHELL_PRESET_IDS` in `main/terminal.ts` and
-  `TERMINAL_SHELL_OPTIONS` in `stores/ui.ts`.
-- **The terminal has its own font, decoupled from the app-wide `fontSize`**: `ui.terminalFontFamily`
-  (`''` = follow `--font-mono`) and `ui.terminalFontSize` are persisted in `stores/ui.ts` and edited
-  in Settings → Terminal. The family offers exactly four presets (`TERMINAL_FONT_OPTIONS` — Default,
-  Cascadia Code NF, JetBrains Mono NF, Maple Mono NF) **plus** a manually typed name:
-  `sanitizeTerminalFontFamily` strips quotes/backslashes/newlines and never reject-and-resets custom
-  names. The field auto-applies ~400ms after typing stops (and on blur/Enter) and flushes on modal
-  close — Escape-closing must never drop a typed family. Preset values are the real installed family
-  names, and a preset may carry a `stack` (`TerminalFontOption.stack`) for families that shipped under
-  two names — Nerd Fonts v3 uses `JetBrainsMono NF`, v2 `JetBrainsMono Nerd Font`.
-  `TerminalView.terminalFontFamily()` appends the app's `--font-mono` stack to every choice, so a
-  family that is not installed falls back to the app default instead of a generic `monospace`.
-  The size shares its chip list with Appearance → Font size (`FONT_SIZE_OPTIONS`, default 14) and
-  `stepTerminalFontSize` (the header `A−`/`A+` buttons) walks that same list.
-  `ui.fontSize` and `ui.zoom` both ride on `<html> { zoom: zoomScale × fontScale }`, so xterm is
-  handed `ui.terminalFontPx` (`terminalFontSize / fontScale`) instead of the raw value: changing the
-  UI font size must not move the terminal, while app zoom (`Ctrl+±`) still scales it on purpose.
-  Never reintroduce a hardcoded font size or a `--font-mono` read with no opt-out here.
-- **Live font changes refit on the next frame**: `TerminalView.vue` watches
-  `[terminalFontFamily, terminalFontSize, fontSize]`, assigns `term.options`, then refits inside
-  `requestAnimationFrame` — xterm re-measures the cell box on a debounced task, so calling `fit()`
-  immediately solves cols/rows from the stale cell size. Every open view (all repos, all tabs)
-  reacts to the shared store; hidden ones no-op in `resizePty()` and refit from the `visible` watcher.
-- **Full height is a card that lines up with the other columns, never covering the tab bar**
-  (Teleport to `.app` + absolute `top: 60px` — the 48px tab bar plus `.app-body`'s 6px margin —
-  `left: 6px` / `bottom: 6px` matching `.app`'s padding, an inline `right: rightPanelWidth + 12px`
-  (6px app padding + the 6px `.panel-splitter` gap, so the card clears the right pane like the
-  graph does), plus the same border/`--radius-card`/shadow as
-  `.center-column` and `.right-pane`). The repo tabs stay clickable so the user can switch repos
-  with the terminal expanded. Expanded deliberately survives a tab switch and only collapses when
-  the panel isn't visible (the `terminalVisible` watcher — hiding counts as not visible). The Changes
-  panel stays visible; do not turn it into a centered/modal card — the inline `right` offset is what
-  keeps the file-change pane usable.
-- **node-pty is a native module**: keep it external in `electron.vite.config.ts`, in
-  `asarUnpack` and in `pnpm-workspace.yaml` (`allowBuilds` / `onlyBuiltDependencies`);
-  `scripts/rebuild-native.mjs` prepares it on postinstall and before each
-  dist: it prefers node-pty's ABI-stable N-API prebuild for the current platform and only falls
-  back to an `@electron/rebuild` from-source compile (Python + MSVC) when no prebuild exists. It is
-  loaded lazily so a missing binary only disables the terminal.
-- `baseEnv()` in `main/git.ts` strips `GUARDED_AMBIENT_ENV_KEYS` (EDITOR, VISUAL, PAGER, GIT_*)
-  before simple-git runs: v4's `allowEnvironment` guard throws on any guarded var present in the
-  injected env, and `baseEnv()` injects the whole process env. Do not remove that list or repos
-  stop opening for anyone with `EDITOR`/`VISUAL` set.
 
 ## Updates & releases
 

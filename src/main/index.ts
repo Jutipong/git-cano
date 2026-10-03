@@ -121,19 +121,6 @@ import {
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
 import { cancelModelCall, generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
-import {
-    createTerminal,
-    disposeAllTerminals,
-    disposeTerminal,
-    disposeTerminalsForRepo,
-    listTerminalShells,
-    onTerminalData,
-    onTerminalExit,
-    resizeTerminal,
-    terminalAvailable,
-    terminalShellName,
-    writeTerminal,
-} from './terminal'
 import { downloadUpdate, initAutoUpdater, installUpdate, isAutoUpdateSupported, openReleasePage } from './updater'
 
 import type { LocalChangesMode, MergeMode } from '@shared/types'
@@ -150,9 +137,6 @@ function sendToRenderer(channel: string, payload?: unknown): void {
 onRepoChanged(repoPath => {
     if (win && !win.isDestroyed()) win.webContents.send('repo:changed', repoPath)
 })
-
-onTerminalData(payload => sendToRenderer('terminal:data', payload))
-onTerminalExit(payload => sendToRenderer('terminal:exit', payload))
 
 function createWindow(): void {
     win = new BrowserWindow({
@@ -618,46 +602,11 @@ app.whenReady().then(() => {
         return getStatus()
     })
     handle('repo:close', (_dir?: string) => {
-        // Resolve the target exactly like closeRepo() does, so a no-arg close still kills the shell.
+        // Resolve the target exactly like closeRepo() does, so a no-arg close releases the right instance.
         const target = typeof _dir === 'string' && _dir ? _dir : getActiveRepoPath()
-        // Drop every shell of the repo with the repo — the renderer's terminal state is memory-only,
-        // so a closed tab must not leave a pty process behind (a repo can hold several terminals).
-        if (target) disposeTerminalsForRepo(target)
         closeRepo(target ?? undefined)
         return isOpen()
     })
-    handle('terminal:create', (id: string, dir: string, cols?: number, rows?: number, shell?: string) => {
-        // Returns the spawned shell's label so the renderer's tab labels can be per-shell.
-        return createTerminal(
-            String(id),
-            String(dir),
-            typeof cols === 'number' ? cols : 80,
-            typeof rows === 'number' ? rows : 24,
-            typeof shell === 'string' ? shell : ''
-        )
-    })
-    handle('terminal:write', (id: string, data: string) => {
-        writeTerminal(String(id), String(data))
-        return true
-    })
-    handle('terminal:resize', (id: string, cols: number, rows: number) => {
-        resizeTerminal(String(id), Number(cols), Number(rows))
-        return true
-    })
-    handle('terminal:dispose', (id: string) => {
-        disposeTerminal(String(id))
-        return true
-    })
-    // Called once by a booting renderer: terminal state is memory-only, so any live session at that
-    // point is an orphan from a previous renderer session (a reload/crash leaves ptys behind — this
-    // process owns them). Killing them keeps the shell list clean and the renderer's id counter safe.
-    handle('terminal:disposeAll', () => {
-        disposeAllTerminals()
-        return true
-    })
-    handle('terminal:available', () => terminalAvailable())
-    handle('terminal:shell', (shell?: string) => terminalShellName(typeof shell === 'string' ? shell : ''))
-    handle('terminal:shells', () => listTerminalShells())
     handle('app:openTerminal', (dir: string) => openTerminal(dir as string))
     handle('app:openExternal', (url: string) => {
         const target = String(url ?? '').trim()
@@ -1084,7 +1033,3 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
 })
-
-// Shells are never persisted — kill every pty on quit so no orphan process survives.
-app.on('before-quit', () => disposeAllTerminals())
-app.on('quit', () => disposeAllTerminals())

@@ -265,28 +265,3 @@ export interface UpdateProgress {
     transferred: number
     total: number
 }
-
-/** Payload pushed to the renderer on `terminal:data` — one shell output chunk for a terminal. */
-export interface TerminalData {
-    /** Identifies the shell inside its repo — a repo may hold several (see `terminalId` on create). */
-    terminalId: string
-    repoPath: string
-    data: string
-}
-
-/** Payload pushed to the renderer on `terminal:exit` — that shell ended. */
-export interface TerminalExit {
-    terminalId: string
-    repoPath: string
-    exitCode: number
-    signal?: number
-}
-
-/** One preset shell reported by `terminal:shells` for Settings → Terminal (the `''` default is implicit). */
-export interface TerminalShellOption {
-    /** Preset id: `'cmd' | 'powershell' | 'pwsh'`. */
-    id: string
-    /** Resolved executable on this machine, or null when it is not installed. */
-    path: string | null
-    available: boolean
-}

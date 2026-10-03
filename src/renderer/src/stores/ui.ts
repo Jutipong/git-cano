@@ -7,7 +7,6 @@ import {
     SHORTCUT_DEFAULTS,
     SHORTCUT_PLATFORMS,
     currentPlatform,
-    isWindows,
     isValidSyncCombo,
     type CustomShortcutId,
     type ShortcutOverrideMap,
@@ -68,64 +67,6 @@ export const DEFAULT_FONT_SIZE = 14
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
 export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
 export const DEFAULT_ZOOM = 100
-
-/**
- * Terminal font size — the SAME chip list as the app's Appearance → Font size (`FONT_SIZE_OPTIONS`).
- * The terminal still owns its own value (it is not tied to `fontSize`; only app zoom scales it, see
- * `terminalFontPx`), it just picks from the shared options.
- */
-export const DEFAULT_TERMINAL_FONT_SIZE = DEFAULT_FONT_SIZE
-
-/**
- * Terminal font family presets. `''` = follow the app's `--font-mono` stack (the default). Values are
- * the real installed family names: Nerd Fonts v3 registers "JetBrainsMono NF" while v2 used
- * "JetBrainsMono Nerd Font", so that preset carries a `stack` covering both. A preset that is not
- * installed falls back to the app's mono stack (TerminalView appends it), and any other family stays
- * reachable through the custom field in Settings → Terminal (`sanitizeTerminalFontFamily`).
- */
-export interface TerminalFontOption {
-    value: string
-    label: string
-    /** Extra family names this preset should fall back through before the app's own mono stack. */
-    stack?: string
-}
-
-export const TERMINAL_FONT_OPTIONS: readonly TerminalFontOption[] = [
-    { value: '', label: 'Default' },
-    { value: 'Cascadia Code NF', label: 'Cascadia Code NF' },
-    {
-        value: 'JetBrainsMono NF',
-        label: 'JetBrains Mono NF',
-        stack: '"JetBrainsMono NF", "JetBrainsMono Nerd Font"',
-    },
-    { value: 'Maple Mono NF', label: 'Maple Mono NF' },
-]
-export const DEFAULT_TERMINAL_FONT_FAMILY = ''
-
-/**
- * Terminal shell presets. `''` = the OS default (cmd.exe on Windows, `$SHELL` elsewhere); the other
- * ids are resolved in the main process (PATH + well-known install locations) and must stay in sync
- * with `SHELL_PRESET_IDS` in `src/main/terminal.ts`. PowerShell 7+ (`pwsh`) renders Thai/UTF-8 best.
- */
-export const TERMINAL_SHELL_OPTIONS = [
-    { value: '', label: 'Default' },
-    { value: 'cmd', label: 'Command Prompt' },
-    { value: 'powershell', label: 'Windows PowerShell' },
-    { value: 'pwsh', label: 'PowerShell 7+' },
-] as const
-export const DEFAULT_TERMINAL_SHELL = ''
-
-/** Longest custom family name accepted from Settings — a font name, not a fallback stack. */
-const TERMINAL_FONT_FAMILY_MAX = 64
-
-/** Keep a typed family safe for xterm's `"<name>", monospace` shorthand (no quotes/backslashes/newlines). */
-export function sanitizeTerminalFontFamily(value: string): string {
-    return value
-        .replace(/["'\\]/g, '')
-        .replace(/[\r\n\t]+/g, ' ')
-        .trim()
-        .slice(0, TERMINAL_FONT_FAMILY_MAX)
-}
 
 /** Code viewer font size (Blame / File History diff) — adjustable with Ctrl+wheel. */
 export const CODE_FONT_SIZE_MIN = 9
@@ -217,50 +158,9 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
         })
-        /** Terminal font — its own family and size, independent of the app-wide `fontSize`. The family
-         *  takes a manually typed name (Settings → Terminal), so its guard sanitizes instead of
-         *  rejecting values outside the preset list; the size picks from the shared
-         *  `FONT_SIZE_OPTIONS` list (same chips as Appearance). */
-        const terminalFontSize = ref(DEFAULT_TERMINAL_FONT_SIZE)
-        watchEffect(() => {
-            // Shared list with Appearance → Font size; a value left over from the old terminal-only
-            // list (10/11/18/20) falls back to the default.
-            if (!FONT_SIZE_OPTIONS.includes(terminalFontSize.value)) terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
-        })
-        const terminalFontFamily = ref<string>(DEFAULT_TERMINAL_FONT_FAMILY)
-        watchEffect(() => {
-            const clean = sanitizeTerminalFontFamily(terminalFontFamily.value)
-            if (clean !== terminalFontFamily.value) terminalFontFamily.value = clean
-        })
-
-        /**
-         * Shell for NEW terminal tabs (`''` = OS default). Shells already spawned keep their process —
-         * a pty cannot switch shells — so this only affects tabs opened after the change.
-         */
-        const terminalShell = ref<string>(DEFAULT_TERMINAL_SHELL)
-        watchEffect(() => {
-            // The shell presets are Windows-only — on macOS/Linux the setting is hidden and always
-            // stays default (the main process ignores the spec there too).
-            if (!isWindows || !TERMINAL_SHELL_OPTIONS.some(option => option.value === terminalShell.value)) {
-                terminalShell.value = DEFAULT_TERMINAL_SHELL
-            }
-        })
-
-        /** App zoom and UI font size both ride on `<html> { zoom }`; keep the factors separate so the
-         *  terminal can divide out only the font-size one. */
+        /** App zoom and UI font size both ride on `<html> { zoom }`; keep the two factors separate. */
         const fontScale = computed(() => fontSize.value / DEFAULT_FONT_SIZE)
         const zoomScale = computed(() => zoom.value / DEFAULT_ZOOM)
-
-        /** px to hand xterm so the terminal renders at exactly `terminalFontSize` on screen: the
-         *  root zoom scale multiplies every px, so the `fontSize` factor is divided back out. App
-         *  zoom is intentionally kept — zooming the window still enlarges the terminal. */
-        const terminalFontPx = computed(() => terminalFontSize.value / fontScale.value)
-
-        /** Step through FONT_SIZE_OPTIONS one slot (terminal header A− / A+). */
-        function stepTerminalFontSize(direction: number) {
-            const idx = FONT_SIZE_OPTIONS.indexOf(terminalFontSize.value)
-            terminalFontSize.value = FONT_SIZE_OPTIONS[Math.min(FONT_SIZE_OPTIONS.length - 1, Math.max(0, idx + direction))]
-        }
         const codeFontSize = ref(DEFAULT_CODE_FONT_SIZE)
         const repoTabColors = ref<Record<string, string>>({})
         // migrate the first shipped default so existing persisted stores pick up the new default
@@ -361,7 +261,6 @@ export const useUiStore = defineStore(
                 openRepo: getShortcut('openRepo', platform),
                 cloneRepo: getShortcut('cloneRepo', platform),
                 searchCommits: getShortcut('searchCommits', platform),
-                terminal: getShortcut('terminal', platform),
                 settings: getShortcut('settings', platform),
                 commandPalette: getShortcut('commandPalette', platform),
             }
@@ -414,12 +313,6 @@ export const useUiStore = defineStore(
             toastDurationSec.value = DEFAULT_TOAST_DURATION_SEC
         }
 
-        function resetTerminal() {
-            terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
-            terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
-            terminalShell.value = DEFAULT_TERMINAL_SHELL
-        }
-
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
@@ -451,11 +344,6 @@ export const useUiStore = defineStore(
             fontSize,
             zoom,
             stepZoom,
-            terminalFontSize,
-            terminalFontFamily,
-            terminalShell,
-            terminalFontPx,
-            stepTerminalFontSize,
             codeFontSize,
             zoomCodeFontSize,
             repoTabColors,
@@ -470,7 +358,6 @@ export const useUiStore = defineStore(
             resetCommitColumns,
             resetAppearance,
             resetGeneral,
-            resetTerminal,
             setTheme,
             setRepoTabColor,
         }
@@ -498,9 +385,6 @@ export const useUiStore = defineStore(
                 'toastDurationSec',
                 'fontSize',
                 'zoom',
-                'terminalFontSize',
-                'terminalFontFamily',
-                'terminalShell',
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',

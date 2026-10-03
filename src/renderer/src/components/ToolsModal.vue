@@ -22,7 +22,6 @@
     import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import ILucideSparkles from '~icons/lucide/sparkles'
     import Sun from '~icons/lucide/sun'
-    import ILucideTerminal from '~icons/lucide/terminal'
     import ILucideTrash2 from '~icons/lucide/trash-2'
     import ILucideUserRound from '~icons/lucide/user-round'
     import ILucideUsers from '~icons/lucide/users'
@@ -33,7 +32,7 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_OPTIONS, TERMINAL_SHELL_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, sanitizeTerminalFontFamily, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -56,7 +55,7 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts' | 'terminal'
+        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts'
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -148,7 +147,6 @@
 
     const TABS = [
         { key: 'appearance', label: 'Appearance' },
-        { key: 'terminal', label: 'Terminal' },
         { key: 'general', label: 'General' },
         { key: 'auth', label: 'Remotes' },
         { key: 'ai', label: 'AI' },
@@ -159,54 +157,8 @@
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
     const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
-    /** Shared by Appearance → Font size and Terminal → Font size (the terminal picks from the same list). */
+    /** Appearance → Font size chips (px labels). */
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
-
-    /** Manual terminal font family field: a draft string that applies automatically shortly after
-     *  typing stops (no Enter needed), immediately on blur/Enter, and flushes when the modal closes —
-     *  Escape-closing must never silently drop a typed family. */
-    const terminalFontFamilyDraft = ref(ui.terminalFontFamily)
-    const terminalFontInput = ref<HTMLInputElement | null>(null)
-    let terminalFontCommitTimer: number | null = null
-    watch(
-        () => ui.terminalFontFamily,
-        value => {
-            // Don't clobber what the user is still typing — the debounced commit writes the same
-            // sanitized value anyway, and chip/reset changes blur the input first.
-            if (document.activeElement === terminalFontInput.value) return
-            terminalFontFamilyDraft.value = value
-        }
-    )
-    function commitTerminalFontFamily() {
-        if (terminalFontCommitTimer !== null) {
-            window.clearTimeout(terminalFontCommitTimer)
-            terminalFontCommitTimer = null
-        }
-        const clean = sanitizeTerminalFontFamily(terminalFontFamilyDraft.value)
-        terminalFontFamilyDraft.value = clean
-        ui.terminalFontFamily = clean
-    }
-    function scheduleTerminalFontFamilyCommit() {
-        if (terminalFontCommitTimer !== null) window.clearTimeout(terminalFontCommitTimer)
-        terminalFontCommitTimer = window.setTimeout(commitTerminalFontFamily, 400)
-    }
-    onBeforeUnmount(commitTerminalFontFamily)
-
-    /** Preset shell availability (Settings → Terminal), probed in main without spawning. `null` until loaded. */
-    const terminalShellPaths = ref<Record<string, string | null> | null>(null)
-    onMounted(async () => {
-        const list = await window.api.terminalShells().catch(() => [])
-        terminalShellPaths.value = Object.fromEntries(list.map(option => [option.id, option.path]))
-    })
-    /** The OS default is always available; a preset is disabled while the probe says it is not installed. */
-    function shellAvailable(value: string): boolean {
-        if (!value || !terminalShellPaths.value) return true
-        return terminalShellPaths.value[value] !== null
-    }
-    function shellTitle(value: string, label: string): string {
-        if (!value) return 'OS default shell'
-        return terminalShellPaths.value?.[value] ?? `${label} — not detected on this machine`
-    }
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
@@ -411,7 +363,6 @@
         openRepo: 'Open repo',
         cloneRepo: 'Clone repo',
         searchCommits: 'Search commits',
-        terminal: 'Toggle terminal',
         settings: 'Open settings',
         commandPalette: 'Command palette',
     }
@@ -706,10 +657,6 @@
                         v-if="tabItem.key === 'appearance'"
                         width="13"
                         height="13" />
-                    <i-lucide-terminal
-                        v-else-if="tabItem.key === 'terminal'"
-                        width="13"
-                        height="13" />
                     <i-lucide-sliders-horizontal
                         v-else-if="tabItem.key === 'general'"
                         width="13"
@@ -791,95 +738,6 @@
                             class="btn danger small"
                             title="Restore appearance settings to defaults"
                             @click="resetAppearance()">
-                            <i-lucide-rotate-ccw
-                                width="13"
-                                height="13" />
-                            Reset to defaults
-                        </button>
-                    </div>
-                </template>
-
-                <template v-else-if="tab === 'terminal'">
-                    <div
-                        v-if="isWindows"
-                        class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-terminal
-                                width="13"
-                                height="13" />
-                            Shell
-                        </strong>
-                        <span class="setting-label">Shell for new terminal tabs</span>
-                        <div class="setting-choice-row">
-                            <button
-                                v-for="option in TERMINAL_SHELL_OPTIONS"
-                                :key="option.value || 'default'"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.terminalShell === option.value }"
-                                :disabled="!shellAvailable(option.value)"
-                                :title="shellTitle(option.value, option.label)"
-                                @click="ui.terminalShell = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                        <p class="tools-section-hint">Applies to terminals opened after the change — running shells keep their process. PowerShell 7+ (pwsh) renders Thai/UTF-8 better than cmd. Presets that are not installed on this machine are disabled.</p>
-                    </div>
-
-                    <div class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-terminal
-                                width="13"
-                                height="13" />
-                            Terminal font
-                        </strong>
-                        <span class="setting-label">Font family</span>
-                        <div class="setting-choice-row">
-                            <button
-                                v-for="option in TERMINAL_FONT_OPTIONS"
-                                :key="option.value || 'default'"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.terminalFontFamily === option.value }"
-                                @click="ui.terminalFontFamily = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                        <label class="ai-field terminal-font-manual">
-                            <span>Custom family — any installed font</span>
-                            <div class="ai-token-row">
-                                <input
-                                    ref="terminalFontInput"
-                                    v-model="terminalFontFamilyDraft"
-                                    type="text"
-                                    placeholder="Default"
-                                    autocomplete="off"
-                                    spellcheck="false"
-                                    @input="scheduleTerminalFontFamilyCommit"
-                                    @change="commitTerminalFontFamily" />
-                            </div>
-                        </label>
-                        <span class="setting-label">Font size</span>
-                        <div class="setting-choice-row">
-                            <button
-                                v-for="option in FONT_OPTIONS"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.terminalFontSize === option.value }"
-                                @click="ui.terminalFontSize = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                        <p class="tools-section-hint">The terminal keeps its own font — changing the app font size leaves it untouched. Window zoom still scales it. Type any installed family name and it applies automatically.</p>
-                    </div>
-
-                    <div class="tools-actions tools-reset-row">
-                        <span class="spacer" />
-                        <button
-                            class="btn danger small"
-                            title="Restore terminal settings to defaults"
-                            @click="ui.resetTerminal()">
                             <i-lucide-rotate-ccw
                                 width="13"
                                 height="13" />

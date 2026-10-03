@@ -1,7 +1,7 @@
 /** Single source of truth for keyboard shortcuts — used by the global keydown handler and the ShortcutsModal. */
 
 export const isMac = /mac/i.test(navigator.platform)
-/** Windows-only features (e.g. the terminal shell presets) gate their UI on this. */
+/** Windows-only features (e.g. the git status accelerators) gate their UI on this. */
 export const isWindows = /win/i.test(navigator.platform)
 
 export interface ShortcutDef {
@@ -19,7 +19,6 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'cloneRepo', label: 'Clone repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
     { id: 'closeTab', label: 'Close tab', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
     { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
-    { id: 'terminal', label: 'Toggle terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
     { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
     { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },
@@ -35,7 +34,7 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
 }
 
 /** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
-export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'terminal' | 'settings' | 'commandPalette'
+export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'settings' | 'commandPalette'
 
 export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'fetch',
@@ -44,7 +43,6 @@ export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'openRepo',
     'cloneRepo',
     'searchCommits',
-    'terminal',
     'settings',
     'commandPalette',
 ]
@@ -71,7 +69,6 @@ export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     openRepo: 'Ctrl+O',
     cloneRepo: 'Ctrl+N',
     searchCommits: 'Ctrl+F',
-    terminal: 'Ctrl+`',
     settings: 'Ctrl+,',
     commandPalette: 'Ctrl+P',
 }

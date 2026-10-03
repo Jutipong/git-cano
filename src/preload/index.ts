@@ -33,9 +33,6 @@ import type {
     OpenInTargets,
     RepoState,
     UpdateProgress,
-    TerminalData,
-    TerminalExit,
-    TerminalShellOption,
 } from '@shared/types'
 
 async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -53,26 +50,6 @@ const api = {
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),
     openExternal: (url: string): Promise<void> => call('app:openExternal', url),
-    terminalCreate: (id: string, dir: string, cols: number, rows: number, shell: string): Promise<string> =>
-        call('terminal:create', id, dir, cols, rows, shell),
-    terminalWrite: (id: string, data: string): Promise<boolean> => call('terminal:write', id, data),
-    terminalResize: (id: string, cols: number, rows: number): Promise<boolean> => call('terminal:resize', id, cols, rows),
-    terminalDispose: (id: string): Promise<boolean> => call('terminal:dispose', id),
-    /** Boot-time sweep: kills every pty a previous renderer session left behind. */
-    terminalDisposeAll: (): Promise<boolean> => call('terminal:disposeAll'),
-    terminalAvailable: (): Promise<boolean> => call('terminal:available'),
-    terminalShell: (shell: string): Promise<string> => call('terminal:shell', shell),
-    terminalShells: (): Promise<TerminalShellOption[]> => call('terminal:shells'),
-    onTerminalData: (callback: (payload: TerminalData) => void): (() => void) => {
-        const listener = (_event: Electron.IpcRendererEvent, payload: TerminalData) => callback(payload)
-        ipcRenderer.on('terminal:data', listener)
-        return () => ipcRenderer.removeListener('terminal:data', listener)
-    },
-    onTerminalExit: (callback: (payload: TerminalExit) => void): (() => void) => {
-        const listener = (_event: Electron.IpcRendererEvent, payload: TerminalExit) => callback(payload)
-        ipcRenderer.on('terminal:exit', listener)
-        return () => ipcRenderer.removeListener('terminal:exit', listener)
-    },
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
     openInKiro: (dir: string): Promise<void> => call('app:openInKiro', dir),

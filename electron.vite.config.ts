@@ -11,7 +11,7 @@ export default defineConfig({
         },
         build: {
             rollupOptions: {
-                external: ['electron', 'electron-updater', 'simple-git', 'node-pty'],
+                external: ['electron', 'electron-updater', 'simple-git'],
             },
         },
     },

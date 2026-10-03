@@ -32,13 +32,12 @@
     import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
-    import TerminalPanel from './components/TerminalPanel.vue'
     import ThinkSpinner from './components/ThinkSpinner.vue'
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAiStore } from './stores/ai'
     import { useAuthStore } from './stores/auth'
-    import { useRepoStore, MAX_TERMINALS_PER_REPO } from './stores/repo'
+    import { useRepoStore } from './stores/repo'
     import { useSyncStore } from './stores/sync'
     import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
@@ -76,27 +75,6 @@
         switchingWorkspace,
     } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
-
-    /**
-     * Repo paths that own at least one shell. Each gets its OWN TerminalPanel instance (keyed by
-     * path) so its xterm buffers + pty stay alive while another tab is active or while the panel is
-     * toggled away — hiding only stops painting, and killing is the ✕ buttons' job alone.
-     *
-     * Driven by the store's terminal map, NOT by the open tabs: a repo parked in another workspace
-     * still owns its shells, so its panel stays mounted (hidden) and its scrollback survives a switch.
-     * `isTerminalVisible` keeps it off screen until that repo is the active tab again.
-     */
-    const terminalPaths = computed(() => Object.keys(repoStore.terminals).filter(path => repoStore.terminalExists(path)))
-    /** Path of the repo whose terminal is on screen (the active tab). */
-    const activeRepoPath = computed(() => repo?.value?.path ?? null)
-    /** True while this repo's panel is the one on screen (active tab, not toggled away). */
-    function isTerminalVisible(path: string): boolean {
-        return path === activeRepoPath.value && repoStore.terminalVisible
-    }
-    /** True only for the active repo's terminal while it is expanded. */
-    function isExpandedTerminal(path: string): boolean {
-        return repoStore.terminalExpanded && path === activeRepoPath.value
-    }
 
     /** Whole seconds left on a toast, shown as the countdown badge on its close button. */
     function countdownSeconds(t: { progress: number; durationMs: number }) {
@@ -337,12 +315,6 @@
                 target?.select()
                 return
             }
-            // Toggle the bottom terminal panel for the active repo (customizable, default Ctrl+`).
-            if (combo && combo === ui.getShortcut('terminal') && repoStore.repo) {
-                event.preventDefault()
-                void toggleTerminal()
-                return
-            }
             // Push/Pull/Fetch.
             // Skipped while typing (Ctrl+Arrows = word jump), palette open (owns Arrows), or no repo.
             if (!repoStore.commandPaletteOpen && repoStore.repo) {
@@ -417,130 +389,6 @@
         window.addEventListener('mousemove', onMove)
         window.addEventListener('mouseup', onEnd)
     }
-
-    /** Vertical drag for the bottom terminal panel — pulls the top edge, so delta grows downward. */
-    function beginTerminalResize(event: MouseEvent) {
-        event.preventDefault()
-        const startY = event.clientY
-        const startHeight = repoStore.terminalHeight
-        const maxHeight = Math.max(160, Math.round(window.innerHeight * 0.7))
-        const onMove = (moveEvent: MouseEvent) => {
-            const delta = startY - moveEvent.clientY
-            repoStore.terminalHeight = Math.min(maxHeight, Math.max(120, startHeight + delta))
-        }
-        const onEnd = () => {
-            document.body.style.cursor = ''
-            document.body.style.userSelect = ''
-            window.removeEventListener('mousemove', onMove)
-            window.removeEventListener('mouseup', onEnd)
-        }
-        document.body.style.cursor = 'row-resize'
-        document.body.style.userSelect = 'none'
-        window.addEventListener('mousemove', onMove)
-        window.addEventListener('mouseup', onEnd)
-    }
-
-    /** Ask to close every shell of the active repo — they all die, so this always confirms. */
-    async function confirmCloseTerminal(): Promise<void> {
-        const path = repoStore.tabs[repoStore.activeTab]?.path
-        if (!path) return
-        const count = repoStore.repoTerminals(path)?.ids.length ?? 0
-        if (!count) return
-        const ok = await confirmDialog({
-            title: count > 1 ? `Close ${count} terminals` : 'Close terminal',
-            message:
-                count > 1
-                    ? `Closing these ${count} terminals will end their shell sessions and clear their scrollback.`
-                    : 'Closing the terminal will end its shell session and clear its scrollback.',
-            confirmLabel: count > 1 ? `Close ${count} terminals` : 'Close terminal',
-            danger: true,
-        })
-        if (ok) repoStore.closeRepoTerminals(path)
-    }
-
-    /**
-     * Ask to end EVERY shell in EVERY repo — including the ones parked in another workspace, which is
-     * exactly what the command palette's "Terminate all terminals" is for. It always confirms.
-     */
-    async function confirmTerminateAllTerminals(): Promise<void> {
-        const count = repoStore.terminalCount
-        if (!count) return
-        const repos = repoStore.terminalRepoCount
-        // Shells whose repo is parked in another workspace — invisible, so name them explicitly.
-        const parked = repoStore.terminalParkedCount
-        const many = count > 1
-        const parkedNote = parked > 0 ? ` ${parked} of them belong to repos open in another workspace.` : ''
-        const ok = await confirmDialog({
-            title: many ? `Close all ${count} terminals` : 'Close terminal',
-            message: `Closing ${count} terminal${many ? 's' : ''} across ${repos} repo${repos > 1 ? 's' : ''} will end every shell session and clear their scrollback.${parkedNote}`,
-            confirmLabel: many ? `Close ${count} terminals` : 'Close terminal',
-            danger: true,
-        })
-        if (ok) {
-            repoStore.closeAllTerminals()
-            uiTransient.notify(`Closed ${count} terminal${many ? 's' : ''}`, 'success')
-        }
-    }
-
-    /** Ask to close one terminal tab — its shell and scrollback die, so this always confirms. */
-    async function confirmCloseTerminalTab(path: string, id: string): Promise<void> {
-        // The tab's own number, not its position — the confirm must name what the label shows.
-        const index = repoStore.terminalNumber(path, id)
-        if (index < 1) return
-        const ok = await confirmDialog({
-            title: `Close terminal ${index}`,
-            message: 'Closing this terminal will end its shell session and clear its scrollback.',
-            confirmLabel: 'Close terminal',
-            danger: true,
-        })
-        if (ok) repoStore.closeTerminalTab(path, id)
-    }
-
-    /** Panel `+` — spawn another shell for this repo, up to the per-repo cap. */
-    function addTerminalTab(path: string) {
-        if (!repoStore.openTerminalTab(path)) {
-            uiTransient.notify(`Maximum ${MAX_TERMINALS_PER_REPO} terminals per repo`, 'warning')
-        }
-    }
-
-    /**
-     * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has
-     * none, otherwise show or hide the panel. It never kills anything — the ✕ buttons own that.
-     */
-    async function toggleTerminal() {
-        const path = repoStore.tabs[repoStore.activeTab]?.path
-        if (!path) return
-        if (repoStore.terminalExists(path)) {
-            repoStore.toggleTerminalPanel(path)
-            return
-        }
-        const available = await window.api.terminalAvailable().catch(() => false)
-        if (!available) {
-            uiTransient.notify('Terminal is unavailable — the native module could not be loaded', 'error')
-            return
-        }
-        repoStore.openTerminalTab(path)
-    }
-
-    /** The X in the terminal header kills every shell of this repo, behind a confirm. */
-    function closeTerminalPanel() {
-        void confirmCloseTerminal()
-    }
-
-    /**
-     * One shell ended on its own (exit / Ctrl+D / crash) — drop just that tab, exactly like a manual
-     * close but without the confirm: the process is already gone, so there is nothing to end. When it
-     * was the repo's last terminal the panel unmounts with it.
-     */
-    function handleTerminalExit(path: string, id: string) {
-        repoStore.closeTerminalTab(path, id)
-    }
-
-    /** Expand the terminal over the whole center column (graph hidden) or restore its height. */
-    function toggleTerminalExpand() {
-        repoStore.setTerminalExpanded(!repoStore.terminalExpanded)
-    }
-
     async function run(label: string, fn: () => Promise<unknown>, busyLabel = 'Working…') {
         try {
             await uiTransient.withBusy(async () => {
@@ -762,13 +610,13 @@
             '--right-panel-width': `${ui.rightPanelWidth}px`,
         }">
         <!--
-            The app shell also stays mounted while no repo is active but a shell is still alive
-            (`terminalCount > 0`): `switchWorkspace` empties `tabs` before it reopens the destination,
-            and `v-if="repo"` alone would unmount this whole subtree — every TerminalPanel with it —
-            throwing away the xterm scrollback of every parked shell. `v-show` hides it instead, so
-            the panels (and their buffers) survive a switch and only the empty state is on screen.
+            The app shell also stays mounted while a workspace switch is in flight
+            (`switchingWorkspace`): `switchWorkspace` empties `tabs` before it reopens the destination,
+            so `repo` goes null mid-switch, and `v-if="repo"` alone would unmount this whole subtree —
+            throwing away the Changes panel's commit-message draft and the graph's scroll position.
+            `v-show` hides it instead, so only the empty state is on screen for that gap.
         -->
-        <template v-if="repo || repoStore.terminalCount > 0">
+        <template v-if="repo || switchingWorkspace">
             <TabBar
                 :tabs="tabs"
                 :active-index="activeTab"
@@ -804,7 +652,6 @@
                     <div class="app-body">
                         <div class="center-column">
                             <GraphView
-                                v-show="!repoStore.terminalVisible || !repoStore.terminalExpanded"
                                 :commits="commits"
                                 :has-more="hasMore"
                                 :commit-open="!!selectedCommit || !!selectedStash"
@@ -818,36 +665,7 @@
                                 @squash="squashTarget = $event"
                                 @revert="revertCommit"
                                 @reset-soft="commit => resetTo(commit, 'soft')"
-                                @reset-hard="commit => resetTo(commit, 'hard')"
-                                @toggle-terminal="toggleTerminal" />
-                            <div
-                                v-if="repoStore.terminalVisible && !repoStore.terminalExpanded"
-                                class="terminal-splitter"
-                                @mousedown="beginTerminalResize" />
-                            <template
-                                v-for="path in terminalPaths"
-                                :key="path">
-                                <Teleport
-                                    to=".app"
-                                    :disabled="!isExpandedTerminal(path)">
-                                    <TerminalPanel
-                                        v-show="isTerminalVisible(path)"
-                                        :repo-path="path"
-                                        :expanded="isExpandedTerminal(path)"
-                                        :visible="isTerminalVisible(path)"
-                                        :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
-                                        :style="
-                                            isExpandedTerminal(path)
-                                                ? { right: `${ui.rightPanelWidth + 12}px` }
-                                                : { height: `${repoStore.terminalHeight}px` }
-                                        "
-                                        @add-tab="addTerminalTab(path)"
-                                        @close="closeTerminalPanel"
-                                        @close-tab="id => confirmCloseTerminalTab(path, id)"
-                                        @exit="id => handleTerminalExit(path, id)"
-                                        @toggle-expand="toggleTerminalExpand" />
-                                </Teleport>
-                            </template>
+                                @reset-hard="commit => resetTo(commit, 'hard')" />
                         </div>
                         <div
                             class="panel-splitter"
@@ -976,9 +794,7 @@
         <CommandPalette
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
-            @open-repo="openNewRepo"
-            @toggle-terminal="toggleTerminal"
-            @terminate-all-terminals="confirmTerminateAllTerminals" />
+            @open-repo="openNewRepo" />
         <ChangelogModal
             v-if="updater.changelogOpen"
             @close="updater.changelogOpen = false" />

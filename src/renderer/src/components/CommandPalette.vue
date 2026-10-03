@@ -16,8 +16,6 @@
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
     import Sparkles from '~icons/lucide/sparkles'
-    import Terminal from '~icons/lucide/terminal'
-    import Trash2 from '~icons/lucide/trash2'
     import X from '~icons/lucide/x'
     import Kiro from '~icons/thesvg-color/kiro'
 
@@ -32,7 +30,7 @@
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
 
-    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void; (e: 'toggle-terminal'): void; (e: 'terminate-all-terminals'): void }>()
+    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void }>()
 
     const repoStore = useRepoStore()
     const uiTransient = useUiTransientStore()
@@ -218,33 +216,6 @@
                           run: () => {
                               close()
                               repoStore.reflogOpen = true
-                          },
-                      } satisfies PaletteItem,
-                      {
-                          id: 'terminal',
-                          label: 'Terminal',
-                          hint: 'Show/hide terminal panel',
-                          icon: Terminal,
-                          run: () => {
-                              close()
-                              emit('toggle-terminal')
-                          },
-                      } satisfies PaletteItem,
-                  ]
-                : []),
-            // Not repo-gated on purpose: shells parked in another workspace still count, and
-            // terminating them all is exactly the escape hatch a workspace switch no longer provides.
-            ...(repoStore.terminalCount > 0
-                ? [
-                      {
-                          id: 'terminal-terminate-all',
-                          label: 'Terminate all terminals',
-                          hint: `Terminate ${repoStore.terminalCount} terminal${repoStore.terminalCount > 1 ? 's' : ''} in every repo`,
-                          icon: Trash2,
-                          accent: 'red',
-                          run: () => {
-                              close()
-                              emit('terminate-all-terminals')
                           },
                       } satisfies PaletteItem,
                   ]
