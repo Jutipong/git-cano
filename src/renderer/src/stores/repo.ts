@@ -9,12 +9,6 @@ import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEn
 
 const PAGE_SIZE = 500
 
-/**
- * Minimum time the workspace-switch splash stays up — shorter than the 1800ms boot splash; just enough that a fast
- * switch reads as an intentional cover instead of a one-frame flash.
- */
-const SWITCH_SPLASH_MIN_MS = 400
-
 export interface RepoTab {
     path: string
     name: string
@@ -486,7 +480,6 @@ export const useRepoStore = defineStore('repo', () => {
         if (useUiTransientStore().busy) return
         if (name === ws.active || !ws.names.includes(name)) return
         switchingWorkspace.value = true
-        const startedAt = Date.now()
         syncSession()
         ws.select(name)
         restoringSession = true
@@ -523,11 +516,8 @@ export const useRepoStore = defineStore('repo', () => {
                 await selectTab(0)
             }
         } finally {
-            // Keep the splash up long enough to read as an intentional cover, not a one-frame flash.
-            const elapsed = Date.now() - startedAt
-            if (elapsed < SWITCH_SPLASH_MIN_MS) {
-                await new Promise(resolve => setTimeout(resolve, SWITCH_SPLASH_MIN_MS - elapsed))
-            }
+            // The splash's minimum visible time is owned by `useMinVisible` in App.vue — release the flag
+            // as soon as the work is done so guards (`loadMore`, focus refresh) unblock promptly.
             switchingWorkspace.value = false
             restoringSession = false
         }

@@ -44,8 +44,10 @@
     import { useUpdaterStore } from './stores/updater'
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
+    import { useMinVisible } from './utils/minVisible'
     import { promptDialog } from './utils/prompt'
     import { eventToCombo } from './utils/shortcuts'
+    import { SPLASH_MIN_MS } from './utils/splash'
     import { notifyUndoable } from './utils/undo'
 
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -111,10 +113,16 @@
     const stashCreateOpen = ref(false)
     const cloneOpen = ref(false)
 
-    const SPLASH_MIN_MS = 1800
-    const splashMinElapsed = ref(false)
-    const splashVisible = computed(() => !booted.value || !splashMinElapsed.value || switchingWorkspace.value)
-    const splashText = computed(() => (switchingWorkspace.value ? 'Switching workspace…' : 'Restoring your repositories…'))
+    // Splash visibility is stabilized by the shared composable: the boot cover stays for the shared
+    // minimum after `booted` flips, and the switch cover for the minimum after `switchingWorkspace`
+    // clears — `switchWorkspace` itself no longer waits.
+    const bootSplashVisible = useMinVisible(() => !booted.value, { minVisibleMs: SPLASH_MIN_MS })
+    const switchSplashVisible = useMinVisible(() => switchingWorkspace.value, { minVisibleMs: SPLASH_MIN_MS })
+    const splashVisible = computed(() => bootSplashVisible.value || switchSplashVisible.value)
+    const splashText = computed(() => (switchSplashVisible.value ? 'Switching workspace…' : 'Restoring your repositories…'))
+
+    // Cached tab switches finish before the delay, so they never flash the "Loading repository…" overlay.
+    const loadingRepoVisible = useMinVisible(() => repoStore.loadingRepo, { showDelayMs: 150, minVisibleMs: 400 })
     const showEmptyWorkspace = computed(() => wsStore.names.some(name => name !== wsStore.active))
 
     provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
@@ -157,7 +165,6 @@
         void repoStore.init()
         void useAiStore().load()
         void auth.load()
-        setTimeout(() => (splashMinElapsed.value = true), SPLASH_MIN_MS)
 
         const unwatch = window.api.onRepoChanged(debouncedRefresh)
         onUnmounted(unwatch)
@@ -642,7 +649,7 @@
                     class="panel-splitter"
                     @mousedown="event => beginResize('left', event)" />
                 <div
-                    v-if="repoStore.loadingRepo"
+                    v-if="loadingRepoVisible"
                     class="busy-overlay">
                     <div class="busy-card">
                         <ThinkSpinner suffix="Loading repository…" />
