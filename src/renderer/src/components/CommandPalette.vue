@@ -27,6 +27,7 @@
     import { useWorkspaceStore } from '../stores/workspace'
     import { resolveCheckoutMode } from '../utils/checkout'
     import { fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
+    import { collectWorkspaceRepos, repoNameFromPath } from '../utils/workspaceRepos'
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
 
@@ -55,6 +56,10 @@
         id: string
         label: string
         hint?: string
+        /** Accent pill rendered before the hint (the repo mode's "Active" marker). */
+        badge?: string
+        /** Extra text folded into the filter match on top of `label` (e.g. a repo's full path). */
+        search?: string
         icon: Component
         /** Accent color matching the equivalent UI button (sync buttons / AI modes). */
         accent?: 'green' | 'orange' | 'red' | 'blue'
@@ -157,6 +162,26 @@
         })()
     }
 
+    /**
+     * Opens a repo that belongs to another workspace: `switchWorkspace` restores that workspace's whole
+     * session and lands on this repo. Not wrapped in `withBusy` — `switchWorkspace` has its own busy
+     * guard and would silently no-op. A repo whose folder vanished fails `openPath` inside the switch, so
+     * the focus check reports it instead of leaving the user on an unrelated repo.
+     */
+    function openRepoInWorkspace(workspace: string, repoPath: string) {
+        close()
+        void (async () => {
+            try {
+                await repoStore.switchWorkspace(workspace, repoPath)
+                if (repoStore.tabs[repoStore.activeTab]?.path !== repoPath) {
+                    notify(`${repoNameFromPath(repoPath)} could not be opened`, 'error')
+                }
+            } catch (error) {
+                notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            }
+        })()
+    }
+
     /** Mirrors OpenInButton's error handling — close first, then open the active repo externally. */
     function openExternal(action: (repoPath: string) => Promise<unknown>) {
         const repoPath = repoStore.repo?.path
@@ -181,7 +206,7 @@
             )
         }
         items.push(
-            { id: 'repo', label: 'Repo…', hint: 'Switch repository tab', icon: FolderGit2, run: () => enterMode('repo') },
+            { id: 'repo', label: 'Repo…', hint: ws.names.length > 1 ? 'Open repo in any workspace' : 'Switch repository tab', icon: FolderGit2, run: () => enterMode('repo') },
             { id: 'branch', label: 'Branch…', hint: 'Checkout branch', icon: GitBranch, run: () => enterMode('branch') },
             // Flattened top-level commands: no "Open in…" / "AI…" sub-mode to drill into.
             ...(repoStore.repo ? openInItems.value : []),
@@ -233,18 +258,34 @@
         return items
     })
 
-    const repoItems = computed<PaletteItem[]>(() =>
-        repoStore.tabs.map((tab, index) => ({
-            id: tab.path,
-            label: tab.name,
-            hint: index === repoStore.activeTab ? 'Active' : undefined,
+    /** Repos open in ANY workspace, the current one first — picking a foreign one switches workspace and restores its session. */
+    const repoItems = computed<PaletteItem[]>(() => {
+        const crossWorkspace = ws.names.length > 1
+        return collectWorkspaceRepos(ws.names, ws.active, ws.sessions, repoStore.tabs, repoStore.activeTab).map(entry => ({
+            // The same repo can be listed once per workspace that opens it, so the row key is the pair. NUL is the
+            // one byte that can never occur in a folder name on any platform, so no workspace/path
+            // combination can collide (`:` would be legal in a Unix file name).
+            id: `${entry.workspace}\u0000${entry.path}`,
+            label: entry.name,
+            // The badge marks the repo that is genuinely open; the workspace name only earns its place once
+            // there is more than one. Green, so it never reads as the teal of the row the cursor is on.
+            badge: entry.isActiveTab ? 'Active' : undefined,
+            hint: crossWorkspace ? entry.workspace : undefined,
+            // A repo answers to its name (the label), its path, and — once there is more than one workspace —
+            // the workspace that opens it. The space separator keeps a match from spanning the two fields.
+            search: crossWorkspace ? `${entry.path} ${entry.workspace}` : entry.path,
             icon: FolderGit2,
             run: () => {
+                if (!entry.isCurrentWorkspace) {
+                    openRepoInWorkspace(entry.workspace, entry.path)
+                    return
+                }
                 close()
-                if (index !== repoStore.activeTab) void repoStore.setActive(index)
+                const index = repoStore.tabs.findIndex(tab => tab.path === entry.path)
+                if (index >= 0 && index !== repoStore.activeTab) void repoStore.setActive(index)
             },
         }))
-    )
+    })
 
     const branchItems = computed<PaletteItem[]>(() =>
         (repoStore.branchList?.local ?? fetchedLocal.value ?? [])
@@ -348,11 +389,13 @@
                 : commandItems.value
     )
 
-    /** Like-style filter: case-insensitive substring match on the item label. */
+    /** Like-style filter: case-insensitive substring match on the item label, plus any extra `search` text. */
     const filtered = computed(() => {
         const query = search.value.trim().toLowerCase()
         if (!query) return items.value
-        return items.value.filter(item => item.label.toLowerCase().includes(query))
+        return items.value.filter(
+            item => item.label.toLowerCase().includes(query) || (item.search ?? '').toLowerCase().includes(query)
+        )
     })
 
     watch(filtered, () => (active.value = 0))
@@ -360,7 +403,7 @@
 
     const PLACEHOLDERS: Record<Mode, string> = {
         commands: 'Type a command…',
-        repo: 'Search repo…',
+        repo: ws.names.length > 1 ? 'Search repo or workspace…' : 'Search repo…',
         branch: 'Search branch…',
         workspace: 'Search workspace…',
     }
@@ -467,10 +510,13 @@
                         height="14" />
                     <span class="palette-label">{{ item.label }}</span>
                     <span
-                        v-if="item.hint"
-                        class="palette-hint"
-                        >{{ item.hint }}</span
-                    >
+                        v-if="item.badge || item.hint"
+                        class="palette-hint">
+                        <span
+                            v-if="item.badge"
+                            class="palette-badge">{{ item.badge }}</span
+                        >{{ item.hint }}
+                    </span>
                 </button>
             </div>
             <div class="palette-footer">

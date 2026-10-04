@@ -486,7 +486,12 @@ export const useRepoStore = defineStore('repo', () => {
         await refresh()
     }
 
-    async function switchWorkspace(name: string) {
+    /**
+     * Switches to `name` and restores its saved session. `focusPath` selects one of the restored repos
+     * instead of the session's own active tab (used by the command palette's cross-workspace repo search)
+     * — resolving it here keeps the single `selectTab` and avoids a second `git status`.
+     */
+    async function switchWorkspace(name: string, focusPath?: string) {
         if (useUiTransientStore().busy) return
         if (name === ws.active || !ws.names.includes(name)) return
         switchingWorkspace.value = true
@@ -517,8 +522,8 @@ export const useRepoStore = defineStore('repo', () => {
             for (const status of statuses) {
                 if (status) addTab(status)
             }
-            const savedActivePath = saved.paths[saved.active]
-            const restored = savedActivePath ? tabs.value.findIndex(tab => tab.path === savedActivePath) : -1
+            const focus = focusPath ?? saved.paths[saved.active]
+            const restored = focus ? tabs.value.findIndex(tab => tab.path === focus) : -1
             if (restored >= 0) {
                 activeTab.value = restored
                 await selectTab(restored, tabs.value[restored]?.status)

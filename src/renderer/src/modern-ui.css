@@ -6857,10 +6857,23 @@ body {
 }
 
 .palette-hint {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     margin-left: auto;
     color: var(--text-muted);
     font-size: 11px;
     white-space: nowrap;
+}
+
+/* Accent pill for the repo that is actually open. Green so it never reads as the teal of the row the
+   cursor is on, and `color-mix` like `.repo-tab.active` so it holds up in the light themes. */
+.palette-badge {
+    padding: 1px 7px;
+    color: var(--green);
+    font-weight: 600;
+    background: color-mix(in srgb, var(--green) 16%, transparent);
+    border-radius: var(--radius-pill);
 }
 
 .palette-empty {

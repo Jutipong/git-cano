@@ -18,6 +18,11 @@ export interface LaunchOptions {
     debugLog?: boolean
     /** Extra Electron args (e.g. `--js-flags=--expose-gc` for benchmarks). */
     extraArgs?: string[]
+    /**
+     * Additional workspace sessions to seed alongside `Main` (which always gets `repoPaths`), e.g.
+     * `{ Alt: [pathA, pathB] }` — every workspace's first repo is its active tab.
+     */
+    workspaces?: Record<string, string[]>
 }
 
 /**
@@ -26,7 +31,7 @@ export interface LaunchOptions {
  * `userData` and `sessionData` to it), so the real user profile is never touched.
  */
 export async function launchApp(repoPaths: string[], options: LaunchOptions = {}): Promise<AppHandle> {
-    const { appDir = '.', debugLog = true, extraArgs = [] } = options
+    const { appDir = '.', debugLog = true, extraArgs = [], workspaces = {} } = options
     const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'git-cano-e2e-userdata-'))
     fs.writeFileSync(path.join(userData, 'recent.json'), JSON.stringify(repoPaths))
     const env: Record<string, string> = {
@@ -41,16 +46,25 @@ export async function launchApp(repoPaths: string[], options: LaunchOptions = {}
 
     // Runs on the reload below, before the app scripts: seed the workspace session and spy on
     // URL.revokeObjectURL so the image-diff cleanup can be asserted.
-    await page.addInitScript(({ paths }: { paths: string[] }) => {
-        localStorage.setItem('workspace', JSON.stringify({ names: ['Main'], active: 'Main', sessions: { Main: { paths, active: 0 } } }))
-        const w = window as unknown as { __revokes: number }
-        w.__revokes = 0
-        const original = URL.revokeObjectURL.bind(URL)
-        URL.revokeObjectURL = (url: string) => {
-            w.__revokes++
-            return original(url)
-        }
-    }, { paths: repoPaths })
+    await page.addInitScript(
+        ({ paths, extraWorkspaces }: { paths: string[]; extraWorkspaces: Record<string, string[]> }) => {
+            const names = ['Main']
+            const sessions: Record<string, { paths: string[]; active: number }> = { Main: { paths, active: 0 } }
+            for (const [name, workspacePaths] of Object.entries(extraWorkspaces)) {
+                names.push(name)
+                sessions[name] = { paths: workspacePaths, active: 0 }
+            }
+            localStorage.setItem('workspace', JSON.stringify({ names, active: 'Main', sessions }))
+            const w = window as unknown as { __revokes: number }
+            w.__revokes = 0
+            const original = URL.revokeObjectURL.bind(URL)
+            URL.revokeObjectURL = (url: string) => {
+                w.__revokes++
+                return original(url)
+            }
+        },
+        { paths: repoPaths, extraWorkspaces: workspaces }
+    )
     await page.reload()
 
     await page.waitForSelector('.repo-tab, .app-empty', { timeout: 60_000 })
