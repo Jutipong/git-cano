@@ -14,6 +14,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { formatDatePattern } from '../utils/format'
+    import { buildSplitPlan, splitRowAt, type SideBySideRow, type SplitPlan } from '../utils/diffPlan'
     import {
         markChangedLines,
         isWhitespaceOnlyChange,
@@ -28,7 +29,7 @@
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
-    import type { BlameLine, DiffLine } from '@shared/types'
+    import type { BlameLine, DiffLine, GitImage } from '@shared/types'
 
     interface Props {
         file: { path: string; staged: boolean } | null
@@ -54,6 +55,26 @@
     const meta = ref<{ binary: boolean; image: boolean } | null>(null)
     const images = ref<{ oldUrl: string | null; newUrl: string | null } | null>(null)
     const rawPatch = ref('')
+
+    /** Release the blob URLs backing the image diff (called on every reload and on unmount). */
+    function revokeImages(): void {
+        if (!images.value) return
+        if (images.value.oldUrl) URL.revokeObjectURL(images.value.oldUrl)
+        if (images.value.newUrl) URL.revokeObjectURL(images.value.newUrl)
+        images.value = null
+    }
+
+    /** Raw IPC bytes → blob URL. Zero extra copies; data URLs would keep a ~1.37x string per image side. */
+    function toObjectUrl(payload: GitImage | null): string | null {
+        if (!payload?.data?.length) return null
+        return URL.createObjectURL(new Blob([payload.data as unknown as BlobPart], { type: payload.mime }))
+    }
+
+    /** Commit both blob URLs for a loaded image pair — a stale sequence is dropped instead of leaking its URLs. */
+    function setImageUrls(seq: number, oldImage: GitImage | null, newImage: GitImage | null): void {
+        if (seq !== loadSeq) return
+        images.value = { oldUrl: toObjectUrl(oldImage), newUrl: toObjectUrl(newImage) }
+    }
 
     const diffBody = ref<HTMLElement | null>(null)
     const currentChange = ref(0)
@@ -94,7 +115,7 @@
         const seq = ++loadSeq
         lines.value = []
         meta.value = null
-        images.value = null
+        revokeImages()
         rawPatch.value = ''
         currentChange.value = 0
         showToTop.value = false
@@ -116,7 +137,7 @@
                 lines.value = stashDiff
                 meta.value = stashMeta
                 if (stashMeta.image) {
-                    images.value = { oldUrl: null, newUrl: await window.api.stashImageVersion(props.stashHash, f.path) }
+                    setImageUrls(seq, null, await window.api.stashImageVersion(props.stashHash, f.path))
                 }
                 return
             }
@@ -129,7 +150,7 @@
                 lines.value = commitDiff
                 meta.value = commitMeta
                 if (commitMeta.image) {
-                    images.value = { oldUrl: null, newUrl: await window.api.getCommitImageVersion(props.commitHash, f.path) }
+                    setImageUrls(seq, null, await window.api.getCommitImageVersion(props.commitHash, f.path))
                 }
                 return
             }
@@ -143,12 +164,11 @@
             meta.value = diffMeta
             rawPatch.value = patch
             if (diffMeta.image) {
-                const [oldUrl, newUrl] = await Promise.all([
+                const [oldImage, newImage] = await Promise.all([
                     window.api.imageVersion(f.path, 'head'),
                     f.staged ? window.api.imageVersion(f.path, 'index') : window.api.imageVersion(f.path, 'workdir'),
                 ])
-                if (seq !== loadSeq) return
-                images.value = { oldUrl, newUrl }
+                setImageUrls(seq, oldImage, newImage)
             }
         } catch {
             if (seq !== loadSeq) return
@@ -338,65 +358,11 @@
         return !!first && first.type === 'meta' && first.text.startsWith('snapshot ')
     })
 
-    interface SideBySideRow {
-        left?: DiffLine
-        right?: DiffLine
-        hunkHeader?: DiffLine
-        change?: number
-    }
-
-    const sideBySide = computed<SideBySideRow[]>(() => {
-        if (ui.diffViewMode !== 'split') return []
-        const rows: SideBySideRow[] = []
-        let change = 0
-        let inChange = false
-        let i = 0
-        while (i < lines.value.length) {
-            const line = lines.value[i]
-            if (line.type === 'meta') {
-                i++
-                continue
-            }
-            if (line.type === 'hunk') {
-                rows.push({ hunkHeader: line })
-                inChange = false
-                i++
-                continue
-            }
-            if (line.type !== 'del') {
-                if (line.type === 'add') {
-                    rows.push({ right: line, change: inChange ? undefined : change++ })
-                    inChange = true
-                    i++
-                    continue
-                }
-                const ctx = line.type === 'ctx' ? line : undefined
-                rows.push({ left: ctx, right: ctx })
-                inChange = false
-                i++
-                continue
-            }
-            const dels: DiffLine[] = []
-            while (i < lines.value.length && lines.value[i].type === 'del') dels.push(lines.value[i++])
-            const adds: DiffLine[] = []
-            while (i < lines.value.length && lines.value[i].type === 'add') adds.push(lines.value[i++])
-            const leftPad = Math.max(0, adds.length - dels.length)
-            const rightPad = Math.max(0, dels.length - adds.length)
-            const at = (arr: DiffLine[], index: number): DiffLine | undefined => (index >= 0 && index < arr.length ? arr[index] : undefined)
-            for (let p = 0; p < Math.max(dels.length, adds.length); p++) {
-                const row: SideBySideRow = { left: at(dels, p - leftPad), right: at(adds, p - rightPad) }
-                if (!inChange) {
-                    row.change = change++
-                    inChange = true
-                }
-                rows.push(row)
-            }
-        }
-        return rows
-    })
+    const splitPlan = computed<SplitPlan | null>(() => (ui.diffViewMode !== 'split' ? null : buildSplitPlan(lines.value)))
 
     function totalRows(): number {
-        return ui.diffViewMode === 'split' ? sideBySide.value.length : lines.value.length
+        if (ui.diffViewMode === 'split') return splitPlan.value?.totalRows ?? 0
+        return lines.value.length
     }
 
     const virtualStart = computed(() => {
@@ -412,9 +378,15 @@
     const virtualLines = computed(() =>
         lines.value.slice(virtualStart.value, virtualEnd.value).map((line, offset) => ({ line, i: virtualStart.value + offset }))
     )
-    const virtualRows = computed(() =>
-        sideBySide.value.slice(virtualStart.value, virtualEnd.value).map((row, offset) => ({ row, i: virtualStart.value + offset }))
-    )
+    const virtualRows = computed(() => {
+        const plan = splitPlan.value
+        const rows: { row: SideBySideRow; i: number }[] = []
+        if (!plan) return rows
+        const start = virtualStart.value
+        const end = virtualEnd.value
+        for (let i = start; i < end; i++) rows.push({ row: splitRowAt(plan, i), i })
+        return rows
+    })
 
     const marks = computed(() => {
         const map = new Map<DiffLine, TextRange[]>()
@@ -476,9 +448,7 @@
     const changeIndexMap = computed(() => new Map(changeStartIndexes.value.map((lineIndex, i) => [lineIndex, i])))
 
     const changeCount = computed(() =>
-        ui.diffViewMode === 'split'
-            ? sideBySide.value.reduce((count, row) => count + (row.change !== undefined ? 1 : 0), 0)
-            : changeStartIndexes.value.length
+        ui.diffViewMode === 'split' ? (splitPlan.value?.changeRows.length ?? 0) : changeStartIndexes.value.length
     )
 
     let scrollAnimation: number | null = null
@@ -505,34 +475,11 @@
         scrollAnimation = requestAnimationFrame(step)
     }
 
-    /** Change #n → row offset: inline uses line indexes, split uses side-by-side row indexes. */
-    const splitChangeRowIndexes = computed(() => {
-        const indexes: number[] = []
-        sideBySide.value.forEach((row, index) => {
-            if (row.change !== undefined) indexes.push(index)
-        })
-        return indexes
-    })
-
-    const lineIndexMap = computed(() => {
-        const map = new Map<DiffLine, number>()
-        lines.value.forEach((line, index) => map.set(line, index))
-        return map
-    })
-
-    const splitRowByLine = computed(() => {
-        const map = new Map<DiffLine, number>()
-        sideBySide.value.forEach((row, index) => {
-            if (row.left && !map.has(row.left)) map.set(row.left, index)
-            if (row.right && !map.has(row.right)) map.set(row.right, index)
-        })
-        return map
-    })
-
+    /** Change #n → row offset: inline uses line indexes, split uses plan row indexes. */
     function scrollToChange(index: number) {
         const body = diffBody.value
         if (!body) return
-        const rowIndex = ui.diffViewMode === 'split' ? splitChangeRowIndexes.value[index] : changeStartIndexes.value[index]
+        const rowIndex = ui.diffViewMode === 'split' ? splitPlan.value?.changeRows[index] : changeStartIndexes.value[index]
         if (rowIndex === undefined) return
         animateBodyScrollTo(rowIndex * rowHeight.value)
     }
@@ -552,8 +499,8 @@
         if (!body) return
         const hit = searchHits.value[index]
         if (!hit) return
-        const rowIndex = ui.diffViewMode === 'split' ? splitRowByLine.value.get(hit.line) : lineIndexMap.value.get(hit.line)
-        if (rowIndex === undefined) return
+        const rowIndex = ui.diffViewMode === 'split' ? splitPlan.value?.lineRows[hit.index] : hit.index
+        if (rowIndex === undefined || rowIndex < 0) return
         animateBodyScrollTo(rowIndex * rowHeight.value - (body.clientHeight - rowHeight.value) / 2)
     }
 
@@ -637,18 +584,21 @@
     const lineStates = computed(() => computeLineStates(lines.value, props.file?.path ?? ''))
 
     /** Cached per-line highlight (visible lines only, keyed by the stable DiffLine object). */
-    function htmlFor(line: DiffLine | undefined, i: number): string {
+    function htmlFor(line: DiffLine | undefined, index: number | undefined): string {
         if (!line) return ''
         const cached = htmlCache.get(line)
         if (cached !== undefined) return cached
-        const context = lineStates.value[i]
-        const html = highlightLineAt(line, context ?? computeLineStates([line], props.file?.path ?? '')[0]!, renderOne)
+        const context =
+            index !== undefined ? lineStates.value.context(index) : computeLineStates([line], props.file?.path ?? '').context(0)
+        const html = highlightLineAt(line, context, renderOne)
         htmlCache.set(line, html)
         return html
     }
 
     interface SearchHit {
         line: DiffLine
+        /** Line index in `lines` — split mode maps it to a row through the plan. */
+        index: number
         ranges: [number, number][]
     }
 
@@ -657,7 +607,8 @@
         const hits: SearchHit[] = []
         if (!query || meta.value?.binary || meta.value?.image) return hits
         const lower = query.toLowerCase()
-        for (const line of lines.value) {
+        for (let index = 0; index < lines.value.length; index++) {
+            const line = lines.value[index]!
             if (line.type === 'hunk' || line.type === 'meta') continue
             const content = line.text.slice(1)
             const ranges: [number, number][] = []
@@ -668,7 +619,7 @@
                 ranges.push([i, i + query.length])
                 from = i + query.length
             }
-            if (ranges.length) hits.push({ line, ranges })
+            if (ranges.length) hits.push({ line, index, ranges })
         }
         return hits
     })
@@ -696,14 +647,6 @@
     let scrollSyncTimer: ReturnType<typeof setTimeout> | null = null
 
     type MinimapKind = 'add' | 'del'
-
-    function minimapRows(): { kind?: MinimapKind; left?: MinimapKind; right?: MinimapKind }[] {
-        const change = (type?: string) => (type === 'add' || type === 'del' ? (type as MinimapKind) : undefined)
-        if (ui.diffViewMode === 'split') {
-            return sideBySide.value.map(row => (row.hunkHeader ? {} : { left: change(row.left?.type), right: change(row.right?.type) }))
-        }
-        return lines.value.map(line => ({ kind: change(line.type) }))
-    }
 
     function minimapColors(): Record<MinimapKind, { color: string; alpha: number }> {
         const styles = getComputedStyle(document.documentElement)
@@ -736,10 +679,12 @@
         const cssW = strip.clientWidth
         const stripH = strip.clientHeight
         if (!cssW || !stripH) return
-        const rows = minimapRows()
-        if (!rows.length) return
-        const barH = stripH / rows.length
-        minimapMapH = barH * rows.length
+        const split = ui.diffViewMode === 'split'
+        const plan = split ? splitPlan.value : null
+        const rowCount = split ? (plan?.totalRows ?? 0) : lines.value.length
+        if (!rowCount) return
+        const barH = stripH / rowCount
+        minimapMapH = barH * rowCount
         const dpr = window.devicePixelRatio || 1
         canvas.width = Math.round(cssW * dpr)
         canvas.height = Math.round(stripH * dpr)
@@ -749,17 +694,42 @@
         ctx.clearRect(0, 0, cssW, stripH)
         const colors = minimapColors()
         const pad = 4
-        const split = ui.diffViewMode === 'split'
         const halfW = split ? (cssW - pad * 2 - 2) / 2 : cssW - pad * 2
-        rows.forEach((row, i) => {
-            const y = i * barH
-            if (split) {
-                drawMinimapBar(ctx, pad, y, halfW, barH, colors, row.left)
-                drawMinimapBar(ctx, pad + halfW + 2, y, halfW, barH, colors, row.right)
-            } else {
-                drawMinimapBar(ctx, pad, y, cssW - pad * 2, barH, colors, row.kind)
+        const kindOf = (type?: DiffLine['type']): MinimapKind | undefined => (type === 'add' || type === 'del' ? type : undefined)
+        if (split && plan) {
+            // Iterate the plan directly — materializing a row wrapper per line just to draw bars would defeat it.
+            for (let s = 0; s < plan.segments.length; s++) {
+                const segment = plan.segments[s]!
+                if (segment.kind !== 'change') continue
+                const start = plan.prefix[s] ?? 0
+                const rows = Math.max(segment.dels.length, segment.adds.length)
+                for (let p = 0; p < rows; p++) {
+                    const leftOffset = p - segment.leftPad
+                    const rightOffset = p - segment.rightPad
+                    const y = (start + p) * barH
+                    drawMinimapBar(
+                        ctx,
+                        pad,
+                        y,
+                        halfW,
+                        barH,
+                        colors,
+                        leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined
+                    )
+                    drawMinimapBar(
+                        ctx,
+                        pad + halfW + 2,
+                        y,
+                        halfW,
+                        barH,
+                        colors,
+                        rightOffset >= 0 ? kindOf(segment.adds[rightOffset]?.type) : undefined
+                    )
+                }
             }
-        })
+            return
+        }
+        lines.value.forEach((line, i) => drawMinimapBar(ctx, pad, i * barH, cssW - pad * 2, barH, colors, kindOf(line.type)))
     }
 
     function updateViewport() {
@@ -822,8 +792,8 @@
         let rowCount: number
         let anchors: number[]
         if (ui.diffViewMode === 'split') {
-            rowCount = sideBySide.value.length
-            anchors = splitChangeRowIndexes.value
+            rowCount = splitPlan.value?.totalRows ?? 0
+            anchors = splitPlan.value?.changeRows ?? []
         } else {
             rowCount = lines.value.length
             anchors = changeStartIndexes.value
@@ -876,6 +846,7 @@
         resizeObserver = null
         if (scrollSyncTimer) clearTimeout(scrollSyncTimer)
         window.removeEventListener('keydown', onGlobalKeyDown, true)
+        revokeImages()
     })
 
     onMounted(() => window.addEventListener('keydown', onGlobalKeyDown, true))
@@ -908,7 +879,7 @@
         if (body && resizeObserver) resizeObserver.observe(body)
     })
 
-    watch([lines, sideBySide, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme], () =>
+    watch([lines, splitPlan, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme], () =>
         nextTick(() => {
             measureRowHeight()
             resetPaneScroll()
@@ -1178,7 +1149,7 @@
                                     >
                                     <pre
                                         v-if="v.row.left"
-                                        v-html="htmlFor(v.row.left, v.i)" />
+                                        v-html="htmlFor(v.row.left, v.row.leftIndex)" />
                                     <pre v-else></pre>
                                 </div>
                             </template>
@@ -1219,7 +1190,7 @@
                                     >
                                     <pre
                                         v-if="v.row.right"
-                                        v-html="htmlFor(v.row.right, v.i)" />
+                                        v-html="htmlFor(v.row.right, v.row.rightIndex)" />
                                     <pre v-else></pre>
                                 </div>
                             </template>

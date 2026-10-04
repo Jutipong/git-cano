@@ -29,6 +29,7 @@ import {
     discard,
     discardUnstaged,
     fetchAll,
+    getCommitBody,
     getCommitDetails,
     getDiff,
     getLog,
@@ -655,6 +656,10 @@ app.whenReady().then(() => {
     handle('commit:details', (hash: string) => {
         requireRepo()
         return getCommitDetails(hash as string)
+    })
+    handle('commit:body', (hash: string, _dir?: string) => {
+        requireRepo()
+        return getCommitBody(hash as string, typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
     })
     handle('commit:revert', (hash: string) => {
         requireRepo()

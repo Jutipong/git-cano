@@ -21,7 +21,10 @@ The guard also blocks guarded **ambient** vars (EDITOR, VISUAL, PAGER, PREFIX, G
 `git status` throw "blocked by the environment guard" and `openRepo()` report "not a git
 repository". `GUARDED_AMBIENT_ENV_KEYS` strips them before every git call; do not remove it (the
 full guarded list lives in `@simple-git/argv-parser`). Keep that strip inside `baseEnv()` — without
-it repos stop opening for anyone with `EDITOR`/`VISUAL` set.
+it repos stop opening for anyone with `EDITOR`/`VISUAL` set. `baseEnv()` also deletes **every**
+remaining `git*` key: the guard blocks any unknown variable with a `git` prefix (its parse-env step
+collects them case-insensitively), so a stray `GITLAB_TOKEN` or `GIT_CANO_LOG_LEVEL` would break
+every spawn. Keep that sweep too — the git envs we inject ourselves are added *after* `baseEnv()`.
 
 ## Ref names (ambiguous short names)
 
@@ -35,6 +38,22 @@ into every command fed a name from the UI:
   `backup` warns `refname 'backup' is ambiguous`, and `git push origin backup` fails with "matches more than one".
 - Do NOT qualify `@{upstream}`: `refs/heads/<name>@{upstream}` is a fatal "no such branch". `@{upstream}`
   resolves through `branch.<name>.*` config and only accepts the bare branch name (it is not ambiguous on its own).
+
+## Memory-conscious payloads
+
+- `getLog()` / `getSoloLog()` ship only a body **presence marker** (`%<(1,trunc)%b`, parsed into `CommitNode.hasBody`) —
+  never the full `%b`. The graph's message popover fetches the body lazily via `commit:body` → `getCommitBody(hash, dir?)`
+  (repo-pinned). Do not put `%b` back into `logArgs()`/`soloLogArgs()`.
+- `getCommitDetails()` deliberately runs no full `git diff`: the Changes panel only needs files + message, and per-file
+  diffs come from `file:commitDiff` / `file:stashDiff`. Adding the diff back doubles peak memory for a discarded payload.
+- `capDiffLines()` (`MAX_DIFF_LINES` 20k) truncates every diff/snapshot payload with a visible marker; whole-file views
+  and untracked files are the reason it exists.
+- `logCache` / `branchCache` are MRU-bounded to 6 repos (`cacheLog`, `listBranches`) and survive `closeRepo` only within
+  that bound; `getCachedLog` touches the entry. Keep new per-repo caches bounded the same way.
+- Image IPC (`getImageVersion` / `getCommitImageVersion` / `getStashImageVersion`) returns `GitImage` raw bytes, never a
+  base64 data URL; the renderer wraps them in blob URLs. Base64 here kept a ~1.37x string per image side on both ends.
+- `getChangesContext()` caps each prompt section (`capContextSection`, 20k chars) before joining — the prompt is
+  truncated to 16k in `opencode.ts` anyway.
 
 ## AI commit messages
 

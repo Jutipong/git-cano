@@ -7,6 +7,8 @@ export interface CommitNode {
     date: string
     subject: string
     body?: string
+    /** Presence marker from the log (`%<(1,trunc)%b`) — the body text itself is fetched lazily on expand. */
+    hasBody?: boolean
     refs: string[]
     lane: number
 }
@@ -83,7 +85,12 @@ export interface CommitDetails {
     date: string
     parents: string[]
     files: CommitFile[]
-    diff: DiffLine[]
+}
+
+/** Raw image bytes + mime from the main process — the renderer turns them into a blob URL (no base64 duplication). */
+export interface GitImage {
+    mime: string
+    data: Uint8Array
 }
 
 export interface StashEntry {

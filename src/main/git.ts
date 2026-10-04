@@ -8,6 +8,7 @@ import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
 import { authGitEnv } from './auth'
 import { log, maskUrl } from './logger'
+import { capContextSection, capDiffLines, parseDiff, parseLog } from './parsers'
 
 import type {
     BlameLine,
@@ -19,6 +20,7 @@ import type {
     DiffLine,
     FileEntry,
     GitignoreRuleKind,
+    GitImage,
     LocalChangesMode,
     MergeCheck,
     MergeMode,
@@ -40,10 +42,15 @@ import type { FSWatcher } from 'node:fs'
 
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
-/** Last computed log per repo path — lets the renderer paint instantly (stale-while-revalidate) when switching back. */
+/**
+ * Last computed log per repo path — lets the renderer paint instantly (stale-while-revalidate) when switching back.
+ * Bounded to the most recently used repos so a long session with many tabs can't grow it forever.
+ */
 const logCache = new Map<string, { limit: number; commits: CommitNode[] }>()
+const LOG_CACHE_MAX_REPOS = 6
 /** Last computed branch list per repo path — same stale-while-revalidate purpose as logCache (branches change slowly). */
 const branchCache = new Map<string, { local: BranchInfo[]; remote: BranchInfo[] }>()
+const BRANCH_CACHE_MAX_REPOS = 6
 /** Original HEAD per repo path while an interactive rebase is paused, so completion can be journaled for Undo. */
 const interactiveRebases = new Map<string, string>()
 
@@ -113,6 +120,14 @@ export function baseEnv(): NodeJS.ProcessEnv {
     delete env.GIT_ASKPASS
     delete env.SSH_ASKPASS
     for (const key of GUARDED_AMBIENT_ENV_KEYS) delete env[key]
+    // simple-git v4's environment guard collects *every* key starting with "git" (its parse-env step) and blocks
+    // the ones it does not know — so an unrelated variable like GITLAB_TOKEN or GIT_CANO_LOG_LEVEL makes every
+    // spawn throw "blocked by the environment guard" and repos stop opening. Strip them all; the git envs we
+    // intentionally inject (SSH command / config extraheader / editors) are added after baseEnv() and listed
+    // in SAFE_UNSAFE_OPTIONS.allowEnvironment.
+    for (const key of Object.keys(env)) {
+        if (/^git/i.test(key)) delete env[key]
+    }
     return env
 }
 
@@ -235,8 +250,8 @@ export function closeRepo(dir?: string): void {
     // Drop its undo journal too — hashes from a previous life at the same path must not resurface.
     undoStacks.delete(target)
     interactiveRebases.delete(target)
-    // Keep the log cache for closed repos — it only costs a few hundred in-memory commits and
-    // makes reopening (tab or workspace switch) paint instantly; selectTab always re-validates.
+    // Keep the log/branch cache for closed repos — it only costs a few hundred in-memory commits, is bounded
+    // by the LRU caps above, and makes reopening (tab or workspace switch) paint instantly; selectTab always re-validates.
     unwatchRepo(target)
     if (activeRepoPath === target) {
         activeRepoPath = repoInstances.keys().next().value ?? null
@@ -446,7 +461,7 @@ const MIME_BY_EXT: Record<string, string> = {
     '.svg': 'image/svg+xml',
 }
 
-export async function getImageVersion(file: string, source: 'workdir' | 'index' | 'head'): Promise<string | null> {
+export async function getImageVersion(file: string, source: 'workdir' | 'index' | 'head'): Promise<GitImage | null> {
     const { path: p } = getRepo()
     const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
     try {
@@ -458,69 +473,12 @@ export async function getImageVersion(file: string, source: 'workdir' | 'index' 
             buf = await gitBinaryBuffer(p, ['cat-file', '-p', spec])
         }
         if (!buf.length) return null
-        return `data:${mime};base64,${buf.toString('base64')}`
+        // Raw bytes instead of a base64 data URL — the renderer wraps these in a blob URL, so the
+        // image never exists as an extra ~1.37x string on both sides of the IPC.
+        return { mime, data: buf }
     } catch {
         return null
     }
-}
-
-function normalizeRef(raw: string): string | null {
-    const s = raw.trim()
-    if (!s) return null
-    if (s.startsWith('HEAD -> ')) {
-        const target = s.slice('HEAD -> '.length).trim()
-        return `HEAD -> ${target.replace(/^refs\/heads\//, '')}`
-    }
-    if (s.startsWith('tag:')) {
-        const name = s
-            .slice(4)
-            .trim()
-            .replace(/\^\{\}$/, '')
-            .replace(/^refs\/tags\//, '')
-        return `tag: ${name}`
-    }
-    if (s.startsWith('refs/tags/')) return `tag: ${s.replace(/^refs\/tags\//, '').replace(/\^\{\}$/, '')}`
-    if (s.startsWith('refs/remotes/')) {
-        const short = s.replace(/^refs\/remotes\//, '')
-        if (!short || short.endsWith('/HEAD')) return null
-        return `remote:${short}`
-    }
-    if (s.startsWith('refs/heads/')) return s.replace(/^refs\/heads\//, '')
-    if (s.endsWith('/HEAD')) return null
-    return s
-}
-
-function parseLog(text: string): CommitNode[] {
-    const SEP = '\x1f'
-    const REC = '\x1e'
-    const commits: CommitNode[] = []
-    for (const line of text.split(REC)) {
-        const t = line.replace(/^\n/, '')
-        if (!t.trim()) continue
-        const [hash, parents, shortHash, author, authorEmail, date, refsRaw, subject, bodyRaw] = t.split(SEP)
-        const refs = refsRaw
-            ? refsRaw
-                  .trim()
-                  .replace(/^\(/, '')
-                  .replace(/\)$/, '')
-                  .split(',')
-                  .map(normalizeRef)
-                  .filter((ref): ref is string => !!ref)
-            : []
-        commits.push({
-            hash,
-            shortHash,
-            parents: parents ? parents.split(' ').filter(Boolean) : [],
-            author,
-            authorEmail: authorEmail || undefined,
-            date,
-            subject,
-            body: bodyRaw ? bodyRaw.trim() || undefined : undefined,
-            refs,
-            lane: 0,
-        })
-    }
-    return commits
 }
 
 function logArgs(limit: number, skip?: number): string[] {
@@ -530,7 +488,7 @@ function logArgs(limit: number, skip?: number): string[] {
         '--remotes',
         '--tags',
         '--decorate=full',
-        `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join('\x1f')}\x1e`,
+        `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%<(1,trunc)%b'].join('\x1f')}\x1e`,
         '--date=iso',
         `--max-count=${limit}`,
         ...(skip ? [`--skip=${skip}`] : []),
@@ -538,12 +496,34 @@ function logArgs(limit: number, skip?: number): string[] {
     ]
 }
 
+/** Moves a repo's log entry to the MRU end of the bounded cache, evicting the oldest entry when full. */
+function cacheLog(repoPath: string, limit: number, commits: CommitNode[]): void {
+    logCache.delete(repoPath)
+    logCache.set(repoPath, { limit, commits })
+    while (logCache.size > LOG_CACHE_MAX_REPOS) {
+        const oldest = logCache.keys().next().value
+        if (oldest === undefined) break
+        logCache.delete(oldest)
+    }
+}
+
 export async function getLog(limit = 500): Promise<CommitNode[]> {
     const { path: p, git: g } = getRepo()
     const commits = parseLog(await g.raw(logArgs(limit)))
     assignLanes(commits)
-    logCache.set(p, { limit, commits })
+    cacheLog(p, limit, commits)
     return commits
+}
+
+/** Commit body only (`%b`) — lazy-loaded for the graph's message popover so the full log stays lean. Null when empty. */
+export async function getCommitBody(hash: string, dir?: string): Promise<string | null> {
+    const { git: g } = dir ? getRepoFor(dir) : getRepo()
+    try {
+        const body = (await g.raw(['show', '-s', '--format=%b', hash])).trim()
+        return body || null
+    } catch {
+        return null
+    }
 }
 
 /** Returns the cached log for the active repo when it covers `limit`, else null. May be stale — the renderer re-validates with repo:log. */
@@ -551,6 +531,9 @@ export function getCachedLog(limit = 500): CommitNode[] | null {
     if (!activeRepoPath) return null
     const entry = logCache.get(activeRepoPath)
     if (!entry || entry.limit < limit) return null
+    // Reading counts as use — keep this repo at the MRU end of the bounded cache.
+    logCache.delete(activeRepoPath)
+    logCache.set(activeRepoPath, entry)
     return entry.commits.slice(0, limit)
 }
 export async function getLogPage(offset: number, limit: number): Promise<CommitNode[]> {
@@ -563,7 +546,7 @@ function soloLogArgs(branch: string, limit: number, skip?: number): string[] {
         'log',
         branch,
         '--decorate=full',
-        `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%b'].join('\x1f')}\x1e`,
+        `--pretty=format:${['%H', '%P', '%h', '%an', '%aE', '%ad', '%d', '%s', '%<(1,trunc)%b'].join('\x1f')}\x1e`,
         '--date=iso',
         `--max-count=${limit}`,
         ...(skip ? [`--skip=${skip}`] : []),
@@ -654,7 +637,7 @@ export async function discardUnstaged(): Promise<void> {
 export async function getDiff(file: string, staged: boolean, context?: number): Promise<DiffLine[]> {
     const { path: p, git: g } = getRepo()
     if (!staged && (await isUntracked(g, file))) {
-        return getUntrackedDiff(p, file)
+        return capDiffLines(getUntrackedDiff(p, file))
     }
     const unified = `--unified=${context ?? 3}`
     const args = staged ? ['diff', '--cached', unified, '--no-color', '--', file] : ['diff', unified, '--no-color', '--', file]
@@ -662,10 +645,10 @@ export async function getDiff(file: string, staged: boolean, context?: number): 
     try {
         text = await g.raw(args)
     } catch {}
-    if (text.trim() || text.includes('Binary files')) return parseDiff(text, file)
+    if (text.trim() || text.includes('Binary files')) return capDiffLines(parseDiff(text, file))
     // Empty diff = unchanged file (opened from ALL FILES mode) — show the full content
     // like Fork/GitKraken's file tree instead of an empty diff.
-    return fullFileLines(p, file, staged)
+    return capDiffLines(await fullFileLines(p, file, staged))
 }
 
 async function isUntracked(g: SimpleGit, file: string): Promise<boolean> {
@@ -739,40 +722,6 @@ function snapshotToCtxLines(file: string, content: string): DiffLine[] {
     return lines
 }
 
-function parseDiff(text: string, file?: string): DiffLine[] {
-    const lines: DiffLine[] = file ? [{ type: 'meta', oldNo: null, newNo: null, text: `diff --git a/${file} b/${file}` }] : []
-    let oldNo = 0
-    let newNo = 0
-
-    for (const line of text.split('\n')) {
-        if (
-            line.startsWith('diff ') ||
-            line.startsWith('index ') ||
-            line.startsWith('--- ') ||
-            line.startsWith('+++ ') ||
-            line.startsWith('similarity ') ||
-            line.startsWith('rename ')
-        ) {
-            continue
-        }
-        if (line.startsWith('@@')) {
-            const m = /@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(line)
-            oldNo = m ? parseInt(m[1], 10) : 0
-            newNo = m ? parseInt(m[2], 10) : 0
-            lines.push({ type: 'hunk', oldNo: null, newNo: null, text: line })
-        } else if (line.startsWith('+')) {
-            lines.push({ type: 'add', oldNo: null, newNo: newNo++, text: line })
-        } else if (line.startsWith('-')) {
-            lines.push({ type: 'del', oldNo: oldNo++, newNo: null, text: line })
-        } else if (line.startsWith(' ')) {
-            lines.push({ type: 'ctx', oldNo: oldNo++, newNo: newNo++, text: line })
-        } else if (line.startsWith('\\')) {
-            lines.push({ type: 'meta', oldNo: null, newNo: null, text: line })
-        }
-    }
-    return lines
-}
-
 export async function getCommitDetails(hash: string): Promise<CommitDetails> {
     const { git: g } = getRepo()
     const [metadata, message] = await Promise.all([
@@ -781,8 +730,10 @@ export async function getCommitDetails(hash: string): Promise<CommitDetails> {
     ])
     const [fullHash, author, email, date, parents = ''] = metadata.trim().split('\u001f')
     const parent = parents.split(' ').filter(Boolean)[0]
-    const [diffText, fileText, numstatText] = await Promise.all([
-        parent ? g.raw(['diff', '--no-color', parent, hash]) : g.raw(['show', '--no-color', '--format=', hash]),
+    // Deliberately no full `git diff` here: the Changes panel only needs the file list + message, and the
+    // per-file diff is fetched lazily by DiffView through `file:commitDiff`. Diffing here doubled peak
+    // memory (text + parsed lines on both sides of the IPC) for a payload the renderer discarded.
+    const [fileText, numstatText] = await Promise.all([
         parent
             ? g.raw(['diff-tree', '--no-commit-id', '--name-status', '-r', parent, hash])
             : g.raw(['diff-tree', '--root', '--no-commit-id', '--name-status', '-r', hash]),
@@ -818,7 +769,6 @@ export async function getCommitDetails(hash: string): Promise<CommitDetails> {
         date,
         parents: parents.split(' ').filter(Boolean),
         files,
-        diff: parseDiff(diffText),
     }
 }
 
@@ -925,7 +875,7 @@ export async function getStashFileDiff(hash: string, file: string, context?: num
     try {
         text = await g.raw(['diff', `${hash}^`, hash, `--unified=${context ?? 3}`, '--no-color', '--', file])
     } catch {}
-    if (text.trim() || text.includes('Binary files')) return parseDiff(text)
+    if (text.trim() || text.includes('Binary files')) return capDiffLines(parseDiff(text))
 
     // Empty diff: unchanged files (opened from ALL FILES mode) render the stash-tree blob
     // as context; untracked files kept in the 3rd parent keep their added-lines rendering.
@@ -934,7 +884,7 @@ export async function getStashFileDiff(hash: string, file: string, context?: num
         if (snapshot.subarray(0, 8000).includes(0)) {
             return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
         }
-        return snapshotToCtxLines(file, snapshot.toString('utf8'))
+        return capDiffLines(snapshotToCtxLines(file, snapshot.toString('utf8')))
     } catch {
         // not in the stash tree — fall through to the 3rd-parent check below
     }
@@ -948,7 +898,7 @@ export async function getStashFileDiff(hash: string, file: string, context?: num
     if (snapshot.subarray(0, 8000).includes(0)) {
         return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
     }
-    return stashBlobAddedLines(file, snapshot)
+    return capDiffLines(stashBlobAddedLines(file, snapshot))
 }
 
 export async function getStashFileMeta(hash: string, file: string): Promise<DiffMeta> {
@@ -963,14 +913,14 @@ export async function getStashFileMeta(hash: string, file: string): Promise<Diff
     return { binary: snapshot.subarray(0, 8000).includes(0), image }
 }
 
-export async function getStashImageVersion(hash: string, file: string): Promise<string | null> {
+export async function getStashImageVersion(hash: string, file: string): Promise<GitImage | null> {
     const { path: p } = getRepo()
     const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
     const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
         .catch(() => gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}^3:${file}`]))
         .catch(() => null)
     if (!snapshot?.length) return null
-    return `data:${mime};base64,${snapshot.toString('base64')}`
+    return { mime, data: snapshot }
 }
 
 export async function revertCommit(hash: string): Promise<void> {
@@ -1047,7 +997,14 @@ export async function listBranches(): Promise<{ local: BranchInfo[]; remote: Bra
     }
 
     const result = { local, remote }
+    // Bounded, MRU-ordered cache — see logCache.
+    branchCache.delete(p)
     branchCache.set(p, result)
+    while (branchCache.size > BRANCH_CACHE_MAX_REPOS) {
+        const oldest = branchCache.keys().next().value
+        if (oldest === undefined) break
+        branchCache.delete(oldest)
+    }
     return result
 }
 
@@ -1711,7 +1668,7 @@ export async function getCommitFileDiff(hash: string, file: string, context?: nu
             ? await g.raw(['diff', parents[0], hash, `--unified=${context ?? 3}`, '--no-color', '--', file])
             : await g.raw(['show', `--unified=${context ?? 3}`, '--no-color', '--format=', hash, '--', file])
     } catch {}
-    if (text.trim() || text.includes('Binary files')) return parseDiff(text)
+    if (text.trim() || text.includes('Binary files')) return capDiffLines(parseDiff(text))
 
     let snapshot: Buffer
     try {
@@ -1723,7 +1680,7 @@ export async function getCommitFileDiff(hash: string, file: string, context?: nu
         return [{ type: 'meta', oldNo: null, newNo: null, text: `Binary file ${file} not shown` }]
     }
     const content = snapshot.toString('utf8')
-    return snapshotToCtxLines(file, content)
+    return capDiffLines(snapshotToCtxLines(file, content))
 }
 
 export async function getCommitFileMeta(hash: string, file: string): Promise<DiffMeta> {
@@ -1738,7 +1695,7 @@ export async function getCommitFileMeta(hash: string, file: string): Promise<Dif
     }
 }
 
-export async function getCommitImageVersion(hash: string, file: string): Promise<string | null> {
+export async function getCommitImageVersion(hash: string, file: string): Promise<GitImage | null> {
     const { path: p } = getRepo()
     const MIME_BY_EXT: Record<string, string> = {
         '.png': 'image/png',
@@ -1753,7 +1710,7 @@ export async function getCommitImageVersion(hash: string, file: string): Promise
     const mime = MIME_BY_EXT[path.extname(file).toLowerCase()] ?? 'application/octet-stream'
     try {
         const snapshot = await gitBinaryBuffer(p, ['cat-file', 'blob', `${hash}:${file}`])
-        return snapshot.length ? `data:${mime};base64,${snapshot.toString('base64')}` : null
+        return snapshot.length ? { mime, data: snapshot } : null
     } catch {
         return null
     }
@@ -2165,20 +2122,20 @@ export async function getChangesContext(scope: AiContextScope = 'staged', dir?: 
     } catch {}
 
     if (scope === 'staged' && stagedFiles.length > 0) {
-        parts.push(`Changed files (staged for commit):\n${stagedFiles.join('\n')}`)
+        parts.push(capContextSection(`Changed files (staged for commit):\n${stagedFiles.join('\n')}`))
         try {
             const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
-            if (staged.trim()) parts.push(staged)
+            if (staged.trim()) parts.push(capContextSection(staged))
         } catch {}
         return parts.join('\n')
     }
 
-    if (allLines.length) parts.push(`Changed files:\n${allLines.join('\n')}`)
+    if (allLines.length) parts.push(capContextSection(`Changed files:\n${allLines.join('\n')}`))
     try {
         const staged = await g.raw(['diff', '--cached', '--no-color', '--no-ext-diff'])
         const unstaged = await g.raw(['diff', '--no-color', '--no-ext-diff'])
-        if (staged.trim()) parts.push(staged)
-        if (unstaged.trim()) parts.push(unstaged)
+        if (staged.trim()) parts.push(capContextSection(staged))
+        if (unstaged.trim()) parts.push(capContextSection(unstaged))
     } catch {}
     try {
         const untracked = await g.raw(['ls-files', '--others', '--exclude-standard'])
@@ -2263,7 +2220,10 @@ function runFormatCommand(cmd: string, args: string[], cwd: string): Promise<voi
 }
 
 function writeTempPatch(patch: string): string {
-    const tmp = path.join(path.dirname(getRepo().path), '.git', `git-cano-patch-${Date.now()}.patch`)
+    // The patch must live inside the repo's own git dir — `path.dirname(repo)` pointed at the parent
+    // directory, so hunk staging failed with ENOENT for any repo whose parent has no `.git`.
+    // resolveGitDir() also handles linked worktrees where `.git` is a pointer file.
+    const tmp = path.join(resolveGitDir(getRepo().path), `git-cano-patch-${Date.now()}.patch`)
     fs.writeFileSync(tmp, patch.endsWith('\n') ? patch : `${patch}\n`)
     return tmp
 }

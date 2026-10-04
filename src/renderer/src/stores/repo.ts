@@ -1,6 +1,6 @@
 import { assignLanes } from '@shared/lanes'
 import { defineStore } from 'pinia'
-import { computed, ref, watch } from 'vue'
+import { computed, markRaw, ref, watch } from 'vue'
 
 import { useUiTransientStore } from './uiTransient'
 import { useWorkspaceStore } from './workspace'
@@ -8,6 +8,16 @@ import { useWorkspaceStore } from './workspace'
 import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
 
 const PAGE_SIZE = 500
+
+/**
+ * Commit objects are only ever replaced wholesale (never mutated field-by-field), so marking them raw keeps Pinia from
+ * wrapping every one of potentially thousands of commits in a deep reactive proxy — a large chunk of renderer memory
+ * for big logs, with no behavioral difference since the `commits` array itself stays reactive.
+ */
+function rawCommits(list: CommitNode[]): CommitNode[] {
+    for (const commit of list) markRaw(commit)
+    return list
+}
 
 export interface RepoTab {
     path: string
@@ -254,7 +264,7 @@ export const useRepoStore = defineStore('repo', () => {
             ])
             if (!tabs.value.some(tab => tab.path === status.path)) return
             if (tabs.value[activeTab.value]?.path !== status.path) return
-            commits.value = log
+            commits.value = rawCommits(log)
             // A second solo may have started mid-flight — only apply files for the current one.
             if (soloBranch.value === solo) soloFiles.value = focused
             hasMore.value = log.length >= limit
@@ -341,7 +351,7 @@ export const useRepoStore = defineStore('repo', () => {
             ])
             if (cachedBranches) branchList.value = cachedBranches
             if (cachedLog && tabs.value[activeTab.value]?.path === tab.path) {
-                commits.value = cachedLog
+                commits.value = rawCommits(cachedLog)
                 hasMore.value = cachedLog.length >= logLimit.value
                 loadedPath.value = tab.path
             }
@@ -457,7 +467,7 @@ export const useRepoStore = defineStore('repo', () => {
                 await refresh()
                 return
             }
-            commits.value = [...commits.value, ...fresh]
+            commits.value = [...commits.value, ...rawCommits(fresh)]
             assignLanes(commits.value)
             hasMore.value = fresh.length >= PAGE_SIZE
         } finally {

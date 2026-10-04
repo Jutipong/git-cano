@@ -83,8 +83,8 @@
     const expandedAbove = ref(false)
     const expandedMaxH = ref(240)
 
-    function toggleMessage(hash: string, event: MouseEvent) {
-        if (expandedHash.value === hash) {
+    function toggleMessage(commit: CommitNode, event: MouseEvent) {
+        if (expandedHash.value === commit.hash) {
             expandedHash.value = null
             return
         }
@@ -99,7 +99,8 @@
             expandedAbove.value = spaceBelow < spaceAbove
             expandedMaxH.value = Math.round(Math.max(96, Math.min(240, Math.max(spaceBelow, spaceAbove) - 44)))
         }
-        expandedHash.value = hash
+        expandedHash.value = commit.hash
+        void loadBody(commit)
     }
 
     function onKeydown(event: KeyboardEvent) {
@@ -192,11 +193,13 @@
         const edges: { commit: CommitNode; parent: string; childIndex: number; parentIndex: number }[] = []
         const rows = visibleCommits.value
         for (let childIndex = 0; childIndex < rows.length; childIndex++) {
+            // Row indexes grow monotonically, so once the child is below the window no later child can reach it.
+            if (childIndex > hi) break
             const commit = rows[childIndex]!
             for (const parent of commit.parents) {
                 const parentIndex = rowIndex.value.get(parent)
                 if (parentIndex === undefined || parentIndex <= childIndex) continue
-                if (childIndex > hi || parentIndex < lo) continue
+                if (parentIndex < lo) continue
                 edges.push({ commit, parent, childIndex, parentIndex })
             }
         }
@@ -288,7 +291,6 @@
      * what `getSquashPlan` accepts (merge commits are rejected).
      */
     const squashPicks = ref<string[]>([])
-    const commitByHash = computed(() => new Map(props.commits.map(commit => [commit.hash as string, commit])))
     const headHash = computed(
         () => props.commits.find(commit => commit.refs.some(ref => ref === 'HEAD' || ref.startsWith('HEAD -> ')))?.hash ?? null
     )
@@ -296,8 +298,11 @@
         const chain: CommitNode[] = []
         const seen = new Set<string>()
         let current = headHash.value
+        // Local lookup map: it exists only for this computation, unlike a store-lifetime hash → commit map
+        // that would duplicate the whole log in memory for the (rare) squash/menu lookups.
+        const byHash = new Map(props.commits.map(commit => [commit.hash as string, commit]))
         while (current && !seen.has(current)) {
-            const commit = commitByHash.value.get(current)
+            const commit = byHash.get(current)
             if (!commit) break
             chain.push(commit)
             seen.add(current)
@@ -568,10 +573,33 @@
         return palette[hashString(name) % palette.length]
     }
     const avatarAssignments = new Map<string, number>()
+    /** Lazily fetched commit bodies (`%b`) for the message popover — the log itself only carries a `hasBody` marker. */
+    const bodies = ref<Record<string, string>>({})
+    let bodyRequest = 0
     watch(
         () => repoStore.repo?.path,
-        () => avatarAssignments.clear()
+        () => {
+            avatarAssignments.clear()
+            measureCache.clear()
+            bodies.value = {}
+            bodyRequest++
+        }
     )
+
+    /** Body shown in the popover: eager `body` (squash/legacy paths) or the lazily fetched `%b`. */
+    function bodyOf(commit: CommitNode): string {
+        return commit.body ?? bodies.value[commit.hash] ?? ''
+    }
+
+    async function loadBody(commit: CommitNode): Promise<void> {
+        if (commit.body || bodies.value[commit.hash] !== undefined) return
+        const repoPath = repoStore.repo?.path
+        const request = ++bodyRequest
+        const body = await window.api.commitBody(commit.hash, repoPath).catch(() => null)
+        // Repo switched or another popover opened mid-flight — the body belongs to another context.
+        if (request !== bodyRequest || repoStore.repo?.path !== repoPath) return
+        bodies.value = { ...bodies.value, [commit.hash]: body ?? '' }
+    }
 
     function circularDistance(a: number, b: number): number {
         const distance = Math.abs(a - b)
@@ -925,10 +953,10 @@
                                 ></span
                             >
                             <button
-                                v-if="commit.body"
+                                v-if="commit.body || commit.hasBody || bodies[commit.hash] !== undefined"
                                 class="msg-toggle"
                                 :title="expandedHash === commit.hash ? 'Collapse message' : 'Show full message'"
-                                @click.stop="toggleMessage(commit.hash, $event)">
+                                @click.stop="toggleMessage(commit, $event)">
                                 <i-lucide-chevron-down
                                     v-if="expandedHash === commit.hash"
                                     width="13"
@@ -967,10 +995,10 @@
                         </div>
                         <div class="cmp-subject">{{ commit.subject }}</div>
                         <pre
-                            v-if="commit.body"
+                            v-if="bodyOf(commit)"
                             class="cmp-message"
                             :style="{ maxHeight: `${expandedMaxH}px` }"
-                            >{{ commit.body }}</pre>
+                            >{{ bodyOf(commit) }}</pre>
                     </div>
                 </div>
                 <div

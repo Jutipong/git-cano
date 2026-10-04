@@ -790,46 +790,84 @@ export interface LineRenderContext {
     hashComments: boolean
 }
 
+const SECTION_LIST: Section[] = ['script', 'template', 'style', 'json', 'other']
+const SECTION_INDEX: Record<Section, number> = { script: 0, template: 1, style: 2, json: 3, other: 4 }
+
+/**
+ * Per-line tokenizer snapshots for a whole diff. Stored as packed typed arrays (one byte per flag + param depth)
+ * instead of an object per line, so whole-file views stay cheap; contexts are materialized only for lines that render.
+ */
+export interface LineStateStore {
+    /** Tokenizer context immediately before line `index` — allocate-on-demand, safe for virtual scrolling. */
+    context(index: number): LineRenderContext
+}
+
 /**
  * Single sequential pass over a diff that advances the tokenizer state line by line and records each line's initial (section, state) —
  * cheap: no HTML is built here. The per-line contexts let callers highlight only the lines they actually render (virtual scrolling) while
  * keeping cross-line state (block comments, backticks, SFC sections) correct.
  */
-export function computeLineStates(lines: DiffLine[], filename: string): LineRenderContext[] {
+export function computeLineStates(lines: DiffLine[], filename: string): LineStateStore {
     const mode = modeFor(filename)
     const isSfc = mode === 'vue'
     const keywords = keywordsFor(mode)
     const supports = supportsFor(mode)
     const hashComments = mode === 'python' || mode === 'shell'
     const state: TokState = { blockComment: false, htmlComment: false, htmlString: false, backtick: false, paramDepth: 0 }
+    const sections = new Uint8Array(lines.length)
+    const flags = new Uint8Array(lines.length)
+    const depths = new Uint32Array(lines.length)
     let section = sectionFor(filename)
     let tagged = !isSfc
-    const contexts: LineRenderContext[] = []
-    for (const line of lines) {
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index]!
         const content = line.text.slice(1)
         let initialSection = section
-        const initialState: TokState = { ...state }
+        sections[index] = SECTION_INDEX[initialSection]
+        flags[index] =
+            (state.blockComment ? 1 : 0) | (state.htmlComment ? 2 : 0) | (state.htmlString ? 4 : 0) | (state.backtick ? 8 : 0)
+        depths[index] = state.paramDepth
         if (line.type !== 'hunk' && line.type !== 'meta' && content) {
             if (isSfc) {
                 const open = SECTION_OPEN.exec(content)
                 if (open) {
                     initialSection = 'template'
                     section = open[1] as Section
+                    sections[index] = SECTION_INDEX[initialSection]
                     tagged = true
                 } else if (SECTION_CLOSE.test(content)) {
                     initialSection = 'template'
                     section = 'other'
+                    sections[index] = SECTION_INDEX[initialSection]
                     tagged = true
                 } else if (!tagged) {
                     initialSection = state.htmlString || state.htmlComment ? 'template' : guessSfcSection(content)
                     section = initialSection
+                    sections[index] = SECTION_INDEX[initialSection]
                 }
             }
             renderSegment(content, initialSection, state, keywords, supports, hashComments)
         }
-        contexts.push({ section: initialSection, state: initialState, keywords, supports, hashComments })
     }
-    return contexts
+    return {
+        context(index: number): LineRenderContext {
+            const i = Math.max(0, Math.min(index, lines.length - 1))
+            const bits = flags[i] ?? 0
+            return {
+                section: SECTION_LIST[sections[i] ?? 0] ?? 'script',
+                state: {
+                    blockComment: (bits & 1) !== 0,
+                    htmlComment: (bits & 2) !== 0,
+                    htmlString: (bits & 4) !== 0,
+                    backtick: (bits & 8) !== 0,
+                    paramDepth: depths[i] ?? 0,
+                },
+                keywords,
+                supports,
+                hashComments,
+            }
+        },
+    }
 }
 
 /** Highlights a single line using the sequential context recorded by computeLineStates. */

@@ -74,6 +74,15 @@ Panel/modal component patterns. Loaded automatically when working under
   whole overlay. `getBlame()` parses `summary` plus the final line number from the porcelain
   sha header (`<orig> <final>` — there is no bare line-number line); do not regress this or
   `BlameModal.vue` shows 0 on every row again.
+- **Large-view memory**: split mode resolves rows through a segment plan
+  (`splitPlan` / `splitRowAt`, virtualized per visible row) instead of a `sideBySide`
+  array over every line — do not reintroduce a full row array. Meta rows (diff header,
+  truncation notice, snapshot marker) render as full-width separators in split mode so
+  the `capDiffLines` truncation marker stays visible in both modes — keep that. Per-line
+  tokenizer state is a compact typed-array store (`computeLineStates(...).context(i)`),
+  not an object per line. Image diffs render `GitImage` bytes as blob URLs and must go
+  through `revokeImages()` (reload + unmount). `file:diff` payloads are capped in main
+  (`capDiffLines`, 20k lines) — the truncation marker is intentional.
 
 ## Commit graph
 
@@ -114,7 +123,10 @@ Panel/modal component patterns. Loaded automatically when working under
   (a-z) with remote before HEAD before local — keep it.
 - **Full-message popover** (`.commit-msg-popover`, styles in `modern-ui.css`): header row
   is author (bold) / date / mono hash chip with a separator line, then the subject
-  (bold) and the body as a `<pre>` (shown only when `commit.body` exists). Flips above
+  (bold) and the body as a `<pre>` (shown only when `commit.body`/the lazy fetch has one).
+  The body is lazy by design: the log ships only `hasBody` (`%<(1,trunc)%b`), and
+  `bodies`/`loadBody()` fetch `%b` through `commitBody(hash, repoPath)` on expand —
+  never add `%b` back to the log payload. Flips above
   the row via `.above` when there is not enough room below — keep that behavior.
 
 ## Shared component patterns

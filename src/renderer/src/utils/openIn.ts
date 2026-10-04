@@ -11,6 +11,8 @@ import type { OpenInTargets } from '@shared/types'
 const cache = new Map<string, OpenInTargets>()
 /** In-flight requests joined by path, so two mounted components never run the same scan twice. */
 const inflight = new Map<string, Promise<OpenInTargets>>()
+/** Keep the session cache small — availability is tiny, but a long session with many repos should not retain them all. */
+const MAX_CACHE_ENTRIES = 20
 
 /** Cached availability for a repo, or null when this session has not fetched it yet. */
 export function peekOpenInTargets(path: string): OpenInTargets | null {
@@ -26,7 +28,13 @@ export function fetchOpenInTargets(path: string): Promise<OpenInTargets> {
     const request = window.api
         .getOpenInTargets(path)
         .then(targets => {
+            cache.delete(path)
             cache.set(path, targets)
+            while (cache.size > MAX_CACHE_ENTRIES) {
+                const oldest = cache.keys().next().value
+                if (oldest === undefined) break
+                cache.delete(oldest)
+            }
             return targets
         })
         .finally(() => inflight.delete(path))

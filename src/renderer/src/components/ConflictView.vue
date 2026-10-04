@@ -13,7 +13,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
-    import { highlightLine, computeLineStates, highlightLineAt, type LineRenderContext } from '../utils/highlight'
+    import { highlightLine, computeLineStates, highlightLineAt } from '../utils/highlight'
     import { buildPrefix, windowFor } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
@@ -72,6 +72,12 @@
 
     /** Per-line highlight caches for the two version panes, keyed by the stable DiffLine objects. */
     const paneHtmlCache: Record<'ours' | 'theirs', Map<DiffLine, string>> = { ours: new Map(), theirs: new Map() }
+
+    // highlightLine is pure per (path, text) — caching keeps checkbox toggles cheap: only
+    // genuinely new output lines get highlighted, the rest reuse the cached HTML string.
+    // Looked up lazily per rendered row (virtualized) instead of rebuilding an O(n) array per toggle.
+    // Declared above loadConflict so the immediate watcher can clear it without a TDZ crash.
+    const outputHtmlCache = new Map<string, string>()
 
     const MARK_OURS = /^<{7}(?: (.*))?$/
     const MARK_BASE = /^\|{7}(?: .*)?$/
@@ -160,6 +166,7 @@
         manualOutput.value = null
         paneHtmlCache.ours.clear()
         paneHtmlCache.theirs.clear()
+        outputHtmlCache.clear()
         try {
             const [content, vers] = await Promise.all([window.api.readConflictFile(f.path), window.api.conflictVersions(f.path)])
             if (props.file !== f) return
@@ -255,10 +262,6 @@
 
     const resultContent = computed(() => resultLines.value.map(line => line.text).join('\n'))
 
-    // highlightLine is pure per (path, text) — caching keeps checkbox toggles cheap: only
-    // genuinely new output lines get highlighted, the rest reuse the cached HTML string.
-    // Looked up lazily per rendered row (virtualized) instead of rebuilding an O(n) array per toggle.
-    const outputHtmlCache = new Map<string, string>()
     function outputHtmlFor(idx: number): string {
         const row = outputDisplay.value[idx]
         if (!row || row.kind !== 'line') return ''
@@ -549,7 +552,7 @@
     }
 
     // Sequential tokenizer state per pane line — lets the template highlight only visible lines.
-    const lineStatesBySide = computed<Record<Side, LineRenderContext[]>>(() => ({
+    const lineStatesBySide = computed(() => ({
         ours: computeLineStates(paneLines.value.ours, props.file?.path ?? ''),
         theirs: computeLineStates(paneLines.value.theirs, props.file?.path ?? ''),
     }))
@@ -558,8 +561,7 @@
         const cache = paneHtmlCache[side]
         const cached = cache.get(line)
         if (cached !== undefined) return cached
-        const context = lineStatesBySide.value[side][idx]
-        const html = highlightLineAt(line, context ?? computeLineStates([line], props.file?.path ?? '')[0]!, (_line, highlight) =>
+        const html = highlightLineAt(line, lineStatesBySide.value[side].context(idx), (_line, highlight) =>
             highlight(line.text.slice(1))
         )
         cache.set(line, html)
