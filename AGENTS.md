@@ -14,6 +14,9 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm dev` — development with hot reload
 - `pnpm lint` — oxlint + vue-tsc; run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
+- `pnpm test:unit` — Vitest unit tests for pure logic (`tests/unit`)
+- `pnpm test:e2e` — Playwright Electron E2E; builds `out/` first (`tests/e2e`) — see `tests/AGENTS.md`
+- `pnpm test` — lint + typecheck + unit + e2e (release gate)
 - `pnpm build` — production build (`out/`)
 - `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
 - Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
