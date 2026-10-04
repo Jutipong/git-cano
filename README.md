@@ -37,6 +37,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | 📁  | Open & clone repositories                                               |
 | 🗂️  | Multiple repos open at once as tabs                                     |
 | 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder; switcher button shows text only, no icon |
+| 🔎  | **Find a repo in any workspace** — the palette's `Repo…` mode lists every repo open across all workspaces and matches on repo name, full path, or workspace name; picking a repo from another workspace switches there and opens it, with a green **Active** pill on the repo you are actually on. A repo held by several workspaces gets one row per workspace, so you always know which one you will land in |
 | ⏳  | **Switch cover** — the splash appears fully opaque the instant you switch (min 1s), so tabs and panels never flicker; clicks pass through while it fades out |
 | 💾  | Session & recent-repo restore on startup                                |
 | 🔗  | "Open in" text-only button (no chevron) → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette |
