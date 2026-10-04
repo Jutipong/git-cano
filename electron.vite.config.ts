@@ -11,7 +11,9 @@ export default defineConfig({
         },
         build: {
             rollupOptions: {
-                external: ['electron', 'electron-updater', 'simple-git'],
+                // node-pty stays external: its CJS loader requires prebuilt .node files with paths
+                // relative to its own lib folder, which breaks once it is bundled into out/main.
+                external: ['electron', 'electron-updater', 'node-pty', 'simple-git'],
             },
         },
     },

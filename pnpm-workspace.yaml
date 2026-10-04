@@ -4,6 +4,7 @@ allowBuilds:
   electron: true
   electron-winstaller: true
   esbuild: true
+  node-pty: true
   vue-demi: true
 
 minimumReleaseAgeExclude:

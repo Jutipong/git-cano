@@ -225,6 +225,37 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
   with the FilePanel-style soft length counter, and blocks on a dirty worktree.
 
+## Terminal panel (PTY)
+
+- `src/main/terminal.ts` owns one PTY per terminal id and nothing else. It must stay free of any
+  coupling to repo lifetime: `disposeTerminalsForRepo` is called by the renderer's "close repo tab"
+  action only, because `switchWorkspace` closes git instances too and its shells have to survive.
+  `disposeAllTerminals` runs on `before-quit`/`quit`; a session must never outlive the app.
+- `node-pty` is loaded lazily with `require` inside a try/catch (a missing/mismatched native module
+  must degrade to an "unavailable" message, never crash the app), and it must stay in
+  `rollupOptions.external` — bundling it breaks the relative `require` of its own prebuilt `.node`
+  files. It is N-API, so no `@electron/rebuild` step exists or is needed.
+- **Windows shells must force UTF-8 as their first action** (`shellCommand()`): ConPTY opens the
+  pseudo-console with codepage 437, so anything writing raw bytes (`type`, `git log`, most CLI tools)
+  comes out as mojibake. `cmd.exe` gets `/k "chcp 65001 >nul"` and both PowerShell flavours get
+  `-NoExit -Command "chcp 65001 > $null; [Console]::OutputEncoding=[System.Text.Encoding]::UTF8"`
+  (`POWER_SHELL_ARGS`). Setting `CHCP` in the spawn env does NOT work — only the in-session `chcp`
+  call does.
+- Shell choices are `cmd | powershell | pwsh`, and **`pwsh` (PowerShell 7) is the default** — it is an
+  optional install, so `shellCommand()` resolves it through a cached PATH scan (`hasPwsh()`, no
+  subprocess) and silently falls back to Command Prompt when pwsh.exe is missing. The settings hint
+  says so, and the resolved label is what the tab shows (`pwsh 1` vs `cmd 1`). `powershell` is the
+  in-box Windows PowerShell 5.1.
+- `createTerminal` is idempotent per id (a remounted panel re-sends the same id and gets its live
+  shell back) and clamps cols/rows, because xterm briefly reports 0 while a panel is hidden.
+- **Always spawn with `useConptyDll: true` on Windows.** The OS ConPTY (Win11 26200) corrupts Thai
+  in TUI redraws: typing `สวัสดี ยังทำงานอยู่ไหม` into opencode's prompt rendered
+  `สวัสดี ยังานอยู่ไ` plus a stale fragment of the previous placeholder — the same input renders
+  exactly with node-pty's bundled `conpty.dll`. That is the opposite trade-off from speed: the
+  bundled DLL withholds the first screen for ~3 s (measured 3018 ms vs 18 ms, resizes do not help),
+  then streams normally (echo latency 1 ms), so `TerminalView` shows its "Starting shell…" hint until
+  the first chunk. Never drop the DLL to make startup faster — it silently mangles Thai in TUIs.
+
 ## Updates & releases (main process)
 
 - In-app download/install (`downloading` → `downloaded`) works only in the installed

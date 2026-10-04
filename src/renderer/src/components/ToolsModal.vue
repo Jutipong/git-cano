@@ -21,6 +21,7 @@
     import ILucideSettings2 from '~icons/lucide/settings2'
     import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import ILucideSparkles from '~icons/lucide/sparkles'
+    import ILucideTerminal from '~icons/lucide/terminal'
     import Sun from '~icons/lucide/sun'
     import ILucideTrash2 from '~icons/lucide/trash-2'
     import ILucideUserRound from '~icons/lucide/user-round'
@@ -32,7 +33,7 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -51,11 +52,11 @@
     import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { ToastKind } from '../stores/uiTransient'
-    import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult } from '@shared/types'
+    import type { AiConfig, AiProvider, AiProviderConfig, GoModel, SshKeyInfo, SshTestResult, TerminalShell } from '@shared/types'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts'
+        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts' | 'terminal'
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -150,6 +151,7 @@
         { key: 'general', label: 'General' },
         { key: 'auth', label: 'Remotes' },
         { key: 'ai', label: 'AI' },
+        { key: 'terminal', label: 'Terminal' },
         { key: 'shortcuts', label: 'Shortcuts' },
     ] as const
     const tab = ref(props.initialTab ?? 'appearance')
@@ -159,6 +161,18 @@
     const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
     /** Appearance → Font size chips (px labels). */
     const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
+    /** Terminal → its own text size, deliberately independent of the UI font size above. */
+    const TERMINAL_FONT_OPTIONS = TERMINAL_FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
+    /**
+     * Shell choices — PowerShell 7 is the default, and the resolver in `main/terminal.ts` falls back
+     * to Command Prompt on machines where pwsh is not installed. Hidden off Windows, following the
+     * repo's rule for Windows-only settings (elsewhere the terminal always uses `$SHELL`).
+     */
+    const TERMINAL_SHELL_OPTIONS: { value: TerminalShell; label: string }[] = [
+        { value: 'cmd', label: 'Command Prompt' },
+        { value: 'powershell', label: 'Windows PowerShell' },
+        { value: 'pwsh', label: 'PowerShell 7' },
+    ]
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
@@ -365,6 +379,8 @@
         searchCommits: 'Search commits',
         settings: 'Open settings',
         commandPalette: 'Command palette',
+        terminal: 'Toggle terminal',
+        terminalKillAll: 'Kill all terminals',
     }
     const recording = ref<{ id: CustomShortcutId; platform: ShortcutPlatform } | null>(null)
 
@@ -669,6 +685,10 @@
                         v-else-if="tabItem.key === 'auth'"
                         width="13"
                         height="13" />
+                    <i-lucide-terminal
+                        v-else-if="tabItem.key === 'terminal'"
+                        width="13"
+                        height="13" />
                     <i-lucide-sparkles
                         v-else
                         width="13"
@@ -959,6 +979,61 @@
                                 height="13" />
                             Reset to defaults
                         </button>
+                    </div>
+                </template>
+
+                <template v-else-if="tab === 'terminal'">
+                    <div
+                        v-if="isWindows"
+                        class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-terminal
+                                width="13"
+                                height="13" />
+                            Shell
+                        </strong>
+                        <span class="setting-label">Shell for new terminals</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in TERMINAL_SHELL_OPTIONS"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.terminalShell === option.value }"
+                                @click="ui.terminalShell = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                        <p
+                            v-if="ui.terminalShell === 'pwsh'"
+                            class="tools-section-hint">
+                            PowerShell 7 falls back to Command Prompt on machines where it is not installed.
+                        </p>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-settings-2
+                                width="13"
+                                height="13" />
+                            Text
+                        </strong>
+                        <span class="setting-label">Font size</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="option in TERMINAL_FONT_OPTIONS"
+                                :key="option.value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.terminalFontSize === option.value }"
+                                @click="ui.terminalFontSize = option.value">
+                                {{ option.label }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">
+                            Independent of the interface font size — the A− / A+ buttons in the terminal panel header change
+                            this too, and open terminals follow along.
+                        </p>
                     </div>
                 </template>
 

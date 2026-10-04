@@ -1,0 +1,278 @@
+<script setup lang="ts">
+    import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import ILucideTriangleAlert from '~icons/lucide/triangle-alert'
+
+    import { useUiStore } from '../stores/ui'
+
+    import '@xterm/xterm/css/xterm.css'
+
+    import type { TerminalData, TerminalExit } from '@shared/types'
+    import type { Terminal } from '@xterm/xterm'
+    import type { FitAddon } from '@xterm/addon-fit'
+
+    const props = defineProps<{
+        /** Repo path whose shell this view shows — pinned so a mid-flight tab switch can't retarget it. */
+        repoPath: string
+        /** Identity of this shell (the pty key); the main process tags every chunk with it. */
+        terminalId: string
+        /** True while this terminal is the one the panel shows (siblings stay mounted but hidden). */
+        visible: boolean
+    }>()
+
+    const emit = defineEmits<{ (e: 'exit'): void }>()
+
+    const ui = useUiStore()
+
+    const host = ref<HTMLElement | null>(null)
+    const failed = ref<string | null>(null)
+    /** False until the shell produces its first chunk — drives the "Starting shell…" hint. */
+    const started = ref(false)
+
+    /**
+     * A fresh pty emits escape sequences (window title, cursor/mode setup) within milliseconds, long
+     * before the shell has drawn anything — the bundled conpty.dll can then hold the actual screen
+     * for seconds. Only real text counts as "the shell is up", or the hint would blink away instantly.
+     */
+    function hasVisibleText(data: string): boolean {
+        // Built from char codes so no control character ever appears in this source file.
+        const esc = String.fromCharCode(27)
+        const bel = String.fromCharCode(7)
+        const osc = new RegExp(`${esc}\\][^${bel}]*${bel}`, 'g')
+        const csi = new RegExp(`${esc}\\[[0-9;?]*[A-Za-z]`, 'g')
+        return data.replace(osc, '').replace(csi, '').trim().length > 0
+    }
+
+    let term: Terminal | null = null
+    let fit: FitAddon | null = null
+    let resizeObserver: ResizeObserver | null = null
+    let settleTimer: ReturnType<typeof setInterval> | null = null
+    let dataDisposer: (() => void) | null = null
+    let exitDisposer: (() => void) | null = null
+    let disposed = false
+
+    /**
+     * Cascadia Mono covers latin/box-drawing; Thai has no monospace face on Windows, so the browser
+     * falls back per codepoint to Leelawadee UI and lets GPOS stack the vowels/tone marks. xterm's DOM
+     * renderer writes whole grapheme clusters into one <span>, which is what makes that shaping work —
+     * the canvas renderer (removed in xterm 6) never shaped Thai at all.
+     */
+    const FONT_FAMILY = "'Cascadia Mono', 'Leelawadee UI', monospace"
+
+    /** Reads the app's live theme tokens so xterm matches whichever theme is active. */
+    function themeColors() {
+        const styles = getComputedStyle(document.documentElement)
+        const read = (name: string, fallback: string) => styles.getPropertyValue(name).trim() || fallback
+        return {
+            background: read('--canvas', '#101014'),
+            foreground: read('--text', '#e8e8f0'),
+            cursor: read('--teal', '#29a8ff'),
+            selectionBackground: read('--surface-hover', '#2d2d40'),
+        }
+    }
+
+    function resizePty() {
+        if (!term || !fit) return
+        // A hidden view (a sibling tab is showing, or the whole panel is toggled away) has no box —
+        // fitting it would report 0 cols/rows.
+        if (!host.value || host.value.clientWidth === 0 || host.value.clientHeight === 0) return
+        try {
+            fit.fit()
+        } catch {
+            return
+        }
+        void window.api.terminalResize(props.terminalId, term.cols, term.rows).catch(() => {})
+    }
+
+    /**
+     * xterm measures the character cell once at construction and caches it. Creating the Terminal
+     * before the stylesheets and fallback fonts are ready yields a wrong cell size, and every Thai
+     * combining mark then lands off its column.
+     */
+    async function waitForFonts() {
+        const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
+        await Promise.all(
+            sheets.map(
+                link =>
+                    new Promise<void>(resolve => {
+                        if (link.sheet) {
+                            resolve()
+                            return
+                        }
+                        link.addEventListener('load', () => resolve(), { once: true })
+                        link.addEventListener('error', () => resolve(), { once: true })
+                    })
+            )
+        )
+        await document.fonts.ready
+    }
+
+    async function setup() {
+        if (!host.value || term) return
+
+        // The shell is spawned BEFORE xterm is built. Waiting for the xterm chunk and the fallback
+        // fonts first kept a fresh terminal blank for over a second (and the bundled ConPTY made it
+        // worse), so the shell starts immediately and its first screen is buffered here until xterm
+        // can paint it.
+        const pending: string[] = []
+        // Stream output only for this shell — the main process tags every chunk with its id, and
+        // every mounted view of every repo sees the traffic (a string compare per chunk).
+        dataDisposer = window.api.onTerminalData((payload: TerminalData) => {
+            if (payload.terminalId !== props.terminalId) return
+            if (hasVisibleText(payload.data)) started.value = true
+            if (term) term.write(payload.data)
+            else pending.push(payload.data)
+        })
+        exitDisposer = window.api.onTerminalExit((payload: TerminalExit) => {
+            if (payload.terminalId !== props.terminalId) return
+            started.value = true
+            // The shell ended on its own (exit / Ctrl+D / crash) — the panel drops just this tab
+            // exactly like a manual close, so it simply disappears. No confirm and no toast: there is
+            // nothing left to end. The view repaints from `pending` either way.
+            emit('exit')
+        })
+        // 80x24 is only the opening size — the real one arrives with the first fit once xterm exists.
+        const spawn = window.api.terminalCreate(props.terminalId, props.repoPath, 80, 24, ui.terminalShell).catch(error => {
+            failed.value = String(error).replace(/^Error:\s*/, '')
+        })
+
+        await waitForFonts()
+        if (disposed || !host.value) return
+        // Loaded lazily so the terminal chunk (xterm) only ships when a panel actually opens.
+        const [{ Terminal }, { FitAddon }, { Unicode11Addon }] = await Promise.all([
+            import('@xterm/xterm'),
+            import('@xterm/addon-fit'),
+            import('@xterm/addon-unicode11'),
+        ])
+        if (disposed) return
+
+        const colors = themeColors()
+        term = new Terminal({
+            cursorBlink: true,
+            fontFamily: FONT_FAMILY,
+            fontSize: ui.terminalFontSize,
+            // Must be exactly 1.0: block-element ASCII art (opencode's logo) fills the em box, and a
+            // taller cell leaves a visible gap in the art.
+            lineHeight: 1.0,
+            scrollback: 1000,
+            // xterm 6 moved Unicode11Addon behind the proposed API.
+            allowProposedApi: true,
+            theme: {
+                background: colors.background,
+                foreground: colors.foreground,
+                cursor: colors.cursor,
+                selectionBackground: colors.selectionBackground,
+            },
+        })
+        fit = new FitAddon()
+        term.loadAddon(fit)
+        // Unicode 11 widths match what the pi TUI assumes; xterm 6's DOM renderer does the shaping.
+        const unicode11 = new Unicode11Addon()
+        term.loadAddon(unicode11)
+        term.unicode.activeVersion = '11'
+        term.open(host.value)
+        term.onData(data => void window.api.terminalWrite(props.terminalId, data).catch(() => {}))
+        // Paint whatever the shell already produced while xterm was being built.
+        for (const chunk of pending) if (term) term.write(chunk)
+        pending.length = 0
+        resizePty()
+
+        await spawn
+        // The view can unmount while the create call is in flight (tab closed quickly) —
+        // touching the disposed terminal after the await would throw.
+        if (disposed || !term) return
+        if (failed.value) return
+        term.focus()
+        // Chromium re-measures the cell height when a fallback font lands (~0.7s in), so the first
+        // fit can be one row too tall and the last row clipped — re-fit briefly until it settles.
+        settleTimer = setInterval(resizePty, 100)
+        setTimeout(() => {
+            if (settleTimer) clearInterval(settleTimer)
+            settleTimer = null
+        }, 2000)
+    }
+
+    onMounted(async () => {
+        await nextTick()
+        await setup()
+        if (host.value) {
+            resizeObserver = new ResizeObserver(() => resizePty())
+            resizeObserver.observe(host.value)
+        }
+        // A hidden view reports no box, so refit explicitly when it becomes the showing tab again.
+        watch(
+            () => props.visible,
+            shown => {
+                if (shown) nextTick(() => resizePty())
+            }
+        )
+        // Re-tint when the theme changes while the panel is open.
+        watch(
+            () => ui.theme,
+            () => {
+                if (term) term.options.theme = { ...term.options.theme, ...themeColors() }
+                resizePty()
+            }
+        )
+        // The terminal's font is its own setting, decoupled from the UI font size — apply it live to
+        // every open view and re-solve the grid. xterm re-measures the cell box on the next task
+        // (debounced CharSizeService.measure), so the refit must wait a frame: fitting immediately
+        // would compute cols/rows from the stale cell size.
+        watch(
+            () => ui.terminalFontSize,
+            () => {
+                if (!term) return
+                term.options.fontSize = ui.terminalFontSize
+                requestAnimationFrame(() => resizePty())
+            }
+        )
+    })
+
+    onBeforeUnmount(() => {
+        disposed = true
+        if (settleTimer) clearInterval(settleTimer)
+        settleTimer = null
+        resizeObserver?.disconnect()
+        resizeObserver = null
+        dataDisposer?.()
+        exitDisposer?.()
+        dataDisposer = null
+        exitDisposer = null
+        // The pty is NOT killed here: it is owned by the store's close actions (panel ✕, repo tab
+        // close, kill all) and by the app-quit cleanup — a panel unmounting means "hidden", not "dead".
+        term?.dispose()
+        term = null
+        fit = null
+    })
+
+    /** Called by the panel when its tab is clicked — a shell you can't type into is useless. */
+    function focus() {
+        term?.focus()
+    }
+
+    defineExpose({ focus })
+</script>
+
+<template>
+    <div class="terminal-view">
+        <div
+            ref="host"
+            class="terminal-host" />
+        <!--
+            The bundled conpty.dll withholds a new shell's first screen for ~3 s. Without a hint the
+            panel just looks broken (an empty box) until the prompt lands, so say what is happening.
+        -->
+        <p
+            v-if="!started && !failed"
+            class="terminal-starting">
+            Starting shell…
+        </p>
+        <p
+            v-if="failed"
+            class="terminal-error">
+            <i-lucide-triangle-alert
+                width="13"
+                height="13" />
+            {{ failed }}
+        </p>
+    </div>
+</template>

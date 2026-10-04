@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watchEffect } from 'vue'
 
-import type { LocalChangesMode } from '@shared/types'
+import type { LocalChangesMode, TerminalShell } from '@shared/types'
 
 import {
     SHORTCUT_DEFAULTS,
@@ -63,6 +63,10 @@ export const DEFAULT_FORMAT_BEFORE_GENERATE = false
 /** App-wide UI font size options (applied via CSS zoom relative to the base size). */
 export const FONT_SIZE_OPTIONS = [12, 13, 14, 15, 16]
 export const DEFAULT_FONT_SIZE = 14
+
+/** Terminal text size options — its own scale, decoupled from the UI font size above. */
+export const TERMINAL_FONT_SIZE_OPTIONS = [10, 11, 12, 13, 14, 16, 18, 20]
+export const DEFAULT_TERMINAL_FONT_SIZE = 13
 
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
 export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
@@ -158,6 +162,29 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!ZOOM_OPTIONS.includes(zoom.value)) zoom.value = DEFAULT_ZOOM
         })
+        // Terminal preferences: which shell new terminals spawn, and their own text size. Both are
+        // persisted; the size is deliberately independent of `fontSize` (the UI scale above).
+        const terminalFontSize = ref(DEFAULT_TERMINAL_FONT_SIZE)
+        watchEffect(() => {
+            if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value))
+                terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+        })
+        const terminalShell = ref<TerminalShell>('pwsh')
+        watchEffect(() => {
+            const saved = terminalShell.value as string
+            // PowerShell 7 is the default; legacy persisted values ('default' from older builds) and
+            // anything unknown migrate to it. A machine without pwsh resolves to cmd at spawn time.
+            if (saved !== 'cmd' && saved !== 'powershell' && saved !== 'pwsh') terminalShell.value = 'pwsh'
+        })
+
+        /** Header A− / A+ in the terminal panel — steps the terminal scale only. */
+        function stepTerminalFontSize(direction: number) {
+            const idx = TERMINAL_FONT_SIZE_OPTIONS.indexOf(terminalFontSize.value)
+            terminalFontSize.value =
+                TERMINAL_FONT_SIZE_OPTIONS[
+                    Math.min(TERMINAL_FONT_SIZE_OPTIONS.length - 1, Math.max(0, (idx < 0 ? 0 : idx) + direction))
+                ]
+        }
         /** App zoom and UI font size both ride on `<html> { zoom }`; keep the two factors separate. */
         const fontScale = computed(() => fontSize.value / DEFAULT_FONT_SIZE)
         const zoomScale = computed(() => zoom.value / DEFAULT_ZOOM)
@@ -263,6 +290,8 @@ export const useUiStore = defineStore(
                 searchCommits: getShortcut('searchCommits', platform),
                 settings: getShortcut('settings', platform),
                 commandPalette: getShortcut('commandPalette', platform),
+                terminal: getShortcut('terminal', platform),
+                terminalKillAll: getShortcut('terminalKillAll', platform),
             }
         }
 
@@ -344,6 +373,9 @@ export const useUiStore = defineStore(
             fontSize,
             zoom,
             stepZoom,
+            terminalFontSize,
+            stepTerminalFontSize,
+            terminalShell,
             codeFontSize,
             zoomCodeFontSize,
             repoTabColors,
@@ -385,6 +417,8 @@ export const useUiStore = defineStore(
                 'toastDurationSec',
                 'fontSize',
                 'zoom',
+                'terminalFontSize',
+                'terminalShell',
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',

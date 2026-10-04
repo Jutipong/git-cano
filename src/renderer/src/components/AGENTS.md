@@ -129,6 +129,47 @@ Panel/modal component patterns. Loaded automatically when working under
   never add `%b` back to the log payload. Flips above
   the row via `.above` when there is not enough room below — keep that behavior.
 
+## Terminal panel
+
+- `TerminalPanel.vue` + `TerminalView.vue` render the bottom panel under the graph. `App.vue` mounts
+  **one panel per repo that owns a shell**, keyed by repo path, and keeps them mounted for the whole
+  session — a repo switch, a workspace switch or the show/hide toggle only hides them. Never key the
+  panel by the active repo or by tab index: that would unmount an xterm, and its PTY would keep
+  running with no buffer behind it.
+- **Thai rendering is the whole point of this panel** — do not “optimise” it away:
+  xterm 6's DOM renderer (never `addon-canvas`/`addon-webgl`, which do no Thai shaping),
+  `Unicode11Addon` with `unicode.activeVersion = '11'` (needs `allowProposedApi: true` in xterm 6),
+  `lineHeight: 1.0`, the font stack `'Cascadia Mono', 'Leelawadee UI', monospace`, and a
+  `waitForFonts()` step before constructing the `Terminal` (xterm caches the cell size measured
+  during construction, and a wrong cell size pushes every combining mark off its column). The
+  `.xterm` padding lives on `.xterm`, never on `.terminal-host` — FitAddon subtracts `.xterm`'s own
+  padding from the parent's height, so padding on the container clips the last row.
+- **Do not add `convertEol`.** ConPTY already emits CRLF, and the reference POC leaves it off: with
+  the extra CR, TUI output (opencode/pi redraws) gets different cursor semantics. Measured without
+  it: LF-only output still lands in one column (no staircase) and opencode's box/logo stay intact.
+  Keep every xterm option identical to the POC unless the POC changes first.
+- A panel that mounts while hidden has no box: fitting or resizing it then reports 0 cols/rows. Guard
+  on `clientWidth/clientHeight` and re-fit when `visible` turns true. The view also re-fits for the
+  first ~2s because Chromium measures the cell height again when a fallback font lands.
+- **The shell is spawned before xterm is built**, and the chunks that arrive meanwhile are buffered in
+  `pending` and written once the terminal is open. Waiting for the xterm chunk + `document.fonts.ready`
+  *before* spawning left a fresh panel blank for over a second. Keep the `waitForFonts()` gate for
+  `new Terminal()` itself (xterm caches its cell size at construction, and a wrong size desyncs Thai
+  marks), just not for the spawn.
+- Because the bundled conpty.dll (see `src/main/AGENTS.md`) withholds a new shell's first screen for
+  ~3 s, the view renders a dim `Starting shell…` line (`.terminal-starting`) until the first chunk
+  arrives — without it the panel just looks broken for those seconds. Do not remove that hint to
+  "clean up"; drop it only if the ConPTY choice ever changes.
+- Tab label = the user's rename, else `<shell> <1-based position in the repo>`; rename is a
+  double-click on the label (inline input, Enter/blur commits, Esc cancels, blank restores the
+  derived label). Reorder is drag-to-reorder with the live `dragover` swap used by the repo tabs, so
+  the id (and its live shell) has to travel with the tab.
+- Header buttons: `A−`/`A+` step `ui.terminalFontSize` (its own persisted scale, never `ui.fontSize`),
+  the trash button kills every shell of every repo, maximize teleports the panel into `.app` as
+  `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar, `right: rightPanelWidth + 12px`
+  clears the Changes pane) and hides the graph, and the ✕ kills every shell of THIS repo. All three
+  destructive paths confirm through `ConfirmDialog`; only a shell that exits by itself does not.
+
 ## Shared component patterns
 
 - **Close (✕) buttons** always use the `.icon-btn danger commit-close-btn` style (red ring +
@@ -163,8 +204,8 @@ Panel/modal component patterns. Loaded automatically when working under
   `.rebase-modal`/`.modal-overlay` — only the create forms use the confirm family. Their text
   inputs/selects still speak the same pill language (`7px 12px`, `var(--radius-pill)`), header
   icons are `17px`, and the readonly column checks match the `18px` checkbox boxes. Its tab strip is
-  a single non-wrapping row of equal-width pills (`flex: 1 1 0`, ~112px each at 620px with the
-  current five tabs — Appearance / General / Remotes / AI / Shortcuts), so a sixth tab needs a
-  measured width check, not a guess.
+  a single non-wrapping row of equal-width pills (`flex: 1 1 0`), six tabs (Appearance / General /
+  Remotes / AI / Terminal / Shortcuts) measuring ~92px each in the 582px strip, so a seventh tab
+  needs a measured width check, not a guess.
 - **Settings (`ToolsModal.vue`) has no Zoom control** — zoom lives only in the `App.vue`
   global handler (`⌘/Ctrl + − 0`, Ctrl/⌘+wheel). Do not re-add Zoom chips.

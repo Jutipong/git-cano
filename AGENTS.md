@@ -25,6 +25,12 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
   `*.map`, `*.md`, `LICENSE*`). New platform assets must follow the same png/icns/ico triple.
   There are no native modules left, so nothing needs `asarUnpack`; `npmRebuild: false` stays as a
   cheap guard so electron-builder never reaches for a native rebuild toolchain on `pnpm dist:*`.
+  The one exception is `node-pty` (the terminal panel): it ships prebuilt N-API binaries, so it needs
+  no rebuild step either — but it must stay listed in `asarUnpack`
+  (`**/node_modules/node-pty/**`) because a `.node` file cannot be loaded from inside the asar, and
+  it must stay in `rollupOptions.external` in `electron.vite.config.ts` because its CJS loader
+  requires those binaries with paths relative to its own folder. `allowBuilds: node-pty` in
+  `pnpm-workspace.yaml` lets pnpm run its install script (which picks the right prebuild).
 
 ## Architecture
 
@@ -38,10 +44,11 @@ Key files:
 
 - `src/main/git.ts` — all git operations (one exported function per operation) — see `src/main/AGENTS.md`
 - `src/main/opencode.ts` — AI commit-message generation — see `src/main/AGENTS.md`
+- `src/main/terminal.ts` — PTY sessions for the terminal panel — see `src/main/AGENTS.md`
 - `src/main/updater.ts` — Windows in-app update download/install — see `src/main/AGENTS.md`
 - `src/preload/index.ts` — the `window.api` surface
 - `src/renderer/src/App.vue` — app shell, global keydown handler, toast/error rendering
-- `src/renderer/src/stores/` — repo/ui/updater/workspace/uiTransient state — see `src/renderer/src/stores/AGENTS.md`
+- `src/renderer/src/stores/` — repo/ui/terminal/updater/workspace/uiTransient state — see `src/renderer/src/stores/AGENTS.md`
 - `src/renderer/src/utils/shortcuts.ts` — single source of truth for keyboard shortcuts
 - `src/renderer/src/components/` — one Vue SFC per panel/modal — see `src/renderer/src/components/AGENTS.md`
 - `src/shared/` — `types.ts` (IPC types), `models.ts` (model catalogs/helpers), `lanes.ts`

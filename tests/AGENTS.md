@@ -14,6 +14,11 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
   - `app.spec.ts` covers the memory/payload work (lazy commit bodies, diff caps, blob-URL images, split plan,
     tokenizer state, graph interactions, AI context cap).
   - `conflict.spec.ts` covers the conflict flow.
+  - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
+    panel per repo, full overlay geometry, terminal-only font size, rename + drag reorder, the
+    four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+``/`Ctrl+Shift+``,
+    the palette entries, Settings → Terminal). Scope panel actions with `.terminal-panel:visible` —
+    every repo keeps its own panel mounted.
   - `fixtures.ts` creates throwaway repos in the OS temp dir (`globalSetup` writes a metadata file the specs load).
   - `launch.ts` is the only way to start the app in tests.
 
@@ -30,7 +35,8 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
 - `GIT_CANO_LOG_LEVEL=debug` is safe (baseEnv strips every `git*` key before spawning git). Any new `GIT_*` env
   injected into git must be added to `SAFE_UNSAFE_OPTIONS.allowEnvironment` first, or every spawn will throw.
 - Selector conventions: `.repo-tab`, `.graph-row`, `.file-row`, `.diff-line` / `.split-pane`, `.diff-body`,
-  `.conflict-view`, `.blame-lens-tip`, `.toast`. Prefer role/title-based locators for buttons.
+  `.conflict-view`, `.blame-lens-tip`, `.toast`, `.terminal-panel` / `.terminal-tab-label`. Prefer
+  role/title-based locators for buttons.
 - Playwright output goes to the OS temp dir (`GITCANO_E2E_ARTIFACTS` overrides); CI uploads it on failure.
 - `retries: 1` and `forbidOnly` apply when `CI=true`.
 

@@ -16,6 +16,8 @@
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
     import Sparkles from '~icons/lucide/sparkles'
+    import Terminal from '~icons/lucide/terminal'
+    import Trash2 from '~icons/lucide/trash-2'
     import X from '~icons/lucide/x'
     import Kiro from '~icons/thesvg-color/kiro'
 
@@ -31,7 +33,12 @@
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
 
-    const emit = defineEmits<{ (e: 'close'): void; (e: 'open-repo'): void }>()
+    const emit = defineEmits<{
+        (e: 'close'): void
+        (e: 'open-repo'): void
+        (e: 'toggle-terminal'): void
+        (e: 'kill-all-terminals'): void
+    }>()
 
     const repoStore = useRepoStore()
     const uiTransient = useUiTransientStore()
@@ -243,8 +250,29 @@
                               repoStore.reflogOpen = true
                           },
                       } satisfies PaletteItem,
+                      {
+                          id: 'terminal',
+                          label: 'Terminal',
+                          hint: 'Open, or show/hide this repo’s shells',
+                          icon: Terminal,
+                          run: () => {
+                              close()
+                              emit('toggle-terminal')
+                          },
+                      } satisfies PaletteItem,
                   ]
                 : []),
+            // Offered even with no repo open: shells of repos in another workspace are still running.
+            {
+                id: 'terminalKillAll',
+                label: 'Terminal: kill all',
+                hint: 'End every shell of every repository',
+                icon: Trash2,
+                run: () => {
+                    close()
+                    emit('kill-all-terminals')
+                },
+            },
             {
                 id: 'settings',
                 label: 'Settings',

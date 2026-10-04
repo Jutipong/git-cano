@@ -18,6 +18,8 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
     { id: 'cloneRepo', label: 'Clone repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
     { id: 'closeTab', label: 'Close tab', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
+    { id: 'terminal', label: 'Toggle terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
+    { id: 'terminalKillAll', label: 'Kill all terminals', mac: ['Ctrl+Shift+`'], win: ['Ctrl+Shift+`'] },
     { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
     { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
     { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
@@ -34,7 +36,15 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
 }
 
 /** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
-export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'settings' | 'commandPalette'
+export type CustomShortcutId =
+    | SyncShortcutId
+    | 'openRepo'
+    | 'cloneRepo'
+    | 'searchCommits'
+    | 'settings'
+    | 'commandPalette'
+    | 'terminal'
+    | 'terminalKillAll'
 
 export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'fetch',
@@ -45,6 +55,8 @@ export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'searchCommits',
     'settings',
     'commandPalette',
+    'terminal',
+    'terminalKillAll',
 ]
 
 /** Platform a custom shortcut override applies to. Combos stay canonical ("Ctrl+…", Cmd counts as Ctrl) — only the stored value differs per platform. */
@@ -71,6 +83,8 @@ export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     searchCommits: 'Ctrl+F',
     settings: 'Ctrl+,',
     commandPalette: 'Ctrl+P',
+    terminal: 'Ctrl+`',
+    terminalKillAll: 'Ctrl+Shift+`',
 }
 
 /** Fixed combos a custom shortcut must not override (app zoom + close tab — handled above the busy gate). */

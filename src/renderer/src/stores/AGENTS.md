@@ -18,6 +18,13 @@ app-level UI rules live in `src/renderer/AGENTS.md`.
   (paths + active tab).
 - `uiTransient.ts` — the single owner of ALL toast/error feedback (see
   `src/renderer/AGENTS.md`).
+- `terminal.ts` — the terminal panel's shells, keyed by repo path (memory-only, never persisted):
+  tab list + label/rename/reorder, which tab shows, hidden/expanded state, panel height, and the
+  close / kill-all actions that ask the main process to kill PTYs. Panel lifetime rules are load
+  bearing: closing the REPO TAB kills that repo's shells (`repo.ts closeTab` calls
+  `closeRepoTerminals`), while a workspace switch must not — it only recycles git instances.
+  Terminal preferences (`ui.terminalShell`, `ui.terminalFontSize`) are persisted in `ui.ts`, but
+  live terminal sessions are not.
 
 ## Repository loading and performance
 

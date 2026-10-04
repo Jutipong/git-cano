@@ -29,6 +29,14 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   (insertion = before/after by pointer Y within the row), `dragstart` is blocked while
   renaming/switching, and `draggingName` clears on drop/dragend/popover-close. There are
   deliberately no drop indicators — do not add them back without a product decision.
+- **Terminal panel**: a bottom panel under the graph, toggled by the toolbar button next to the
+  commit-search settings icon (`GraphView.vue` `.graph-terminal-btn`, same spot as before v1.4.0).
+  First press spawns the active repo's shell, every press after that hides/shows it — killing is the
+  ✕ buttons' job alone. `App.vue` mounts one `TerminalPanel` per repo that owns a shell, keyed by
+  repo path, and keeps it mounted across repo switches, workspace switches and the toggle, so a
+  shell you left behind is still there (and still running) when you come back. The graph is only
+  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). Drag the
+  `.terminal-splitter` for height (persisted per session, resets to 260px on launch).
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it). Commit/stash mode (`commit-mode` in `modern-ui.css`)
@@ -92,14 +100,18 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   warm-gray base — keep both legible on low-clarity Windows displays.
 - **Windows-only settings hide on macOS/Linux**: General → Performance status accelerators render
   only when `isWindows` (`utils/shortcuts.ts`), and main forces them off outside win32
-  (`setStatusAccelerators()` in `main/git.ts`). A persisted `true` must never take effect there —
-  gate new Windows-only toggles the same way instead of leaving them visible-but-inert.
+  (`setStatusAccelerators()` in `main/git.ts`). Settings → Terminal hides its shell section the same
+  way (Command Prompt / Windows PowerShell / PowerShell 7 render only when `isWindows`; elsewhere the
+  terminal always spawns `$SHELL`, and PowerShell 7 — the default — falls back to Command Prompt where
+  pwsh is not installed). A persisted `true` must never take effect
+  there — gate new Windows-only toggles the same way instead of leaving them visible-but-inert.
 
 ## Keyboard shortcuts
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Clone repo, Close tab, Search commits, Open settings, Command palette, Show shortcuts — with
+  Clone repo, Close tab, Toggle terminal, Kill all terminals, Search commits, Open settings,
+  Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
   `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
@@ -113,8 +125,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
   Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
-  palette. Click Change… under macOS or Windows then press keys (`Esc` cancels, capture listener
-  while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
+  palette, Toggle terminal, Kill all terminals. Click Change… under macOS or Windows then press keys
+  (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
@@ -129,11 +141,20 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing),
+  Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills),
+  Kill all terminals `Ctrl+Shift+` (every repo, behind a confirm),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
   dialogs `Enter`/`Esc`, app zoom `⌘/Ctrl +` `−` `0` and Ctrl/⌘+wheel,
   `Esc` to close diff/deselect.
+- **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
+  a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
+  (open repo, clone, settings, palette, terminal toggle/kill-all, commit search). xterm stops
+  propagation of character keys, so without the capture listener every one of those combos dies while
+  a shell has the keyboard. The capture handler calls `stopPropagation()` after acting, so the bubble
+  copy never double-fires. Keep combos the shell owns (Ctrl+Arrows sync, `Esc`, plain typing) out of
+  `handleAppShortcut` — they stay in the bubble handler so readline and TUIs still receive them.
 - Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom
   and close tab, which are intentionally handled above the gate in `App.vue`
   (close tab still no-ops on busy and on unknown indexes via its own guards).

@@ -272,3 +272,22 @@ export interface UpdateProgress {
     transferred: number
     total: number
 }
+
+/** Which shell a new terminal spawns — the Terminal settings tab owns the choice. */
+export type TerminalShell = 'cmd' | 'powershell' | 'pwsh'
+
+/** Payload pushed to the renderer on `terminal:data` — one shell output chunk for a terminal. */
+export interface TerminalData {
+    /** Identifies the shell inside its repo — a repo may hold several (see `terminalId` on create). */
+    terminalId: string
+    repoPath: string
+    data: string
+}
+
+/** Payload pushed to the renderer on `terminal:exit` — that shell ended. */
+export interface TerminalExit {
+    terminalId: string
+    repoPath: string
+    exitCode: number
+    signal?: number
+}

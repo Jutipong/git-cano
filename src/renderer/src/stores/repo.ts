@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { computed, markRaw, ref, watch } from 'vue'
 
 import { useUiTransientStore } from './uiTransient'
+import { useTerminalStore } from './terminal'
 import { useWorkspaceStore } from './workspace'
 
 import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
@@ -121,7 +122,7 @@ export const useRepoStore = defineStore('repo', () => {
     /** Whether the command palette overlay is open. */
     const commandPaletteOpen = ref(false)
     /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'ai'>('appearance')
+    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'ai' | 'terminal'>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
     /** Branch soloed in the graph (GitKraken-style focus) — view-only filter, never persisted. */
@@ -364,6 +365,10 @@ export const useRepoStore = defineStore('repo', () => {
         const tab = tabs.value[index]
         if (!tab) return
         const wasActive = index === activeTab.value
+        // Closing the repo tab takes its shells with it (the renderer's state is memory-only, so a
+        // killed pty would otherwise have no tab left to close it). Workspace switches do NOT call
+        // this — they recycle git instances only, and their shells keep running.
+        await useTerminalStore().closeRepoTerminals(tab.path)
         const stillOpen = await window.api.closeRepo(tab.path).catch(() => false)
         const remaining = tabs.value.filter((_, i) => i !== index)
         tabs.value = remaining

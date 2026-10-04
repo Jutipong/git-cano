@@ -32,6 +32,7 @@
     import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
+    import TerminalPanel from './components/TerminalPanel.vue'
     import ThinkSpinner from './components/ThinkSpinner.vue'
     import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
@@ -39,6 +40,7 @@
     import { useAuthStore } from './stores/auth'
     import { useRepoStore } from './stores/repo'
     import { useSyncStore } from './stores/sync'
+    import { MAX_TERMINALS_PER_REPO, useTerminalStore } from './stores/terminal'
     import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
     import { useUpdaterStore } from './stores/updater'
@@ -77,6 +79,27 @@
         switchingWorkspace,
     } = storeToRefs(repoStore)
     const repo = computed(() => repoStore.repo)
+
+    const terminalStore = useTerminalStore()
+    /**
+     * Every repo path that owns at least one shell — each gets its OWN TerminalPanel instance (keyed
+     * by path) so its xterm buffers + pty stay alive while another tab is active, while a workspace
+     * switch happens, or while the panel is toggled away — hiding only stops painting, and killing is
+     * the ✕ buttons' job alone. The list comes from the terminal store itself, NOT from the open repo
+     * tabs: a workspace switch empties `tabs`, and panels keyed off it would unmount and throw away
+     * the buffers of shells that are still running.
+     */
+    const terminalPaths = computed(() => Object.keys(terminalStore.terminals))
+    /** Path of the repo whose terminal is on screen (the active tab). */
+    const activeRepoPath = computed(() => repo?.value?.path ?? null)
+    /** True while this repo's panel is the one on screen (active tab, not toggled away). */
+    function isTerminalVisible(path: string): boolean {
+        return path === activeRepoPath.value && terminalStore.panelVisible(path)
+    }
+    /** True only for the active repo's terminal while it is expanded. */
+    function isExpandedTerminal(path: string): boolean {
+        return terminalStore.isExpanded(path) && path === activeRepoPath.value
+    }
 
     /** Whole seconds left on a toast, shown as the countdown badge on its close button. */
     function countdownSeconds(t: { progress: number; durationMs: number }) {
@@ -227,6 +250,74 @@
         const DOUBLE_SHIFT_MS = 400
         let lastShiftTap = 0
 
+        /**
+         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle/kill-all and
+         * commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
+         *
+         * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell
+         * would otherwise swallow Ctrl+P / Ctrl+, / Ctrl+O entirely — the capture-phase listener
+         * below grabs them first and stops the event there, which also keeps the bubble-phase copy
+         * from firing a second time. Combos the shell owns (Ctrl+Arrows, Escape, …) are deliberately
+         * NOT here: they stay in the bubble handler so TUIs and readline keep receiving them.
+         */
+        function handleAppShortcut(combo: string | null, event: KeyboardEvent): boolean {
+            if (!combo) return false
+            if (combo === ui.getShortcut('openRepo')) {
+                event.preventDefault()
+                openNewRepo()
+                return true
+            }
+            if (combo === ui.getShortcut('cloneRepo')) {
+                event.preventDefault()
+                cloneOpen.value = true
+                return true
+            }
+            if (combo === ui.getShortcut('settings')) {
+                event.preventDefault()
+                repoStore.toolsOpen = true
+                return true
+            }
+            // Command palette (double-Shift is handled above, in the bubble handler)
+            if (combo === ui.getShortcut('commandPalette')) {
+                event.preventDefault()
+                repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
+                return true
+            }
+            // Terminal panel: spawn the first shell of the active repo, then show/hide. Never kills.
+            if (combo === ui.getShortcut('terminal') && repoStore.repo) {
+                event.preventDefault()
+                void toggleTerminal()
+                return true
+            }
+            // Kill every shell of every repo — off-screen repos included, so it always confirms.
+            if (combo === ui.getShortcut('terminalKillAll') && repoStore.repo) {
+                event.preventDefault()
+                void killAllTerminals()
+                return true
+            }
+            // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
+            if (combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
+                event.preventDefault()
+                const target = document.querySelector<HTMLInputElement>('.commit-search input')
+                target?.focus()
+                target?.select()
+                return true
+            }
+            return false
+        }
+
+        /**
+         * The same shortcuts one phase earlier, so they also reach the app while a shell has focus.
+         * Stopping propagation keeps the bubble-phase handler from handling them a second time and
+         * stops the shell from seeing a key the user bound to the app.
+         */
+        const onKeyDownCapture = (event: KeyboardEvent) => {
+            if (uiTransient.busy) return
+            if (event.metaKey || event.ctrlKey) {
+                if (handleAppShortcut(eventToCombo(event), event)) event.stopPropagation()
+            }
+        }
+
         const onKeyDown = (event: KeyboardEvent) => {
             // app zoom shortcuts — kept above the busy gate so zooming always works
             if (event.metaKey || event.ctrlKey) {
@@ -290,38 +381,8 @@
             // Customizable shortcuts (Settings → Shortcuts) — canonical combos, so Ctrl and Cmd both work.
             const combo = eventToCombo(event)
 
-            // Open repo
-            if (combo && combo === ui.getShortcut('openRepo')) {
-                event.preventDefault()
-                openNewRepo()
-                return
-            }
-            // Clone repo
-            if (combo && combo === ui.getShortcut('cloneRepo')) {
-                event.preventDefault()
-                cloneOpen.value = true
-                return
-            }
-            // Open settings
-            if (combo && combo === ui.getShortcut('settings')) {
-                event.preventDefault()
-                repoStore.toolsOpen = true
-                return
-            }
-            // Command palette (double-Shift is handled above)
-            if (combo && combo === ui.getShortcut('commandPalette')) {
-                event.preventDefault()
-                repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
-                return
-            }
-            // Focus commit-history search (a diff overlay owns Ctrl+F while open)
-            if (combo && combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
-                event.preventDefault()
-                const target = document.querySelector<HTMLInputElement>('.commit-search input')
-                target?.focus()
-                target?.select()
-                return
-            }
+            // App shortcuts (the capture-phase twin of this handler sees them first — see onKeyDownCapture).
+            if (handleAppShortcut(combo, event)) return
             // Push/Pull/Fetch.
             // Skipped while typing (Ctrl+Arrows = word jump), palette open (owns Arrows), or no repo.
             if (!repoStore.commandPaletteOpen && repoStore.repo) {
@@ -350,8 +411,10 @@
 
         onBeforeUnmount(() => {
             if (autoRefreshTimer.value) clearInterval(autoRefreshTimer.value)
+            window.removeEventListener('keydown', onKeyDownCapture, true)
             window.removeEventListener('keydown', onKeyDown)
         })
+        window.addEventListener('keydown', onKeyDownCapture, true)
         window.addEventListener('keydown', onKeyDown)
 
         // Ctrl/Cmd+wheel zooms the app itself (steps of ui.zoom) instead of letting
@@ -396,6 +459,119 @@
         window.addEventListener('mousemove', onMove)
         window.addEventListener('mouseup', onEnd)
     }
+    /** Vertical drag for the bottom terminal panel — pulls the top edge, so delta grows downward. */
+    function beginTerminalResize(event: MouseEvent) {
+        event.preventDefault()
+        const startY = event.clientY
+        const startHeight = terminalStore.terminalHeight
+        const maxHeight = Math.max(160, Math.round(window.innerHeight * 0.7))
+        const onMove = (moveEvent: MouseEvent) => {
+            const delta = startY - moveEvent.clientY
+            terminalStore.terminalHeight = Math.min(maxHeight, Math.max(120, startHeight + delta))
+        }
+        const onEnd = () => {
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onEnd)
+        }
+        document.body.style.cursor = 'row-resize'
+        document.body.style.userSelect = 'none'
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onEnd)
+    }
+
+    /** Ask to close every shell of one repo — they all die, so this always confirms. */
+    async function confirmCloseTerminal(path: string): Promise<void> {
+        const count = terminalStore.terminalCount(path)
+        if (!count) return
+        const ok = await confirmDialog({
+            title: count > 1 ? `Close ${count} terminals` : 'Close terminal',
+            message:
+                count > 1
+                    ? `Closing these ${count} terminals will end their shell sessions and clear their scrollback.`
+                    : 'Closing the terminal will end its shell session and clear its scrollback.',
+            confirmLabel: count > 1 ? `Close ${count} terminals` : 'Close terminal',
+            danger: true,
+        })
+        if (ok) await terminalStore.closeRepoTerminals(path)
+    }
+
+    /** Ask to close one terminal tab — its shell and scrollback die, so this always confirms. */
+    async function confirmCloseTerminalTab(path: string, id: string): Promise<void> {
+        const label = terminalStore.tabLabel(path, id)
+        if (!label) return
+        const ok = await confirmDialog({
+            title: `Close ${label}`,
+            message: 'Closing this terminal will end its shell session and clear its scrollback.',
+            confirmLabel: 'Close terminal',
+            danger: true,
+        })
+        if (ok) terminalStore.closeTerminalTab(path, id)
+    }
+
+    /** Panel `+` — spawn another shell for this repo, up to the per-repo cap. */
+    async function addTerminalTab(path: string) {
+        if (!(await terminalStore.openTerminalTab(path))) {
+            uiTransient.notify(`Maximum ${MAX_TERMINALS_PER_REPO} terminals per repo`, 'warning')
+        }
+    }
+
+    /**
+     * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has
+     * none, otherwise show or hide the panel. It never kills anything — the ✕ buttons own that.
+     */
+    async function toggleTerminal() {
+        const path = repoStore.tabs[repoStore.activeTab]?.path
+        if (!path) return
+        if (terminalStore.terminalExists(path)) {
+            if (terminalStore.panelVisible(path)) terminalStore.hideTerminals(path)
+            else terminalStore.showTerminals(path)
+            return
+        }
+        const available = await window.api.terminalAvailable().catch(() => false)
+        if (!available) {
+            uiTransient.notify('Terminal is unavailable — the native module could not be loaded', 'error')
+            return
+        }
+        await terminalStore.openTerminalTab(path)
+    }
+
+    /**
+     * Kill every shell of every repository — the panel's trash button, the palette command and its
+     * shortcut. Confirm first: it ends shells of repos that are not even on screen.
+     */
+    async function killAllTerminals() {
+        const total = Object.values(terminalStore.terminals).reduce((sum, state) => sum + state.tabs.length, 0)
+        if (!total) {
+            uiTransient.notify('No terminals are running', 'info')
+            return
+        }
+        const ok = await confirmDialog({
+            title: `Kill ${total} terminal${total > 1 ? 's' : ''}`,
+            message: 'Every running shell will end, including those of repositories that are not on screen.',
+            confirmLabel: 'Kill all',
+            danger: true,
+        })
+        if (!ok) return
+        const killed = await terminalStore.killAllTerminals()
+        uiTransient.notify(`Killed ${killed} terminal${killed === 1 ? '' : 's'}`, 'success')
+    }
+
+    /**
+     * One shell ended on its own (exit / Ctrl+D / crash) — drop just that tab, exactly like a manual
+     * close but without the confirm: the process is already gone, so there is nothing to end. When it
+     * was the repo's last terminal the panel unmounts with it.
+     */
+    function handleTerminalExit(path: string, id: string) {
+        terminalStore.closeTerminalTab(path, id)
+    }
+
+    /** Expand the terminal over the whole center column (graph hidden) or restore its height. */
+    function toggleTerminalExpand(path: string) {
+        terminalStore.setExpanded(path, !terminalStore.isExpanded(path))
+    }
+
     async function run(label: string, fn: () => Promise<unknown>, busyLabel = 'Working…') {
         try {
             await uiTransient.withBusy(async () => {
@@ -659,6 +835,7 @@
                     <div class="app-body">
                         <div class="center-column">
                             <GraphView
+                                v-show="!isExpandedTerminal(activeRepoPath ?? '')"
                                 :commits="commits"
                                 :has-more="hasMore"
                                 :commit-open="!!selectedCommit || !!selectedStash"
@@ -672,7 +849,43 @@
                                 @squash="squashTarget = $event"
                                 @revert="revertCommit"
                                 @reset-soft="commit => resetTo(commit, 'soft')"
-                                @reset-hard="commit => resetTo(commit, 'hard')" />
+                                @reset-hard="commit => resetTo(commit, 'hard')"
+                                @toggle-terminal="toggleTerminal" />
+                            <div
+                                v-if="activeRepoPath && terminalStore.panelVisible(activeRepoPath) && !terminalStore.isExpanded(activeRepoPath)"
+                                class="terminal-splitter"
+                                @mousedown="beginTerminalResize" />
+                            <!--
+                                One panel per repo that owns a shell, kept mounted for the whole session:
+                                hidden repos keep their xterm buffers and pty alive across repo switches,
+                                workspace switches and the panel toggle. Expanded panels teleport into
+                                `.app` so they float over the graph without moving the repo tab bar.
+                            -->
+                            <template
+                                v-for="path in terminalPaths"
+                                :key="path">
+                                <Teleport
+                                    to=".app"
+                                    :disabled="!isExpandedTerminal(path)">
+                                    <TerminalPanel
+                                        v-show="isTerminalVisible(path)"
+                                        :repo-path="path"
+                                        :expanded="isExpandedTerminal(path)"
+                                        :visible="isTerminalVisible(path)"
+                                        :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
+                                        :style="
+                                            isExpandedTerminal(path)
+                                                ? { right: `${ui.rightPanelWidth + 12}px` }
+                                                : { height: `${terminalStore.terminalHeight}px` }
+                                        "
+                                        @add-tab="addTerminalTab(path)"
+                                        @close="confirmCloseTerminal(path)"
+                                        @close-tab="id => confirmCloseTerminalTab(path, id)"
+                                        @exit="id => handleTerminalExit(path, id)"
+                                        @toggle-expand="toggleTerminalExpand(path)"
+                                        @kill-all="killAllTerminals" />
+                                </Teleport>
+                            </template>
                         </div>
                         <div
                             class="panel-splitter"
@@ -801,7 +1014,9 @@
         <CommandPalette
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
-            @open-repo="openNewRepo" />
+            @open-repo="openNewRepo"
+            @toggle-terminal="toggleTerminal"
+            @kill-all-terminals="killAllTerminals" />
         <ChangelogModal
             v-if="updater.changelogOpen"
             @close="updater.changelogOpen = false" />
