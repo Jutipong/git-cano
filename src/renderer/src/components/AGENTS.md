@@ -178,10 +178,11 @@ Panel/modal component patterns. Loaded automatically when working under
   `right: rightPanelWidth + 12px` clears the Changes pane) and hides the graph — it carries
   `.icon-btn.active` while expanded. Hide (`chevron-down`) collapses the panel back into the graph
   toolbar button / `Ctrl+` / palette and never touches the shells; the ✕ kills every shell of THIS
-  repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. Every
-  control in the 30px strip is 22px tall with a 14px icon (tab pills, `+`, steppers, icon buttons)
-  and the header's 10px side padding matches the xterm inset — keep those in step instead of letting
-  one control borrow the roomier 25px `.icon-btn` base used by the other panel headers.
+  repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
+  32px strip keeps one scale: 28px pills (tab, `+`, the two `.segmented` groups), 22px buttons with
+  14px icons inside them (the `+` glyph is 15px), a 12px mono tab label and an 88px tab minimum; the
+  header's 10px side padding matches the xterm inset — keep those in step instead of letting one
+  control borrow the roomier 25px `.icon-btn` base used by the other panel headers.
 - **Kill every terminal is palette/shortcut-only — no panel button.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item and the
   `Ctrl+Shift+`` shortcut, both behind a confirm. Do not add a header button back.

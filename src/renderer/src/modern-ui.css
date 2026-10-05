@@ -5294,10 +5294,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 30px;
-    flex: 0 0 30px;
-    /* 10px matches the xterm's own inset, so the first tab lines up with the terminal text. */
-    padding: 0 10px;
+    height: 36px;
+    flex: 0 0 36px;
+    /* 10px matches the xterm's own inset, so the first tab lines up with the terminal text. The 8px
+       top is matched by the terminal's own 8px inset underneath, so the pills sit centred in the
+       panel's opening band instead of hugging its top border. */
+    padding: 8px 10px 0;
     color: var(--text-muted);
 }
 
@@ -5323,10 +5325,11 @@ body {
 .terminal-tab {
     display: inline-flex;
     flex: 0 1 auto;
-    min-width: 0;
+    /* Short labels ("cmd 1") still get a comfortable pill; longer ones grow and truncate. */
+    min-width: 88px;
     align-items: center;
-    /* Every header control is 22px tall so the tabs and the action buttons share one baseline row. */
-    height: 22px;
+    /* 28px = the height of the right-hand `.segmented` groups, so every pill in the strip lines up. */
+    height: 28px;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -5347,13 +5350,13 @@ body {
 
 .terminal-tab-label {
     min-width: 0;
-    padding: 0 4px 0 9px;
+    padding: 0 6px 0 11px;
     overflow: hidden;
     color: var(--text-muted);
     background: transparent;
     border: none;
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -5368,10 +5371,10 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 16px;
-    height: 16px;
-    min-height: 16px;
-    margin-right: 2px;
+    width: 18px;
+    height: 18px;
+    min-height: 18px;
+    margin-right: 3px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -5387,8 +5390,8 @@ body {
    to this 16px button instead, or the (invisible) ring swallows every click in the panel. */
 .terminal-tab-close .close-x-svg {
     position: static;
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
 }
 
 /* Keep the ✕ of the showing tab visible — it is the only way to kill it. */
@@ -5406,9 +5409,9 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 22px;
-    height: 22px;
-    min-height: 22px;
+    width: 28px;
+    height: 28px;
+    min-height: 28px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -5457,11 +5460,17 @@ body {
 }
 
 /* Same 22px frame as the tabs and steppers — the base .icon-btn (25px, for panel headers) would
-   tower over them in this compact 30px bar. */
+   tower over them in this compact 32px strip. */
 .terminal-actions .icon-btn {
     width: 22px;
     height: 22px;
     min-height: 22px;
+}
+
+/* Pin the groups to the tab/`+` pill height: the 0.8px border would otherwise make them 27.6px. */
+.terminal-actions .segmented {
+    height: 28px;
+    align-items: center;
 }
 
 /* No padding on the container: FitAddon measures the parent height and subtracts .xterm's own
@@ -5503,15 +5512,15 @@ body {
 
 /* Inline rename of a terminal tab (double-click its label) — sized like the label it replaces. */
 .terminal-tab-rename {
-    width: 96px;
+    width: 104px;
     min-width: 0;
-    padding: 2px 4px 2px 8px;
+    padding: 3px 5px 3px 9px;
     color: var(--text);
     background: var(--surface-0);
     border: 1px solid var(--teal);
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     line-height: 1.2;
 }
 
