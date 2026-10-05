@@ -109,13 +109,25 @@
         search.value = ''
         active.value = 0
         input.value?.focus()
-        if (next === 'branch' && repoStore.repo && !repoStore.branchList && !fetchedLocal.value) {
-            void window.api
-                .branches()
-                .then(branches => (fetchedLocal.value = branches.local))
-                .catch(() => {})
-        }
+        if (next === 'branch') ensureBranches()
     }
+
+    /** One-flight fetch of the local branch list, shared by branch mode and outermost search. */
+    let fetchingBranches = false
+    function ensureBranches() {
+        if (!repoStore.repo || repoStore.branchList || fetchedLocal.value || fetchingBranches) return
+        fetchingBranches = true
+        void window.api
+            .branches()
+            .then(branches => (fetchedLocal.value = branches.local))
+            .catch(() => {})
+            .finally(() => (fetchingBranches = false))
+    }
+
+    // Outermost search needs branches too — fetch once on the first query, not on every palette open.
+    watch(search, query => {
+        if (mode.value === 'commands' && query.trim()) ensureBranches()
+    })
 
     function backToCommands() {
         enterMode('commands')
@@ -444,8 +456,8 @@
                     : []
     )
 
-    /** Spotlight-style cap: the outermost level shows only the top hits, the full list stays in `Repo…` mode. */
-    const OUTER_REPO_LIMIT = 8
+    /** Spotlight-style cap: the outermost level shows only the top hits, the full list stays in its drill-in mode. */
+    const OUTER_HIT_LIMIT = 8
 
     /** Matching workspaces for the outermost level (only when there is more than one to switch between). */
     const matchedWorkspaces = computed(() =>
@@ -462,12 +474,21 @@
     })
 
     /** Top repo hits for the outermost level (capped). */
-    const matchedRepos = computed(() => filterPaletteItems(repoItems.value, search.value).slice(0, OUTER_REPO_LIMIT))
+    const matchedRepos = computed(() => filterPaletteItems(repoItems.value, search.value).slice(0, OUTER_HIT_LIMIT))
+
+    /** Top branch hits for the outermost level (capped). */
+    const matchedBranches = computed(() => filterPaletteItems(branchItems.value, search.value).slice(0, OUTER_HIT_LIMIT))
 
     /** How many repo hits the outermost level hides behind the cap. */
     const hiddenRepoCount = computed(() => {
         if (mode.value !== 'commands' || !search.value.trim()) return 0
         return Math.max(0, filterPaletteItems(repoItems.value, search.value).length - matchedRepos.value.length)
+    })
+
+    /** How many branch hits the outermost level hides behind the cap. */
+    const hiddenBranchCount = computed(() => {
+        if (mode.value !== 'commands' || !search.value.trim()) return 0
+        return Math.max(0, filterPaletteItems(branchItems.value, search.value).length - matchedBranches.value.length)
     })
 
     interface PaletteSection {
@@ -479,9 +500,10 @@
 
     /**
      * Sectioned view: commands mode groups core actions under Commands and adds the
-     * query-driven Repositories/Workspaces sections while searching (AI and Open in stay
-     * drill-in modes like Repo…/Branch…). Sub-modes stay a single untitled list. Empty
-     * groups are dropped, so the headers double as Spotlight-style group labels.
+     * query-driven Open in / Repositories / Branches / Workspaces / AI sections while
+     * searching (each stays a drill-in mode too, like Repo…/Branch…). Sub-modes stay a
+     * single untitled list. Empty groups are dropped, so the headers double as
+     * Spotlight-style group labels.
      */
     const sections = computed<PaletteSection[]>(() => {
         if (mode.value !== 'commands') return [{ items: subFiltered.value, offset: 0 }]
@@ -491,8 +513,11 @@
         ]
         if (query.trim()) {
             groups.push(
+                { title: 'Open in', items: repoStore.repo ? filterPaletteItems(openInItems.value, query) : [] },
                 { title: 'Repositories', items: matchedRepos.value },
-                { title: 'Workspaces', items: matchedWorkspaces.value }
+                { title: 'Branches', items: matchedBranches.value },
+                { title: 'Workspaces', items: matchedWorkspaces.value },
+                { title: 'AI', items: aiCanRun.value ? filterPaletteItems(aiItems.value, query) : [] }
             )
         }
         return withOffsets(groups.filter(group => group.items.length > 0))
@@ -643,6 +668,11 @@
                     v-if="hiddenRepoCount > 0"
                     class="palette-more">
                     +{{ hiddenRepoCount }} more — enter Repo… to see all
+                </div>
+                <div
+                    v-if="hiddenBranchCount > 0"
+                    class="palette-more">
+                    +{{ hiddenBranchCount }} more — enter Branch… to see all
                 </div>
             </div>
             <div class="palette-footer">

@@ -23,6 +23,8 @@ Panel/modal component patterns. Loaded automatically when working under
   Palette command items must `close()` before acting/emitting (mode switches like
   Repo…/Branch…/AI…/Open in… excepted) — otherwise the palette stays open over the next dialog.
   AI actions live behind an `AI…` drill-in mode (`Sparkles` chip), gated by `aiCanRun`.
+  Typing at the outermost level additionally surfaces query-driven `Open in` / `Repositories` /
+  `Branches` / `Workspaces` / `AI` sections (top hits only — the full lists stay in their drill-in modes).
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
