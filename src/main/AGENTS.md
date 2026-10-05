@@ -246,6 +246,15 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   subprocess) and silently falls back to Command Prompt when pwsh.exe is missing. The settings hint
   says so, and the resolved label is what the tab shows (`pwsh 1` vs `cmd 1`). `powershell` is the
   in-box Windows PowerShell 5.1.
+- **The `pwsh` probe must match both install flavours**: MSI installs a real file at
+  `%ProgramFiles%\PowerShell\7\pwsh.exe`; the Microsoft Store installs an AppExecLink alias at
+  `%LOCALAPPDATA%\Microsoft\WindowsApps\pwsh.exe`. `fs.existsSync` FOLLOWS that alias into the
+  locked `Program Files\WindowsApps` package folder and fails with EACCES, so Store installs looked
+  "not installed" and every terminal silently fell back to cmd. The PATH scan therefore uses
+  `shellFileExists()` (`fs.lstatSync`, accepting `isFile()` or `isSymbolicLink()`) — do not
+  "simplify" it back to `existsSync`. Spawning the alias works fine; only the probe was broken.
+  PowerShell 7.7+ is MSIX-only, so this path matters more over time, and when both flavours are
+  installed whichever is first on PATH (Machine before User — normally the MSI) wins.
 - `createTerminal` is idempotent per id (a remounted panel re-sends the same id and gets its live
   shell back) and clamps cols/rows, because xterm briefly reports 0 while a panel is hidden.
 - **Always spawn with `useConptyDll: true` on Windows.** The OS ConPTY (Win11 26200) corrupts Thai

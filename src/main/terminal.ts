@@ -56,10 +56,26 @@ const POWER_SHELL_ARGS = ['-NoExit', '-Command', 'chcp 65001 > $null; [Console]:
 let pwshInstalled: boolean | null = null
 
 /**
+ * True when the candidate exists as a shell executable — a plain file (MSI install) or a
+ * Store/MSIX app-execution alias. fs.existsSync follows reparse points, and the WindowsApps
+ * `pwsh.exe` alias resolves into the locked package folder, so stat fails with EACCES and the
+ * alias looks missing. lstat reads the alias itself (libuv reports it as a symlink), and Windows
+ * resolves the alias again when the shell is spawned — so both install flavours must match here.
+ */
+function shellFileExists(candidate: string): boolean {
+    try {
+        const stat = fs.lstatSync(candidate)
+        return stat.isFile() || stat.isSymbolicLink()
+    } catch {
+        return false
+    }
+}
+
+/**
  * True when pwsh.exe is on PATH. PowerShell 7 is an optional install, and the settings default is
  * "PowerShell 7", so this decides whether that default is honoured or falls back to Command Prompt.
- * The WindowsApps app-execution alias counts as installed (fs sees it as a file), and no subprocess
- * is spawned — the PATH scan is cached for the session.
+ * Both install flavours count — MSI (real file) and Store/MSIX (WindowsApps alias) — and no
+ * subprocess is spawned: the PATH scan is cached for the session.
  */
 function hasPwsh(): boolean {
     if (pwshInstalled !== null) return pwshInstalled
@@ -68,13 +84,7 @@ function hasPwsh(): boolean {
         if (!dir) return false
         return exts.some(ext => {
             const candidates = [path.join(dir, `pwsh${ext.toLowerCase()}`), path.join(dir, `pwsh${ext}`)]
-            return candidates.some(candidate => {
-                try {
-                    return fs.existsSync(candidate)
-                } catch {
-                    return false
-                }
-            })
+            return candidates.some(candidate => shellFileExists(candidate))
         })
     })
     return pwshInstalled
