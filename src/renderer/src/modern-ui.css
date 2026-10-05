@@ -8433,8 +8433,9 @@ body {
 }
 .md-preview {
     max-width: 860px;
+    margin: 0 auto;
     font-family: var(--font-sans, system-ui, sans-serif);
-    font-size: 14px;
+    font-size: 1em;
     line-height: 1.7;
     color: var(--text);
     overflow-wrap: break-word;
@@ -8468,7 +8469,7 @@ body {
     padding: 12px 14px;
     overflow: auto;
     font-family: var(--font-mono);
-    font-size: 12.5px;
+    font-size: 0.9em;
     line-height: 1.55;
     background: var(--diff-bg);
     border: 1px solid var(--line-soft);
@@ -8491,8 +8492,14 @@ body {
     margin: 0.6em 0;
     padding-left: 24px;
 }
+.md-preview div[align='center'] {
+    text-align: center;
+}
 .md-preview table {
+    display: block;
+    max-width: 100%;
     margin: 0.8em 0;
+    overflow-x: auto;
     border-collapse: collapse;
 }
 .md-preview th,
@@ -8502,12 +8509,45 @@ body {
 }
 .md-preview img {
     max-width: 100%;
+    height: auto;
+    vertical-align: middle;
+}
+/* Standalone screenshots — block, centered, carded. Inline badges stay borderless. */
+.md-preview p > img:only-child,
+.md-preview p > a:only-child > img {
+    display: block;
+    margin: 12px auto;
+    border: 1px solid var(--line-soft);
+    border-radius: 8px;
+}
+.md-preview p > a:only-child {
+    display: block;
+    width: fit-content;
+    margin: 12px auto;
+}
+.md-preview p > a:only-child > img {
+    margin: 0 auto;
+}
+.md-preview td img,
+.md-preview th img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid var(--line-soft);
+    border-radius: 6px;
 }
 .json-preview {
-    margin: 0;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 12px 14px;
+    overflow: auto;
     font-family: var(--font-mono);
+    font-size: 0.9em;
     line-height: 1.6;
     white-space: pre;
+    background: var(--diff-bg);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
 }
 .json-preview .jk {
     color: var(--teal);

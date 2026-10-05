@@ -1,14 +1,16 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import DOMPurify from 'dompurify'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
     import { marked } from 'marked'
 
+    import { isLoadableMarkdownImageSrc } from '@shared/markdownImages'
+
     import { useUiStore } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
 
-    import type { FileContent } from '@shared/types'
+    import type { FileContent, GitImage } from '@shared/types'
 
     const props = defineProps<{
         file: string
@@ -48,7 +50,10 @@
         }
     }
     onMounted(() => document.addEventListener('keydown', onKey))
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
+    onBeforeUnmount(() => {
+        document.removeEventListener('keydown', onKey)
+        revokeMarkdownImages()
+    })
 
     const kind = computed<'markdown' | 'json'>(() => (props.file.toLowerCase().endsWith('.json') ? 'json' : 'markdown'))
     const sourceLabel = computed(() => {
@@ -60,10 +65,30 @@
     /**
      * The modal is reused while it stays open (previewing another file / picking another
      * commit-stash updates the props without remounting), so reload on every prop change.
+     * Markdown image state lives above load(): the immediate file watcher runs load()
+     * during setup, and anything touched there but declared below throws a TDZ error.
      */
+    const mdBody = ref<HTMLElement | null>(null)
+    let mdImageUrls: string[] = []
+    let mdImageSeq = 0
+
+    /** Release the blob URLs backing repo-relative markdown images. */
+    function revokeMarkdownImages(): void {
+        mdImageSeq++
+        for (const url of mdImageUrls) URL.revokeObjectURL(url)
+        mdImageUrls = []
+    }
+
+    /** Raw IPC bytes → blob URL (same no-base64 pattern as the image diff). */
+    function markdownImageUrl(payload: GitImage | null): string | null {
+        if (!payload?.data?.length) return null
+        return URL.createObjectURL(new Blob([payload.data as unknown as BlobPart], { type: payload.mime }))
+    }
+
     let seq = 0
     async function load() {
         const my = ++seq
+        revokeMarkdownImages()
         loading.value = true
         result.value = null
         try {
@@ -88,6 +113,47 @@
         const raw = marked.parse(result.value.content, { async: false }) as string
         return DOMPurify.sanitize(raw, { USE_PROFILES: { html: true } })
     })
+
+    /**
+     * `marked` emits relative `<img src>` verbatim, which would resolve against
+     * the app URL instead of the repo — rewrite those through the
+     * `markdown:image` IPC. Remote/inline sources stay untouched for the
+     * browser (gated by the `img-src` CSP); failures keep the alt text.
+     */
+    async function resolveMarkdownImages(): Promise<void> {
+        const my = ++mdImageSeq
+        for (const url of mdImageUrls) URL.revokeObjectURL(url)
+        mdImageUrls = []
+        if (kind.value !== 'markdown' || !markdownHtml.value) return
+        await nextTick()
+        if (my !== mdImageSeq) return
+        const el = mdBody.value
+        if (!el) return
+        const imgs = [...el.querySelectorAll('img')]
+        const file = props.file
+        const commitHash = props.commitHash ?? null
+        const stashHash = props.stashHash ?? null
+        await Promise.all(
+            imgs.map(async img => {
+                const src = img.getAttribute('src')?.trim() ?? ''
+                if (!src || isLoadableMarkdownImageSrc(src)) return
+                // A relative srcset would fetch against the app URL — the rewritten src wins instead.
+                img.removeAttribute('srcset')
+                let payload: GitImage | null
+                try {
+                    payload = await window.api.markdownImage(file, src, commitHash, stashHash)
+                } catch {
+                    return
+                }
+                if (my !== mdImageSeq) return
+                const url = markdownImageUrl(payload)
+                if (!url) return
+                mdImageUrls.push(url)
+                img.setAttribute('src', url)
+            })
+        )
+    }
+    watch(markdownHtml, () => void resolveMarkdownImages(), { flush: 'post' })
 
     const jsonState = computed<{ ok: boolean; pretty: string }>(() => {
         if (kind.value !== 'json') return { ok: true, pretty: '' }
@@ -178,6 +244,7 @@
             <!-- eslint-disable-next-line vue/no-v-html -->
             <div
                 v-else-if="kind === 'markdown'"
+                ref="mdBody"
                 class="md-preview"
                 @click="onContentClick"
                 v-html="markdownHtml" />

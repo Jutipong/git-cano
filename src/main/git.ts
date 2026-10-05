@@ -4,6 +4,7 @@ import * as os from 'node:os'
 import * as path from 'node:path'
 
 import { assignLanes } from '@shared/lanes'
+import { resolveMarkdownImagePath } from '@shared/markdownImages'
 import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
 import { authGitEnv } from './auth'
@@ -921,6 +922,47 @@ export async function getStashImageVersion(hash: string, file: string): Promise<
         .catch(() => null)
     if (!snapshot?.length) return null
     return { mime, data: snapshot }
+}
+
+/** Max bytes served per markdown image — keeps a huge screenshot from bloating the preview. */
+const MARKDOWN_IMAGE_MAX_BYTES = 8 * 1024 * 1024
+
+/**
+ * Repo-relative image referenced by a markdown preview (`![alt](src)`).
+ * Relative sources resolve against the markdown file's directory (a leading
+ * `/` anchors at the repo root); remote/inline/escaping sources resolve to
+ * null so the renderer leaves them alone. Commit/stash previews read the blob
+ * at that revision, otherwise the working tree is read.
+ */
+export async function getMarkdownImage(
+    mdFile: string,
+    src: string,
+    commitHash?: string | null,
+    stashHash?: string | null
+): Promise<GitImage | null> {
+    const target = resolveMarkdownImagePath(String(mdFile ?? ''), String(src ?? ''))
+    if (!target) return null
+    const { path: p } = getRepo()
+    const mime = MIME_BY_EXT[path.extname(target).toLowerCase()] ?? 'application/octet-stream'
+    try {
+        let buf: Buffer | null = null
+        if (typeof stashHash === 'string' && stashHash) {
+            buf = await gitBinaryBuffer(p, ['cat-file', 'blob', `${stashHash}:${target}`])
+                .catch(() => gitBinaryBuffer(p, ['cat-file', 'blob', `${stashHash}^3:${target}`]))
+                .catch(() => null)
+        } else if (typeof commitHash === 'string' && commitHash) {
+            buf = await gitBinaryBuffer(p, ['cat-file', 'blob', `${commitHash}:${target}`]).catch(() => null)
+        } else {
+            const abs = path.join(p, ...target.split('/'))
+            const rel = path.relative(p, abs)
+            if (!rel || rel === '..' || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) return null
+            buf = await fs.promises.readFile(abs).catch(() => null)
+        }
+        if (!buf?.length || buf.length > MARKDOWN_IMAGE_MAX_BYTES) return null
+        return { mime, data: buf }
+    } catch {
+        return null
+    }
 }
 
 export async function revertCommit(hash: string): Promise<void> {

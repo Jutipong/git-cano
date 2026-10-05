@@ -146,6 +146,8 @@ const api = {
     fileContent: (file: string, staged: boolean): Promise<FileContent> => call('file:content', file, staged),
     commitFileContent: (hash: string, file: string): Promise<FileContent> => call('file:commitContent', hash, file),
     stashFileContent: (hash: string, file: string): Promise<FileContent> => call('stash:fileContent', hash, file),
+    markdownImage: (mdFile: string, src: string, commitHash?: string | null, stashHash?: string | null): Promise<GitImage | null> =>
+        call('markdown:image', mdFile, src, commitHash ?? null, stashHash ?? null),
     listFiles: (commitHash?: string): Promise<string[]> => call('file:list', commitHash),
     addIgnoreRule: (rule: string): Promise<string> => call('file:addIgnoreRule', rule),
 

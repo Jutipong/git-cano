@@ -115,6 +115,7 @@ import {
     sshTestHost,
     getFileHistory,
     getBlame,
+    getMarkdownImage,
     listFiles,
     addIgnoreRule,
     plainGit,
@@ -799,6 +800,15 @@ app.whenReady().then(() => {
     handle('stash:fileContent', (hash: string, file: string) => {
         requireRepo()
         return getStashFileContent(hash as string, file as string)
+    })
+    handle('markdown:image', (mdFile: string, src: string, commitHash?: string | null, stashHash?: string | null) => {
+        requireRepo()
+        return getMarkdownImage(
+            mdFile as string,
+            src as string,
+            typeof commitHash === 'string' && commitHash ? commitHash : null,
+            typeof stashHash === 'string' && stashHash ? stashHash : null
+        )
     })
     handle('file:list', (hash?: string) => {
         requireRepo()
