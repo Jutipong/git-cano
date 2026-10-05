@@ -139,7 +139,9 @@ Panel/modal component patterns. Loaded automatically when working under
 - **Thai rendering is the whole point of this panel** — do not “optimise” it away:
   xterm 6's DOM renderer (never `addon-canvas`/`addon-webgl`, which do no Thai shaping),
   `Unicode11Addon` with `unicode.activeVersion = '11'` (needs `allowProposedApi: true` in xterm 6),
-  `lineHeight: 1.0`, the font stack `'Cascadia Mono', 'Leelawadee UI', monospace`, and a
+  `lineHeight: 1.0`, the font stack `'Consolas', 'Leelawadee UI', monospace` (default from
+  `ui.terminalFontFamily` — Settings → Terminal → Text offers NF presets plus a custom face, and an
+  uninstalled pick resolves back to this stack), and a
   `waitForFonts()` step before constructing the `Terminal` (xterm caches the cell size measured
   during construction, and a wrong cell size pushes every combining mark off its column). The
   `.xterm` padding lives on `.xterm`, never on `.terminal-host` — FitAddon subtracts `.xterm`'s own
@@ -173,19 +175,20 @@ Panel/modal component patterns. Loaded automatically when working under
   commits, Esc cancels, blank restores the derived label). Reorder is drag-to-reorder with the live
   `dragover` swap used by the repo tabs, so the id (and its live shell) has to travel with the tab.
 - Header buttons sit in two `.segmented` pills (the diff header's group style): `[A− A+]` for the
-  font stepper and `[maximize · hide · ✕]` for the panel. Maximize teleports the panel into `.app`
+  font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`, same `gap: 6px`
+  and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: rightPanelWidth + 12px` clears the Changes pane) and hides the graph — it carries
   `.icon-btn.active` while expanded. Hide (`chevron-down`) collapses the panel back into the graph
   toolbar button / `Ctrl+` / palette and never touches the shells; the ✕ kills every shell of THIS
   repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
-  32px strip keeps one scale: 28px pills (tab, `+`, the two `.segmented` groups), 22px buttons with
-  14px icons inside them (the `+` glyph is 15px), a 12px mono tab label and an 88px tab minimum; the
-  header's 10px side padding matches the xterm inset — keep those in step instead of letting one
-  control borrow the roomier 25px `.icon-btn` base used by the other panel headers.
-- **Kill every terminal is palette/shortcut-only — no panel button.** It ends shells of repos that
-  are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item and the
-  `Ctrl+Shift+`` shortcut, both behind a confirm. Do not add a header button back.
+  strip shares the diff-view scale: 31px pills (tab, `+`, the two `.segmented` groups), 25px
+  buttons with 15px icons inside them, a 12px mono tab label and an 88px tab minimum; the
+  header's 10px side padding matches the xterm inset — keep those in step with the diff header
+  instead of inventing a second compact scale.
+- **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
+  are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
+  a confirm. Do not add a header button or a shortcut back.
 
 ## Shared component patterns
 

@@ -110,7 +110,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Clone repo, Close tab, Toggle terminal, Kill all terminals, Search commits, Open settings,
+  Clone repo, Close tab, Toggle terminal, Search commits, Open settings,
   Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
@@ -125,7 +125,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
   Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
-  palette, Toggle terminal, Kill all terminals. Click Change… under macOS or Windows then press keys
+  palette, Toggle terminal. Click Change… under macOS or Windows then press keys
   (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
@@ -141,8 +141,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing),
-  Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills),
-  Kill all terminals `Ctrl+Shift+` (every repo, behind a confirm),
+  Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
+  killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
@@ -150,7 +150,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Esc` to close diff/deselect.
 - **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
   a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
-  (open repo, clone, settings, palette, terminal toggle/kill-all, commit search). xterm stops
+  (open repo, clone, settings, palette, terminal toggle, commit search). xterm stops
   propagation of character keys, so without the capture listener every one of those combos dies while
   a shell has the keyboard. The capture handler calls `stopPropagation()` after acting, so the bubble
   copy never double-fires. Keep combos the shell owns (Ctrl+Arrows sync, `Esc`, plain typing) out of

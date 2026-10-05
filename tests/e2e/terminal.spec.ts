@@ -144,11 +144,12 @@ test('closing the repo tab kills its shells, and the other repo keeps working', 
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
 })
 
-test('kill all lives in the palette/shortcut only, and terminates every remaining shell', async () => {
-    // No header button for it: kill-all ends shells of repos that are not on screen, so it keeps one
-    // confirm-guarded home (the palette item and Ctrl+Shift+`).
+test('kill all lives in the palette only, and terminates every remaining shell', async () => {
+    // No header button for it and no shortcut (too easy to fat-finger): kill-all ends shells of
+    // repos that are not on screen, so it keeps one confirm-guarded home — the palette item.
     await expect(page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]')).toHaveCount(0)
-    await page.keyboard.press('Control+Shift+`')
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -159,19 +160,20 @@ test('the header ✕ closes every shell of its repo behind a confirm', async () 
     await panel.locator('.terminal-tab-add').click()
     await expect(panel.locator('.terminal-tab')).toHaveCount(2)
 
-    await panel.locator('.commit-close-btn').click()
+    await panel.locator('.diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close 2 terminals' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
-test('Ctrl+` toggles the panel and Ctrl+Shift+` kills everything', async () => {
+test('Ctrl+` toggles the panel, and the palette kills everything', async () => {
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
 
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-panel')).toBeHidden()
 
-    await page.keyboard.press('Control+Shift+`')
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -189,7 +191,8 @@ test('the header hide button hides the panel without killing the shell', async (
     await expect(panel.locator('.terminal-tab-label')).toHaveText('cmd 1')
     await runInTerminal('echo after-hide-ok', 'after-hide-ok')
 
-    await page.keyboard.press('Control+Shift+`')
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -226,7 +229,7 @@ test('Settings → Terminal picks the shell of new terminals and sizes the text 
     await page.locator('.tools-modal .commit-close-btn').click()
     await page.locator('.graph-terminal-btn').click()
     await expect(page.locator('.terminal-panel:visible .terminal-tab-label')).toHaveText(hasPwsh ? 'pwsh 1' : 'cmd 1')
-    await page.locator('.terminal-panel:visible .commit-close-btn').click()
+    await page.locator('.terminal-panel:visible .diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 
@@ -250,9 +253,36 @@ test('Settings → Terminal picks the shell of new terminals and sizes the text 
     expect((await readUi()).terminalShell).toBe('powershell')
     expect(sizeBefore).not.toBe(18)
 
-    await page.keyboard.press('Control+Shift+`')
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
+test('Settings → Terminal picks a font family with fallback to default', async () => {
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    const readUi = () => page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}'))
+
+    // A preset chip persists the full stack (primary + Thai fallback).
+    await page.locator('.setting-chip', { hasText: 'JetBrains Mono' }).click()
+    expect((await readUi()).terminalFontFamily).toContain('JetBrains Mono')
+    expect((await readUi()).terminalFontFamily).toContain('Leelawadee UI')
+
+    // Custom input commits on Enter; an uninstalled face reports the fallback hint.
+    const input = page.locator('.tools-modal input[placeholder="e.g. Fira Code"]')
+    await input.fill('No Such Font On Earth')
+    await input.press('Enter')
+    expect((await readUi()).terminalFontFamily).toContain('No Such Font On Earth')
+    await expect(page.getByText('Font not installed — using default.')).toBeVisible()
+
+    // Reset restores the Consolas default behind a confirm.
+    await page.locator('.tools-modal .tools-reset-row button', { hasText: 'Reset to defaults' }).click()
+    await page.locator('.confirm-dialog button', { hasText: 'Reset' }).click()
+    expect((await readUi()).terminalFontFamily).toContain('Consolas')
+
+    await page.locator('.tools-modal .commit-close-btn').click()
+    await expect(page.locator('.tools-modal')).toHaveCount(0)
 })
 
 test('a repo stops at four shells', async () => {
@@ -272,7 +302,7 @@ test('a repo stops at four shells', async () => {
     await panel.locator('.terminal-tab-add').click({ force: true })
     await expect(panel.locator('.terminal-tab')).toHaveCount(4)
 
-    await panel.locator('.commit-close-btn').click()
+    await panel.locator('.diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close 4 terminals' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -301,7 +331,7 @@ test('the splitter resizes the panel height, and the shell follows', async () =>
     expect(rows).toBeGreaterThan(0)
 
     await runInTerminal('echo after-resize-ok', 'after-resize-ok')
-    await panel.locator('.commit-close-btn').click()
+    await panel.locator('.diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })

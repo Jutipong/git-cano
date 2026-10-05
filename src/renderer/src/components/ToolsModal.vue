@@ -33,8 +33,9 @@
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
+    import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_FAMILY_PRESETS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
+    import { buildTerminalFontFamily, isFontInstalled, primaryFontFamily } from '../utils/terminalFont'
     import {
         CUSTOM_SHORTCUT_IDS,
         eventToCombo,
@@ -173,6 +174,26 @@
         { value: 'powershell', label: 'Windows PowerShell' },
         { value: 'pwsh', label: 'PowerShell 7' },
     ]
+
+    /** Terminal → font family preset chips + custom input. The input mirrors the stored stack's
+     *  primary family; it commits on Enter/blur and reverts on Esc or tab switch. */
+    const terminalFontInput = ref(primaryFontFamily(ui.terminalFontFamily))
+    const terminalFontPrimary = computed(() => primaryFontFamily(ui.terminalFontFamily))
+    const terminalFontMissing = computed(() => !isFontInstalled(terminalFontPrimary.value))
+    function syncTerminalFontInput() {
+        terminalFontInput.value = terminalFontPrimary.value
+    }
+    function setTerminalFontPreset(name: string) {
+        ui.terminalFontFamily = buildTerminalFontFamily(name, DEFAULT_TERMINAL_FONT_FAMILY)
+        terminalFontInput.value = name
+    }
+    function commitTerminalFontInput() {
+        ui.terminalFontFamily = buildTerminalFontFamily(terminalFontInput.value, DEFAULT_TERMINAL_FONT_FAMILY)
+        syncTerminalFontInput()
+    }
+    watch(tab, value => {
+        if (value === 'terminal') syncTerminalFontInput()
+    })
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
@@ -370,6 +391,19 @@
         notify('Settings reset to defaults', 'success')
     }
 
+    async function resetTerminal() {
+        const ok = await confirmDialog({
+            message: 'Reset terminal settings to defaults?',
+            confirmLabel: 'Reset',
+            danger: true,
+            confirmIcon: 'reset',
+        })
+        if (!ok) return
+        ui.resetTerminal()
+        syncTerminalFontInput()
+        notify('Terminal settings reset to defaults', 'success')
+    }
+
     const SHORTCUT_LABELS: Record<CustomShortcutId, string> = {
         fetch: 'Fetch',
         pull: 'Pull',
@@ -380,7 +414,6 @@
         settings: 'Open settings',
         commandPalette: 'Command palette',
         terminal: 'Toggle terminal',
-        terminalKillAll: 'Kill all terminals',
     }
     const recording = ref<{ id: CustomShortcutId; platform: ShortcutPlatform } | null>(null)
 
@@ -1034,6 +1067,48 @@
                             Independent of the interface font size — the A− / A+ buttons in the terminal panel header change
                             this too, and open terminals follow along.
                         </p>
+                        <span class="setting-label">Font family</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="name in TERMINAL_FONT_FAMILY_PRESETS"
+                                :key="name"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: terminalFontPrimary === name }"
+                                @click="setTerminalFontPreset(name)">
+                                {{ name }}
+                            </button>
+                        </div>
+                        <label class="ai-field">
+                            <span>Custom font (must be installed on this machine)</span>
+                            <input
+                                v-model="terminalFontInput"
+                                type="text"
+                                placeholder="e.g. Fira Code"
+                                autocomplete="off"
+                                spellcheck="false"
+                                @keydown.enter.prevent="commitTerminalFontInput"
+                                @keydown.esc.stop="syncTerminalFontInput"
+                                @blur="commitTerminalFontInput" />
+                        </label>
+                        <p
+                            v-if="terminalFontMissing"
+                            class="tools-section-hint">
+                            Font not installed — using default.
+                        </p>
+                    </div>
+
+                    <div class="tools-actions tools-reset-row">
+                        <span class="spacer" />
+                        <button
+                            class="btn danger small"
+                            title="Restore terminal settings to defaults"
+                            @click="resetTerminal()">
+                            <i-lucide-rotate-ccw
+                                width="13"
+                                height="13" />
+                            Reset to defaults
+                        </button>
                     </div>
                 </template>
 

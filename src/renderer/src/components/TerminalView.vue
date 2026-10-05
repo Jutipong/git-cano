@@ -2,7 +2,8 @@
     import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ILucideTriangleAlert from '~icons/lucide/triangle-alert'
 
-    import { useUiStore } from '../stores/ui'
+    import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY } from '../stores/ui'
+    import { primaryFontFamily, resolveTerminalFontFamily } from '../utils/terminalFont'
 
     import '@xterm/xterm/css/xterm.css'
 
@@ -52,12 +53,14 @@
     let disposed = false
 
     /**
-     * Cascadia Mono covers latin/box-drawing; Thai has no monospace face on Windows, so the browser
-     * falls back per codepoint to Leelawadee UI and lets GPOS stack the vowels/tone marks. xterm's DOM
-     * renderer writes whole grapheme clusters into one <span>, which is what makes that shaping work —
-     * the canvas renderer (removed in xterm 6) never shaped Thai at all.
+     * The primary family comes from Settings → Terminal (default Consolas, inbox on every
+     * Windows); the stack always keeps Leelawadee UI behind it — Thai has no monospace face on
+     * Windows, so the browser falls back per codepoint and lets GPOS stack the vowels/tone marks.
+     * xterm's DOM renderer writes whole grapheme clusters into one <span>, which is what makes
+     * that shaping work — the canvas renderer (removed in xterm 6) never shaped Thai at all.
+     * A pick whose font is not installed resolves back to the default stack.
      */
-    const FONT_FAMILY = "'Cascadia Mono', 'Leelawadee UI', monospace"
+    const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
 
     /** Reads the app's live theme tokens so xterm matches whichever theme is active. */
     function themeColors() {
@@ -113,7 +116,7 @@
      * before the stylesheets and fallback fonts are ready yields a wrong cell size, and every Thai
      * combining mark then lands off its column.
      */
-    async function waitForFonts() {
+    async function waitForFonts(family: string) {
         const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
         await Promise.all(
             sheets.map(
@@ -129,6 +132,14 @@
             )
         )
         await document.fonts.ready
+        // Preload the picked face before xterm measures its cell — otherwise the first measure
+        // uses a fallback metric and Thai marks drift off their column until the fonts settle.
+        try {
+            await document.fonts.load(`14px "${family}"`)
+        } catch {
+            // Uninstalled faces resolve to the default stack before this point; a load failure
+            // here just means xterm measures a fallback — never fatal.
+        }
     }
 
     async function setup() {
@@ -160,7 +171,7 @@
             failed.value = String(error).replace(/^Error:\s*/, '')
         })
 
-        await waitForFonts()
+        await waitForFonts(primaryFontFamily(family))
         if (disposed || !host.value) return
         // Loaded lazily so the terminal chunk (xterm) only ships when a panel actually opens.
         const [{ Terminal }, { FitAddon }, { Unicode11Addon }] = await Promise.all([
@@ -173,7 +184,7 @@
         const colors = themeColors()
         term = new Terminal({
             cursorBlink: true,
-            fontFamily: FONT_FAMILY,
+            fontFamily: family,
             fontSize: ui.terminalFontSize,
             // Must be exactly 1.0: block-element ASCII art (opencode's logo) fills the em box, and a
             // taller cell leaves a visible gap in the art.
@@ -245,10 +256,11 @@
         // (debounced CharSizeService.measure), so the refit must wait a frame: fitting immediately
         // would compute cols/rows from the stale cell size.
         watch(
-            () => ui.terminalFontSize,
+            () => [ui.terminalFontSize, ui.terminalFontFamily] as const,
             () => {
                 if (!term) return
                 term.options.fontSize = ui.terminalFontSize
+                term.options.fontFamily = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
                 requestAnimationFrame(() => resizePty())
             }
         )

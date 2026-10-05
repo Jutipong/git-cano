@@ -66,7 +66,15 @@ export const DEFAULT_FONT_SIZE = 14
 
 /** Terminal text size options — its own scale, decoupled from the UI font size above. */
 export const TERMINAL_FONT_SIZE_OPTIONS = [10, 11, 12, 13, 14, 16, 18, 20]
-export const DEFAULT_TERMINAL_FONT_SIZE = 13
+export const DEFAULT_TERMINAL_FONT_SIZE = 14
+/** First shipped default — migrated to DEFAULT_TERMINAL_FONT_SIZE on load. */
+const LEGACY_TERMINAL_FONT_SIZE = 13
+
+/** Terminal font family — Consolas leads (inbox on every Windows), Leelawadee UI covers the
+ *  Thai glyphs Consolas lacks, monospace catches macOS/Linux. Persisted; blank resets to default. */
+export const DEFAULT_TERMINAL_FONT_FAMILY = "'Consolas', 'Leelawadee UI', monospace"
+/** Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied). */
+export const TERMINAL_FONT_FAMILY_PRESETS = ['Consolas', 'Cascadia Mono', 'JetBrains Mono']
 
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
 export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
@@ -168,6 +176,10 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value))
                 terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+        })
+        const terminalFontFamily = ref(DEFAULT_TERMINAL_FONT_FAMILY)
+        watchEffect(() => {
+            if (!terminalFontFamily.value.trim()) terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
         })
         const terminalShell = ref<TerminalShell>('pwsh')
         watchEffect(() => {
@@ -291,7 +303,6 @@ export const useUiStore = defineStore(
                 settings: getShortcut('settings', platform),
                 commandPalette: getShortcut('commandPalette', platform),
                 terminal: getShortcut('terminal', platform),
-                terminalKillAll: getShortcut('terminalKillAll', platform),
             }
         }
 
@@ -342,6 +353,12 @@ export const useUiStore = defineStore(
             toastDurationSec.value = DEFAULT_TOAST_DURATION_SEC
         }
 
+        function resetTerminal() {
+            terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+            terminalShell.value = 'pwsh'
+            terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
+        }
+
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
@@ -375,6 +392,7 @@ export const useUiStore = defineStore(
             stepZoom,
             terminalFontSize,
             stepTerminalFontSize,
+            terminalFontFamily,
             terminalShell,
             codeFontSize,
             zoomCodeFontSize,
@@ -390,6 +408,7 @@ export const useUiStore = defineStore(
             resetCommitColumns,
             resetAppearance,
             resetGeneral,
+            resetTerminal,
             setTheme,
             setRepoTabColor,
         }
@@ -418,6 +437,7 @@ export const useUiStore = defineStore(
                 'fontSize',
                 'zoom',
                 'terminalFontSize',
+                'terminalFontFamily',
                 'terminalShell',
                 'codeFontSize',
                 'repoTabColors',
@@ -426,6 +446,17 @@ export const useUiStore = defineStore(
                 'commitDateFormat',
                 'shortcutOverrides',
             ],
+            afterHydrate: context => {
+                // Persist hydration ($patch) lands after the setup body, so the legacy-size migration
+                // cannot live next to the ref — the store would still hold defaults there.
+                const store = context.store as unknown as {
+                    $state: { terminalFontSize?: unknown }
+                    $patch: (partial: { terminalFontSize: number }) => void
+                }
+                if (store.$state.terminalFontSize === LEGACY_TERMINAL_FONT_SIZE) {
+                    store.$patch({ terminalFontSize: DEFAULT_TERMINAL_FONT_SIZE })
+                }
+            },
         },
     }
 )

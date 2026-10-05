@@ -284,15 +284,10 @@
                 return true
             }
             // Terminal panel: spawn the first shell of the active repo, then show/hide. Never kills.
+            // Killing every shell is palette-only (confirm-guarded) — no shortcut, too easy to fat-finger.
             if (combo === ui.getShortcut('terminal') && repoStore.repo) {
                 event.preventDefault()
                 void toggleTerminal()
-                return true
-            }
-            // Kill every shell of every repo — off-screen repos included, so it always confirms.
-            if (combo === ui.getShortcut('terminalKillAll') && repoStore.repo) {
-                event.preventDefault()
-                void killAllTerminals()
                 return true
             }
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)

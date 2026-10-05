@@ -185,7 +185,15 @@
                         A+
                     </button>
                 </span>
-                <span class="segmented">
+                <span class="segmented diff-header-actions">
+                    <button
+                        class="icon-btn"
+                        title="Hide panel (shells keep running)"
+                        @click="emit('hide')">
+                        <i-lucide-chevron-down
+                            width="15"
+                            height="15" />
+                    </button>
                     <button
                         class="icon-btn"
                         :class="{ active: expanded }"
@@ -193,23 +201,15 @@
                         @click="emit('toggle-expand')">
                         <i-lucide-minimize
                             v-if="expanded"
-                            width="14"
-                            height="14" />
+                            width="15"
+                            height="15" />
                         <i-lucide-maximize
                             v-else
-                            width="14"
-                            height="14" />
+                            width="15"
+                            height="15" />
                     </button>
                     <button
-                        class="icon-btn"
-                        title="Hide panel (shells keep running)"
-                        @click="emit('hide')">
-                        <i-lucide-chevron-down
-                            width="14"
-                            height="14" />
-                    </button>
-                    <button
-                        class="icon-btn danger commit-close-btn"
+                        class="icon-btn danger diff-close-btn"
                         :title="tabs.length > 1 ? `Close all ${tabs.length} terminals` : 'Close terminal'"
                         @click="emit('close')">
                         <CloseXIcon />

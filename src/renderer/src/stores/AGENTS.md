@@ -23,7 +23,7 @@ app-level UI rules live in `src/renderer/AGENTS.md`.
   close / kill-all actions that ask the main process to kill PTYs. Panel lifetime rules are load
   bearing: closing the REPO TAB kills that repo's shells (`repo.ts closeTab` calls
   `closeRepoTerminals`), while a workspace switch must not — it only recycles git instances.
-  Terminal preferences (`ui.terminalShell`, `ui.terminalFontSize`) are persisted in `ui.ts`, but
+  Terminal preferences (`ui.terminalShell`, `ui.terminalFontSize`, `ui.terminalFontFamily`) are persisted in `ui.ts`, but
   live terminal sessions are not.
 
 ## Repository loading and performance

@@ -4862,6 +4862,14 @@ body {
     min-width: 78px;
     padding: 0 12px;
     font-weight: 600;
+    /* Tighten the text box to the em box so the label shares the icon's optical center —
+       with line-height: normal the taller text box sits its glyphs on the baseline and the
+       label reads low next to the 13px icon. */
+    line-height: 1;
+}
+
+.confirm-dialog-actions .btn > svg {
+    flex: none;
 }
 
 .btn.danger {
@@ -5244,8 +5252,31 @@ body {
 }
 
 .graph-terminal-btn.active {
-    color: var(--teal);
-    background: color-mix(in srgb, var(--teal) 14%, transparent);
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 14%, transparent);
+}
+
+@keyframes terminal-running-blink {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.35;
+    }
+}
+
+/* Shells running while the panel is hidden — green blink so a background shell is unmissable. */
+.graph-terminal-btn.terminal-running {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 14%, transparent);
+    animation: terminal-running-blink 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .graph-terminal-btn.terminal-running {
+        animation: none;
+    }
 }
 
 .terminal-splitter {
@@ -5294,11 +5325,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 36px;
-    flex: 0 0 36px;
+    height: 39px;
+    flex: 0 0 39px;
     /* 10px matches the xterm's own inset, so the first tab lines up with the terminal text. The 8px
        top is matched by the terminal's own 8px inset underneath, so the pills sit centred in the
-       panel's opening band instead of hugging its top border. */
+       panel's opening band instead of hugging its top border. 39px = 8px top + the 31px strip. */
     padding: 8px 10px 0;
     color: var(--text-muted);
 }
@@ -5328,8 +5359,9 @@ body {
     /* Short labels ("cmd 1") still get a comfortable pill; longer ones grow and truncate. */
     min-width: 88px;
     align-items: center;
-    /* 28px = the height of the right-hand `.segmented` groups, so every pill in the strip lines up. */
-    height: 28px;
+    /* 31px = the auto height of the right-hand `.segmented` groups (25px buttons + 2px padding +
+       1px border per side), so every pill in the strip lines up — same scale as diff-view. */
+    height: 31px;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -5374,7 +5406,9 @@ body {
     width: 18px;
     height: 18px;
     min-height: 18px;
+    /* Push the ✕ to the tab's right edge so it never hugs the shell name. */
     margin-right: 3px;
+    margin-left: auto;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -5409,9 +5443,9 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 28px;
-    height: 28px;
-    min-height: 28px;
+    width: 31px;
+    height: 31px;
+    min-height: 31px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -5420,7 +5454,7 @@ body {
 }
 
 .terminal-tab-add:hover:not(:disabled) {
-    color: var(--teal);
+    color: var(--green);
     background: var(--surface-hover);
 }
 
@@ -5445,32 +5479,19 @@ body {
     min-width: 0;
 }
 
-/* header A− / A+ text steppers — plain icon-btn slots with a mono glyph instead of an SVG
-   (the disabled end, already at the smallest/largest step, dims via .icon-btn:disabled) */
+/* header A− / A+ text steppers — same 25px frame as every other `.icon-btn`, with a mono
+   glyph instead of an SVG (the disabled end, already at the smallest/largest step, dims via
+   .icon-btn:disabled) */
 .terminal-actions .terminal-font-btn {
-    width: 22px;
-    height: 22px;
-    min-height: 22px;
+    width: 25px;
+    height: 25px;
+    min-height: 25px;
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0;
-}
-
-/* Same 22px frame as the tabs and steppers — the base .icon-btn (25px, for panel headers) would
-   tower over them in this compact 32px strip. */
-.terminal-actions .icon-btn {
-    width: 22px;
-    height: 22px;
-    min-height: 22px;
-}
-
-/* Pin the groups to the tab/`+` pill height: the 0.8px border would otherwise make them 27.6px. */
-.terminal-actions .segmented {
-    height: 28px;
-    align-items: center;
 }
 
 /* No padding on the container: FitAddon measures the parent height and subtracts .xterm's own

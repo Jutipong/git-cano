@@ -475,6 +475,8 @@
     /** The toolbar button spawns the first shell, then just shows/hides — only ✕ ever kills. */
     const terminalPath = computed(() => repoStore.tabs[repoStore.activeTab]?.path ?? '')
     const terminalVisible = computed(() => terminalStore.panelVisible(terminalPath.value))
+    /** Shells running while the panel is hidden — the toolbar button blinks green for them. */
+    const terminalRunning = computed(() => terminalStore.terminalExists(terminalPath.value) && !terminalVisible.value)
     const terminalToggleTitle = computed(() => {
         if (terminalVisible.value) return 'Hide terminal'
         return terminalStore.terminalExists(terminalPath.value) ? 'Show terminal' : 'Open terminal'
@@ -817,7 +819,7 @@
                 </button>
                 <button
                     class="icon-btn graph-terminal-btn"
-                    :class="{ active: terminalVisible }"
+                    :class="{ active: terminalVisible, 'terminal-running': terminalRunning }"
                     :title="terminalToggleTitle"
                     @click="emit('toggle-terminal')">
                     <i-lucide-terminal

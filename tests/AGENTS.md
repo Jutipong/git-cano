@@ -16,7 +16,7 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
   - `conflict.spec.ts` covers the conflict flow.
   - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
     panel per repo, full overlay geometry, terminal-only font size, rename + drag reorder, the
-    four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+``/`Ctrl+Shift+``,
+    four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
     the palette entries, Settings → Terminal). Scope panel actions with `.terminal-panel:visible` —
     every repo keeps its own panel mounted.
   - `fixtures.ts` creates throwaway repos in the OS temp dir (`globalSetup` writes a metadata file the specs load).
