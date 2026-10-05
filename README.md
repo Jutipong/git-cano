@@ -15,6 +15,34 @@ A lightweight, open-source Git GUI for **Windows & macOS** — review history �
 
 ---
 
+## 📸 Screenshots
+
+![Main overview — tabs, sidebar, graph and Changes](docs/screenshots/01-overview.png)
+
+| Commit history | Side-by-side diff |
+| --- | --- |
+| ![Selected commit with Committed History](docs/screenshots/02-graph.png) | ![Side-by-side diff with word highlights](docs/screenshots/03-diff.png) |
+
+| Changes & commit | Terminal panel |
+| --- | --- |
+| ![Changes panel with commit box](docs/screenshots/04-ai-commit.png) | ![Built-in terminal with multiple tabs](docs/screenshots/05-terminal.png) |
+
+| Conflict resolver | Command palette |
+| --- | --- |
+| ![Per-line conflict picks](docs/screenshots/06-rebase-conflict.png) | ![Palette Repo search across workspaces](docs/screenshots/07-palette.png) |
+
+### 🎨 Themes
+
+| Dark | Light |
+| --- | --- |
+| ![Dark theme](docs/screenshots/08-theme-dark.png) | ![Light theme](docs/screenshots/08-theme-light.png) |
+
+| Win9x | Win9x Dark |
+| --- | --- |
+| ![Win9x theme](docs/screenshots/08-theme-win9x.png) | ![Win9x Dark theme](docs/screenshots/08-theme-win9x-dark.png) |
+
+---
+
 ## 📥 Install
 
 Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
