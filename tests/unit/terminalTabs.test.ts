@@ -4,27 +4,39 @@ import {
     MAX_TERMINALS_PER_REPO,
     canAddTerminal,
     moveTerminalTab,
+    nextTerminalNumber,
     terminalTabLabel,
     type TerminalTab,
 } from '../../src/renderer/src/utils/terminalTabs'
 
-function tab(id: string, shellLabel: string, name: string | null = null): TerminalTab {
-    return { id, shell: shellLabel === 'cmd' ? 'cmd' : 'powershell', shellLabel, name }
+function tab(id: string, shell: TerminalTab['shell'], number: number, name: string | null = null): TerminalTab {
+    const shellLabel = shell === 'cmd' ? 'cmd' : shell === 'pwsh' ? 'pwsh' : 'powershell'
+    return { id, shell, shellLabel, number, name }
 }
 
 describe('terminalTabLabel', () => {
-    const tabs = [tab('t1', 'cmd'), tab('t2', 'powershell'), tab('t3', 'cmd')]
-
-    it('numbers tabs by their position in the repo', () => {
-        expect(tabs.map((t, i) => terminalTabLabel(t, i))).toEqual(['cmd 1', 'powershell 2', 'cmd 3'])
+    it("uses the tab's own number, not its slot", () => {
+        // The order here is a reordered list: every tab keeps the number it was born with.
+        const tabs = [tab('t1', 'cmd', 2), tab('t2', 'powershell', 1), tab('t3', 'cmd', 1)]
+        expect(tabs.map(tab => terminalTabLabel(tab))).toEqual(['cmd 2', 'powershell 1', 'cmd 1'])
     })
 
     it('prefers a custom rename', () => {
-        expect(terminalTabLabel(tab('t1', 'cmd', '  build  '), 0)).toBe('build')
+        expect(terminalTabLabel(tab('t1', 'cmd', 3, '  build  '))).toBe('build')
     })
 
     it('falls back to the shell label when the rename is blank', () => {
-        expect(terminalTabLabel(tab('t1', 'cmd', '   '), 0)).toBe('cmd 1')
+        expect(terminalTabLabel(tab('t1', 'cmd', 2, '   '))).toBe('cmd 2')
+    })
+})
+
+describe('nextTerminalNumber', () => {
+    it('numbers per shell, one past the highest live sibling', () => {
+        const tabs = [tab('t1', 'cmd', 1), tab('t2', 'pwsh', 1), tab('t3', 'cmd', 3), tab('t4', 'powershell', 2)]
+        expect(nextTerminalNumber(tabs, 'cmd')).toBe(4)
+        expect(nextTerminalNumber(tabs, 'pwsh')).toBe(2)
+        expect(nextTerminalNumber(tabs, 'powershell')).toBe(3)
+        expect(nextTerminalNumber([], 'cmd')).toBe(1)
     })
 })
 

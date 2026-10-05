@@ -167,10 +167,11 @@ Panel/modal component patterns. Loaded automatically when working under
   ~3 s, the view renders a dim `Starting shell…` line (`.terminal-starting`) until the first chunk
   arrives — without it the panel just looks broken for those seconds. Do not remove that hint to
   "clean up"; drop it only if the ConPTY choice ever changes.
-- Tab label = the user's rename, else `<shell> <1-based position in the repo>`; rename is a
-  double-click on the label (inline input, Enter/blur commits, Esc cancels, blank restores the
-  derived label). Reorder is drag-to-reorder with the live `dragover` swap used by the repo tabs, so
-  the id (and its live shell) has to travel with the tab.
+- Tab label = the user's rename, else `<shell> <number>` where the number is bound to the tab when
+  it is created (`nextTerminalNumber`) and never reassigned — reordering or closing a neighbour
+  must not rename a live shell. Rename is a double-click on the label (inline input, Enter/blur
+  commits, Esc cancels, blank restores the derived label). Reorder is drag-to-reorder with the live
+  `dragover` swap used by the repo tabs, so the id (and its live shell) has to travel with the tab.
 - Header buttons: `A−`/`A+` step `ui.terminalFontSize` (its own persisted scale, never `ui.fontSize`),
   the trash button kills every shell of every repo, maximize teleports the panel into `.app` as
   `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar, `right: rightPanelWidth + 12px`

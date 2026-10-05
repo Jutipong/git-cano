@@ -7,6 +7,7 @@ import {
     MAX_TERMINALS_PER_REPO,
     canAddTerminal,
     moveTerminalTab,
+    nextTerminalNumber,
     terminalTabLabel,
     type TerminalTab,
 } from '../utils/terminalTabs'
@@ -79,7 +80,8 @@ export const useTerminalStore = defineStore('terminal', () => {
         const current = repoTerminals(path)
         if (state && !current) return null
         const id = `t${++terminalSeq}`
-        const tab: TerminalTab = { id, shell, shellLabel, name: null }
+        const number = nextTerminalNumber(current?.tabs ?? [], shell)
+        const tab: TerminalTab = { id, shell, shellLabel, number, name: null }
         setRepoTerminals(path, {
             tabs: current ? [...current.tabs, tab] : [tab],
             activeId: id,
@@ -111,12 +113,12 @@ export const useTerminalStore = defineStore('terminal', () => {
         setRepoTerminals(path, { ...state, tabs: moveTerminalTab(state.tabs, from, to) })
     }
 
-    /** Label shown on a terminal tab (custom rename, else "cmd 1"). */
+    /** Label shown on a terminal tab (custom rename, else its own "cmd 2"). */
     function tabLabel(path: string, id: string): string {
         const state = repoTerminals(path)
         const index = state?.tabs.findIndex(tab => tab.id === id) ?? -1
         if (!state || index < 0) return ''
-        return terminalTabLabel(state.tabs[index], index)
+        return terminalTabLabel(state.tabs[index])
     }
 
     /**

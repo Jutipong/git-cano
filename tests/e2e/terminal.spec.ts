@@ -100,14 +100,23 @@ test('font size buttons change the terminal scale only', async () => {
     await expect(page.locator('.terminal-view:visible .xterm-rows')).not.toHaveAttribute('style', rowsBefore ?? '')
 })
 
-test('a terminal tab renames on double-click and reorder by drag', async () => {
+test('terminal tabs rename on double-click and keep their number through a reorder', async () => {
     const panel = page.locator('.terminal-panel:visible')
     await panel.locator('.terminal-tab-add').click()
     await expect(panel.locator('.terminal-tab')).toHaveCount(2)
     await expect(panel.locator('.terminal-tab-label')).toHaveText(['cmd 1', 'cmd 2'])
 
-    // Both shells are cmd, so their derived labels are the same text — name them first, otherwise a
-    // reorder would be invisible.
+    // The number belongs to the tab, not the slot: dragging the second shell in front keeps its name.
+    await panel.locator('.terminal-tab').nth(1).dragTo(panel.locator('.terminal-tab').first(), {
+        targetPosition: { x: 2, y: 8 },
+    })
+    await expect(panel.locator('.terminal-tab-label')).toHaveText(['cmd 2', 'cmd 1'])
+    await panel.locator('.terminal-tab').nth(1).dragTo(panel.locator('.terminal-tab').first(), {
+        targetPosition: { x: 2, y: 8 },
+    })
+    await expect(panel.locator('.terminal-tab-label')).toHaveText(['cmd 1', 'cmd 2'])
+
+    // Rename each so the later drag is unambiguous even if the derived labels ever collide.
     const rename = async (index: number, name: string) => {
         await panel.locator('.terminal-tab-label').nth(index).dblclick()
         await panel.locator('.terminal-tab-rename').fill(name)
