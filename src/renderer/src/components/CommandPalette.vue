@@ -8,6 +8,7 @@
     import ArrowDown from '~icons/lucide/arrow-down'
     import ArrowDownToLine from '~icons/lucide/arrow-down-to-line'
     import ArrowUp from '~icons/lucide/arrow-up'
+    import ExternalLink from '~icons/lucide/external-link'
     import FolderGit2 from '~icons/lucide/folder-git2'
     import FolderOpen from '~icons/lucide/folder-open'
     import GitBranch from '~icons/lucide/git-branch'
@@ -29,6 +30,7 @@
     import { useWorkspaceStore } from '../stores/workspace'
     import { resolveCheckoutMode } from '../utils/checkout'
     import { fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
+    import { filterPaletteItems, withOffsets } from '../utils/palette'
     import { collectWorkspaceRepos, repoNameFromPath } from '../utils/workspaceRepos'
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
@@ -48,7 +50,7 @@
     const ws = useWorkspaceStore()
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
-    type Mode = 'commands' | 'repo' | 'branch' | 'workspace'
+    type Mode = 'commands' | 'repo' | 'branch' | 'workspace' | 'ai' | 'openin'
     const mode = ref<Mode>('commands')
     const search = ref('')
     const active = ref(0)
@@ -197,7 +199,8 @@
         action(repoPath).catch((error: unknown) => notify(String(error).replace(/^Error:\s*/, ''), 'error'))
     }
 
-    const commandItems = computed<PaletteItem[]>(() => {
+    /** Core actions — Open-in targets and AI runs live in their own drill-in modes below. */
+    const baseCommandItems = computed<PaletteItem[]>(() => {
         const items: PaletteItem[] = []
         if (repoStore.repo) {
             items.push(
@@ -215,8 +218,6 @@
         items.push(
             { id: 'repo', label: 'Repo…', hint: ws.names.length > 1 ? 'Open repo in any workspace' : 'Switch repository tab', icon: FolderGit2, run: () => enterMode('repo') },
             { id: 'branch', label: 'Branch…', hint: 'Checkout branch', icon: GitBranch, run: () => enterMode('branch') },
-            // Flattened top-level commands: no "Open in…" / "AI…" sub-mode to drill into.
-            ...(repoStore.repo ? openInItems.value : []),
             ...(ws.names.length > 1
                 ? [
                       {
@@ -228,7 +229,29 @@
                       } satisfies PaletteItem,
                   ]
                 : []),
-            ...(aiCanRun.value ? aiItems.value : []),
+            // Drill-in modes (like Repo…/Branch… above): no flattened Open-in/AI rows here.
+            ...(repoStore.repo
+                ? [
+                      {
+                          id: 'openin',
+                          label: 'Open in…',
+                          hint: 'Open repo in external app',
+                          icon: ExternalLink,
+                          run: () => enterMode('openin'),
+                      } satisfies PaletteItem,
+                  ]
+                : []),
+            ...(aiCanRun.value
+                ? [
+                      {
+                          id: 'ai',
+                          label: 'AI…',
+                          hint: 'Generate commit',
+                          icon: Sparkles,
+                          run: () => enterMode('ai'),
+                      } satisfies PaletteItem,
+                  ]
+                : []),
             {
                 id: 'openRepo',
                 label: 'Open repository',
@@ -414,11 +437,23 @@
               ? branchItems.value
               : mode.value === 'workspace'
                 ? workspaceItems.value
-                : commandItems.value
+                : mode.value === 'ai'
+                  ? aiItems.value
+                  : mode.value === 'openin'
+                    ? openInItems.value
+                    : []
     )
 
-    /** Like-style filter: case-insensitive substring match on the item label, plus any extra `search` text. */
-    const filtered = computed(() => {
+    /** Spotlight-style cap: the outermost level shows only the top hits, the full list stays in `Repo…` mode. */
+    const OUTER_REPO_LIMIT = 8
+
+    /** Matching workspaces for the outermost level (only when there is more than one to switch between). */
+    const matchedWorkspaces = computed(() =>
+        ws.names.length > 1 ? filterPaletteItems(workspaceItems.value, search.value) : []
+    )
+
+    /** Like-style filter for the drill-in sub-modes: case-insensitive substring match on the label, plus any extra `search` text. */
+    const subFiltered = computed(() => {
         const query = search.value.trim().toLowerCase()
         if (!query) return items.value
         return items.value.filter(
@@ -426,20 +461,67 @@
         )
     })
 
+    /** Top repo hits for the outermost level (capped). */
+    const matchedRepos = computed(() => filterPaletteItems(repoItems.value, search.value).slice(0, OUTER_REPO_LIMIT))
+
+    /** How many repo hits the outermost level hides behind the cap. */
+    const hiddenRepoCount = computed(() => {
+        if (mode.value !== 'commands' || !search.value.trim()) return 0
+        return Math.max(0, filterPaletteItems(repoItems.value, search.value).length - matchedRepos.value.length)
+    })
+
+    interface PaletteSection {
+        title?: string
+        items: PaletteItem[]
+        /** Flat-list offset of this section's first row (for keyboard/mouse active tracking). */
+        offset: number
+    }
+
+    /**
+     * Sectioned view: commands mode groups core actions under Commands and adds the
+     * query-driven Repositories/Workspaces sections while searching (AI and Open in stay
+     * drill-in modes like Repo…/Branch…). Sub-modes stay a single untitled list. Empty
+     * groups are dropped, so the headers double as Spotlight-style group labels.
+     */
+    const sections = computed<PaletteSection[]>(() => {
+        if (mode.value !== 'commands') return [{ items: subFiltered.value, offset: 0 }]
+        const query = search.value
+        const groups: { title: string; items: PaletteItem[] }[] = [
+            { title: 'Commands', items: filterPaletteItems(baseCommandItems.value, query) },
+        ]
+        if (query.trim()) {
+            groups.push(
+                { title: 'Repositories', items: matchedRepos.value },
+                { title: 'Workspaces', items: matchedWorkspaces.value }
+            )
+        }
+        return withOffsets(groups.filter(group => group.items.length > 0))
+    })
+
+    /** Flat list for keyboard navigation — the section offsets map back into it. */
+    const filtered = computed<PaletteItem[]>(() => {
+        if (mode.value !== 'commands') return subFiltered.value
+        return sections.value.flatMap(section => section.items)
+    })
+
     watch(filtered, () => (active.value = 0))
     watch(active, () => document.querySelector('.palette-item.active')?.scrollIntoView({ block: 'nearest' }))
 
     const PLACEHOLDERS: Record<Mode, string> = {
-        commands: 'Type a command…',
+        commands: 'Type a command, repo, or workspace…',
         repo: ws.names.length > 1 ? 'Search repo or workspace…' : 'Search repo…',
         branch: 'Search branch…',
         workspace: 'Search workspace…',
+        ai: 'Search AI command…',
+        openin: 'Search app…',
     }
     const EMPTY_TEXTS: Record<Mode, string> = {
-        commands: 'No matching command',
+        commands: 'No matches found',
         repo: 'No matching repository',
         branch: 'No matching branch',
         workspace: 'No matching workspace',
+        ai: 'No matching command',
+        openin: 'No matching app',
     }
     const placeholder = computed(() => PLACEHOLDERS[mode.value])
     const emptyText = computed(() => EMPTY_TEXTS[mode.value])
@@ -448,6 +530,8 @@
         repo: { icon: FolderGit2, label: 'Repo' },
         branch: { icon: GitBranch, label: 'Branch' },
         workspace: { icon: Layers, label: 'Workspace' },
+        ai: { icon: Sparkles, label: 'AI' },
+        openin: { icon: ExternalLink, label: 'Open in' },
     }
 
     function move(delta: number) {
@@ -524,28 +608,42 @@
                     class="palette-empty">
                     {{ emptyText }}
                 </div>
-                <button
-                    v-for="(item, index) in filtered"
-                    :key="item.id"
-                    class="palette-item"
-                    :class="[{ active: index === active }, item.accent ? `accent-${item.accent}` : '']"
-                    @mousemove="active = index"
-                    @click="item.run()">
-                    <component
-                        :is="item.icon"
-                        class="palette-ic"
-                        width="14"
-                        height="14" />
-                    <span class="palette-label">{{ item.label }}</span>
-                    <span
-                        v-if="item.badge || item.hint"
-                        class="palette-hint">
+                <template
+                    v-for="section in sections"
+                    :key="section.title ?? 'all'">
+                    <div
+                        v-if="section.title && filtered.length > 0"
+                        class="palette-section-header">
+                        {{ section.title }}
+                    </div>
+                    <button
+                        v-for="(item, index) in section.items"
+                        :key="item.id"
+                        class="palette-item"
+                        :class="[{ active: section.offset + index === active }, item.accent ? `accent-${item.accent}` : '']"
+                        @mousemove="active = section.offset + index"
+                        @click="item.run()">
+                        <component
+                            :is="item.icon"
+                            class="palette-ic"
+                            width="14"
+                            height="14" />
+                        <span class="palette-label">{{ item.label }}</span>
                         <span
-                            v-if="item.badge"
-                            class="palette-badge">{{ item.badge }}</span
-                        >{{ item.hint }}
-                    </span>
-                </button>
+                            v-if="item.badge || item.hint"
+                            class="palette-hint">
+                            <span
+                                v-if="item.badge"
+                                class="palette-badge">{{ item.badge }}</span
+                            >{{ item.hint }}
+                        </span>
+                    </button>
+                </template>
+                <div
+                    v-if="hiddenRepoCount > 0"
+                    class="palette-more">
+                    +{{ hiddenRepoCount }} more — enter Repo… to see all
+                </div>
             </div>
             <div class="palette-footer">
                 <span>↑↓ navigate</span>

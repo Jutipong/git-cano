@@ -7153,12 +7153,43 @@ body {
     padding: 6px;
 }
 
+.palette-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px 4px;
+    color: var(--teal);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.palette-section-header::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--line);
+}
+
+.palette-section-header:not(:first-child) {
+    margin-top: 6px;
+}
+
+.palette-more {
+    padding: 6px 10px 4px;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-align: center;
+}
+
 .palette-item {
     display: flex;
     width: 100%;
+    height: 32px;
     align-items: center;
     gap: 9px;
-    padding: 7px 10px;
+    padding: 0 10px;
     color: var(--text);
     background: none;
     border: none;
@@ -7187,12 +7218,14 @@ body {
 
 .palette-label {
     overflow: hidden;
+    line-height: 20px;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .palette-hint {
     display: flex;
+    height: 20px;
     align-items: center;
     gap: 6px;
     margin-left: auto;
@@ -7204,9 +7237,13 @@ body {
 /* Accent pill for the repo that is actually open. Green so it never reads as the teal of the row the
    cursor is on, and `color-mix` like `.repo-tab.active` so it holds up in the light themes. */
 .palette-badge {
-    padding: 1px 7px;
+    display: inline-flex;
+    height: 16px;
+    align-items: center;
+    padding: 0 7px;
     color: var(--green);
     font-weight: 600;
+    line-height: 1;
     background: color-mix(in srgb, var(--green) 16%, transparent);
     border-radius: var(--radius-pill);
 }

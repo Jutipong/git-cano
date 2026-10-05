@@ -13,15 +13,16 @@ Panel/modal component patterns. Loaded automatically when working under
   `ContextMenu.vue` is only for generic dropdown menus (e.g. remote branches in the
   sidebar and the `OpenInButton.vue` short-label menu: Folder / Terminal / VS Code,
   plus Kiro / Visual Studio / Rider when installed). The command palette mirrors
-  it with repo-gated top-level `Open in: <target>` items (no sub-mode to drill into)
+  it through a repo-gated `Open in…` drill-in mode (same options/conditions, `ExternalLink`
+  chip) rather than flattened rows
   and the same conditions; availability is cached per repo path for the session in
   `utils/openIn.ts` (`peekOpenInTargets` / `fetchOpenInTargets`) and shared with
   `OpenInButton.vue`, so the main-process scan runs once per repo.
   Open-in Folder /
   Terminal use catppuccin `folder` / `bash` icons in both places.
   Palette command items must `close()` before acting/emitting (mode switches like
-  Repo…/Branch… excepted) — otherwise the palette stays open over the next dialog.
-  AI actions (`AI: Generate …`) are flattened into the same list, gated by `aiCanRun`.
+  Repo…/Branch…/AI…/Open in… excepted) — otherwise the palette stays open over the next dialog.
+  AI actions live behind an `AI…` drill-in mode (`Sparkles` chip), gated by `aiCanRun`.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
