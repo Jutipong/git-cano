@@ -1,9 +1,9 @@
 <script setup lang="ts">
     import { computed, nextTick, ref, watch } from 'vue'
+    import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
     import ILucidePlus from '~icons/lucide/plus'
-    import ILucideTrash2 from '~icons/lucide/trash-2'
 
     import { useTerminalStore, MAX_TERMINALS_PER_REPO } from '../stores/terminal'
     import { useUiStore, TERMINAL_FONT_SIZE_OPTIONS } from '../stores/ui'
@@ -25,7 +25,7 @@
         (e: 'close-tab', id: string): void
         (e: 'exit', id: string): void
         (e: 'toggle-expand'): void
-        (e: 'kill-all'): void
+        (e: 'hide'): void
     }>()
 
     const terminalStore = useTerminalStore()
@@ -163,52 +163,58 @@
                     :disabled="atCap"
                     @click="emit('add-tab')">
                     <i-lucide-plus
-                        width="13"
-                        height="13" />
-                </button>
-            </span>
-            <span class="terminal-actions">
-                <button
-                    class="icon-btn terminal-font-btn"
-                    :title="fontStep.title"
-                    :disabled="fontStep.shrink"
-                    @click="ui.stepTerminalFontSize(-1)">
-                    A−
-                </button>
-                <button
-                    class="icon-btn terminal-font-btn"
-                    :title="fontStep.title"
-                    :disabled="fontStep.grow"
-                    @click="ui.stepTerminalFontSize(1)">
-                    A+
-                </button>
-                <button
-                    class="icon-btn"
-                    title="Kill every terminal of every repository"
-                    @click="emit('kill-all')">
-                    <i-lucide-trash-2
                         width="14"
                         height="14" />
                 </button>
-                <button
-                    class="icon-btn"
-                    :title="expanded ? 'Exit full height' : 'Full height'"
-                    @click="emit('toggle-expand')">
-                    <i-lucide-minimize
-                        v-if="expanded"
-                        width="15"
-                        height="15" />
-                    <i-lucide-maximize
-                        v-else
-                        width="15"
-                        height="15" />
-                </button>
-                <button
-                    class="icon-btn danger commit-close-btn"
-                    :title="tabs.length > 1 ? `Close all ${tabs.length} terminals` : 'Close terminal'"
-                    @click="emit('close')">
-                    <CloseXIcon />
-                </button>
+            </span>
+            <span class="terminal-actions">
+                <!-- Two diff-view style pills: the font stepper and the panel controls stay separate. -->
+                <span class="segmented">
+                    <button
+                        class="icon-btn terminal-font-btn"
+                        :title="fontStep.title"
+                        :disabled="fontStep.shrink"
+                        @click="ui.stepTerminalFontSize(-1)">
+                        A−
+                    </button>
+                    <button
+                        class="icon-btn terminal-font-btn"
+                        :title="fontStep.title"
+                        :disabled="fontStep.grow"
+                        @click="ui.stepTerminalFontSize(1)">
+                        A+
+                    </button>
+                </span>
+                <span class="segmented">
+                    <button
+                        class="icon-btn"
+                        :class="{ active: expanded }"
+                        :title="expanded ? 'Exit full height' : 'Full height'"
+                        @click="emit('toggle-expand')">
+                        <i-lucide-minimize
+                            v-if="expanded"
+                            width="14"
+                            height="14" />
+                        <i-lucide-maximize
+                            v-else
+                            width="14"
+                            height="14" />
+                    </button>
+                    <button
+                        class="icon-btn"
+                        title="Hide panel (shells keep running)"
+                        @click="emit('hide')">
+                        <i-lucide-chevron-down
+                            width="14"
+                            height="14" />
+                    </button>
+                    <button
+                        class="icon-btn danger commit-close-btn"
+                        :title="tabs.length > 1 ? `Close all ${tabs.length} terminals` : 'Close terminal'"
+                        @click="emit('close')">
+                        <CloseXIcon />
+                    </button>
+                </span>
             </span>
         </header>
         <div class="terminal-views">

@@ -144,8 +144,11 @@ test('closing the repo tab kills its shells, and the other repo keeps working', 
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
 })
 
-test('kill all terminates every remaining shell', async () => {
-    await page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]').click()
+test('kill all lives in the palette/shortcut only, and terminates every remaining shell', async () => {
+    // No header button for it: kill-all ends shells of repos that are not on screen, so it keeps one
+    // confirm-guarded home (the palette item and Ctrl+Shift+`).
+    await expect(page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]')).toHaveCount(0)
+    await page.keyboard.press('Control+Shift+`')
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -167,6 +170,24 @@ test('Ctrl+` toggles the panel and Ctrl+Shift+` kills everything', async () => {
 
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-panel')).toBeHidden()
+
+    await page.keyboard.press('Control+Shift+`')
+    await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
+test('the header hide button hides the panel without killing the shell', async () => {
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await expect(panel.locator('.terminal-tab-label')).toHaveText('cmd 1')
+
+    await panel.locator('.icon-btn[title*="Hide panel"]').click()
+    await expect(page.locator('.terminal-panel')).toBeHidden()
+
+    // Hiding is not closing: the same shell session is there when the panel comes back.
+    await page.locator('.graph-terminal-btn').click()
+    await expect(panel.locator('.terminal-tab-label')).toHaveText('cmd 1')
+    await runInTerminal('echo after-hide-ok', 'after-hide-ok')
 
     await page.keyboard.press('Control+Shift+`')
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
@@ -229,7 +250,7 @@ test('Settings → Terminal picks the shell of new terminals and sizes the text 
     expect((await readUi()).terminalShell).toBe('powershell')
     expect(sizeBefore).not.toBe(18)
 
-    await page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]').click()
+    await page.keyboard.press('Control+Shift+`')
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })

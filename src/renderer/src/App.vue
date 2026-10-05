@@ -538,8 +538,8 @@
     }
 
     /**
-     * Kill every shell of every repository — the panel's trash button, the palette command and its
-     * shortcut. Confirm first: it ends shells of repos that are not even on screen.
+     * Kill every shell of every repository — the palette command and its shortcut. Confirm first: it
+     * ends shells of repos that are not even on screen.
      */
     async function killAllTerminals() {
         const total = Object.values(terminalStore.terminals).reduce((sum, state) => sum + state.tabs.length, 0)
@@ -883,7 +883,7 @@
                                         @close-tab="id => confirmCloseTerminalTab(path, id)"
                                         @exit="id => handleTerminalExit(path, id)"
                                         @toggle-expand="toggleTerminalExpand(path)"
-                                        @kill-all="killAllTerminals" />
+                                        @hide="terminalStore.hideTerminals(path)" />
                                 </Teleport>
                             </template>
                         </div>

@@ -5296,7 +5296,8 @@ body {
     justify-content: space-between;
     height: 30px;
     flex: 0 0 30px;
-    padding: 0 12px;
+    /* 10px matches the xterm's own inset, so the first tab lines up with the terminal text. */
+    padding: 0 10px;
     color: var(--text-muted);
 }
 
@@ -5324,6 +5325,8 @@ body {
     flex: 0 1 auto;
     min-width: 0;
     align-items: center;
+    /* Every header control is 22px tall so the tabs and the action buttons share one baseline row. */
+    height: 22px;
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -5344,13 +5347,13 @@ body {
 
 .terminal-tab-label {
     min-width: 0;
-    padding: 3px 4px 3px 9px;
+    padding: 0 4px 0 9px;
     overflow: hidden;
     color: var(--text-muted);
     background: transparent;
     border: none;
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
     letter-spacing: 0.02em;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -5403,9 +5406,9 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 20px;
-    height: 18px;
-    min-height: 18px;
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -5443,14 +5446,22 @@ body {
    (the disabled end, already at the smallest/largest step, dims via .icon-btn:disabled) */
 .terminal-actions .terminal-font-btn {
     width: 22px;
-    height: 18px;
-    min-height: 18px;
+    height: 22px;
+    min-height: 22px;
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0;
+}
+
+/* Same 22px frame as the tabs and steppers — the base .icon-btn (25px, for panel headers) would
+   tower over them in this compact 30px bar. */
+.terminal-actions .icon-btn {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
 }
 
 /* No padding on the container: FitAddon measures the parent height and subtracts .xterm's own
@@ -5494,14 +5505,14 @@ body {
 .terminal-tab-rename {
     width: 96px;
     min-width: 0;
-    padding: 3px 4px 3px 8px;
+    padding: 2px 4px 2px 8px;
     color: var(--text);
     background: var(--surface-0);
     border: 1px solid var(--teal);
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
-    font-size: 10px;
-    line-height: 1.4;
+    font-size: 11px;
+    line-height: 1.2;
 }
 
 .terminal-error {

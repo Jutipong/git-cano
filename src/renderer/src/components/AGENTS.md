@@ -172,11 +172,19 @@ Panel/modal component patterns. Loaded automatically when working under
   must not rename a live shell. Rename is a double-click on the label (inline input, Enter/blur
   commits, Esc cancels, blank restores the derived label). Reorder is drag-to-reorder with the live
   `dragover` swap used by the repo tabs, so the id (and its live shell) has to travel with the tab.
-- Header buttons: `A−`/`A+` step `ui.terminalFontSize` (its own persisted scale, never `ui.fontSize`),
-  the trash button kills every shell of every repo, maximize teleports the panel into `.app` as
-  `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar, `right: rightPanelWidth + 12px`
-  clears the Changes pane) and hides the graph, and the ✕ kills every shell of THIS repo. All three
-  destructive paths confirm through `ConfirmDialog`; only a shell that exits by itself does not.
+- Header buttons sit in two `.segmented` pills (the diff header's group style): `[A− A+]` for the
+  font stepper and `[maximize · hide · ✕]` for the panel. Maximize teleports the panel into `.app`
+  as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
+  `right: rightPanelWidth + 12px` clears the Changes pane) and hides the graph — it carries
+  `.icon-btn.active` while expanded. Hide (`chevron-down`) collapses the panel back into the graph
+  toolbar button / `Ctrl+` / palette and never touches the shells; the ✕ kills every shell of THIS
+  repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. Every
+  control in the 30px strip is 22px tall with a 14px icon (tab pills, `+`, steppers, icon buttons)
+  and the header's 10px side padding matches the xterm inset — keep those in step instead of letting
+  one control borrow the roomier 25px `.icon-btn` base used by the other panel headers.
+- **Kill every terminal is palette/shortcut-only — no panel button.** It ends shells of repos that
+  are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item and the
+  `Ctrl+Shift+`` shortcut, both behind a confirm. Do not add a header button back.
 
 ## Shared component patterns
 
