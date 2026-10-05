@@ -144,6 +144,13 @@ Panel/modal component patterns. Loaded automatically when working under
   during construction, and a wrong cell size pushes every combining mark off its column). The
   `.xterm` padding lives on `.xterm`, never on `.terminal-host` — FitAddon subtracts `.xterm`'s own
   padding from the parent's height, so padding on the container clips the last row.
+- `markBars()` (TerminalView) tags spans that are a pure run of `▀` with `.terminal-bar`, and
+  `modern-ui.css` paints a solid half-height `currentColor` layer behind them. That layer closes
+  both the 1px seam against the filled row above and the per-cell antialiased vertical seams
+  (opencode's `╹▀▀▀…` footer otherwise reads as stripes). Retag after `term.onRender` — xterm
+  recycles and rewrites those spans on every refresh. Do not raise the rows' `line-height` to fix
+  the top seam: the opencode block-art wordmark only tiles at xterm's cell-height line-height (a
+  taller line box shifts the `█` strokes off the row boundaries and breaks the art).
 - **Do not add `convertEol`.** ConPTY already emits CRLF, and the reference POC leaves it off: with
   the extra CR, TUI output (opencode/pi redraws) gets different cursor semantics. Measured without
   it: LF-only output still lands in one column (no staircase) and opencode's box/logo stay intact.

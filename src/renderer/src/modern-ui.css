@@ -5467,6 +5467,18 @@ body {
     box-sizing: border-box;
 }
 
+/* TerminalView.markBars() flags runs of `▀` (opencode's input-box footer). At fractional display
+   scales each glyph's antialiased edge falls a hair short of the cell, which opens a 1px seam
+   between the filled row above and the bar's top edge and leaves a faint vertical seam at every
+   cell boundary. A solid half-height layer in the glyph's own colour sits behind the run, so both
+   seams blend into the identical colour. Do NOT raise the rows' line-height to chase the top seam —
+   the opencode block-art wordmark only tiles at xterm's cell-height line-height. */
+.terminal-host .xterm-rows .terminal-bar {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: 100% 50%;
+    background-repeat: no-repeat;
+}
+
 /* xterm draws its own scroll affordance, so hide Chromium's scrollbar that TUIs otherwise trigger. */
 .terminal-host .xterm-viewport {
     background: transparent !important;

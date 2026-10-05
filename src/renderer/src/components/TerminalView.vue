@@ -7,7 +7,7 @@
     import '@xterm/xterm/css/xterm.css'
 
     import type { TerminalData, TerminalExit } from '@shared/types'
-    import type { Terminal } from '@xterm/xterm'
+    import type { IDisposable, Terminal } from '@xterm/xterm'
     import type { FitAddon } from '@xterm/addon-fit'
 
     const props = defineProps<{
@@ -48,6 +48,7 @@
     let settleTimer: ReturnType<typeof setInterval> | null = null
     let dataDisposer: (() => void) | null = null
     let exitDisposer: (() => void) | null = null
+    let renderDisposer: IDisposable | null = null
     let disposed = false
 
     /**
@@ -81,6 +82,30 @@
             return
         }
         void window.api.terminalResize(props.terminalId, term.cols, term.rows).catch(() => {})
+    }
+
+    /**
+     * TUIs draw horizontal rules as a run of `▀` half-blocks (opencode's input-box footer). At
+     * fractional display scales each glyph's antialiased edge falls a hair short of the cell, so the
+     * run shows a faint vertical seam at every boundary. Tag those spans so a solid half-height
+     * background of the same colour can sit behind the glyphs (`.terminal-bar` in modern-ui.css) —
+     * the antialiasing then blends into the identical colour and the bar reads as one crisp line.
+     */
+    const BAR_RUN = /^\u2580+$/
+    let barFrame = 0
+    function markBars() {
+        barFrame = 0
+        const root = host.value?.querySelector('.xterm-rows')
+        if (!root) return
+        for (const span of root.querySelectorAll<HTMLElement>('span')) {
+            // A cursor span paints its own block — leave it alone so the cursor stays visible.
+            const bar = BAR_RUN.test(span.textContent ?? '') && !span.classList.contains('xterm-cursor')
+            span.classList.toggle('terminal-bar', bar)
+        }
+    }
+    function scheduleBars() {
+        if (barFrame) return
+        barFrame = requestAnimationFrame(markBars)
     }
 
     /**
@@ -170,6 +195,8 @@
         term.loadAddon(unicode11)
         term.unicode.activeVersion = '11'
         term.open(host.value)
+        // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs after each render.
+        renderDisposer = term.onRender(scheduleBars)
         term.onData(data => void window.api.terminalWrite(props.terminalId, data).catch(() => {}))
         // Paint whatever the shell already produced while xterm was being built.
         for (const chunk of pending) if (term) term.write(chunk)
@@ -235,8 +262,10 @@
         resizeObserver = null
         dataDisposer?.()
         exitDisposer?.()
+        renderDisposer?.dispose()
         dataDisposer = null
         exitDisposer = null
+        renderDisposer = null
         // The pty is NOT killed here: it is owned by the store's close actions (panel ✕, repo tab
         // close, kill all) and by the app-quit cleanup — a panel unmounting means "hidden", not "dead".
         term?.dispose()
