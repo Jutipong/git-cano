@@ -6916,7 +6916,8 @@ body {
 
 /* ---------- Settings modal ---------- */
 .tools-modal {
-    width: min(620px, 92vw);
+    width: min(720px, 92vw);
+    max-height: 88vh;
 }
 
 .tools-modal .rebase-modal-header {

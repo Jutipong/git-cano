@@ -2395,7 +2395,8 @@ mark {
 }
 
 .tools-modal {
-    width: min(600px, 92vw);
+    width: min(720px, 92vw);
+    max-height: 88vh;
 }
 .tools-tabs {
     display: flex;
@@ -2474,7 +2475,7 @@ mark {
 }
 
 .general-body {
-    max-height: calc(82vh - 120px);
+    max-height: calc(88vh - 120px);
     overflow-y: auto;
 }
 
