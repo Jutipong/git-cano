@@ -300,7 +300,7 @@
             // Offered even with no repo open: shells of repos in another workspace are still running.
             {
                 id: 'terminalKillAll',
-                label: 'Terminal: kill all',
+                label: 'Terminal Kill All',
                 hint: 'End every shell of every repository',
                 icon: Trash2,
                 run: () => {

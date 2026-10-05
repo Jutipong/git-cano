@@ -400,6 +400,516 @@
     outline-offset: -2px;
 }
 
+/* ===== Win9x chrome — Win95 classic gray + raised/sunken bevels (win9x-opencode theme only) ===== */
+
+:root[data-theme='win9x-opencode'] {
+    --canvas: #c0c0c0;
+    --surface-0: #c0c0c0;
+    --surface-1: #c0c0c0;
+    --surface-2: #c0c0c0;
+    --surface-3: #b8b8b8;
+    --surface-hover: #c8c8c8;
+    --surface-selected: #c0c0c0;
+    --line: #808080;
+    --line-soft: #808080;
+    --text: #000000;
+    --text-secondary: #1a1a1a;
+    --text-muted: #404040;
+    --teal: #000080;
+    --teal-dark: #000080;
+    --blue: #084d9e;
+    --green: #095c2b;
+    --orange: #8c2c08;
+    --red: #9a0e1b;
+    --purple: #4c1da3;
+    --pink: #960f4e;
+    --yellow: #635100;
+    --diff-bg: #ffffff;
+    --diff-inline-bg: #f0f0f0;
+    --diff-mark-strength: 27%;
+    --toast-bg: #c0c0c0;
+    --toast-border: #808080;
+    --conflict-bg: #ffffe1;
+    --conflict-border: #000000;
+    --conflict-text: #000000;
+    --shadow: rgba(0, 0, 0, 0);
+    --radius-card: 0px;
+    --radius-pill: 0px;
+}
+
+:root[data-theme='win9x-opencode'] mark {
+    background: #ffff00;
+    color: #000000;
+}
+
+/* dark-on-light syntax tokens (base set targets dark backgrounds) */
+:root[data-theme='win9x-opencode'] .tok-comment {
+    color: #3f4449;
+}
+:root[data-theme='win9x-opencode'] .tok-string {
+    color: #0d5527;
+}
+:root[data-theme='win9x-opencode'] .tok-number {
+    color: #5a25a8;
+}
+:root[data-theme='win9x-opencode'] .tok-keyword {
+    color: #960f4e;
+}
+:root[data-theme='win9x-opencode'] .tok-function {
+    color: #095c2b;
+}
+:root[data-theme='win9x-opencode'] .tok-param {
+    color: #8c2c08;
+}
+:root[data-theme='win9x-opencode'] .tok-type {
+    color: #084d9e;
+}
+:root[data-theme='win9x-opencode'] .tok-support {
+    color: #075a7d;
+}
+
+/* flat gray desktop — no glow, no gradient, no animation */
+:root[data-theme='win9x-opencode'] .app,
+:root[data-theme='win9x-opencode'] .app-empty {
+    background: var(--canvas);
+}
+
+:root[data-theme='win9x-opencode'] :is(*, *::before, *::after) {
+    border-radius: 0;
+    text-shadow: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+:root[data-theme='win9x-opencode'] .node-ring {
+    border-radius: 0;
+}
+
+/* selected node: hard dotted focus frame instead of the modern glow — matches the square avatar */
+:root[data-theme='win9x-opencode'] .node-ring.selected {
+    border: 2px dotted #000000;
+    box-shadow: 0 0 0 1px #ffffff;
+}
+
+:root[data-theme='win9x-opencode'] .node-avatar.selected {
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 1px var(--canvas);
+}
+
+/* raised bevel panes — outset edge, no soft shadow */
+:root[data-theme='win9x-opencode'] :is(.sidebar, .center-column, .right-pane, .tab-group, .tab-actions, .tab-sync-actions) {
+    border: 0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #ffffff,
+        inset -2px -2px #808080,
+        inset 2px 2px #dfdfdf;
+}
+
+/* raised bevel buttons — outset at rest, sunken while pressed.
+   NOTE: popup rows (.workspace-item, .open-repo-item) stay flat — navy highlight carries them. */
+:root[data-theme='win9x-opencode']
+    :is(
+        .btn,
+        .toolbar-action,
+        .toolbar-icon-button,
+        .icon-btn,
+        .tab-new,
+        .open-in-btn,
+        .workspace-btn,
+        .setting-chip,
+        .repo-tab,
+        .segmented-btn,
+        .diff-nav,
+        .segmented,
+        .clone-dest-field
+    ) {
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #ffffff,
+        inset -2px -2px #808080,
+        inset 2px 2px #dfdfdf;
+}
+
+:root[data-theme='win9x-opencode']
+    :is(
+        .btn:active:not(:disabled),
+        .toolbar-action:active:not(:disabled),
+        .toolbar-icon-button:active:not(:disabled),
+        .icon-btn:active:not(:disabled),
+        .clone-dest-field:active,
+        .setting-chip.active,
+        .repo-tab.active,
+        .segmented-btn.active
+    ) {
+    box-shadow:
+        inset -1px -1px #ffffff,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px #808080;
+}
+
+/* sunken bevel fields + content lists — white windows cut into the gray face */
+:root[data-theme='win9x-opencode']
+    :is(
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.tab-search-input):not(.diff-search-input):not(.palette-input):not(.section-search-input):not(.terminal-tab-rename),
+        textarea,
+        select,
+        .diff-body,
+        .file-groups,
+        .commit-search,
+        .tab-search-field,
+        .diff-search,
+        .palette-input-row,
+        .sidebar .section-search,
+        .section-body,
+        .prompt-local-changes
+    ) {
+    background: #ffffff;
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #ffffff,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px #808080;
+}
+
+/* inner inputs live inside an already-sunken row — keep them flat transparent.
+   !important: the generic sunken `input:not(...)` above is more specific, so this must win. */
+:root[data-theme='win9x-opencode'] :is(.tab-search-input, .diff-search-input, .palette-input, .section-search-input, .commit-search input) {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* settings groupbox — etched groove on gray (Win95 group box), so child
+   edit fields stay single-frame white sunken instead of nesting */
+:root[data-theme='win9x-opencode'] .tools-section {
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset 1px 1px #808080,
+        inset -1px -1px #ffffff;
+}
+
+/* dialogs + menus + toasts — gray raised cards with an OK-style hard edge */
+:root[data-theme='win9x-opencode']
+    :is(
+        .diff-overlay,
+        .modal-overlay > div,
+        .confirm-dialog,
+        .error-dialog,
+        .toast,
+        .workspace-pop,
+        .tab-search-pop,
+        .repo-tab-menu,
+        .open-repo-pop,
+        .context-menu,
+        .file-context-menu,
+        .palette
+    ) {
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #ffffff,
+        inset -2px -2px #808080,
+        inset 2px 2px #dfdfdf;
+}
+
+/* Win95 keys */
+:root[data-theme='win9x-opencode'] kbd {
+    padding: 1px 5px;
+    color: #000000;
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #ffffff,
+        inset -2px -2px #808080,
+        inset 2px 2px #dfdfdf;
+    opacity: 1;
+}
+
+/* caret + text selection */
+:root[data-theme='win9x-opencode'] :is(input, textarea) {
+    caret-color: #000000;
+}
+
+:root[data-theme='win9x-opencode'] ::selection {
+    background: #000080;
+    color: #ffffff;
+}
+
+/* dotted focus rect instead of the soft glow */
+:root[data-theme='win9x-opencode'] *:focus-visible {
+    outline: 1px dotted #000000;
+    outline-offset: -4px;
+}
+
+/* edit fields show focus with the caret, not a dotted rect (like real Win95) */
+:root[data-theme='win9x-opencode'] :is(input, textarea, select):focus-visible {
+    outline: none;
+}
+
+/* chunky classic scrollbars */
+:root[data-theme='win9x-opencode'] ::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+:root[data-theme='win9x-opencode'] ::-webkit-scrollbar-thumb {
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #ffffff,
+        inset -2px -2px #808080,
+        inset 2px 2px #dfdfdf;
+}
+
+:root[data-theme='win9x-opencode'] ::-webkit-scrollbar-thumb:hover {
+    background: var(--surface-1);
+}
+
+:root[data-theme='win9x-opencode'] .sidebar > .sidebar-section > .section-body {
+    scrollbar-color: var(--line) #ffffff;
+}
+
+:root[data-theme='win9x-opencode'] ::-webkit-scrollbar-track,
+:root[data-theme='win9x-opencode'] ::-webkit-scrollbar-corner {
+    background: #ffffff;
+    background-image: repeating-conic-gradient(rgba(0, 0, 0, 0.08) 0% 25%, transparent 0% 50%);
+    background-size: 2px 2px;
+}
+
+/* gentler row highlight on the white content windows */
+:root[data-theme='win9x-opencode'] .graph-row:hover::after,
+:root[data-theme='win9x-opencode'] .graph-row.selected::after {
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 10%, transparent);
+}
+
+/* muted word-level diff marks on white */
+:root[data-theme='win9x-opencode'] .diff-line.add mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--green) var(--diff-mark-strength), transparent);
+}
+:root[data-theme='win9x-opencode'] .diff-line.del mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--red) var(--diff-mark-strength), transparent);
+}
+
+/* softer search hits on white */
+:root[data-theme='win9x-opencode'] .search-hit {
+    background: color-mix(in srgb, var(--orange) 30%, transparent);
+    outline-color: color-mix(in srgb, var(--orange) 50%, transparent);
+}
+:root[data-theme='win9x-opencode'] :is(.diff-line.add, .diff-line.del) mark.search-hit,
+:root[data-theme='win9x-opencode'] .diff-line mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 40%, transparent);
+    outline-color: color-mix(in srgb, var(--orange) 60%, transparent);
+}
+:root[data-theme='win9x-opencode'] .diff-line.search-current mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 60%, transparent);
+}
+
+:root[data-theme='win9x-opencode'] .diff-body::-webkit-scrollbar-thumb {
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #ffffff,
+        inset -2px -2px #808080,
+        inset 2px 2px #dfdfdf;
+}
+
+/* commit-mode green tint tuning on white — same contrast rule as light */
+:root[data-theme='win9x-opencode'] .panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
+}
+
+:root[data-theme='win9x-opencode'] .file-panel.commit-mode .file-groups {
+    background: color-mix(in srgb, var(--green) 5%, #ffffff);
+}
+
+:root[data-theme='win9x-opencode'] .panel-heading.commit-mode .panel-heading-title,
+:root[data-theme='win9x-opencode'] .panel-heading.commit-mode .panel-heading-title svg {
+    color: #053a1a;
+}
+
+/* ===== Win9x pass 2 — gray buttons, navy menu highlights, white graph list ===== */
+
+/* taskbar-style buttons stay beveled; dropdown rows go flat (highlight carries them) */
+:root[data-theme='win9x-opencode']
+    :is(
+        .btn,
+        .toolbar-action,
+        .toolbar-icon-button,
+        .icon-btn,
+        .tab-new,
+        .open-in-btn,
+        .workspace-btn,
+        .setting-chip,
+        .repo-tab,
+        .segmented-btn,
+        .diff-nav,
+        .segmented
+    ) {
+    background: var(--surface-1);
+    color: #000000;
+}
+
+/* every button face is gray — no colored fills, primary reads via bold + default frame */
+:root[data-theme='win9x-opencode'] :is(.btn.primary, .btn.success, .btn.danger) {
+    background: var(--surface-1);
+    color: #000000;
+    border: 1px solid #000000;
+    font-weight: 650;
+}
+
+:root[data-theme='win9x-opencode']
+    :is(
+        .btn:hover,
+        .btn.primary:hover,
+        .btn.success:hover,
+        .btn.danger:hover,
+        .toolbar-action:hover,
+        .toolbar-icon-button:hover,
+        .icon-btn:hover,
+        .open-in-btn:hover,
+        .workspace-btn:hover,
+        .setting-chip:hover,
+        .repo-tab:hover,
+        .segmented-btn:hover,
+        .tab-sync-actions .toolbar-action:hover:not(:disabled)
+    ) {
+    background: var(--surface-hover);
+    color: #000000;
+    border-color: transparent;
+}
+
+:root[data-theme='win9x-opencode'] .repo-tab .tab-close:hover {
+    color: #000000;
+    background: var(--surface-hover);
+}
+
+/* toggled tools look pressed, not tinted */
+:root[data-theme='win9x-opencode']
+    :is(
+        .icon-btn.active,
+        .toolbar-icon-button.active,
+        .tools-tabs .graph-filter.active,
+        .segmented-btn.active,
+        .setting-chip.active,
+        .tab-search.open
+    ) {
+    color: #000000;
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #ffffff,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px #808080;
+}
+
+:root[data-theme='win9x-opencode'] .tools-tabs .graph-filter.active {
+    color: #000000;
+}
+
+/* popup menu rows are flat — hover/active is solid navy, white text */
+:root[data-theme='win9x-opencode']
+    :is(
+        .context-menu-item:hover,
+        .file-context-menu-item:hover,
+        .file-context-menu-item.has-sub:focus-visible,
+        .file-context-menu-wrap:hover > .file-context-menu-item,
+        .palette-item:hover,
+        .palette-item.active,
+        .workspace-item:hover,
+        .workspace-item.active,
+        .open-repo-item:hover,
+        .tab-search-result.active,
+        .repo-tab-menu-clear:hover,
+        .workspace-add:hover
+    ) {
+    background: #000080;
+    color: #ffffff;
+}
+
+:root[data-theme='win9x-opencode']
+    :is(
+        .context-menu-item:hover,
+        .file-context-menu-item:hover,
+        .file-context-menu-item.has-sub:focus-visible,
+        .file-context-menu-wrap:hover > .file-context-menu-item,
+        .palette-item:hover,
+        .palette-item.active,
+        .workspace-item:hover,
+        .workspace-item.active,
+        .open-repo-item:hover,
+        .tab-search-result.active,
+        .repo-tab-menu-clear:hover,
+        .workspace-add:hover
+    )
+    :is(span, div, svg, button) {
+    color: inherit;
+}
+
+/* steady green dot for the active branch — no pulse in this theme */
+:root[data-theme='win9x-opencode'] .branch-active-dot {
+    animation: none;
+}
+
+/* graph reads as a white ListView sunk into the gray face */:root[data-theme='win9x-opencode'] .graph-scroll {
+    background: #ffffff;
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #ffffff,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px #808080;
+}
+
+:root[data-theme='win9x-opencode'] .graph-scroll .graph-row:hover::after,
+:root[data-theme='win9x-opencode'] .graph-scroll .graph-row.selected::after {
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 10%, transparent);
+}
+
+/* caption-style close buttons — square gray key, black X, no ring, no red */
+:root[data-theme='win9x-opencode'] :is(.commit-close-btn, .diff-close-btn) {
+    background: var(--surface-1);
+    color: #000000;
+}
+
+:root[data-theme='win9x-opencode'] :is(.commit-close-btn, .diff-close-btn):hover {
+    background: var(--surface-hover);
+    color: #000000;
+}
+
+:root[data-theme='win9x-opencode'] .close-x-ring {
+    display: none;
+}
+
+:root[data-theme='win9x-opencode'] .close-x-mark {
+    stroke: #000000;
+    stroke-width: 1.5;
+}
+
+/* invalid field keeps a red signal — dotted outline so the bevel stays intact */
+:root[data-theme='win9x-opencode'] .workspace-add-input.invalid {
+    outline: 2px dotted #9a0e1b;
+    outline-offset: -4px;
+}
+
 /* ===== Terminal chrome — full TUI treatment (terminal theme only) ===== */
 
 /* CRT backdrop: dot-grid baked BEHIND content so text stays sharp (no scanlines — they turn to noise on low-clarity screens) */

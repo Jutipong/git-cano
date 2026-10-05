@@ -397,6 +397,7 @@
     function lanePalette(): string[] {
         if (ui.theme === 'terminal') return TERMINAL_COLORS
         if (ui.theme === 'light-retro') return LIGHT_RETRO_COLORS
+        if (ui.theme === 'win9x-opencode') return LIGHT_RETRO_COLORS
         return COLORS
     }
 
@@ -404,6 +405,7 @@
         if (commit.lane === 0) {
             if (ui.theme === 'terminal') return TERMINAL_FIRST_LANE_COLOR
             if (ui.theme === 'light-retro') return LIGHT_RETRO_FIRST_LANE_COLOR
+            if (ui.theme === 'win9x-opencode') return LIGHT_RETRO_FIRST_LANE_COLOR
             return FIRST_LANE_COLOR
         }
         const palette = lanePalette()

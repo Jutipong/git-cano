@@ -149,7 +149,7 @@ test('kill all lives in the palette only, and terminates every remaining shell',
     // repos that are not on screen, so it keeps one confirm-guarded home — the palette item.
     await expect(page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]')).toHaveCount(0)
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -173,7 +173,7 @@ test('Ctrl+` toggles the panel, and the palette kills everything', async () => {
     await expect(page.locator('.terminal-panel')).toBeHidden()
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -192,7 +192,7 @@ test('the header hide button hides the panel without killing the shell', async (
     await runInTerminal('echo after-hide-ok', 'after-hide-ok')
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -203,7 +203,7 @@ test('the command palette toggles the panel and offers kill all', async () => {
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -254,7 +254,7 @@ test('Settings → Terminal picks the shell of new terminals and sizes the text 
     expect(sizeBefore).not.toBe(18)
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal: kill all' }) }).click()
+    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })

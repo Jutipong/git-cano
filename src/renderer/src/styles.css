@@ -218,6 +218,42 @@
     --radius-pill: 0px;
 }
 
+:root[data-theme='win9x-opencode'] {
+    --canvas: #c0c0c0;
+    --surface-0: #c0c0c0;
+    --surface-1: #c0c0c0;
+    --surface-2: #c0c0c0;
+    --surface-3: #b8b8b8;
+    --surface-hover: #c8c8c8;
+    --surface-selected: #c0c0c0;
+    --line: #808080;
+    --line-soft: #808080;
+    --text: #000000;
+    --text-secondary: #1a1a1a;
+    --text-muted: #404040;
+    --teal: #000080;
+    --teal-dark: #000080;
+    --blue: #084d9e;
+    --green: #095c2b;
+    --orange: #8c2c08;
+    --red: #9a0e1b;
+    --purple: #4c1da3;
+    --yellow: #635100;
+    --diff-bg: #ffffff;
+    --diff-inline-bg: #f0f0f0;
+    --toast-bg: #c0c0c0;
+    --toast-border: #808080;
+    --conflict-bg: #ffffe1;
+    --conflict-border: #000000;
+    --conflict-text: #000000;
+    --conflict-ours-bg: #e8f0e8;
+    --conflict-theirs-bg: #f0e8d8;
+    --conflict-base-bg: #c0c0c0;
+    --shadow: rgba(0, 0, 0, 0);
+    --radius-card: 0px;
+    --radius-pill: 0px;
+}
+
 * {
     box-sizing: border-box;
 }
