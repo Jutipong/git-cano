@@ -196,8 +196,9 @@
     })
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
-    const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark'))
-    const lightThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'light'))
+    const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark' && !option.value.startsWith('win9x')))
+    const lightThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'light' && !option.value.startsWith('win9x')))
+    const win9xThemeOptions = computed(() => ui.themeOptions.filter(option => option.value.startsWith('win9x')))
 
     const ai = useAiStore()
     const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
@@ -758,6 +759,21 @@
                             <div class="setting-choice-row">
                                 <button
                                     v-for="option in lightThemeOptions"
+                                    :key="option.value"
+                                    type="button"
+                                    class="setting-chip"
+                                    :class="{ active: ui.theme === option.value }"
+                                    @click="ui.setTheme(option.value)">
+                                    <component
+                                        :is="themeIcon(option)"
+                                        width="13"
+                                        height="13" />
+                                    {{ option.label }}
+                                </button>
+                            </div>
+                            <div class="setting-choice-row">
+                                <button
+                                    v-for="option in win9xThemeOptions"
                                     :key="option.value"
                                     type="button"
                                     class="setting-chip"

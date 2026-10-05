@@ -437,6 +437,41 @@
     --radius-pill: 0px;
 }
 
+:root[data-theme='win9x-dark'] {
+    --canvas: #1a1d29;
+    --surface-0: #1a1d29;
+    --surface-1: #1a1d29;
+    --surface-2: #1a1d29;
+    --surface-3: #151824;
+    --surface-hover: #252b40;
+    --surface-selected: #1a1d29;
+    --line: #0a0b12;
+    --line-soft: #0a0b12;
+    --text: #e8eaf2;
+    --text-secondary: #c2c6d8;
+    --text-muted: #8d94ad;
+    --teal: #7aa2ff;
+    --teal-dark: #5f8fff;
+    --blue: #66d9ff;
+    --green: #4ed665;
+    --orange: #ffa028;
+    --red: #f45868;
+    --purple: #9d7bff;
+    --pink: #ff6fae;
+    --yellow: #ffd60a;
+    --diff-bg: #101218;
+    --diff-inline-bg: #232637;
+    --diff-mark-strength: 45%;
+    --toast-bg: #1a1d29;
+    --toast-border: #0a0b12;
+    --conflict-bg: #232637;
+    --conflict-border: #5a6080;
+    --conflict-text: #e8eaf2;
+    --shadow: rgba(0, 0, 0, 0);
+    --radius-card: 0px;
+    --radius-pill: 0px;
+}
+
 :root[data-theme='win9x-opencode'] mark {
     background: #ffff00;
     color: #000000;
@@ -907,6 +942,450 @@
 /* invalid field keeps a red signal — dotted outline so the bevel stays intact */
 :root[data-theme='win9x-opencode'] .workspace-add-input.invalid {
     outline: 2px dotted #9a0e1b;
+    outline-offset: -4px;
+}
+
+/* ===== Win9x Dark chrome — Win95 bevels on navy-black #1a1d29 (win9x-dark theme only) ===== */
+
+:root[data-theme='win9x-dark'] mark {
+    background: #0f3f6e;
+    color: #e8eaf2;
+}
+
+/* flat navy-black desktop — no glow, no gradient, no animation */
+:root[data-theme='win9x-dark'] .app,
+:root[data-theme='win9x-dark'] .app-empty {
+    background: var(--canvas);
+}
+
+:root[data-theme='win9x-dark'] :is(*, *::before, *::after) {
+    border-radius: 0;
+    text-shadow: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}
+
+:root[data-theme='win9x-dark'] .node-ring {
+    border-radius: 0;
+}
+
+/* selected node: hard dotted focus frame instead of the modern glow */
+:root[data-theme='win9x-dark'] .node-ring.selected {
+    border: 2px dotted #e8eaf2;
+    box-shadow: 0 0 0 1px #05060a;
+}
+
+:root[data-theme='win9x-dark'] .node-avatar.selected {
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 0 1px var(--canvas);
+}
+
+/* raised bevel panes — outset edge, no soft shadow */
+:root[data-theme='win9x-dark'] :is(.sidebar, .center-column, .right-pane, .tab-group, .tab-actions, .tab-sync-actions) {
+    border: 0;
+    box-shadow:
+        inset -1px -1px #05060a,
+        inset 1px 1px #8a90b0,
+        inset -2px -2px #0a0b12,
+        inset 2px 2px #5a6080;
+}
+
+/* raised bevel buttons — outset at rest, sunken while pressed.
+   NOTE: popup rows (.workspace-item, .open-repo-item) stay flat — navy highlight carries them. */
+:root[data-theme='win9x-dark']
+    :is(
+        .btn,
+        .toolbar-action,
+        .toolbar-icon-button,
+        .icon-btn,
+        .tab-new,
+        .open-in-btn,
+        .workspace-btn,
+        .setting-chip,
+        .repo-tab,
+        .segmented-btn,
+        .diff-nav,
+        .segmented,
+        .clone-dest-field
+    ) {
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #05060a,
+        inset 1px 1px #8a90b0,
+        inset -2px -2px #0a0b12,
+        inset 2px 2px #5a6080;
+}
+
+:root[data-theme='win9x-dark']
+    :is(
+        .btn:active:not(:disabled),
+        .toolbar-action:active:not(:disabled),
+        .toolbar-icon-button:active:not(:disabled),
+        .icon-btn:active:not(:disabled),
+        .clone-dest-field:active,
+        .setting-chip.active,
+        .repo-tab.active,
+        .segmented-btn.active
+    ) {
+    box-shadow:
+        inset -1px -1px #5a6080,
+        inset 1px 1px #05060a,
+        inset -2px -2px #3f4763,
+        inset 2px 2px #0a0b12;
+}
+
+/* sunken bevel fields + content lists — near-black windows cut into the navy face */
+:root[data-theme='win9x-dark']
+    :is(
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.tab-search-input):not(.diff-search-input):not(.palette-input):not(.section-search-input):not(.terminal-tab-rename),
+        textarea,
+        select,
+        .diff-body,
+        .file-groups,
+        .commit-search,
+        .tab-search-field,
+        .diff-search,
+        .palette-input-row,
+        .sidebar .section-search,
+        .section-body,
+        .prompt-local-changes
+    ) {
+    background: #101218;
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #5a6080,
+        inset 1px 1px #05060a,
+        inset -2px -2px #3f4763,
+        inset 2px 2px #0a0b12;
+}
+
+/* inner inputs live inside an already-sunken row — keep them flat transparent.
+   !important: the generic sunken `input:not(...)` above is more specific, so this must win. */
+:root[data-theme='win9x-dark'] :is(.tab-search-input, .diff-search-input, .palette-input, .section-search-input, .commit-search input) {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+/* settings groupbox — etched groove on navy (Win95 group box), so child
+   edit fields stay single-frame sunken instead of nesting */
+:root[data-theme='win9x-dark'] .tools-section {
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset 1px 1px #0a0b12,
+        inset -1px -1px #5a6080;
+}
+
+/* dialogs + menus + toasts — navy raised cards with an OK-style hard edge */
+:root[data-theme='win9x-dark']
+    :is(
+        .diff-overlay,
+        .modal-overlay > div,
+        .confirm-dialog,
+        .error-dialog,
+        .toast,
+        .workspace-pop,
+        .tab-search-pop,
+        .repo-tab-menu,
+        .open-repo-pop,
+        .context-menu,
+        .file-context-menu,
+        .palette
+    ) {
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #05060a,
+        inset 1px 1px #8a90b0,
+        inset -2px -2px #0a0b12,
+        inset 2px 2px #5a6080;
+}
+
+/* Win95 keys */
+:root[data-theme='win9x-dark'] kbd {
+    padding: 1px 5px;
+    color: #e8eaf2;
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #05060a,
+        inset 1px 1px #8a90b0,
+        inset -2px -2px #0a0b12,
+        inset 2px 2px #5a6080;
+    opacity: 1;
+}
+
+/* caret + text selection */
+:root[data-theme='win9x-dark'] :is(input, textarea) {
+    caret-color: #e8eaf2;
+}
+
+:root[data-theme='win9x-dark'] ::selection {
+    background: #000080;
+    color: #ffffff;
+}
+
+/* dotted focus rect instead of the soft glow */
+:root[data-theme='win9x-dark'] *:focus-visible {
+    outline: 1px dotted #e8eaf2;
+    outline-offset: -4px;
+}
+
+/* edit fields show focus with the caret, not a dotted rect (like real Win95) */
+:root[data-theme='win9x-dark'] :is(input, textarea, select):focus-visible {
+    outline: none;
+}
+
+/* chunky classic scrollbars */
+:root[data-theme='win9x-dark'] ::-webkit-scrollbar {
+    width: 16px;
+    height: 16px;
+}
+
+:root[data-theme='win9x-dark'] ::-webkit-scrollbar-thumb {
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #05060a,
+        inset 1px 1px #8a90b0,
+        inset -2px -2px #0a0b12,
+        inset 2px 2px #5a6080;
+}
+
+:root[data-theme='win9x-dark'] ::-webkit-scrollbar-thumb:hover {
+    background: var(--surface-1);
+}
+
+:root[data-theme='win9x-dark'] .sidebar > .sidebar-section > .section-body {
+    scrollbar-color: var(--line) #101218;
+}
+
+:root[data-theme='win9x-dark'] ::-webkit-scrollbar-track,
+:root[data-theme='win9x-dark'] ::-webkit-scrollbar-corner {
+    background: #101218;
+    background-image: repeating-conic-gradient(rgba(255, 255, 255, 0.06) 0% 25%, transparent 0% 50%);
+    background-size: 2px 2px;
+}
+
+/* row highlight on the sunken content windows */
+:root[data-theme='win9x-dark'] .graph-row:hover::after,
+:root[data-theme='win9x-dark'] .graph-row.selected::after {
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 10%, transparent);
+}
+
+/* word-level diff marks — same strength as dark themes */
+:root[data-theme='win9x-dark'] .diff-line.add mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--green) var(--diff-mark-strength), transparent);
+}
+:root[data-theme='win9x-dark'] .diff-line.del mark:not(.search-hit) {
+    background: color-mix(in srgb, var(--red) var(--diff-mark-strength), transparent);
+}
+
+:root[data-theme='win9x-dark'] .search-hit {
+    background: color-mix(in srgb, var(--orange) 30%, transparent);
+    outline-color: color-mix(in srgb, var(--orange) 50%, transparent);
+}
+:root[data-theme='win9x-dark'] :is(.diff-line.add, .diff-line.del) mark.search-hit,
+:root[data-theme='win9x-dark'] .diff-line mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 40%, transparent);
+    outline-color: color-mix(in srgb, var(--orange) 60%, transparent);
+}
+:root[data-theme='win9x-dark'] .diff-line.search-current mark.search-hit {
+    background: color-mix(in srgb, var(--orange) 60%, transparent);
+}
+
+:root[data-theme='win9x-dark'] .diff-body::-webkit-scrollbar-thumb {
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #05060a,
+        inset 1px 1px #8a90b0,
+        inset -2px -2px #0a0b12,
+        inset 2px 2px #5a6080;
+}
+
+/* commit-mode green tint — same 20% rule as dark-modern/terminal, title uses bright --green */
+:root[data-theme='win9x-dark'] .panel-heading.commit-mode {
+    background: color-mix(in srgb, var(--green) 20%, var(--surface-0));
+}
+
+:root[data-theme='win9x-dark'] .file-panel.commit-mode .file-groups {
+    background: color-mix(in srgb, var(--green) 8%, #101218);
+}
+
+/* ===== Win9x Dark pass 2 — navy buttons, navy menu highlights, sunken graph list ===== */
+
+/* taskbar-style buttons stay beveled; dropdown rows go flat (highlight carries them) */
+:root[data-theme='win9x-dark']
+    :is(
+        .btn,
+        .toolbar-action,
+        .toolbar-icon-button,
+        .icon-btn,
+        .tab-new,
+        .open-in-btn,
+        .workspace-btn,
+        .setting-chip,
+        .repo-tab,
+        .segmented-btn,
+        .diff-nav,
+        .segmented
+    ) {
+    background: var(--surface-1);
+    color: #e8eaf2;
+}
+
+/* every button face is navy — no colored fills, primary reads via bold + light frame */
+:root[data-theme='win9x-dark'] :is(.btn.primary, .btn.success, .btn.danger) {
+    background: var(--surface-1);
+    color: #e8eaf2;
+    border: 1px solid #e8eaf2;
+    font-weight: 650;
+}
+
+:root[data-theme='win9x-dark']
+    :is(
+        .btn:hover,
+        .btn.primary:hover,
+        .btn.success:hover,
+        .btn.danger:hover,
+        .toolbar-action:hover,
+        .toolbar-icon-button:hover,
+        .icon-btn:hover,
+        .open-in-btn:hover,
+        .workspace-btn:hover,
+        .setting-chip:hover,
+        .repo-tab:hover,
+        .segmented-btn:hover,
+        .tab-sync-actions .toolbar-action:hover:not(:disabled)
+    ) {
+    background: var(--surface-hover);
+    color: #e8eaf2;
+    border-color: transparent;
+}
+
+:root[data-theme='win9x-dark'] .repo-tab .tab-close:hover {
+    color: #e8eaf2;
+    background: var(--surface-hover);
+}
+
+/* toggled tools look pressed, not tinted */
+:root[data-theme='win9x-dark']
+    :is(
+        .icon-btn.active,
+        .toolbar-icon-button.active,
+        .tools-tabs .graph-filter.active,
+        .segmented-btn.active,
+        .setting-chip.active,
+        .tab-search.open
+    ) {
+    color: #e8eaf2;
+    background: var(--surface-1);
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #5a6080,
+        inset 1px 1px #05060a,
+        inset -2px -2px #3f4763,
+        inset 2px 2px #0a0b12;
+}
+
+:root[data-theme='win9x-dark'] .tools-tabs .graph-filter.active {
+    color: #e8eaf2;
+}
+
+/* popup menu rows are flat — hover/active is solid navy, white text */
+:root[data-theme='win9x-dark']
+    :is(
+        .context-menu-item:hover,
+        .file-context-menu-item:hover,
+        .file-context-menu-item.has-sub:focus-visible,
+        .file-context-menu-wrap:hover > .file-context-menu-item,
+        .palette-item:hover,
+        .palette-item.active,
+        .workspace-item:hover,
+        .workspace-item.active,
+        .open-repo-item:hover,
+        .tab-search-result.active,
+        .repo-tab-menu-clear:hover,
+        .workspace-add:hover
+    ) {
+    background: #000080;
+    color: #ffffff;
+}
+
+:root[data-theme='win9x-dark']
+    :is(
+        .context-menu-item:hover,
+        .file-context-menu-item:hover,
+        .file-context-menu-item.has-sub:focus-visible,
+        .file-context-menu-wrap:hover > .file-context-menu-item,
+        .palette-item:hover,
+        .palette-item.active,
+        .workspace-item:hover,
+        .workspace-item.active,
+        .open-repo-item:hover,
+        .tab-search-result.active,
+        .repo-tab-menu-clear:hover,
+        .workspace-add:hover
+    )
+    :is(span, div, svg, button) {
+    color: inherit;
+}
+
+/* steady green dot for the active branch — no pulse in this theme */
+:root[data-theme='win9x-dark'] .branch-active-dot {
+    animation: none;
+}
+
+/* graph reads as a sunken ListView cut into the navy face */
+:root[data-theme='win9x-dark'] .graph-scroll {
+    background: #101218;
+    border: 0;
+    border-radius: 0;
+    box-shadow:
+        inset -1px -1px #5a6080,
+        inset 1px 1px #05060a,
+        inset -2px -2px #3f4763,
+        inset 2px 2px #0a0b12;
+}
+
+:root[data-theme='win9x-dark'] .graph-scroll .graph-row:hover::after,
+:root[data-theme='win9x-dark'] .graph-scroll .graph-row.selected::after {
+    background: color-mix(in srgb, var(--row-color, var(--teal)) 10%, transparent);
+}
+
+/* caption-style close buttons — square navy key, light X, no ring, no red */
+:root[data-theme='win9x-dark'] :is(.commit-close-btn, .diff-close-btn) {
+    background: var(--surface-1);
+    color: #e8eaf2;
+}
+
+:root[data-theme='win9x-dark'] :is(.commit-close-btn, .diff-close-btn):hover {
+    background: var(--surface-hover);
+    color: #e8eaf2;
+}
+
+:root[data-theme='win9x-dark'] .close-x-ring {
+    display: none;
+}
+
+:root[data-theme='win9x-dark'] .close-x-mark {
+    stroke: #e8eaf2;
+    stroke-width: 1.5;
+}
+
+/* invalid field keeps a red signal — dotted outline so the bevel stays intact */
+:root[data-theme='win9x-dark'] .workspace-add-input.invalid {
+    outline: 2px dotted #f45868;
     outline-offset: -4px;
 }
 

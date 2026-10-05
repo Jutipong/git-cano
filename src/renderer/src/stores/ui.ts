@@ -13,7 +13,7 @@ import {
     type ShortcutPlatform,
 } from '../utils/shortcuts'
 
-export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro' | 'win9x-opencode'
+export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro' | 'win9x-opencode' | 'win9x-dark'
 
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 
@@ -104,6 +104,7 @@ const themeOptions: ThemeOption[] = [
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun', kind: 'light' },
     { value: 'light-retro', label: 'Light Retro', description: 'Mono paper with faded vintage accents', icon: 'sun', kind: 'light' },
     { value: 'win9x-opencode', label: 'Win9x', description: 'Win95 gray with raised bevels', icon: 'sun', kind: 'light' },
+    { value: 'win9x-dark', label: 'Win9x Dark', description: 'Win95 bevels on navy-black', icon: 'moon', kind: 'dark' },
 ]
 
 export const useUiStore = defineStore(
@@ -119,7 +120,8 @@ export const useUiStore = defineStore(
                 savedTheme !== 'dark-neon' &&
                 savedTheme !== 'terminal' &&
                 savedTheme !== 'light-retro' &&
-                savedTheme !== 'win9x-opencode'
+                savedTheme !== 'win9x-opencode' &&
+                savedTheme !== 'win9x-dark'
             )
                 theme.value = DEFAULT_THEME
         })
