@@ -47,6 +47,7 @@
     let fit: FitAddon | null = null
     let resizeObserver: ResizeObserver | null = null
     let settleTimer: ReturnType<typeof setInterval> | null = null
+    let fontRefitSeq = 0
     let dataDisposer: (() => void) | null = null
     let exitDisposer: (() => void) | null = null
     let renderDisposer: IDisposable | null = null
@@ -85,6 +86,68 @@
             return
         }
         void window.api.terminalResize(props.terminalId, term.cols, term.rows).catch(() => {})
+    }
+
+    /** Re-fit briefly until the grid settles — covers fallback-font landings and debounced cell measure. */
+    function startSettleRefits(durationMs: number) {
+        if (settleTimer) clearInterval(settleTimer)
+        settleTimer = setInterval(resizePty, 100)
+        setTimeout(() => {
+            if (settleTimer) clearInterval(settleTimer)
+            settleTimer = null
+        }, durationMs)
+    }
+
+    function nextFrame(): Promise<void> {
+        return new Promise(resolve => requestAnimationFrame(() => resolve()))
+    }
+
+    /**
+     * Re-solve the grid after a font change. xterm re-measures the cell box on a later task
+     * (debounced CharSizeService.measure), so fitting immediately reuses the stale cell size and
+     * the last row/column clips for some sizes. Wait for the new face, let two frames pass for
+     * the re-measure, fit, then burst refits until fallback fonts settle. Refits until cols/rows
+     * stop changing so every size in TERMINAL_FONT_SIZE_OPTIONS lands on a full grid.
+     */
+    async function refitAfterFontChange(seq: number, familyStack: string, size: number) {
+        try {
+            await document.fonts.load(`${size}px "${primaryFontFamily(familyStack)}"`)
+            await document.fonts.ready
+        } catch {
+            // A load failure just means xterm measures a fallback — still refit below.
+        }
+        if (disposed || seq !== fontRefitSeq) return
+        await nextFrame()
+        if (disposed || seq !== fontRefitSeq) return
+        await nextFrame()
+        if (disposed || seq !== fontRefitSeq || !term || !fit) return
+        // Fit until the grid stops moving: fractional cell sizes round differently per size, so a
+        // single fit can leave the pty one row/column off and clip x/y.
+        resizePty()
+        if (settleTimer) clearInterval(settleTimer)
+        let lastCols = term.cols
+        let lastRows = term.rows
+        let stable = 0
+        let attempts = 0
+        settleTimer = setInterval(() => {
+            if (disposed || seq !== fontRefitSeq || !term) {
+                if (settleTimer) clearInterval(settleTimer)
+                settleTimer = null
+                return
+            }
+            resizePty()
+            attempts += 1
+            if (term.cols === lastCols && term.rows === lastRows) stable += 1
+            else {
+                stable = 0
+                lastCols = term.cols
+                lastRows = term.rows
+            }
+            if (stable >= 2 || attempts >= 10) {
+                if (settleTimer) clearInterval(settleTimer)
+                settleTimer = null
+            }
+        }, 100)
     }
 
     /**
@@ -222,11 +285,7 @@
         term.focus()
         // Chromium re-measures the cell height when a fallback font lands (~0.7s in), so the first
         // fit can be one row too tall and the last row clipped — re-fit briefly until it settles.
-        settleTimer = setInterval(resizePty, 100)
-        setTimeout(() => {
-            if (settleTimer) clearInterval(settleTimer)
-            settleTimer = null
-        }, 2000)
+        startSettleRefits(2000)
     }
 
     onMounted(async () => {
@@ -252,16 +311,18 @@
             }
         )
         // The terminal's font is its own setting, decoupled from the UI font size — apply it live to
-        // every open view and re-solve the grid. xterm re-measures the cell box on the next task
-        // (debounced CharSizeService.measure), so the refit must wait a frame: fitting immediately
-        // would compute cols/rows from the stale cell size.
+        // every open view and re-solve the grid. xterm re-measures the cell box on a later task,
+        // so refitting immediately would compute cols/rows from the stale cell size and clip x/y
+        // for some sizes — refitAfterFontChange waits for the face + stable grid instead.
         watch(
             () => [ui.terminalFontSize, ui.terminalFontFamily] as const,
             () => {
                 if (!term) return
+                const familyStack = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
                 term.options.fontSize = ui.terminalFontSize
-                term.options.fontFamily = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
-                requestAnimationFrame(() => resizePty())
+                term.options.fontFamily = familyStack
+                fontRefitSeq += 1
+                void refitAfterFontChange(fontRefitSeq, familyStack, ui.terminalFontSize)
             }
         )
     })

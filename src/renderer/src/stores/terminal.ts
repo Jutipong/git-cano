@@ -86,7 +86,7 @@ export const useTerminalStore = defineStore('terminal', () => {
             tabs: current ? [...current.tabs, tab] : [tab],
             activeId: id,
             hidden: false,
-            expanded: false,
+            expanded: current?.expanded ?? false,
         })
         return id
     }

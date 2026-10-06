@@ -4,6 +4,7 @@ import * as path from 'node:path'
 import { log } from './logger'
 
 import type { TerminalData, TerminalExit, TerminalShell } from '@shared/types'
+import { mergePathValue, pathKeyFor } from '@shared/terminalPath'
 import type { IPty } from 'node-pty'
 
 type PtyModule = { spawn: (file: string, args: string[] | string, options: unknown) => IPty }
@@ -75,19 +76,70 @@ function shellFileExists(candidate: string): boolean {
  * True when pwsh.exe is on PATH. PowerShell 7 is an optional install, and the settings default is
  * "PowerShell 7", so this decides whether that default is honoured or falls back to Command Prompt.
  * Both install flavours count — MSI (real file) and Store/MSIX (WindowsApps alias) — and no
- * subprocess is spawned: the PATH scan is cached for the session.
+ * subprocess is spawned: the PATH scan is cached for the session. Reads PATH case-insensitively:
+ * on Windows Electron exposes it as `Path`, so `process.env.PATH` alone is usually undefined.
  */
+function currentProcessPath(): string {
+    const key = Object.keys(process.env).find(candidate => candidate.toLowerCase() === 'path')
+    const value = key ? process.env[key] : undefined
+    return typeof value === 'string' ? value : ''
+}
+
 function hasPwsh(): boolean {
     if (pwshInstalled !== null) return pwshInstalled
     const exts = (process.env.PATHEXT || '.EXE').split(';').filter(Boolean)
-    pwshInstalled = (process.env.PATH || '').split(path.delimiter).some(dir => {
-        if (!dir) return false
-        return exts.some(ext => {
-            const candidates = [path.join(dir, `pwsh${ext.toLowerCase()}`), path.join(dir, `pwsh${ext}`)]
-            return candidates.some(candidate => shellFileExists(candidate))
+    pwshInstalled = currentProcessPath()
+        .split(path.delimiter)
+        .some(dir => {
+            if (!dir) return false
+            return exts.some(ext => {
+                const candidates = [path.join(dir, `pwsh${ext.toLowerCase()}`), path.join(dir, `pwsh${ext}`)]
+                return candidates.some(candidate => shellFileExists(candidate))
+            })
         })
-    })
     return pwshInstalled
+}
+
+/**
+ * True when the directory exists. Guards the PATH augmentation below: only real user-bin dirs
+ * are prepended, so a missing install never pollutes the shell's PATH.
+ */
+function dirExists(candidate: string): boolean {
+    try {
+        return fs.statSync(candidate).isDirectory()
+    } catch {
+        return false
+    }
+}
+
+/**
+ * User-level bin dirs a GUI launch typically misses. An Explorer/Start-menu launch inherits the
+ * registry PATH snapshot from login time, while an interactive shell picks up per-shell additions
+ * (npm global, Scoop, WinGet, the opencode CLI bin) — so `opencode` resolves outside the app but
+ * not inside it until these are prepended when present.
+ */
+function userBinCandidates(): string[] {
+    if (process.platform === 'win32') {
+        const home = process.env.USERPROFILE || ''
+        const appData = process.env.APPDATA || (home ? path.join(home, 'AppData', 'Roaming') : '')
+        const localAppData = process.env.LOCALAPPDATA || (home ? path.join(home, 'AppData', 'Local') : '')
+        return [
+            appData ? path.join(appData, 'npm') : '',
+            localAppData ? path.join(localAppData, 'Microsoft', 'WinGet', 'Links') : '',
+            home ? path.join(home, 'scoop', 'shims') : '',
+            home ? path.join(home, '.opencode', 'bin') : '',
+            home ? path.join(home, '.local', 'bin') : '',
+            localAppData ? path.join(localAppData, 'Microsoft', 'WindowsApps') : '',
+        ].filter(Boolean)
+    }
+    const home = process.env.HOME || ''
+    return [
+        '/opt/homebrew/bin',
+        '/opt/homebrew/sbin',
+        '/usr/local/bin',
+        home ? path.join(home, '.local', 'bin') : '',
+        home ? path.join(home, '.opencode', 'bin') : '',
+    ].filter(Boolean)
 }
 
 function shellCommand(preferred: TerminalShell): { file: string; args: string[]; label: string } {
@@ -185,6 +237,21 @@ function terminalEnv(): Record<string, string> {
     env.TERM = 'xterm-256color'
     env.COLORTERM = 'truecolor'
     if (!env.LANG) env.LANG = 'en_US.UTF-8'
+    // A GUI launch inherits a login-time PATH snapshot, so CLIs installed into user bins
+    // (npm global, Scoop, WinGet, ~/.opencode/bin) resolve in an interactive shell but not here.
+    // Prepend the ones that exist and are missing — never replacing what is already there.
+    const key = pathKeyFor(Object.keys(env), process.platform === 'win32' ? 'Path' : 'PATH')
+    const before = env[key] || ''
+    const merged = mergePathValue(
+        before,
+        userBinCandidates().filter(dir => dirExists(dir)),
+        path.delimiter,
+        process.platform === 'win32'
+    )
+    if (merged !== before) {
+        env[key] = merged
+        log('debug', 'terminal', 'augmented PATH with user bins')
+    }
     return env
 }
 

@@ -257,6 +257,12 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   installed whichever is first on PATH (Machine before User — normally the MSI) wins.
 - `createTerminal` is idempotent per id (a remounted panel re-sends the same id and gets its live
   shell back) and clamps cols/rows, because xterm briefly reports 0 while a panel is hidden.
+- **Shell PATH is augmented with user bins** (`terminalEnv()`): a GUI launch inherits a login-time
+  PATH snapshot, so CLIs in npm-global/Scoop/WinGet/`~/.opencode/bin` resolve outside the app but
+  not inside it. Only dirs that exist and are missing are prepended (pure merge in
+  `shared/terminalPath.ts`, never replacing existing entries). The PATH key is resolved
+  case-insensitively (`Path` on Windows) — `hasPwsh()` reads it the same way, do not revert it to
+  `process.env.PATH` alone.
 - **Always spawn with `useConptyDll: true` on Windows.** The OS ConPTY (Win11 26200) corrupts Thai
   in TUI redraws: typing `สวัสดี ยังทำงานอยู่ไหม` into opencode's prompt rendered
   `สวัสดี ยังานอยู่ไ` plus a stale fragment of the previous placeholder — the same input renders
