@@ -305,8 +305,45 @@ test('a repo stops at four shells', async () => {
     await panel.locator('.terminal-tab-add').click({ force: true })
     await expect(panel.locator('.terminal-tab')).toHaveCount(4)
 
+    // Ctrl+T at the cap is a silent no-op — no fifth tab, no toast.
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(4)
+    await expect(page.locator('.toast', { hasText: 'Maximum' })).toHaveCount(0)
+
     await panel.locator('.diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close 4 terminals' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
+test('Ctrl+T opens a shell and Ctrl+1…9 switch between terminal tabs', async () => {
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(1)
+
+    // Ctrl+T spawns a tab (no `+` click) and makes it the active one.
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(2)
+    await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(3)
+
+    // Number keys address tabs by their on-screen position; a missing tab is a silent no-op.
+    await page.keyboard.press('Control+1')
+    await expect(panel.locator('.terminal-tab').nth(0)).toHaveClass(/active/)
+    await page.keyboard.press('Control+3')
+    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
+    await page.keyboard.press('Control+9')
+    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
+
+    // With the panel hidden, the shortcut brings it back on the requested tab.
+    await panel.locator('.icon-btn[title*="Hide panel"]').click()
+    await expect(page.locator('.terminal-panel')).toBeHidden()
+    await page.keyboard.press('Control+2')
+    await expect(page.locator('.terminal-panel')).toBeVisible()
+    await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+
+    await panel.locator('.diff-close-btn').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close 3 terminals' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 

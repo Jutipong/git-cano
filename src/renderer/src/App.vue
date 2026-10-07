@@ -40,7 +40,7 @@
     import { useAuthStore } from './stores/auth'
     import { useRepoStore } from './stores/repo'
     import { useSyncStore } from './stores/sync'
-    import { MAX_TERMINALS_PER_REPO, useTerminalStore } from './stores/terminal'
+    import { useTerminalStore } from './stores/terminal'
     import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
     import { useUpdaterStore } from './stores/updater'
@@ -290,6 +290,20 @@
                 void toggleTerminal()
                 return true
             }
+            // Terminal tabs of the active repo (fixed Windows-Terminal-style combos, captured before
+            // xterm so no shell/TUI ever sees them): Ctrl+T opens a shell, Ctrl+1…9 jumps to that tab.
+            // A missing tab and the per-repo cap are silent no-ops.
+            if (combo === 'Ctrl+T' && repoStore.repo) {
+                event.preventDefault()
+                void newTerminalTab()
+                return true
+            }
+            const terminalTab = combo?.match(/^Ctrl\+([1-9])$/)
+            if (terminalTab && repoStore.repo && terminalStore.terminalExists(activeRepoPath.value ?? '')) {
+                event.preventDefault()
+                jumpToTerminalTab(Number(terminalTab[1]))
+                return true
+            }
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
             if (combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
                 event.preventDefault()
@@ -505,11 +519,26 @@
         if (ok) terminalStore.closeTerminalTab(path, id)
     }
 
-    /** Panel `+` — spawn another shell for this repo, up to the per-repo cap. */
+    /** Panel `+` / Ctrl+T — spawn another shell for this repo; the per-repo cap is a silent no-op. */
     async function addTerminalTab(path: string) {
-        if (!(await terminalStore.openTerminalTab(path))) {
-            uiTransient.notify(`Maximum ${MAX_TERMINALS_PER_REPO} terminals per repo`, 'warning')
-        }
+        await terminalStore.openTerminalTab(path)
+    }
+
+    /** Ctrl+T — new shell for the active repo; the no-terminal case goes through toggleTerminal's gate. */
+    async function newTerminalTab() {
+        const path = activeRepoPath.value
+        if (!path) return
+        if (terminalStore.terminalExists(path)) await addTerminalTab(path)
+        else await toggleTerminal()
+    }
+
+    /** Ctrl+1…9 — show the panel and activate the Nth tab of the active repo (missing tab = no-op). */
+    function jumpToTerminalTab(index: number) {
+        const path = activeRepoPath.value
+        const tab = path ? terminalStore.repoTerminals(path)?.tabs[index - 1] : undefined
+        if (!path || !tab) return
+        terminalStore.showTerminals(path)
+        terminalStore.setActiveTerminal(path, tab.id)
     }
 
     /**

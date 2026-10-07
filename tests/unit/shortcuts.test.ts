@@ -60,6 +60,13 @@ describe('isReservedCombo', () => {
         expect(isReservedCombo('Ctrl+K', { push: 'Ctrl+K' }, 'push')).toBe(false)
         expect(isReservedCombo('Ctrl+J', { push: 'Ctrl+K' })).toBe(false)
     })
+
+    it('reserves the fixed terminal tab combos', () => {
+        expect(isReservedCombo('Ctrl+T', {})).toBe(true)
+        for (let index = 1; index <= 9; index++) {
+            expect(isReservedCombo(`Ctrl+${index}`, {})).toBe(true)
+        }
+    })
 })
 
 describe('shortcut catalog', () => {

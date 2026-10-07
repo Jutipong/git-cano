@@ -202,6 +202,13 @@ Panel/modal component patterns. Loaded automatically when working under
   `preventDefault()` and returns `false` so xterm writes no `0x03`, then clears the selection so the
   next Ctrl+C interrupts a running command again. Never bind a plain Ctrl+C to copy unconditionally —
   that takes the interrupt away from the shell.
+- **Terminal tab shortcuts are fixed and capture-phase**: `Ctrl+T` opens a shell and `Ctrl+1…9`
+  activates the Nth tab of the active repo (`newTerminalTab` / `jumpToTerminalTab` in `App.vue`,
+  reached through `handleAppShortcut`), like Windows Terminal. They must stay in the capture handler —
+  xterm swallows the keys — which is also why a shell/TUI never sees them (deliberate exception to
+  the "keep shell combos in the bubble handler" rule). A missing tab and the per-repo cap are silent
+  no-ops (no toast); a hidden panel is shown first. The combos are reserved in `isReservedCombo` and
+  documented in `SHORTCUTS`.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.

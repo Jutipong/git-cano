@@ -163,6 +163,8 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | 📁 Open repo             | `Ctrl+O`              | `Ctrl+O`                 |
 | 📥 Clone repo            | `Ctrl+N`              | `Ctrl+N`                 |
 | ❎ Close tab             | `Ctrl+W`              | `Ctrl+W`                 |
+| 🖥️ New terminal tab      | `Ctrl+T`              | `Ctrl+T`                 |
+| 🔢 Terminal tab 1…9      | `Ctrl+1…9`            | `Ctrl+1…9`               |
 | 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
 | ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
 | ✨ Command palette       | `Ctrl+P` / `Shift×2`  | `Ctrl+P` / `Shift×2`     |
