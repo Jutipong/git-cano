@@ -225,6 +225,14 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   newest-first with HEAD / keeps-message badges, defaults the message to the oldest subject
   with the FilePanel-style soft length counter, and blocks on a dirty worktree.
 
+## Open in external apps
+
+- `runCmd()` (`main/index.ts`) launches every "Open in" target (VS Code, Terminal, Kiro, Rider,
+  Visual Studio). It must spawn with `detached: true` + `unref()`: libuv puts every non-detached
+  child in a kill-on-close Windows job, so quitting git-cano would terminate the launched app
+  (VS Code closed along with it). The listeners may stay for error reporting only — never couple
+  the launched app's lifetime to git-cano.
+
 ## Terminal panel (PTY)
 
 - `src/main/terminal.ts` owns one PTY per terminal id and nothing else. It must stay free of any

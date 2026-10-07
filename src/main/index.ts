@@ -210,9 +210,17 @@ function requireRepo(): boolean {
     return true
 }
 
+/**
+ * Launches an external app (VS Code, Windows Terminal, Kiro, Rider, Visual Studio) and reports
+ * spawn/exit failures. `detached` is load-bearing: libuv puts every non-detached child in a
+ * kill-on-close Windows job, so the app opened here would be terminated the moment git-cano
+ * quits. `unref()` keeps the child out of the main process' event loop as well — it must outlive
+ * git-cano, not depend on it.
+ */
 function runCmd(cmd: string, args: string[], cwd: string): Promise<void> {
     return new Promise((resolve, reject) => {
-        const child = spawn(cmd, args, { cwd, stdio: 'ignore' })
+        const child = spawn(cmd, args, { cwd, stdio: 'ignore', detached: true })
+        child.unref()
         child.on('error', err => reject(new Error(`Failed to launch "${cmd}": ${err.message}`)))
         child.on('exit', code => {
             if (code === 0) resolve()
