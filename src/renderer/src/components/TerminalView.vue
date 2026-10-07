@@ -4,6 +4,7 @@
 
     import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY } from '../stores/ui'
     import { primaryFontFamily, resolveTerminalFontFamily } from '../utils/terminalFont'
+    import { shouldActivateTerminalLink } from '../utils/terminalLinks'
 
     import '@xterm/xterm/css/xterm.css'
 
@@ -73,6 +74,16 @@
             cursor: read('--teal', '#29a8ff'),
             selectionBackground: read('--surface-hover', '#2d2d40'),
         }
+    }
+
+    /**
+     * Ctrl/Cmd+click on a URL — plain text via the web-links addon, OSC 8 via `linkHandler`.
+     * The addon's default handler calls `window.open`, which would create an Electron window
+     * instead of opening the user's browser; `app:openExternal` is the OS-browser bridge.
+     */
+    function openLink(event: MouseEvent, uri: string) {
+        if (!shouldActivateTerminalLink(event, uri)) return
+        void window.api.openExternal(uri).catch(() => {})
     }
 
     function resizePty() {
@@ -237,10 +248,11 @@
         await waitForFonts(primaryFontFamily(family))
         if (disposed || !host.value) return
         // Loaded lazily so the terminal chunk (xterm) only ships when a panel actually opens.
-        const [{ Terminal }, { FitAddon }, { Unicode11Addon }] = await Promise.all([
+        const [{ Terminal }, { FitAddon }, { Unicode11Addon }, { WebLinksAddon }] = await Promise.all([
             import('@xterm/xterm'),
             import('@xterm/addon-fit'),
             import('@xterm/addon-unicode11'),
+            import('@xterm/addon-web-links'),
         ])
         if (disposed) return
 
@@ -255,6 +267,9 @@
             scrollback: 1000,
             // xterm 6 moved Unicode11Addon behind the proposed API.
             allowProposedApi: true,
+            // OSC 8 hyperlinks (xterm's built-in provider) would otherwise `confirm()` and then
+            // `window.open`; route them through the same OS-browser handler as plain-text URLs.
+            linkHandler: { activate: openLink },
             theme: {
                 background: colors.background,
                 foreground: colors.foreground,
@@ -268,6 +283,8 @@
         const unicode11 = new Unicode11Addon()
         term.loadAddon(unicode11)
         term.unicode.activeVersion = '11'
+        // Plain-text URLs become links; `openLink` replaces the addon's `window.open` default.
+        term.loadAddon(new WebLinksAddon(openLink))
         term.open(host.value)
         // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs after each render.
         renderDisposer = term.onRender(scheduleBars)

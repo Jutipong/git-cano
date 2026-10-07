@@ -189,6 +189,12 @@ Panel/modal component patterns. Loaded automatically when working under
   buttons with 15px icons inside them, a 12px mono tab label and an 88px tab minimum; the
   header's 10px side padding matches the xterm inset — keep those in step with the diff header
   instead of inventing a second compact scale.
+- **Links open in the OS browser**: `@xterm/addon-web-links` handles plain-text URLs and the
+  `linkHandler` terminal option covers OSC 8 hyperlinks; both call `openLink` (http(s) only) which
+  routes through `app:openExternal`. Activation requires Ctrl/Cmd+click
+  (`shouldActivateTerminalLink` in `utils/terminalLinks.ts`) — never enable plain-click activation,
+  and never fall back to the addon's default `window.open` handler: it spawns an Electron window,
+  not the user's browser.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.

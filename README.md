@@ -100,6 +100,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 | 🗂️  | Up to 4 shells per repo, each its own tab (`cmd 1`, `powershell 2`, …) — double-click a tab to rename it, drag tabs to reorder, like repo tabs |
 | 🔒  | Shells keep running across repo switches and workspace switches; closing the repo tab closes its shells, and **Terminal: Kill All** (palette command) ends every shell of every repo |
 | 🇹🇭  | **Thai renders correctly** — real PTY (node-pty) + xterm 6 DOM renderer with Unicode 11 widths, and Windows shells forced to UTF-8, so `git log`, `pi` and `opencode` output stays aligned instead of turning into mojibake |
+| 🔗  | Clickable URLs — **Ctrl/Cmd+click** a printed `http://localhost:3000` (any http(s) link, including OSC 8 hyperlinks) to open it in the OS default browser |
 | ⚙️  | Terminal has its own settings — shell (PowerShell 7 by default, Command Prompt, or Windows PowerShell; Windows only, and PowerShell 7 falls back to Command Prompt where it is not installed) and font size, decoupled from the interface font size; `A−`/`A+` in the panel header, hide collapses the panel without ending its shells, and maximize expands it under the repo tab bar |
 
 ### 🌿 Branches, Tags & Remotes

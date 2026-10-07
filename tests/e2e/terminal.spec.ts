@@ -336,6 +336,50 @@ test('the splitter resizes the panel height, and the shell follows', async () =>
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
+test('Ctrl+click opens a printed URL through the OS browser bridge, a plain click does not', async () => {
+    // Swap the main-process opener for a recorder: the real one launches the machine's default
+    // browser, and this test only needs to see the URL arrive at `app:openExternal`.
+    await handle.app.evaluate(({ shell }) => {
+        const g = globalThis as unknown as { __openedLinks: string[] }
+        g.__openedLinks = []
+        shell.openExternal = (url: string) => {
+            g.__openedLinks.push(url)
+            return Promise.resolve()
+        }
+    })
+
+    await page.locator('.graph-terminal-btn').click()
+    await page.waitForSelector('.terminal-view:visible .xterm', { timeout: 30_000 })
+    const url = 'http://localhost:3000/git-cano-link-ok'
+    await runInTerminal(`echo ${url}`, url)
+
+    // The echoed command line carries the URL too; only the row without `echo` is its output.
+    const rows = page
+        .locator('.terminal-view:visible .xterm-rows > div')
+        .filter({ hasText: url })
+        .filter({ hasNotText: 'echo' })
+    await expect(rows).toHaveCount(1)
+    const row = rows.first()
+
+    // A plain click stays a selection — xterm core would activate the link, the handler refuses.
+    // `force` skips Playwright's hit-target check: xterm's own layering puts `.xterm-screen` over
+    // the row divs, and the linkifier listens on that screen element.
+    await row.click({ position: { x: 24, y: 8 }, force: true })
+    await page.waitForTimeout(400)
+    expect(await handle.app.evaluate(() => (globalThis as unknown as { __openedLinks: string[] }).__openedLinks)).toEqual([])
+
+    await row.click({ position: { x: 24, y: 8 }, modifiers: ['Control'], force: true })
+    await expect
+        .poll(() => handle.app.evaluate(() => (globalThis as unknown as { __openedLinks: string[] }).__openedLinks))
+        .toEqual([url])
+    // No Electron window may appear: the addon's default `window.open` handler must never run.
+    expect(handle.app.windows()).toHaveLength(1)
+
+    await page.locator('.terminal-panel:visible .diff-close-btn').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
 test.describe('workspace switches', () => {
     let wsHandle: AppHandle
     let wsPage: Page
