@@ -34,7 +34,7 @@ export const useTerminalStore = defineStore('terminal', () => {
     /** Monotonic id source — ids are never reused, so a remounted panel finds its live shell again. */
     let terminalSeq = 0
     /** Height (px) of the bottom terminal panel — memory-only UI pref, resets to the default each launch. */
-    const terminalHeight = ref(260)
+    const terminalHeight = ref(300)
 
     /** Terminal state of a repo (undefined when it owns no shell). */
     function repoTerminals(path: string): RepoTerminals | undefined {

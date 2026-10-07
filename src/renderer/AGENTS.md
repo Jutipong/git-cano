@@ -36,7 +36,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   repo path, and keeps it mounted across repo switches, workspace switches and the toggle, so a
   shell you left behind is still there (and still running) when you come back. The graph is only
   hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). Drag the
-  `.terminal-splitter` for height (persisted per session, resets to 260px on launch).
+  `.terminal-splitter` for height (persisted per session, resets to 300px on launch).
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it). Commit/stash mode (`commit-mode` in `modern-ui.css`)
