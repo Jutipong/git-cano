@@ -29,7 +29,7 @@
     "dompurify": "^3.4.16",
     "electron-updater": "^6.8.10",
     "marked": "^18.0.14",
-    "node-pty": "^1.1.0",
+    "node-pty": "1.2.0-beta.15",
     "pinia": "^4.0.3",
     "pinia-plugin-persistedstate": "^4.7.1",
     "simple-git": "^4.0.2",

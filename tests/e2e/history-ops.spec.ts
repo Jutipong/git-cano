@@ -35,6 +35,9 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
     await handle?.app.close()
+    // palette/terminal/workspace treat ops-repo as the shared clean fixture, but undo of the revert
+    // above is a soft reset — the reverted deletions stay staged. Put the repo back clean for them.
+    cleanTree()
 })
 
 test('undo: a commit is journaled and undo restores HEAD', async () => {

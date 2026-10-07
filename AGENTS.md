@@ -31,6 +31,10 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
   it must stay in `rollupOptions.external` in `electron.vite.config.ts` because its CJS loader
   requires those binaries with paths relative to its own folder. `allowBuilds: node-pty` in
   `pnpm-workspace.yaml` lets pnpm run its install script (which picks the right prebuild).
+  It is pinned to the `1.2.0-beta.15` pre-release on purpose: stable `1.1.0` (npm `latest`) has an
+  unsynchronized `ptyHandles` use-after-free that crashes the whole main process when a PTY is killed
+  (microsoft/node-pty#921, fixed by #922, shipped only in the 1.2.0 betas) — never let
+  `pnpm update --latest` / `uplib` pull the stable line back over it.
 
 ## Architecture
 
