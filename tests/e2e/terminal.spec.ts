@@ -119,6 +119,9 @@ test('terminal tabs rename on double-click and keep their number through a reord
     // Rename each so the later drag is unambiguous even if the derived labels ever collide.
     const rename = async (index: number, name: string) => {
         await panel.locator('.terminal-tab-label').nth(index).dblclick()
+        // `.fill()` focuses the field itself — assert the app put the caret there, or a broken
+        // focus call (a v-for ref collected as an array) would slip through.
+        await expect(panel.locator('.terminal-tab-rename')).toBeFocused()
         await panel.locator('.terminal-tab-rename').fill(name)
         await page.keyboard.press('Enter')
     }

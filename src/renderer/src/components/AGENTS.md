@@ -222,6 +222,12 @@ Panel/modal component patterns. Loaded automatically when working under
   in `onMounted` — native `autofocus` alone only focuses the first open, never the reopen.
   Persistently-mounted store modals (`PromptDialog.vue`, `ConfirmDialog.vue`, `ErrorDialog.vue`)
   focus via `watch(..., { flush: 'post' })` instead.
+- **A template ref inside `v-for` is collected as an array** (the compiler emits `ref_for: true` and
+  Vue writes `[element]` into the ref), so a single `ref="name"` in a loop makes
+  `ref.value?.focus()` throw "… is not a function" — the box renders but never gets the caret.
+  Use a keyed function ref (`:ref="el => (inputs[key] = el as HTMLInputElement | null)"` →
+  `inputs.value[key]`), as `TerminalPanel.vue` (`views`, `renameInputs`) and `WorkspaceButton.vue`
+  (`renameInputs`) do. Do not "fix" this by indexing `ref.value[0]` — the ref carries no stable type.
 - **Create-form modals share the confirm family**: `TagCreateModal.vue`, `StashCreateModal.vue`
   and `PromptDialog.vue` (branch create) all use `.confirm-dialog-overlay` + `.confirm-dialog`
   + `.confirm-dialog-header.flow` (icon + title + optional `chip`/`prompt-chip` context) +

@@ -36,6 +36,21 @@ test('workspace create + switch away and back restores the tabs', async () => {
     await expect(page.locator('.graph-row').first()).toBeVisible()
 })
 
+test('workspace rename places the caret in the name field', async () => {
+    await page.locator('.workspace-btn').click()
+    const row = page.locator('.workspace-row', { hasText: 'Alt' })
+    // The rename pencil is display:none until the row is hovered.
+    await row.hover()
+    await row.getByTitle('Rename workspace').click()
+    const input = page.locator('.workspace-pop .workspace-add-input')
+    // Regression: the v-for string ref collected an array, so focus() threw and the box never focused.
+    await expect(input).toBeFocused()
+    await input.fill('Alt2')
+    await page.keyboard.press('Enter')
+    await expect(page.locator('.workspace-pop .workspace-item', { hasText: 'Alt2' })).toBeVisible()
+    await page.locator('.workspace-btn').click()
+})
+
 test.describe('cross-workspace repo search', () => {
     let alt: AppHandle
     let altPage: Page

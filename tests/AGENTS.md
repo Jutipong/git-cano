@@ -32,6 +32,9 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
 - Use UI assertions for behavior and `window.api` for setup/verification:
   `(window as unknown as { api: any }).api.<call>()`. Never assert on renderer internals.
 - Determinism: no network. The AI test uses a fake token and only asserts the call fails fast with bounded memory.
+- **`.fill()` focuses the field itself**, so it cannot catch a missing app-side focus call (rename
+  boxes, inline inputs). Assert `await expect(locator).toBeFocused()` before filling whenever the app
+  is responsible for placing the caret.
 - `GIT_CANO_LOG_LEVEL=debug` is safe (baseEnv strips every `git*` key before spawning git). Any new `GIT_*` env
   injected into git must be added to `SAFE_UNSAFE_OPTIONS.allowEnvironment` first, or every spawn will throw.
 - Selector conventions: `.repo-tab`, `.graph-row`, `.file-row`, `.diff-line` / `.split-pane`, `.diff-body`,

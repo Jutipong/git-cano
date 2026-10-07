@@ -66,14 +66,17 @@
     /** Double-click a tab label to rename it; Enter/blur confirms, Esc restores the derived name. */
     const renamingId = ref<string | null>(null)
     const renameValue = ref('')
-    const renameInput = ref<HTMLInputElement | null>(null)
+    // A ref inside v-for is collected as an array (ref_for), so the input is addressed per tab id —
+    // same keyed function-ref pattern as `views` below.
+    const renameInputs = ref<Record<string, HTMLInputElement | null>>({})
 
     function startRename(id: string) {
         renamingId.value = id
         renameValue.value = tabLabel(id)
         void nextTick(() => {
-            renameInput.value?.focus()
-            renameInput.value?.select()
+            const input = renameInputs.value[id]
+            input?.focus()
+            input?.select()
         })
     }
 
@@ -134,7 +137,7 @@
                     @dragend="onDragEnd">
                     <input
                         v-if="renamingId === tab.id"
-                        ref="renameInput"
+                        :ref="el => (renameInputs[tab.id] = el as HTMLInputElement | null)"
                         v-model="renameValue"
                         class="terminal-tab-rename"
                         type="text"

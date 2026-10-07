@@ -27,7 +27,9 @@
     const nameInput = ref<HTMLInputElement | null>(null)
     const renaming = ref('')
     const renameValue = ref('')
-    const renameInput = ref<HTMLInputElement | null>(null)
+    // A ref inside v-for is collected as an array (ref_for), so the input is addressed per name —
+    // a keyed function ref (like TerminalPanel's `views`) is the only safe pattern here.
+    const renameInputs = ref<Record<string, HTMLInputElement | null>>({})
     const draggingName = ref<string | null>(null)
 
     const isDuplicate = computed(() => {
@@ -70,8 +72,9 @@
         renaming.value = name
         renameValue.value = name
         nextTick(() => {
-            renameInput.value?.focus()
-            renameInput.value?.select()
+            const input = renameInputs.value[name]
+            input?.focus()
+            input?.select()
         })
     }
 
@@ -217,7 +220,7 @@
                 @dragend="onDragEnd">
                 <template v-if="renaming === name">
                     <input
-                        ref="renameInput"
+                        :ref="el => (renameInputs[name] = el as HTMLInputElement | null)"
                         v-model="renameValue"
                         class="workspace-add-input"
                         :class="{ invalid: isRenameDuplicate }"
