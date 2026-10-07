@@ -176,6 +176,13 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   Alt+Enter (toggles full height) while the terminal panel is focused: they belong to the app like in
   Windows Terminal, so a focused TUI never sees them there (it loses readline's delete-word for Ctrl+W
   and the `ESC+CR` Alt+Enter may carry for TUIs).
+- **Double-Shift stays in the bubble handler**: it must not fire while typing in text fields
+  (`input` / `textarea` / `contenteditable`), or capital letters would open the palette. The xterm
+  helper textarea is the one exemption (`.terminal-panel .xterm`), so the palette opens from a
+  focused shell like Ctrl+P does. The pending tap's reset lives in the **capture** twin: xterm
+  cancels (stopPropagation) character keys, so the bubble handler never sees letters typed in the
+  shell — without the capture reset, fast capitals would leave the tap armed and fire the palette.
+  `lastShiftTap` lives with the keydown handlers in `App.vue`.
 - Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom
   and close tab, which are intentionally handled above the gate in `App.vue`
   (close tab still no-ops on busy and on unknown indexes via its own guards).

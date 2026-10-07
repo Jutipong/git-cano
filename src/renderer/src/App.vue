@@ -345,6 +345,10 @@
          * combos act inside, so every other Alt key still reaches the shell untouched.
          */
         const onKeyDownCapture = (event: KeyboardEvent) => {
+            // A non-Shift key breaks a pending double-Shift tap. This has to run here: xterm cancels
+            // (preventDefault + stopPropagation) character keys, so the bubble handler never sees the
+            // letters typed in the shell, and fast capitals would leave the tap armed for the palette.
+            if (event.key !== 'Shift') lastShiftTap = 0
             if (uiTransient.busy) return
             if (event.metaKey || event.ctrlKey || event.altKey) {
                 if (handleAppShortcut(eventToCombo(event), event)) event.stopPropagation()
@@ -389,7 +393,12 @@
             // otherwise capital letters would fire it
             if (event.key === 'Shift' && !event.repeat && !event.ctrlKey && !event.metaKey && !event.altKey) {
                 const target = event.target as HTMLElement | null
-                if (!target?.closest('input, textarea, [contenteditable="true"]')) {
+                const editable = target?.closest('input, textarea, [contenteditable="true"]')
+                // xterm's hidden helper textarea is a <textarea>, but the shell isn't a DOM text
+                // field — the palette opens from a focused shell too (Ctrl+P already does via the
+                // capture twin). A terminal tab's rename input stays blocked like any other field.
+                const inTerminalShell = !!target?.closest('.terminal-panel .xterm')
+                if (!editable || inTerminalShell) {
                     const now = Date.now()
                     if (now - lastShiftTap < DOUBLE_SHIFT_MS) {
                         lastShiftTap = 0

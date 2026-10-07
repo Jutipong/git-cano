@@ -239,6 +239,21 @@ test('Ctrl+` toggles the panel, and the palette kills everything', async () => {
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 
+    // Double-Shift opens the palette from the shell too: xterm's helper textarea is exempt from the
+    // text-field guard, while a key in between breaks the pending tap so capital letters can't fire it.
+    await page.keyboard.press('Shift')
+    await page.keyboard.press('Shift')
+    await expect(page.locator('.palette-input')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.palette-input')).toHaveCount(0)
+
+    const shell = page.locator('.terminal-view:visible .xterm-helper-textarea')
+    await shell.focus()
+    await page.keyboard.press('Shift')
+    await page.keyboard.press('a')
+    await page.keyboard.press('Shift')
+    await expect(page.locator('.palette-input')).toHaveCount(0)
+
     await page.keyboard.press('Control+p')
     await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
