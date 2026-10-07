@@ -15,10 +15,13 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
     tokenizer state, graph interactions, AI context cap).
   - `conflict.spec.ts` covers the conflict flow.
   - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
-    panel per repo, full overlay geometry, terminal-only font size, rename + drag reorder, the
-    four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
-    the palette entries, Settings → Terminal). Scope panel actions with `.terminal-panel:visible` —
-    every repo keeps its own panel mounted.
+    panel per repo, full overlay geometry, full-mode persistence across a hide (`Ctrl+`` / palette)
+    vs the header hide button collapsing to the strip, the keyboard returning to the active shell on
+    show and around the full-height toggle, terminal-only font size, rename + drag reorder,
+    the four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
+    `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
+    tab), the `:focus-within` focus edge, the palette entries, Settings → Terminal). Scope panel
+    actions with `.terminal-panel:visible` — every repo keeps its own panel mounted.
   - `fixtures.ts` creates throwaway repos in the OS temp dir (`globalSetup` writes a metadata file the specs load).
   - `launch.ts` is the only way to start the app in tests.
 

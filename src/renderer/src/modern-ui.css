@@ -6310,6 +6310,21 @@ body {
     box-shadow: 0 3px 14px var(--shadow);
 }
 
+/* Keyboard focus inside the panel: a teal edge marks where Ctrl+W closes the shell's tab instead
+   of the repo's tab. `:focus-within` matches the exact condition the shortcut checks
+   (isTerminalPanelFocused in App.vue), so the edge always predicts what Ctrl+W will do. */
+.terminal-panel:focus-within {
+    border-top-color: color-mix(in srgb, var(--teal) 55%, var(--line-soft));
+    box-shadow: 0 -1px 0 color-mix(in srgb, var(--teal) 45%, transparent);
+}
+
+.terminal-panel.terminal-overlay:focus-within {
+    border-color: color-mix(in srgb, var(--teal) 45%, var(--line-soft));
+    box-shadow:
+        0 3px 14px var(--shadow),
+        0 0 0 1px color-mix(in srgb, var(--teal) 40%, transparent);
+}
+
 .terminal-header {
     display: flex;
     align-items: center;

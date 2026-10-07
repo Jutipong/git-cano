@@ -75,6 +75,8 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     // Every repo keeps its own panel mounted, so always act on the one on screen.
     await page.locator('.terminal-panel:visible .icon-btn[title="Full height"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    // The teleport move must hand the keyboard back to the shell — both directions.
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
     const tabsAfter = await page.locator('.tab-bar').boundingBox()
     expect(tabsAfter?.y).toBe(tabsBefore?.y)
     expect(tabsAfter?.height).toBe(tabsBefore?.height)
@@ -83,6 +85,48 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     expect(panel?.y).toBeGreaterThan(tabsAfter!.y + tabsAfter!.height - 1)
 
     await page.locator('.terminal-panel:visible .icon-btn[title="Exit full height"]').click()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+})
+
+test('Ctrl+` and the palette remember full mode across a hide; the header hide button collapses to the strip', async () => {
+    const panel = page.locator('.terminal-panel:visible')
+    const fullBtn = panel.locator('.icon-btn[title="Full height"]')
+
+    // Ctrl+` hides the overlay and brings it back untouched, keyboard included.
+    await fullBtn.click()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await page.keyboard.press('Control+`')
+    await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
+    await page.keyboard.press('Control+`')
+    await expect(panel).toBeVisible()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+
+    // The header hide button drops the full-height state: the next show lands on the bottom strip.
+    await panel.locator('.icon-btn[title*="Hide panel"]').click()
+    await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
+    await page.keyboard.press('Control+`')
+    await expect(panel).toBeVisible()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
+
+    // The palette toggle behaves like Ctrl+`: hide, then show straight back into the overlay.
+    await fullBtn.click()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    const paletteTerminal = page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: /^Terminal$/ }) })
+    await page.keyboard.press('Control+p')
+    await paletteTerminal.click()
+    await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
+    await page.keyboard.press('Control+p')
+    await paletteTerminal.click()
+    await expect(panel).toBeVisible()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+
+    // Leave the suite where the neighbouring tests expect it: bottom strip, panel visible.
+    await panel.locator('.icon-btn[title="Exit full height"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
@@ -171,9 +215,14 @@ test('the header ✕ closes every shell of its repo behind a confirm', async () 
 test('Ctrl+` toggles the panel, and the palette kills everything', async () => {
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
+    await page.waitForSelector('.terminal-view:visible .xterm', { timeout: 30_000 })
 
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-panel')).toBeHidden()
+
+    // Showing again hands the keyboard back to the shell — type without clicking first.
+    await page.keyboard.press('Control+`')
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 
     await page.keyboard.press('Control+p')
     await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
@@ -418,6 +467,46 @@ test('Ctrl+click opens a printed URL through the OS browser bridge, a plain clic
     await page.locator('.terminal-panel:visible .diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
+test('Ctrl+W closes the focused terminal tab behind a confirm, and the repo tab otherwise', async () => {
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await panel.locator('.terminal-tab-add').click()
+    await expect(panel.locator('.terminal-tab')).toHaveCount(2)
+
+    // Keyboard in the shell: the panel reads as focused (the teal `:focus-within` edge, the same
+    // condition the shortcut checks) and Ctrl+W belongs to the shell's tab.
+    const shell = page.locator('.terminal-view:visible .xterm-helper-textarea')
+    await shell.focus()
+    expect(await panel.evaluate(el => el.matches(':focus-within'))).toBe(true)
+    await page.locator('.commit-search input').click()
+    expect(await panel.evaluate(el => el.matches(':focus-within'))).toBe(false)
+    await shell.focus()
+
+    const activeLabel = await panel.locator('.terminal-tab.active .terminal-tab-label').innerText()
+    await page.keyboard.press('Control+w')
+    await expect(page.locator('.confirm-dialog-header')).toContainText(`Close ${activeLabel}`)
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(panel.locator('.terminal-tab')).toHaveCount(1)
+
+    // Cancelling keeps the shell alive and hands the keyboard back, so the next press still targets
+    // the terminal tab instead of falling through to the repo tab behind it.
+    await shell.focus()
+    await page.keyboard.press('Control+w')
+    await page.locator('.confirm-dialog button', { hasText: 'Cancel' }).click()
+    await expect(shell).toBeFocused()
+    await expect(panel.locator('.terminal-tab')).toHaveCount(1)
+
+    // The last shell takes the panel down with it — focus lands nowhere near a terminal.
+    await page.keyboard.press('Control+w')
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+
+    // Focus outside the terminal: Ctrl+W is the fixed repo-tab close again.
+    await page.locator('.commit-search input').click()
+    await page.keyboard.press('Control+w')
+    await expect(page.locator('.repo-tab')).toHaveCount(0)
 })
 
 test.describe('workspace switches', () => {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { storeToRefs } from 'pinia'
-    import { computed, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+    import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
     import ILucideArchive from '~icons/lucide/archive'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowDownToLine from '~icons/lucide/arrow-down-to-line'
@@ -90,6 +90,8 @@
      * the buffers of shells that are still running.
      */
     const terminalPaths = computed(() => Object.keys(terminalStore.terminals))
+    /** Panel handles keyed by repo path — a v-for template ref needs the keyed function-ref form. */
+    const terminalPanels = ref<Record<string, { focusActive: () => void } | null>>({})
     /** Path of the repo whose terminal is on screen (the active tab). */
     const activeRepoPath = computed(() => repo?.value?.path ?? null)
     /** True while this repo's panel is the one on screen (active tab, not toggled away). */
@@ -251,8 +253,9 @@
         let lastShiftTap = 0
 
         /**
-         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle/kill-all and
-         * commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
+         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs
+         * (Ctrl+T / Ctrl+1…9), Ctrl+W while the terminal panel is focused (closes the shell's tab)
+         * and commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
          *
          * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell
          * would otherwise swallow Ctrl+P / Ctrl+, / Ctrl+O entirely — the capture-phase listener
@@ -287,7 +290,7 @@
             // Killing every shell is palette-only (confirm-guarded) — no shortcut, too easy to fat-finger.
             if (combo === ui.getShortcut('terminal') && repoStore.repo) {
                 event.preventDefault()
-                void toggleTerminal()
+                void toggleTerminal({ keepExpanded: true })
                 return true
             }
             // Terminal tabs of the active repo (fixed Windows-Terminal-style combos, captured before
@@ -302,6 +305,14 @@
             if (terminalTab && repoStore.repo && terminalStore.terminalExists(activeRepoPath.value ?? '')) {
                 event.preventDefault()
                 jumpToTerminalTab(Number(terminalTab[1]))
+                return true
+            }
+            // Ctrl+W with the keyboard in the terminal panel targets the shell's tab, not the repo
+            // tab: xterm stops character keys, so this has to run in the capture-phase twin. Every
+            // other case stays with the fixed Ctrl+W block in the bubble handler (see onKeyDown).
+            if (combo === 'Ctrl+W' && isTerminalPanelFocused()) {
+                event.preventDefault()
+                void closeActiveTerminalTabByKeyboard()
                 return true
             }
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
@@ -507,9 +518,9 @@
     }
 
     /** Ask to close one terminal tab — its shell and scrollback die, so this always confirms. */
-    async function confirmCloseTerminalTab(path: string, id: string): Promise<void> {
+    async function confirmCloseTerminalTab(path: string, id: string): Promise<boolean> {
         const label = terminalStore.tabLabel(path, id)
-        if (!label) return
+        if (!label) return false
         const ok = await confirmDialog({
             title: `Close ${label}`,
             message: 'Closing this terminal will end its shell session and clear its scrollback.',
@@ -517,6 +528,7 @@
             danger: true,
         })
         if (ok) terminalStore.closeTerminalTab(path, id)
+        return ok
     }
 
     /** Panel `+` / Ctrl+T — spawn another shell for this repo; the per-repo cap is a silent no-op. */
@@ -539,18 +551,51 @@
         if (!path || !tab) return
         terminalStore.showTerminals(path)
         terminalStore.setActiveTerminal(path, tab.id)
+        // Same promise as Ctrl+` on show: the shell on screen takes the keyboard. A tab change
+        // focuses through the panel's activeId watcher already; this also covers jumping to the
+        // tab that stayed active while the panel sat hidden.
+        void nextTick(() => terminalPanels.value[path]?.focusActive())
+    }
+
+    /** True while the keyboard focus sits inside a terminal panel (hidden panels can't hold focus). */
+    function isTerminalPanelFocused(): boolean {
+        const active = document.activeElement
+        return active instanceof Element && !!active.closest('.terminal-panel')
+    }
+
+    /**
+     * Ctrl+W with the keyboard in the terminal panel — closes the shell's tab through the same
+     * confirm as its ✕. A cancelled dialog hands focus back to the shell: the dialog moved it to
+     * its own button, and leaving it there would make the next Ctrl+W close the repo tab instead.
+     */
+    async function closeActiveTerminalTabByKeyboard() {
+        const path = activeRepoPath.value
+        const id = path ? terminalStore.repoTerminals(path)?.activeId : null
+        if (!path || !id) return
+        const focused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+        const closed = await confirmCloseTerminalTab(path, id)
+        if (!closed) focused?.focus()
     }
 
     /**
      * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has
      * none, otherwise show or hide the panel. It never kills anything — the ✕ buttons own that.
+     * `keepExpanded` stays off for the toolbar button, which doubles as the "back to the graph"
+     * gesture; the keyboard/palette toggle passes it, so a full-height panel comes back as an overlay.
+     * Showing always hands the keyboard back to the active shell — a repo/workspace switch does not
+     * (the panel only becomes visible there, the user never asked to switch into the terminal).
      */
-    async function toggleTerminal() {
+    async function toggleTerminal(options?: { keepExpanded?: boolean }) {
         const path = repoStore.tabs[repoStore.activeTab]?.path
         if (!path) return
         if (terminalStore.terminalExists(path)) {
-            if (terminalStore.panelVisible(path)) terminalStore.hideTerminals(path)
-            else terminalStore.showTerminals(path)
+            if (terminalStore.panelVisible(path)) terminalStore.hideTerminals(path, options)
+            else {
+                terminalStore.showTerminals(path)
+                // Hidden panels are `display: none`, which blurred the shell's textarea.
+                await nextTick()
+                terminalPanels.value[path]?.focusActive()
+            }
             return
         }
         const available = await window.api.terminalAvailable().catch(() => false)
@@ -594,6 +639,9 @@
     /** Expand the terminal over the whole center column (graph hidden) or restore its height. */
     function toggleTerminalExpand(path: string) {
         terminalStore.setExpanded(path, !terminalStore.isExpanded(path))
+        // The teleport move detaches the panel (and the click focused the header button), so the
+        // keyboard has to come back to the active shell — same promise as showing the panel.
+        void nextTick(() => terminalPanels.value[path]?.focusActive())
     }
 
     async function run(label: string, fn: () => Promise<unknown>, busyLabel = 'Working…') {
@@ -893,6 +941,7 @@
                                     :disabled="!isExpandedTerminal(path)">
                                     <TerminalPanel
                                         v-show="isTerminalVisible(path)"
+                                        :ref="el => (terminalPanels[path] = el as { focusActive: () => void } | null)"
                                         :repo-path="path"
                                         :expanded="isExpandedTerminal(path)"
                                         :visible="isTerminalVisible(path)"
@@ -1039,7 +1088,7 @@
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
             @open-repo="openNewRepo"
-            @toggle-terminal="toggleTerminal"
+            @toggle-terminal="toggleTerminal({ keepExpanded: true })"
             @kill-all-terminals="killAllTerminals" />
         <ChangelogModal
             v-if="updater.changelogOpen"

@@ -63,6 +63,15 @@
         if (id) void nextTick(() => views.value[id]?.focus())
     })
 
+    /**
+     * Called when the panel is shown again (Ctrl+` / palette / toolbar) — hidden panels are
+     * `display: none`, which blurs the xterm textarea, so the keyboard has to come back explicitly.
+     */
+    function focusActive() {
+        const id = activeId.value
+        if (id) views.value[id]?.focus()
+    }
+
     /** Double-click a tab label to rename it; Enter/blur confirms, Esc restores the derived name. */
     const renamingId = ref<string | null>(null)
     const renameValue = ref('')
@@ -120,6 +129,8 @@
     function onDragEnd() {
         draggingId.value = null
     }
+
+    defineExpose({ focusActive })
 </script>
 
 <template>

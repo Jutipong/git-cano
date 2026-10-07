@@ -158,11 +158,16 @@ export const useTerminalStore = defineStore('terminal', () => {
         setRepoTerminals(path, { ...state, hidden: false })
     }
 
-    /** Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them. */
-    function hideTerminals(path: string) {
+    /**
+     * Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them.
+     * `keepExpanded` keeps the full-height state for the toggle-style entries (Ctrl+` / palette), so
+     * showing the panel again restores the overlay; without it the panel collapses to the bottom strip
+     * (the panel's own chevron and the toolbar button are the "back to the graph" gestures).
+     */
+    function hideTerminals(path: string, options?: { keepExpanded?: boolean }) {
         const state = repoTerminals(path)
         if (!state || state.hidden) return
-        setRepoTerminals(path, { ...state, hidden: true, expanded: false })
+        setRepoTerminals(path, { ...state, hidden: true, expanded: options?.keepExpanded ? state.expanded : false })
     }
 
     /** Expands the panel to the full-height overlay or back to the bottom strip. */

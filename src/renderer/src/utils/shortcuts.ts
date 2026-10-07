@@ -17,7 +17,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'push', label: 'Push', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
     { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
     { id: 'cloneRepo', label: 'Clone repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
-    { id: 'closeTab', label: 'Close tab', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
+    { id: 'closeTab', label: 'Close tab / terminal', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
     { id: 'terminal', label: 'Toggle terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
     { id: 'terminalNewTab', label: 'New terminal tab', mac: ['Ctrl+T'], win: ['Ctrl+T'] },
     { id: 'terminalTabJump', label: 'Terminal tab 1…9', mac: ['Ctrl+1…9'], win: ['Ctrl+1…9'] },

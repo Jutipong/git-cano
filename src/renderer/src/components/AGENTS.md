@@ -139,6 +139,13 @@ Panel/modal component patterns. Loaded automatically when working under
   session — a repo switch, a workspace switch or the show/hide toggle only hides them. Never key the
   panel by the active repo or by tab index: that would unmount an xterm, and its PTY would keep
   running with no buffer behind it.
+- **Showing the panel returns the keyboard to the shell**: a hidden panel is `display: none`, which
+  blurs the focused xterm textarea, so `App.vue` keeps keyed panel refs (`terminalPanels`) and calls
+  the exposed `focusActive()` after `showTerminals` in the `Ctrl+` / palette / toolbar toggle (and
+  after a `Ctrl+1…9` jump) — the shell is ready to type without a click. The maximize/restore toggle
+  (`toggleTerminalExpand`) does the same, because its teleport move detaches the panel and would
+  otherwise drop focus to `<body>` in both directions. Repo/workspace switches only make a panel
+  visible; they must not steal focus from the graph or the tab bar.
 - **Thai rendering is the whole point of this panel** — do not “optimise” it away:
   xterm 6's DOM renderer (never `addon-canvas`/`addon-webgl`, which do no Thai shaping),
   `Unicode11Addon` with `unicode.activeVersion = '11'` (needs `allowProposedApi: true` in xterm 6),
@@ -182,8 +189,10 @@ Panel/modal component patterns. Loaded automatically when working under
   and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: rightPanelWidth + 12px` clears the Changes pane) and hides the graph — it carries
-  `.icon-btn.active` while expanded. Hide (`chevron-down`) collapses the panel back into the graph
-  toolbar button / `Ctrl+` / palette and never touches the shells; the ✕ kills every shell of THIS
+  `.icon-btn.active` while expanded. Hide (`chevron-down`) never touches the shells and drops the
+  full-height state — the panel comes back as the bottom strip; the `Ctrl+` / palette toggle keeps
+  it instead (`hideTerminals(path, { keepExpanded })` in `terminal.ts`), so showing the panel again
+  restores the overlay. The ✕ kills every shell of THIS
   repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
   strip shares the diff-view scale: 31px pills (tab, `+`, the two `.segmented` groups), 25px
   buttons with 15px icons inside them, a 12px mono tab label and an 88px tab minimum; the
@@ -209,6 +218,13 @@ Panel/modal component patterns. Loaded automatically when working under
   the "keep shell combos in the bubble handler" rule). A missing tab and the per-repo cap are silent
   no-ops (no toast); a hidden panel is shown first. The combos are reserved in `isReservedCombo` and
   documented in `SHORTCUTS`.
+- **Ctrl+W follows the keyboard**: while focus is inside a terminal panel (`isTerminalPanelFocused()`
+  in `App.vue`, consulted by the capture-phase twin), Ctrl+W closes the repo's active terminal tab
+  through the same confirm as its ✕ — a cancelled confirm hands focus back to the shell, so the next
+  Ctrl+W still targets the terminal instead of falling through to the repo tab. Focus anywhere else
+  keeps the existing bubble-phase behavior (close the active repo tab). The panel announces this
+  state with a teal edge (`.terminal-panel:focus-within` in `modern-ui.css`); keep that CSS condition
+  in step with the JS check, or the edge stops predicting what Ctrl+W will do.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.

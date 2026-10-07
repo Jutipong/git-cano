@@ -35,7 +35,13 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   ✕ buttons' job alone. `App.vue` mounts one `TerminalPanel` per repo that owns a shell, keyed by
   repo path, and keeps it mounted across repo switches, workspace switches and the toggle, so a
   shell you left behind is still there (and still running) when you come back. The graph is only
-  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). Drag the
+  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). `Ctrl+` / the
+  palette toggle remember the full-height state across a hide (the overlay comes back), while the
+  panel's own hide button is the collapse-to-strip gesture (`hideTerminals(path, { keepExpanded })`
+  in `terminal.ts`). Showing the panel (`Ctrl+` / palette / toolbar) and the maximize/restore toggle
+  always hand the keyboard back to the active shell (`TerminalPanel.focusActive()` — the teleport
+  move would otherwise drop focus to `<body>`) — a repo/workspace switch only makes a panel
+  visible and must not steal focus. Drag the
   `.terminal-splitter` for height (persisted per session, resets to 300px on launch).
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
@@ -110,7 +116,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Clone repo, Close tab, Toggle terminal, New terminal tab, Terminal tab 1…9,
+  Clone repo, Close tab / terminal, Toggle terminal, New terminal tab, Terminal tab 1…9,
   Search commits, Open settings,
   Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
@@ -128,7 +134,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
   palette, Toggle terminal. Click Change… under macOS or Windows then press keys
   (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
-  conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab,
+  conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab / terminal tab,
   terminal tabs `Ctrl+T` / `Ctrl+1…9`) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
@@ -142,7 +148,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Ctrl` and `⌘` both work.
 - Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
-  `Ctrl+W` (fixed, works while typing),
+  `Ctrl+W` (fixed, works while typing — closes the active terminal tab, behind the same confirm as
+  its ✕, while the keyboard is inside a terminal panel, otherwise the active repo tab; the panel's
+  teal top edge via `:focus-within` marks that first case),
   Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
   killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` and terminal tab jump `Ctrl+1…9` (fixed, capture-phase; a missing
@@ -154,13 +162,15 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Esc` to close diff/deselect.
 - **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
   a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
-  (open repo, clone, settings, palette, terminal toggle, terminal tabs, commit search). xterm stops
+  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+W into a focused
+  terminal, commit search). xterm stops
   propagation of character keys, so without the capture listener every one of those combos dies while
   a shell has the keyboard. The capture handler calls `stopPropagation()` after acting, so the bubble
   copy never double-fires. Keep combos the shell owns (Ctrl+Arrows sync, `Esc`, plain typing) out of
   `handleAppShortcut` — they stay in the bubble handler so readline and TUIs still receive them. The
-  one deliberate exception is Ctrl+T / Ctrl+1…9, which belong to the app like in Windows Terminal:
-  a focused TUI never sees them.
+  deliberate exceptions are Ctrl+T / Ctrl+1…9 and Ctrl+W while the terminal panel is focused: they
+  belong to the app like in Windows Terminal, so a focused TUI never sees them (in the focused panel
+  Ctrl+W therefore stops being readline's delete-word — it closes the shell's tab behind a confirm).
 - Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom
   and close tab, which are intentionally handled above the gate in `App.vue`
   (close tab still no-ops on busy and on unknown indexes via its own guards).
