@@ -195,6 +195,13 @@ Panel/modal component patterns. Loaded automatically when working under
   (`shouldActivateTerminalLink` in `utils/terminalLinks.ts`) — never enable plain-click activation,
   and never fall back to the addon's default `window.open` handler: it spawns an Electron window,
   not the user's browser.
+- **Copy is app-implemented on top of the shell's interrupt key** (`terminalCopyDecision` in
+  `utils/terminalCopy.ts` + `attachCustomKeyEventHandler` in `TerminalView.vue`): Ctrl+Shift+C always
+  copies, a plain Ctrl+C on Windows/Linux copies only while text is selected (otherwise xterm's ETX
+  interrupt stays untouched), and macOS uses Cmd+C without ever stealing Ctrl+C. A copy press calls
+  `preventDefault()` and returns `false` so xterm writes no `0x03`, then clears the selection so the
+  next Ctrl+C interrupts a running command again. Never bind a plain Ctrl+C to copy unconditionally —
+  that takes the interrupt away from the shell.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.

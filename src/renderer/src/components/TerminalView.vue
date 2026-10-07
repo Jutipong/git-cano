@@ -3,6 +3,8 @@
     import ILucideTriangleAlert from '~icons/lucide/triangle-alert'
 
     import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY } from '../stores/ui'
+    import { isMac } from '../utils/shortcuts'
+    import { terminalCopyDecision } from '../utils/terminalCopy'
     import { primaryFontFamily, resolveTerminalFontFamily } from '../utils/terminalFont'
     import { shouldActivateTerminalLink } from '../utils/terminalLinks'
 
@@ -289,6 +291,21 @@
         // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs after each render.
         renderDisposer = term.onRender(scheduleBars)
         term.onData(data => void window.api.terminalWrite(props.terminalId, data).catch(() => {}))
+        // Ctrl+C is the shell's interrupt (xterm writes ETX for it) — copy piggybacks Windows-Terminal
+        // style: Ctrl+Shift+C always copies, a plain Ctrl+C copies only while text is selected, and
+        // macOS keeps Cmd+C. Returning false stops xterm from also sending 0x03 on a copy press.
+        term.attachCustomKeyEventHandler(event => {
+            if (!term) return true
+            const action = terminalCopyDecision(event, term.hasSelection(), isMac)
+            if (action === 'pass') return true
+            event.preventDefault()
+            if (action === 'copy') {
+                void navigator.clipboard.writeText(term.getSelection()).catch(() => {})
+                // Clear after copying so the next Ctrl+C goes back to interrupting a running command.
+                term.clearSelection()
+            }
+            return false
+        })
         // Paint whatever the shell already produced while xterm was being built.
         for (const chunk of pending) if (term) term.write(chunk)
         pending.length = 0
