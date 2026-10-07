@@ -211,7 +211,7 @@
                     <button
                         class="icon-btn"
                         :class="{ active: expanded }"
-                        :title="expanded ? 'Exit full height' : 'Full height'"
+                        :title="expanded ? 'Exit full height (Alt+Enter)' : 'Full height (Alt+Enter)'"
                         @click="emit('toggle-expand')">
                         <i-lucide-minimize
                             v-if="expanded"

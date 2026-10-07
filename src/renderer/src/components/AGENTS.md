@@ -225,6 +225,12 @@ Panel/modal component patterns. Loaded automatically when working under
   keeps the existing bubble-phase behavior (close the active repo tab). The panel announces this
   state with a teal edge (`.terminal-panel:focus-within` in `modern-ui.css`); keep that CSS condition
   in step with the JS check, or the edge stops predicting what Ctrl+W will do.
+- **Alt+Enter toggles full height only while the panel has focus**: `handleAppShortcut` matches it
+  behind the same `isTerminalPanelFocused()` guard as Ctrl+W, so the graph, text inputs and any other
+  Alt+Enter habit keep the key; with a shell focused it is captured before xterm and toggles
+  `toggleTerminalExpand`, which hands focus back to the shell like the header button. The header
+  buttons carry the combo in their tooltips (`Full height (Alt+Enter)` / `Exit full height
+  (Alt+Enter)`) — e2e locators match those titles, so update both together.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.

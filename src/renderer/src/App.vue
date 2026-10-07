@@ -254,8 +254,9 @@
 
         /**
          * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs
-         * (Ctrl+T / Ctrl+1…9), Ctrl+W while the terminal panel is focused (closes the shell's tab)
-         * and commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
+         * (Ctrl+T / Ctrl+1…9), Ctrl+W while the terminal panel is focused (closes the shell's tab),
+         * Alt+Enter while it is focused (toggles full height) and commit-search focus. Returns true
+         * when it handled the combo (and preventDefault()s it).
          *
          * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell
          * would otherwise swallow Ctrl+P / Ctrl+, / Ctrl+O entirely — the capture-phase listener
@@ -315,6 +316,15 @@
                 void closeActiveTerminalTabByKeyboard()
                 return true
             }
+            // Alt+Enter is the keyboard twin of the header's maximize button — the terminal-native
+            // fullscreen gesture. Scoped to the focused panel like Ctrl+W, so the graph, inputs and
+            // every other Alt+Enter habit keep the key.
+            if (combo === 'Alt+Enter' && isTerminalPanelFocused()) {
+                event.preventDefault()
+                const path = activeRepoPath.value
+                if (path) toggleTerminalExpand(path)
+                return true
+            }
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
             if (combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
                 event.preventDefault()
@@ -330,10 +340,13 @@
          * The same shortcuts one phase earlier, so they also reach the app while a shell has focus.
          * Stopping propagation keeps the bubble-phase handler from handling them a second time and
          * stops the shell from seeing a key the user bound to the app.
+         *
+         * Alt is routed too because Alt+Enter (terminal full height) is Alt-only — only exact app
+         * combos act inside, so every other Alt key still reaches the shell untouched.
          */
         const onKeyDownCapture = (event: KeyboardEvent) => {
             if (uiTransient.busy) return
-            if (event.metaKey || event.ctrlKey) {
+            if (event.metaKey || event.ctrlKey || event.altKey) {
                 if (handleAppShortcut(eventToCombo(event), event)) event.stopPropagation()
             }
         }

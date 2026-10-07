@@ -20,7 +20,8 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
     show and around the full-height toggle, terminal-only font size, rename + drag reorder,
     the four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
     `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
-    tab), the `:focus-within` focus edge, the palette entries, Settings → Terminal). Scope panel
+    tab), `Alt+Enter` full-height toggle while focused vs outside, the `:focus-within` focus edge,
+    the palette entries, Settings → Terminal). Scope panel
     actions with `.terminal-panel:visible` — every repo keeps its own panel mounted.
   - `fixtures.ts` creates throwaway repos in the OS temp dir (`globalSetup` writes a metadata file the specs load).
   - `launch.ts` is the only way to start the app in tests.

@@ -117,7 +117,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
   Clone repo, Close tab / terminal, Toggle terminal, New terminal tab, Terminal tab 1…9,
-  Search commits, Open settings,
+  Terminal full height, Search commits, Open settings,
   Command palette, Show shortcuts — with
   dividers under the header, after Push, and after Command palette. Every
   entry there must have a real handler. The global `keydown` handler in
@@ -135,7 +135,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   palette, Toggle terminal. Click Change… under macOS or Windows then press keys
   (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab / terminal tab,
-  terminal tabs `Ctrl+T` / `Ctrl+1…9`) or other customized ids
+  terminal tabs `Ctrl+T` / `Ctrl+1…9`, `Alt+Enter` terminal full height) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
   default-equal values are pruned, legacy single-string values migrate to both platforms) with `getShortcut(id, platform?)` /
@@ -155,6 +155,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` and terminal tab jump `Ctrl+1…9` (fixed, capture-phase; a missing
   tab/jump past the end and the per-repo cap are silent no-ops),
+  Terminal full height `Alt+Enter` (fixed, capture-phase; toggles the overlay only while the
+  keyboard is inside a terminal panel — with focus anywhere else the key falls through untouched;
+  the header buttons' tooltips carry the combo),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
@@ -162,15 +165,17 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Esc` to close diff/deselect.
 - **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
   a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
-  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+W into a focused
-  terminal, commit search). xterm stops
+  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+W and Alt+Enter into a
+  focused terminal, commit search). The capture gate routes Ctrl/Cmd **and** Alt — only the exact app
+  combos act, every other Alt key still reaches the shell. xterm stops
   propagation of character keys, so without the capture listener every one of those combos dies while
   a shell has the keyboard. The capture handler calls `stopPropagation()` after acting, so the bubble
   copy never double-fires. Keep combos the shell owns (Ctrl+Arrows sync, `Esc`, plain typing) out of
   `handleAppShortcut` — they stay in the bubble handler so readline and TUIs still receive them. The
-  deliberate exceptions are Ctrl+T / Ctrl+1…9 and Ctrl+W while the terminal panel is focused: they
-  belong to the app like in Windows Terminal, so a focused TUI never sees them (in the focused panel
-  Ctrl+W therefore stops being readline's delete-word — it closes the shell's tab behind a confirm).
+  deliberate exceptions are Ctrl+T / Ctrl+1…9, Ctrl+W (closes the shell's tab behind a confirm) and
+  Alt+Enter (toggles full height) while the terminal panel is focused: they belong to the app like in
+  Windows Terminal, so a focused TUI never sees them there (it loses readline's delete-word for Ctrl+W
+  and the `ESC+CR` Alt+Enter may carry for TUIs).
 - Busy gate: while `uiTransient.busy` is set, shortcuts are ignored — except app zoom
   and close tab, which are intentionally handled above the gate in `App.vue`
   (close tab still no-ops on busy and on unknown indexes via its own guards).

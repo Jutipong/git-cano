@@ -73,7 +73,7 @@ test('the second repo owns its own panel and keeps its shell while the first is 
 test('full mode overlays the graph without moving the repo tab bar', async () => {
     const tabsBefore = await page.locator('.tab-bar').boundingBox()
     // Every repo keeps its own panel mounted, so always act on the one on screen.
-    await page.locator('.terminal-panel:visible .icon-btn[title="Full height"]').click()
+    await page.locator('.terminal-panel:visible .icon-btn[title="Full height (Alt+Enter)"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
     // The teleport move must hand the keyboard back to the shell — both directions.
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
@@ -84,14 +84,29 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     const panel = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
     expect(panel?.y).toBeGreaterThan(tabsAfter!.y + tabsAfter!.height - 1)
 
-    await page.locator('.terminal-panel:visible .icon-btn[title="Exit full height"]').click()
+    await page.locator('.terminal-panel:visible .icon-btn[title="Exit full height (Alt+Enter)"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+
+    // Alt+Enter toggles the same state from the focused shell, and the keyboard stays in it.
+    const shell = page.locator('.terminal-view:visible .xterm-helper-textarea')
+    await shell.focus()
+    await page.keyboard.press('Alt+Enter')
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await expect(shell).toBeFocused()
+    await page.keyboard.press('Alt+Enter')
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
+    await expect(shell).toBeFocused()
+
+    // Scoped to the panel: with focus elsewhere the combo stays out of the app.
+    await page.locator('.commit-search input').click()
+    await page.keyboard.press('Alt+Enter')
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
 test('Ctrl+` and the palette remember full mode across a hide; the header hide button collapses to the strip', async () => {
     const panel = page.locator('.terminal-panel:visible')
-    const fullBtn = panel.locator('.icon-btn[title="Full height"]')
+    const fullBtn = panel.locator('.icon-btn[title="Full height (Alt+Enter)"]')
 
     // Ctrl+` hides the overlay and brings it back untouched, keyboard included.
     await fullBtn.click()
@@ -126,7 +141,7 @@ test('Ctrl+` and the palette remember full mode across a hide; the header hide b
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 
     // Leave the suite where the neighbouring tests expect it: bottom strip, panel visible.
-    await panel.locator('.icon-btn[title="Exit full height"]').click()
+    await panel.locator('.icon-btn[title="Exit full height (Alt+Enter)"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
