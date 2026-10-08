@@ -246,8 +246,11 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
 - **Windows shells must force UTF-8 as their first action** (`shellCommand()`): ConPTY opens the
   pseudo-console with codepage 437, so anything writing raw bytes (`type`, `git log`, most CLI tools)
   comes out as mojibake. `cmd.exe` gets `/k "chcp 65001 >nul"` and both PowerShell flavours get
-  `-NoExit -Command "chcp 65001 > $null; [Console]::OutputEncoding=[System.Text.Encoding]::UTF8"`
-  (`POWER_SHELL_ARGS`). Setting `CHCP` in the spawn env does NOT work — only the in-session `chcp`
+  `-NoExit -Command "chcp 65001 > $null; [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)"`
+  (`POWER_SHELL_ARGS`). The BOM-less `UTF8Encoding($false)` matters on Windows PowerShell 5.1:
+  `[System.Text.Encoding]::UTF8` (BOM-emitting) tears the whole process group down under ConPTY —
+  Electron's main process exits code 0 the moment the shell runs it, so picking Windows PowerShell
+  closed the app. Setting `CHCP` in the spawn env does NOT work — only the in-session `chcp`
   call does.
 - Shell choices are `cmd | powershell | pwsh`, and **`pwsh` (PowerShell 7) is the default** — it is an
   optional install, so `shellCommand()` resolves it through a cached PATH scan (`hasPwsh()`, no

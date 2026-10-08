@@ -51,7 +51,7 @@ function loadPty(): PtyModule {
  * into mojibake (`echo ทดสอบ` from a redirecting command). Forcing UTF-8 as the shell's first action
  * fixes raw-byte output (`type`, `git log`, ...) — Node-based CLIs already write UTF-8 themselves.
  */
-const POWER_SHELL_ARGS = ['-NoExit', '-Command', 'chcp 65001 > $null; [Console]::OutputEncoding=[System.Text.Encoding]::UTF8']
+const POWER_SHELL_ARGS = ['-NoExit', '-Command', 'chcp 65001 > $null; [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)']
 
 /** Cached result of the once-per-run PATH scan for pwsh.exe. */
 let pwshInstalled: boolean | null = null
