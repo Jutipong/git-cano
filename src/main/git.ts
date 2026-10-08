@@ -409,8 +409,8 @@ function normalizeGitignorePath(repoRoot: string, target: string): string {
     return relative.split(path.sep).join('/')
 }
 
-async function addGitignoreRule(target: string, kind: GitignoreRuleKind): Promise<string> {
-    const { git: g } = getRepo()
+async function addGitignoreRule(target: string, kind: GitignoreRuleKind, dir?: string): Promise<string> {
+    const { git: g } = dir ? getRepoFor(dir) : getRepo()
     const repoRoot = (await g.revparse(['--show-toplevel'])).trim()
     let rule: string
     if (kind === 'extension') {
@@ -443,12 +443,12 @@ async function addGitignoreRule(target: string, kind: GitignoreRuleKind): Promis
     return rule
 }
 
-export function addIgnoreRule(rule: string): Promise<string> {
+export function addIgnoreRule(rule: string, dir?: string): Promise<string> {
     const trimmed = rule.trim()
     if (!trimmed || /[\0\r\n]/.test(trimmed)) throw new Error('A gitignore rule is required')
-    if (trimmed.startsWith('*.')) return addGitignoreRule(trimmed, 'extension')
-    if (trimmed.endsWith('/')) return addGitignoreRule(trimmed.slice(0, -1), 'directory')
-    return addGitignoreRule(trimmed.replace(/^\//, ''), 'file')
+    if (trimmed.startsWith('*.')) return addGitignoreRule(trimmed, 'extension', dir)
+    if (trimmed.endsWith('/')) return addGitignoreRule(trimmed.slice(0, -1), 'directory', dir)
+    return addGitignoreRule(trimmed.replace(/^\//, ''), 'file', dir)
 }
 
 const MIME_BY_EXT: Record<string, string> = {

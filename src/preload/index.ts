@@ -149,7 +149,7 @@ const api = {
     markdownImage: (mdFile: string, src: string, commitHash?: string | null, stashHash?: string | null): Promise<GitImage | null> =>
         call('markdown:image', mdFile, src, commitHash ?? null, stashHash ?? null),
     listFiles: (commitHash?: string): Promise<string[]> => call('file:list', commitHash),
-    addIgnoreRule: (rule: string): Promise<string> => call('file:addIgnoreRule', rule),
+    addIgnoreRule: (rule: string, repoPath?: string): Promise<string> => call('file:addIgnoreRule', rule, repoPath),
 
     diff: (file: string, staged: boolean, context?: number): Promise<DiffLine[]> => call('file:diff', file, staged, context),
     diffMeta: (file: string, staged: boolean): Promise<{ binary: boolean; image: boolean }> => call('file:diffMeta', file, staged),

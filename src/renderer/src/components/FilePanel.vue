@@ -521,10 +521,19 @@
             path,
             untracked: isWorkdir.value && file ? isUntracked(file as FileEntry) : false,
             deleted: !isWorkdir.value && !!file && unifiedCommitFile(file).status === 'D',
+            workdir: isWorkdir.value,
+            repoPath: repoStore.repo?.path,
         }
     }
     function openDirectoryMenu(event: MouseEvent, path: string) {
-        menu.value = { x: event.clientX, y: event.clientY, path, directory: true }
+        menu.value = {
+            x: event.clientX,
+            y: event.clientY,
+            path,
+            directory: true,
+            workdir: isWorkdir.value,
+            repoPath: repoStore.repo?.path,
+        }
     }
 
     const STATUS_LABEL: Record<string, string> = {

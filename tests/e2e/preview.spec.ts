@@ -50,6 +50,21 @@ test('file history modal opens from the file context menu', async () => {
     await expect(page.locator('.history-view')).toHaveCount(0)
 })
 
+test('ignore submenu is only offered for worktree files', async () => {
+    await page.locator('.file-row', { hasText: 'notes.md' }).first().click({ button: 'right' })
+    await expect(page.locator('.file-context-menu-wrap')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.file-context-menu')).toHaveCount(0)
+
+    await page.locator('.graph-row').nth(1).click()
+    const commitFile = page.locator('.commit-file-block .file-row').first()
+    await expect(commitFile).toBeVisible()
+    await commitFile.click({ button: 'right' })
+    await expect(page.locator('.file-context-menu')).toBeVisible()
+    await expect(page.locator('.file-context-menu-wrap')).toHaveCount(0)
+    await page.keyboard.press('Escape')
+})
+
 test('reflog modal opens from the command palette', async () => {
     await page.keyboard.press('Control+p')
     await expect(page.locator('.palette')).toBeVisible()

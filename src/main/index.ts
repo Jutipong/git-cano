@@ -822,9 +822,9 @@ app.whenReady().then(() => {
         requireRepo()
         return listFiles(typeof hash === 'string' && hash.trim() ? hash : undefined)
     })
-    handle('file:addIgnoreRule', (rule: string) => {
+    handle('file:addIgnoreRule', (rule: string, dir?: string) => {
         requireRepo()
-        return addIgnoreRule(rule as string)
+        return addIgnoreRule(rule as string, typeof dir === 'string' && dir ? dir : undefined)
     })
 
     handle('file:stage', (paths: string[]) => {

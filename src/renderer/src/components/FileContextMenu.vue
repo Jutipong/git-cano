@@ -18,6 +18,10 @@
         directory?: boolean
         untracked?: boolean
         deleted?: boolean
+        /** False while viewing a commit's files — ignore rules only make sense for the worktree. */
+        workdir?: boolean
+        /** Repo whose .gitignore receives the rule, pinned when the menu opened. */
+        repoPath?: string
     }
 
     const props = defineProps<{
@@ -39,7 +43,7 @@
         const path = props.menu?.path ?? ''
         const name = path.split('/').pop() ?? ''
         const dot = name.lastIndexOf('.')
-        return dot > 0 && dot < name.length - 1 ? `.${name.slice(dot + 1).toLowerCase()}` : null
+        return dot > 0 && dot < name.length - 1 ? `.${name.slice(dot + 1)}` : null
     })
 
     /** Read-only preview supports rendered markdown and pretty-printed JSON. */
@@ -89,7 +93,7 @@
         if (!menu) return
         emit('close')
         try {
-            await window.api.addIgnoreRule(rule)
+            await window.api.addIgnoreRule(rule, menu.repoPath)
             await props.refresh()
             notify(`Added ${rule} to .gitignore. Tracked files remain tracked.`, 'success')
         } catch (error) {
@@ -147,8 +151,12 @@
                 height="13" />
             Preview
         </button>
-        <div class="file-context-menu-separator" />
-        <div class="file-context-menu-wrap">
+        <div
+            v-if="menu.workdir && !menu.deleted"
+            class="file-context-menu-separator" />
+        <div
+            v-if="menu.workdir && !menu.deleted"
+            class="file-context-menu-wrap">
             <button
                 class="file-context-menu-item has-sub"
                 type="button">
