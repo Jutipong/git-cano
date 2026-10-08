@@ -5,6 +5,7 @@ import {
     MAX_DIFF_LINES,
     capContextSection,
     capDiffLines,
+    escapeGitignorePath,
     normalizeRef,
     parseDiff,
     parseLog,
@@ -144,6 +145,20 @@ describe('capDiffLines', () => {
         expect(capped[MAX_DIFF_LINES]).toMatchObject({ type: 'meta' })
         expect(capped[MAX_DIFF_LINES]!.text).toContain('truncated')
         expect(capped[MAX_DIFF_LINES]!.text).toContain('5 more lines')
+    })
+})
+
+describe('escapeGitignorePath', () => {
+    it('leaves ordinary paths untouched', () => {
+        expect(escapeGitignorePath('src/main/git.ts')).toBe('src/main/git.ts')
+        expect(escapeGitignorePath('a b/c-d_e.txt')).toBe('a b/c-d_e.txt')
+    })
+
+    it('escapes gitignore glob metacharacters', () => {
+        expect(escapeGitignorePath('build[1]/out.txt')).toBe('build\\[1\\]/out.txt')
+        expect(escapeGitignorePath('test[1].txt')).toBe('test\\[1\\].txt')
+        expect(escapeGitignorePath('a*b?c')).toBe('a\\*b\\?c')
+        expect(escapeGitignorePath('back\\slash')).toBe('back\\\\slash')
     })
 })
 

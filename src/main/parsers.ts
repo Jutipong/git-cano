@@ -120,6 +120,15 @@ export function parseDiff(text: string, file?: string): DiffLine[] {
 }
 
 /**
+ * Escapes the gitignore glob metacharacters (`\ * ? [ ]`) so a path can be written as a literal rule. Windows
+ * allows `[`/`]` in file and folder names, and an unescaped `[1]` is read as a character class — the rule then
+ * never matches the intended file (and may match an unrelated one like `1`).
+ */
+export function escapeGitignorePath(relativePath: string): string {
+    return relativePath.replace(/[\\*?[\]]/g, '\\$&')
+}
+
+/**
  * Per-section cap for AI prompt context. The final prompt is truncated to 16k chars in opencode.ts anyway,
  * so a multi-megabyte diff is cut here before extra full-size string copies pile up in `parts`.
  */

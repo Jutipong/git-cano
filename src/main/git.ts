@@ -9,7 +9,7 @@ import { simpleGit, type SimpleGit, type SimpleGitOptions } from 'simple-git'
 
 import { authGitEnv } from './auth'
 import { log, maskUrl } from './logger'
-import { capContextSection, capDiffLines, parseDiff, parseLog } from './parsers'
+import { capContextSection, capDiffLines, escapeGitignorePath, parseDiff, parseLog } from './parsers'
 
 import type {
     BlameLine,
@@ -420,9 +420,9 @@ async function addGitignoreRule(target: string, kind: GitignoreRuleKind): Promis
         }
         rule = `*${extension}`
     } else if (kind === 'file') {
-        rule = `/${normalizeGitignorePath(repoRoot, target)}`
+        rule = `/${escapeGitignorePath(normalizeGitignorePath(repoRoot, target))}`
     } else if (kind === 'directory') {
-        rule = `/${normalizeGitignorePath(repoRoot, target)}/`
+        rule = `/${escapeGitignorePath(normalizeGitignorePath(repoRoot, target))}/`
     } else {
         throw new Error('Invalid gitignore rule type')
     }
