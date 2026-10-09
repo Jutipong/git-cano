@@ -4637,6 +4637,16 @@ body {
     background: var(--surface-hover);
 }
 
+.tag-menu-item:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.tag-menu-item:disabled:hover {
+    color: var(--text-secondary);
+    background: transparent;
+}
+
 .tag-menu-item.danger {
     color: var(--red);
 }
