@@ -211,20 +211,27 @@ function requireRepo(): boolean {
 }
 
 /**
- * Launches an external app (VS Code, Windows Terminal, Kiro, Rider, Visual Studio) and reports
- * spawn/exit failures. `detached` is load-bearing: libuv puts every non-detached child in a
- * kill-on-close Windows job, so the app opened here would be terminated the moment git-cano
- * quits. `unref()` keeps the child out of the main process' event loop as well — it must outlive
- * git-cano, not depend on it.
+ * Launches an external app (VS Code, Windows Terminal, Kiro, Rider, Visual Studio).
+ * Resolves as soon as the OS created the process; only a spawn failure (exe missing, no
+ * permission) rejects. The launcher's exit code is NOT a result — JetBrains launchers forward
+ * the path to an already-running IDE and exit with the handoff status, which is non-zero in
+ * transient states (IDE starting, updating or closing) while nothing is wrong here. Whatever
+ * happens after the process exists is the OS/app's job to surface. `detached` is load-bearing:
+ * libuv puts every non-detached child in a kill-on-close Windows job, so the app opened here
+ * would be terminated the moment git-cano quits. `unref()` keeps the child out of the main
+ * process' event loop as well — it must outlive git-cano, not depend on it.
  */
 function runCmd(cmd: string, args: string[], cwd: string): Promise<void> {
     return new Promise((resolve, reject) => {
         const child = spawn(cmd, args, { cwd, stdio: 'ignore', detached: true })
-        child.unref()
-        child.on('error', err => reject(new Error(`Failed to launch "${cmd}": ${err.message}`)))
-        child.on('exit', code => {
-            if (code === 0) resolve()
-            else reject(new Error(`"${cmd}" exited with code ${code}`))
+        child.once('spawn', () => {
+            child.unref()
+            resolve()
+        })
+        child.once('error', err => reject(new Error(`Failed to launch "${cmd}": ${err.message}`)))
+        // Exit code is diagnostic only — never a user-facing failure (see the comment above).
+        child.on('exit', (code, signal) => {
+            if (code !== 0) log('warn', 'app', `"${cmd}" exited with code ${code ?? `signal ${signal}`}`)
         })
     })
 }

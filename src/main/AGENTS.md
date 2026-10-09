@@ -230,8 +230,13 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
 - `runCmd()` (`main/index.ts`) launches every "Open in" target (VS Code, Terminal, Kiro, Rider,
   Visual Studio). It must spawn with `detached: true` + `unref()`: libuv puts every non-detached
   child in a kill-on-close Windows job, so quitting git-cano would terminate the launched app
-  (VS Code closed along with it). The listeners may stay for error reporting only — never couple
-  the launched app's lifetime to git-cano.
+  (VS Code closed along with it). Never couple the launched app's lifetime to git-cano.
+- The promise resolves the moment the OS created the process and rejects only when spawning
+  fails (exe missing / no permission). Never treat the launcher's exit code as the operation's
+  result — JetBrains launchers hand the path to an already-running IDE and exit with the handoff
+  status, which is non-zero while the IDE is starting, updating or closing (observed codes
+  1/2/6/16 against a running Rider) even though nothing is wrong here. Non-zero exits are logged
+  (warn) for diagnosis only; what happens after the process exists is the OS/app's job to surface.
 
 ## Terminal panel (PTY)
 
