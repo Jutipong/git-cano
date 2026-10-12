@@ -155,6 +155,11 @@
     const remoteTagNames = computed(() => repoStore.remoteTagNames)
     const hasRemote = computed(() => repoStore.hasRemote)
     const pendingRemoteTag = ref<string | null>(null)
+    const refreshingTags = computed(() => loadingTags.value || loadingRemoteTags.value)
+    function refreshTags() {
+        if (refreshingTags.value || uiTransient.busy) return
+        void repoStore.refreshWithTags()
+    }
 
     function focusBranch(branch: { name: string; commitHash?: string }) {
         // While soloing, selection is locked to the soloed branch — silently ignore other rows.
@@ -683,6 +688,17 @@
                     <h3>
                         TAGS <span class="section-count">{{ tags.length }}</span>
                     </h3>
+                </button>
+                <button
+                    class="icon-btn section-refresh-btn"
+                    title="Refresh tags"
+                    aria-label="Refresh tags"
+                    :disabled="refreshingTags || !!uiTransient.busy"
+                    @click.stop="refreshTags()">
+                    <i-lucide-rotate-cw
+                        :class="{ spinning: refreshingTags }"
+                        width="14"
+                        height="14" />
                 </button>
             </div>
             <div class="section-body">

@@ -2944,6 +2944,15 @@ body {
     padding: 7px 10px 7px 15px;
     text-align: left;
 }
+.sidebar > .sidebar-section > .section-header > .section-refresh-btn {
+    flex: none;
+    margin-right: 8px;
+    color: var(--orange);
+}
+.sidebar > .sidebar-section > .section-header > .section-refresh-btn:hover {
+    color: var(--orange);
+    background: color-mix(in srgb, var(--orange) 15%, transparent);
+}
 /* the scrollable list under a fixed header */
 .sidebar > .sidebar-section > .section-body {
     flex: 1 1 auto;
