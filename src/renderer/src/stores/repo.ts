@@ -2,8 +2,8 @@ import { assignLanes } from '@shared/lanes'
 import { defineStore } from 'pinia'
 import { computed, markRaw, ref, watch } from 'vue'
 
-import { useUiTransientStore } from './uiTransient'
 import { useTerminalStore } from './terminal'
+import { useUiTransientStore } from './uiTransient'
 import { useWorkspaceStore } from './workspace'
 
 import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
@@ -11,9 +11,9 @@ import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEn
 const PAGE_SIZE = 500
 
 /**
- * Commit objects are only ever replaced wholesale (never mutated field-by-field), so marking them raw keeps Pinia from
- * wrapping every one of potentially thousands of commits in a deep reactive proxy — a large chunk of renderer memory
- * for big logs, with no behavioral difference since the `commits` array itself stays reactive.
+ * Commit objects are only ever replaced wholesale (never mutated field-by-field), so marking them raw keeps Pinia from wrapping every one
+ * of potentially thousands of commits in a deep reactive proxy — a large chunk of renderer memory for big logs, with no behavioral
+ * difference since the `commits` array itself stays reactive.
  */
 function rawCommits(list: CommitNode[]): CommitNode[] {
     for (const commit of list) markRaw(commit)
@@ -290,8 +290,8 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     /**
-     * Full refresh that also reloads local + remote tags (fetch/pull/tag mutations/tab switches).
-     * Plain refresh() skips tags on purpose — most actions never touch them.
+     * Full refresh that also reloads local + remote tags (fetch/pull/tag mutations/tab switches). Plain refresh() skips tags on purpose —
+     * most actions never touch them.
      */
     function refreshWithTags(precomputedStatus?: RepoStatus) {
         return refresh(precomputedStatus, false, true)
@@ -492,9 +492,9 @@ export const useRepoStore = defineStore('repo', () => {
     }
 
     /**
-     * Switches to `name` and restores its saved session. `focusPath` selects one of the restored repos
-     * instead of the session's own active tab (used by the command palette's cross-workspace repo search)
-     * — resolving it here keeps the single `selectTab` and avoids a second `git status`.
+     * Switches to `name` and restores its saved session. `focusPath` selects one of the restored repos instead of the session's own active
+     * tab (used by the command palette's cross-workspace repo search) — resolving it here keeps the single `selectTab` and avoids a second
+     * `git status`.
      */
     async function switchWorkspace(name: string, focusPath?: string) {
         if (useUiTransientStore().busy) return

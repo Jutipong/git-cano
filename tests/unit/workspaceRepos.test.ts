@@ -115,13 +115,7 @@ describe('collectWorkspaceRepos', () => {
     })
 
     it('still lists the current workspace session while its tabs are being restored', () => {
-        const entries = collectWorkspaceRepos(
-            ['aa', 'bb'],
-            'bb',
-            { aa: { paths: [aa1] }, bb: { paths: [bb1, bb2] } },
-            [],
-            0
-        )
+        const entries = collectWorkspaceRepos(['aa', 'bb'], 'bb', { aa: { paths: [aa1] }, bb: { paths: [bb1, bb2] } }, [], 0)
         expect(entries.map(e => e.path)).toEqual([bb1, bb2, aa1])
     })
 

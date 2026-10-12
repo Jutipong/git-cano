@@ -211,15 +211,12 @@ function requireRepo(): boolean {
 }
 
 /**
- * Launches an external app (VS Code, Windows Terminal, Kiro, Rider, Visual Studio).
- * Resolves as soon as the OS created the process; only a spawn failure (exe missing, no
- * permission) rejects. The launcher's exit code is NOT a result — JetBrains launchers forward
- * the path to an already-running IDE and exit with the handoff status, which is non-zero in
- * transient states (IDE starting, updating or closing) while nothing is wrong here. Whatever
- * happens after the process exists is the OS/app's job to surface. `detached` is load-bearing:
- * libuv puts every non-detached child in a kill-on-close Windows job, so the app opened here
- * would be terminated the moment git-cano quits. `unref()` keeps the child out of the main
- * process' event loop as well — it must outlive git-cano, not depend on it.
+ * Launches an external app (VS Code, Windows Terminal, Kiro, Rider, Visual Studio). Resolves as soon as the OS created the process; only a
+ * spawn failure (exe missing, no permission) rejects. The launcher's exit code is NOT a result — JetBrains launchers forward the path to an
+ * already-running IDE and exit with the handoff status, which is non-zero in transient states (IDE starting, updating or closing) while
+ * nothing is wrong here. Whatever happens after the process exists is the OS/app's job to surface. `detached` is load-bearing: libuv puts
+ * every non-detached child in a kill-on-close Windows job, so the app opened here would be terminated the moment git-cano quits. `unref()`
+ * keeps the child out of the main process' event loop as well — it must outlive git-cano, not depend on it.
  */
 function runCmd(cmd: string, args: string[], cwd: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -502,12 +499,11 @@ function startDir(): string | undefined {
 
 /**
  * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't zoom the web frame behind the
- * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead.
- * Ctrl/Cmd+W is also freed from the native Close-window role so it closes the active repo tab instead
- * (window close stays available via Ctrl/Cmd+Shift+W).
+ * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead. Ctrl/Cmd+W is also freed from the native Close-window role
+ * so it closes the active repo tab instead (window close stays available via Ctrl/Cmd+Shift+W).
  *
- * The Window menu is hand-written on both platforms (the stock `windowMenu` role can't be extended)
- * and carries only the app's own items: What's new, and About Git Cano → the repository.
+ * The Window menu is hand-written on both platforms (the stock `windowMenu` role can't be extended) and carries only the app's own items:
+ * What's new, and About Git Cano → the repository.
  */
 function setupMenu(): void {
     const isMac = process.platform === 'darwin'
@@ -533,9 +529,7 @@ function setupMenu(): void {
     const template: MenuItemConstructorOptions[] = [
         ...(isMac ? [appMenu] : []),
         // File → Close owns Cmd+W on macOS — rebind it so Cmd+W reaches the renderer.
-        isMac
-            ? { label: 'File', submenu: [{ role: 'close', accelerator: 'Command+Shift+W' }] }
-            : { role: 'fileMenu' },
+        isMac ? { label: 'File', submenu: [{ role: 'close', accelerator: 'Command+Shift+W' }] } : { role: 'fileMenu' },
         { role: 'editMenu' },
         {
             label: 'View',
@@ -926,7 +920,11 @@ app.whenReady().then(() => {
 
     handle('rebase:start', (baseRef: string, entries, _dir?: string) => {
         requireRepo()
-        return startInteractiveRebase(baseRef as string, entries as never[], typeof _dir === 'string' && _dir ? (_dir as string) : undefined)
+        return startInteractiveRebase(
+            baseRef as string,
+            entries as never[],
+            typeof _dir === 'string' && _dir ? (_dir as string) : undefined
+        )
     })
     handle('squash:plan', (target: string) => {
         requireRepo()

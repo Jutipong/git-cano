@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watchEffect } from 'vue'
 
-import type { LocalChangesMode, TerminalShell } from '@shared/types'
-
 import {
     SHORTCUT_DEFAULTS,
     SHORTCUT_PLATFORMS,
@@ -12,6 +10,8 @@ import {
     type ShortcutOverrideMap,
     type ShortcutPlatform,
 } from '../utils/shortcuts'
+
+import type { LocalChangesMode, TerminalShell } from '@shared/types'
 
 export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro' | 'win9x-opencode' | 'win9x-dark'
 
@@ -70,8 +70,10 @@ export const DEFAULT_TERMINAL_FONT_SIZE = 14
 /** First shipped default — migrated to DEFAULT_TERMINAL_FONT_SIZE on load. */
 const LEGACY_TERMINAL_FONT_SIZE = 13
 
-/** Terminal font family — Consolas leads (inbox on every Windows), Leelawadee UI covers the
- *  Thai glyphs Consolas lacks, monospace catches macOS/Linux. Persisted; blank resets to default. */
+/**
+ * Terminal font family — Consolas leads (inbox on every Windows), Leelawadee UI covers the Thai glyphs Consolas lacks, monospace catches
+ * macOS/Linux. Persisted; blank resets to default.
+ */
 export const DEFAULT_TERMINAL_FONT_FAMILY = "'Consolas', 'Leelawadee UI', monospace"
 /** Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied). */
 export const TERMINAL_FONT_FAMILY_PRESETS = ['Consolas', 'Cascadia Mono', 'JetBrains Mono']
@@ -159,8 +161,7 @@ export const useUiStore = defineStore(
         /** App version seen on the previous launch. A mismatch on startup means the app was just updated. */
         const lastSeenVersion = ref('')
         watchEffect(() => {
-            if (!UPDATE_CHECK_HOURS_OPTIONS.includes(updateCheckHours.value))
-                updateCheckHours.value = DEFAULT_UPDATE_CHECK_HOURS
+            if (!UPDATE_CHECK_HOURS_OPTIONS.includes(updateCheckHours.value)) updateCheckHours.value = DEFAULT_UPDATE_CHECK_HOURS
         })
         const toastDurationSec = ref(DEFAULT_TOAST_DURATION_SEC)
         watchEffect(() => {
@@ -178,8 +179,7 @@ export const useUiStore = defineStore(
         // persisted; the size is deliberately independent of `fontSize` (the UI scale above).
         const terminalFontSize = ref(DEFAULT_TERMINAL_FONT_SIZE)
         watchEffect(() => {
-            if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value))
-                terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
+            if (!TERMINAL_FONT_SIZE_OPTIONS.includes(terminalFontSize.value)) terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
         })
         const terminalFontFamily = ref(DEFAULT_TERMINAL_FONT_FAMILY)
         watchEffect(() => {
@@ -197,9 +197,7 @@ export const useUiStore = defineStore(
         function stepTerminalFontSize(direction: number) {
             const idx = TERMINAL_FONT_SIZE_OPTIONS.indexOf(terminalFontSize.value)
             terminalFontSize.value =
-                TERMINAL_FONT_SIZE_OPTIONS[
-                    Math.min(TERMINAL_FONT_SIZE_OPTIONS.length - 1, Math.max(0, (idx < 0 ? 0 : idx) + direction))
-                ]
+                TERMINAL_FONT_SIZE_OPTIONS[Math.min(TERMINAL_FONT_SIZE_OPTIONS.length - 1, Math.max(0, (idx < 0 ? 0 : idx) + direction))]
         }
         /** App zoom and UI font size both ride on `<html> { zoom }`; keep the two factors separate. */
         const fontScale = computed(() => fontSize.value / DEFAULT_FONT_SIZE)

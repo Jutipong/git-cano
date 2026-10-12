@@ -9,7 +9,6 @@
 
     import canoIcon from './assets/cano.svg'
     import BlameModal from './components/BlameModal.vue'
-    import FilePreviewModal from './components/FilePreviewModal.vue'
     import ChangelogModal from './components/ChangelogModal.vue'
     import CloneRepoModal from './components/CloneRepoModal.vue'
     import CommandPalette from './components/CommandPalette.vue'
@@ -19,6 +18,7 @@
     import ErrorDialog from './components/ErrorDialog.vue'
     import FileHistoryModal from './components/FileHistoryModal.vue'
     import FilePanel from './components/FilePanel.vue'
+    import FilePreviewModal from './components/FilePreviewModal.vue'
     import GraphView from './components/GraphView.vue'
     import KittScanner from './components/KittScanner.vue'
     import OpenRepoMenu from './components/OpenRepoMenu.vue'
@@ -82,12 +82,10 @@
 
     const terminalStore = useTerminalStore()
     /**
-     * Every repo path that owns at least one shell — each gets its OWN TerminalPanel instance (keyed
-     * by path) so its xterm buffers + pty stay alive while another tab is active, while a workspace
-     * switch happens, or while the panel is toggled away — hiding only stops painting, and killing is
-     * the ✕ buttons' job alone. The list comes from the terminal store itself, NOT from the open repo
-     * tabs: a workspace switch empties `tabs`, and panels keyed off it would unmount and throw away
-     * the buffers of shells that are still running.
+     * Every repo path that owns at least one shell — each gets its OWN TerminalPanel instance (keyed by path) so its xterm buffers + pty
+     * stay alive while another tab is active, while a workspace switch happens, or while the panel is toggled away — hiding only stops
+     * painting, and killing is the ✕ buttons' job alone. The list comes from the terminal store itself, NOT from the open repo tabs: a
+     * workspace switch empties `tabs`, and panels keyed off it would unmount and throw away the buffers of shells that are still running.
      */
     const terminalPaths = computed(() => Object.keys(terminalStore.terminals))
     /** Panel handles keyed by repo path — a v-for template ref needs the keyed function-ref form. */
@@ -133,7 +131,9 @@
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
-    const tagTarget = ref<{ hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null } | null>(null)
+    const tagTarget = ref<{ hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null } | null>(
+        null
+    )
     const squashTarget = ref<CommitNode | null>(null)
     const stashCreateOpen = ref(false)
     const cloneOpen = ref(false)
@@ -253,16 +253,14 @@
         let lastShiftTap = 0
 
         /**
-         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs
-         * (Ctrl+T / Ctrl+1…9), Ctrl+W while the terminal panel is focused (closes the shell's tab),
-         * Alt+Enter while it is focused (toggles full height) and commit-search focus. Returns true
-         * when it handled the combo (and preventDefault()s it).
+         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs (Ctrl+T / Ctrl+1…9), Ctrl+W while the
+         * terminal panel is focused (closes the shell's tab), Alt+Enter while it is focused (toggles full height) and commit-search focus.
+         * Returns true when it handled the combo (and preventDefault()s it).
          *
-         * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell
-         * would otherwise swallow Ctrl+P / Ctrl+, / Ctrl+O entirely — the capture-phase listener
-         * below grabs them first and stops the event there, which also keeps the bubble-phase copy
-         * from firing a second time. Combos the shell owns (Ctrl+Arrows, Escape, …) are deliberately
-         * NOT here: they stay in the bubble handler so TUIs and readline keep receiving them.
+         * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell would otherwise swallow Ctrl+P / Ctrl+,
+         * / Ctrl+O entirely — the capture-phase listener below grabs them first and stops the event there, which also keeps the
+         * bubble-phase copy from firing a second time. Combos the shell owns (Ctrl+Arrows, Escape, …) are deliberately NOT here: they stay
+         * in the bubble handler so TUIs and readline keep receiving them.
          */
         function handleAppShortcut(combo: string | null, event: KeyboardEvent): boolean {
             if (!combo) return false
@@ -337,12 +335,11 @@
         }
 
         /**
-         * The same shortcuts one phase earlier, so they also reach the app while a shell has focus.
-         * Stopping propagation keeps the bubble-phase handler from handling them a second time and
-         * stops the shell from seeing a key the user bound to the app.
+         * The same shortcuts one phase earlier, so they also reach the app while a shell has focus. Stopping propagation keeps the
+         * bubble-phase handler from handling them a second time and stops the shell from seeing a key the user bound to the app.
          *
-         * Alt is routed too because Alt+Enter (terminal full height) is Alt-only — only exact app
-         * combos act inside, so every other Alt key still reaches the shell untouched.
+         * Alt is routed too because Alt+Enter (terminal full height) is Alt-only — only exact app combos act inside, so every other Alt key
+         * still reaches the shell untouched.
          */
         const onKeyDownCapture = (event: KeyboardEvent) => {
             // A non-Shift key breaks a pending double-Shift tap. This has to run here: xterm cancels
@@ -586,9 +583,9 @@
     }
 
     /**
-     * Ctrl+W with the keyboard in the terminal panel — closes the shell's tab through the same
-     * confirm as its ✕. A cancelled dialog hands focus back to the shell: the dialog moved it to
-     * its own button, and leaving it there would make the next Ctrl+W close the repo tab instead.
+     * Ctrl+W with the keyboard in the terminal panel — closes the shell's tab through the same confirm as its ✕. A cancelled dialog hands
+     * focus back to the shell: the dialog moved it to its own button, and leaving it there would make the next Ctrl+W close the repo tab
+     * instead.
      */
     async function closeActiveTerminalTabByKeyboard() {
         const path = activeRepoPath.value
@@ -600,12 +597,11 @@
     }
 
     /**
-     * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has
-     * none, otherwise show or hide the panel. It never kills anything — the ✕ buttons own that.
-     * `keepExpanded` stays off for the toolbar button, which doubles as the "back to the graph"
-     * gesture; the keyboard/palette toggle passes it, so a full-height panel comes back as an overlay.
-     * Showing always hands the keyboard back to the active shell — a repo/workspace switch does not
-     * (the panel only becomes visible there, the user never asked to switch into the terminal).
+     * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has none, otherwise show or hide the
+     * panel. It never kills anything — the ✕ buttons own that. `keepExpanded` stays off for the toolbar button, which doubles as the "back
+     * to the graph" gesture; the keyboard/palette toggle passes it, so a full-height panel comes back as an overlay. Showing always hands
+     * the keyboard back to the active shell — a repo/workspace switch does not (the panel only becomes visible there, the user never asked
+     * to switch into the terminal).
      */
     async function toggleTerminal(options?: { keepExpanded?: boolean }) {
         const path = repoStore.tabs[repoStore.activeTab]?.path
@@ -629,8 +625,8 @@
     }
 
     /**
-     * Kill every shell of every repository — the palette command and its shortcut. Confirm first: it
-     * ends shells of repos that are not even on screen.
+     * Kill every shell of every repository — the palette command and its shortcut. Confirm first: it ends shells of repos that are not even
+     * on screen.
      */
     async function killAllTerminals() {
         const total = Object.values(terminalStore.terminals).reduce((sum, state) => sum + state.tabs.length, 0)
@@ -650,9 +646,8 @@
     }
 
     /**
-     * One shell ended on its own (exit / Ctrl+D / crash) — drop just that tab, exactly like a manual
-     * close but without the confirm: the process is already gone, so there is nothing to end. When it
-     * was the repo's last terminal the panel unmounts with it.
+     * One shell ended on its own (exit / Ctrl+D / crash) — drop just that tab, exactly like a manual close but without the confirm: the
+     * process is already gone, so there is nothing to end. When it was the repo's last terminal the panel unmounts with it.
      */
     function handleTerminalExit(path: string, id: string) {
         terminalStore.closeTerminalTab(path, id)
@@ -946,7 +941,11 @@
                                 @reset-hard="commit => resetTo(commit, 'hard')"
                                 @toggle-terminal="toggleTerminal" />
                             <div
-                                v-if="activeRepoPath && terminalStore.panelVisible(activeRepoPath) && !terminalStore.isExpanded(activeRepoPath)"
+                                v-if="
+                                    activeRepoPath &&
+                                    terminalStore.panelVisible(activeRepoPath) &&
+                                    !terminalStore.isExpanded(activeRepoPath)
+                                "
                                 class="terminal-splitter"
                                 @mousedown="beginTerminalResize" />
                             <!--

@@ -589,7 +589,9 @@
 /* sunken bevel fields + content lists — white windows cut into the gray face */
 :root[data-theme='win9x-opencode']
     :is(
-        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.tab-search-input):not(.diff-search-input):not(.palette-input):not(.section-search-input):not(.terminal-tab-rename),
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.tab-search-input):not(.diff-search-input):not(
+                .palette-input
+            ):not(.section-search-input):not(.terminal-tab-rename),
         textarea,
         select,
         .diff-body,
@@ -903,7 +905,8 @@
     animation: none;
 }
 
-/* graph reads as a white ListView sunk into the gray face */:root[data-theme='win9x-opencode'] .graph-scroll {
+/* graph reads as a white ListView sunk into the gray face */
+:root[data-theme='win9x-opencode'] .graph-scroll {
     background: #ffffff;
     border: 0;
     border-radius: 0;
@@ -1038,7 +1041,9 @@
 /* sunken bevel fields + content lists — near-black windows cut into the navy face */
 :root[data-theme='win9x-dark']
     :is(
-        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.tab-search-input):not(.diff-search-input):not(.palette-input):not(.section-search-input):not(.terminal-tab-rename),
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.tab-search-input):not(.diff-search-input):not(
+                .palette-input
+            ):not(.section-search-input):not(.terminal-tab-rename),
         textarea,
         select,
         .diff-body,
@@ -3363,6 +3368,16 @@ body {
 .panel-heading.commit-mode .panel-heading-title,
 .panel-heading.commit-mode .panel-heading-title svg {
     color: var(--green);
+}
+
+/* Commit/stash view: tint the whole right-pane card green (same recipe as the
+   terminal overlay focus ring with --green instead of --teal). The card owns
+   the surround so the outline follows its rounded corners. */
+.right-pane:has(> .file-panel.commit-mode) {
+    border-color: color-mix(in srgb, var(--green) 45%, var(--line-soft));
+    box-shadow:
+        0 3px 14px var(--shadow),
+        0 0 0 1px color-mix(in srgb, var(--green) 40%, transparent);
 }
 
 /* per-theme tuning: keep green title >= 4.5:1 contrast on the tinted header */
@@ -6303,6 +6318,12 @@ body {
     border-top: 1px solid var(--line-soft);
 }
 
+/* Docked only: round the bottom corners to nest inside the center-column card
+   (outer radius minus the card's 1px border, floored for the square themes). */
+.terminal-panel:not(.terminal-overlay) {
+    border-radius: 0 0 max(0px, calc(var(--radius-card) - 1px)) max(0px, calc(var(--radius-card) - 1px));
+}
+
 /* Expanded: teleported to `.app` and styled as a card that lines up with the other columns —
    left/bottom match `.app`'s 6px padding, top starts where `.app-body` does (48px tab bar + the
    body's 6px margin), and the inline `right: rightPanelWidth + 12px` (app padding + the 6px
@@ -6322,10 +6343,15 @@ body {
 
 /* Keyboard focus inside the panel: a teal edge marks where Ctrl+W closes the shell's tab instead
    of the repo's tab. `:focus-within` matches the exact condition the shortcut checks
-   (isTerminalPanelFocused in App.vue), so the edge always predicts what Ctrl+W will do. */
+   (isTerminalPanelFocused in App.vue), so the edge always predicts what Ctrl+W will do.
+   The surround is an inset ring confined to the panel itself — never the whole
+   center-column card, so it never reaches up into the commit history. Its bottom corners
+   are clipped round by the card's own overflow/radius. */
 .terminal-panel:focus-within {
     border-top-color: color-mix(in srgb, var(--teal) 55%, var(--line-soft));
-    box-shadow: 0 -1px 0 color-mix(in srgb, var(--teal) 45%, transparent);
+    box-shadow:
+        0 -1px 0 color-mix(in srgb, var(--teal) 45%, transparent),
+        inset 0 0 0 1px color-mix(in srgb, var(--teal) 40%, transparent);
 }
 
 .terminal-panel.terminal-overlay:focus-within {
@@ -8337,7 +8363,9 @@ body {
     border: calc(var(--cbx-size) * 0.1) solid var(--cbx-border);
     border-radius: calc(var(--cbx-size) * 0.2);
     background: transparent;
-    transition: background-color ease 0.15s, border-color ease 0.15s;
+    transition:
+        background-color ease 0.15s,
+        border-color ease 0.15s;
     cursor: pointer;
 }
 
@@ -8354,7 +8382,9 @@ body {
     content: '';
     transform: rotate(45deg) scale(0.6);
     opacity: 0;
-    transition: opacity ease 0.15s, transform ease 0.15s;
+    transition:
+        opacity ease 0.15s,
+        transform ease 0.15s;
 }
 
 .cbx19 input[type='checkbox']:checked + .check-box {

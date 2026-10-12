@@ -1,8 +1,8 @@
 import type { CommitNode, DiffLine } from '@shared/types'
 
 /**
- * Pure git-output parsers shared by the main process. Kept free of electron/simple-git imports so they can be
- * unit-tested directly (see tests/unit/parsers.test.ts).
+ * Pure git-output parsers shared by the main process. Kept free of electron/simple-git imports so they can be unit-tested directly (see
+ * tests/unit/parsers.test.ts).
  */
 
 export function normalizeRef(raw: string): string | null {
@@ -67,9 +67,9 @@ export function parseLog(text: string): CommitNode[] {
 }
 
 /**
- * Hard cap on the diff payload sent to the renderer. Whole-file views ("show entire file", untracked files, unchanged-file
- * snapshots) otherwise turn a large file into one DiffLine object per line on both sides of the IPC; past the cap the list
- * is cut with a visible marker instead of driving the app into swap.
+ * Hard cap on the diff payload sent to the renderer. Whole-file views ("show entire file", untracked files, unchanged-file snapshots)
+ * otherwise turn a large file into one DiffLine object per line on both sides of the IPC; past the cap the list is cut with a visible
+ * marker instead of driving the app into swap.
  */
 export const MAX_DIFF_LINES = 20_000
 export function capDiffLines(lines: DiffLine[]): DiffLine[] {
@@ -120,17 +120,17 @@ export function parseDiff(text: string, file?: string): DiffLine[] {
 }
 
 /**
- * Escapes the gitignore glob metacharacters (`\ * ? [ ]`) so a path can be written as a literal rule. Windows
- * allows `[`/`]` in file and folder names, and an unescaped `[1]` is read as a character class — the rule then
- * never matches the intended file (and may match an unrelated one like `1`).
+ * Escapes the gitignore glob metacharacters (`\ * ? [ ]`) so a path can be written as a literal rule. Windows allows `[`/`]` in file and
+ * folder names, and an unescaped `[1]` is read as a character class — the rule then never matches the intended file (and may match an
+ * unrelated one like `1`).
  */
 export function escapeGitignorePath(relativePath: string): string {
     return relativePath.replace(/[\\*?[\]]/g, '\\$&')
 }
 
 /**
- * Per-section cap for AI prompt context. The final prompt is truncated to 16k chars in opencode.ts anyway,
- * so a multi-megabyte diff is cut here before extra full-size string copies pile up in `parts`.
+ * Per-section cap for AI prompt context. The final prompt is truncated to 16k chars in opencode.ts anyway, so a multi-megabyte diff is cut
+ * here before extra full-size string copies pile up in `parts`.
  */
 export const AI_CONTEXT_SECTION_MAX = 20_000
 export function capContextSection(text: string): string {

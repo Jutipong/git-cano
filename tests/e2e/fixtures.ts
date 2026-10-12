@@ -6,7 +6,7 @@ import * as path from 'node:path'
 export interface Fixtures {
     root: string
     mainRepo: string
-    /** extra-1 … extra-7 — one-commit repos used for the cache/LRU checks. */
+    /** Extra-1 … extra-7 — one-commit repos used for the cache/LRU checks. */
     extraRepos: string[]
     /** Repo left mid-merge with an unmerged `shared.txt`. */
     conflictRepo: string
@@ -54,14 +54,8 @@ function commit(dir: string, message: string, body?: string): void {
 }
 
 /** Two valid 1x1 PNGs (distinct bytes so the image diff has two real versions). */
-const PNG_A = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-    'base64'
-)
-const PNG_B = Buffer.from(
-    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-    'base64'
-)
+const PNG_A = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64')
+const PNG_B = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64')
 
 /** Deterministic 1024×1024 24-bit BMP (~3MB) — makes the base64-vs-raw image path measurable. */
 function makeBmp(seed: number): Buffer {

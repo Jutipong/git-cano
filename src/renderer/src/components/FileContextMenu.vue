@@ -8,8 +8,9 @@
     import History from '~icons/lucide/history'
     import ScanSearch from '~icons/lucide/scan-search'
 
-    import type { ToastKind } from '../stores/uiTransient'
     import { isPreviewablePath } from '../utils/preview'
+
+    import type { ToastKind } from '../stores/uiTransient'
 
     export interface FileMenuState {
         x: number

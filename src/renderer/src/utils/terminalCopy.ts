@@ -1,9 +1,8 @@
 /**
- * Copy-key gating for the terminal panel. Ctrl+C inside a shell is the interrupt character
- * (ETX / 0x03), so xterm must keep every plain Ctrl+C — copy is layered on top the way Windows
- * Terminal does it: the explicit Ctrl+Shift+C always copies, and on Windows/Linux a plain Ctrl+C
- * copies only while text is selected (interrupting needs no selection). macOS keeps Cmd+C for
- * copy and never steals Ctrl+C from the shell.
+ * Copy-key gating for the terminal panel. Ctrl+C inside a shell is the interrupt character (ETX / 0x03), so xterm must keep every plain
+ * Ctrl+C — copy is layered on top the way Windows Terminal does it: the explicit Ctrl+Shift+C always copies, and on Windows/Linux a plain
+ * Ctrl+C copies only while text is selected (interrupting needs no selection). macOS keeps Cmd+C for copy and never steals Ctrl+C from the
+ * shell.
  */
 
 export type TerminalCopyAction = 'pass' | 'copy' | 'consume'

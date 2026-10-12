@@ -1,10 +1,11 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+import { mergePathValue, pathKeyFor } from '@shared/terminalPath'
+
 import { log } from './logger'
 
 import type { TerminalData, TerminalExit, TerminalShell } from '@shared/types'
-import { mergePathValue, pathKeyFor } from '@shared/terminalPath'
 import type { IPty } from 'node-pty'
 
 type PtyModule = { spawn: (file: string, args: string[] | string, options: unknown) => IPty }
@@ -33,9 +34,8 @@ export function onTerminalExit(callback: (payload: TerminalExit) => void): void 
 }
 
 /**
- * node-pty is a native module that may be missing or built for the wrong ABI on a dev machine.
- * Load it lazily so the rest of the app keeps working and the terminal surfaces a clear error
- * instead of crashing at import time.
+ * Node-pty is a native module that may be missing or built for the wrong ABI on a dev machine. Load it lazily so the rest of the app keeps
+ * working and the terminal surfaces a clear error instead of crashing at import time.
  */
 function loadPty(): PtyModule {
     try {
@@ -47,9 +47,9 @@ function loadPty(): PtyModule {
 }
 
 /**
- * ConPTY opens its pseudo-console with codepage 437, which turns every Thai byte a program writes
- * into mojibake (`echo ทดสอบ` from a redirecting command). Forcing UTF-8 as the shell's first action
- * fixes raw-byte output (`type`, `git log`, ...) — Node-based CLIs already write UTF-8 themselves.
+ * ConPTY opens its pseudo-console with codepage 437, which turns every Thai byte a program writes into mojibake (`echo ทดสอบ` from a
+ * redirecting command). Forcing UTF-8 as the shell's first action fixes raw-byte output (`type`, `git log`, ...) — Node-based CLIs already
+ * write UTF-8 themselves.
  */
 const POWER_SHELL_ARGS = ['-NoExit', '-Command', 'chcp 65001 > $null; [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false)']
 
@@ -57,11 +57,10 @@ const POWER_SHELL_ARGS = ['-NoExit', '-Command', 'chcp 65001 > $null; [Console]:
 let pwshInstalled: boolean | null = null
 
 /**
- * True when the candidate exists as a shell executable — a plain file (MSI install) or a
- * Store/MSIX app-execution alias. fs.existsSync follows reparse points, and the WindowsApps
- * `pwsh.exe` alias resolves into the locked package folder, so stat fails with EACCES and the
- * alias looks missing. lstat reads the alias itself (libuv reports it as a symlink), and Windows
- * resolves the alias again when the shell is spawned — so both install flavours must match here.
+ * True when the candidate exists as a shell executable — a plain file (MSI install) or a Store/MSIX app-execution alias. fs.existsSync
+ * follows reparse points, and the WindowsApps `pwsh.exe` alias resolves into the locked package folder, so stat fails with EACCES and the
+ * alias looks missing. lstat reads the alias itself (libuv reports it as a symlink), and Windows resolves the alias again when the shell is
+ * spawned — so both install flavours must match here.
  */
 function shellFileExists(candidate: string): boolean {
     try {
@@ -73,11 +72,10 @@ function shellFileExists(candidate: string): boolean {
 }
 
 /**
- * True when pwsh.exe is on PATH. PowerShell 7 is an optional install, and the settings default is
- * "PowerShell 7", so this decides whether that default is honoured or falls back to Command Prompt.
- * Both install flavours count — MSI (real file) and Store/MSIX (WindowsApps alias) — and no
- * subprocess is spawned: the PATH scan is cached for the session. Reads PATH case-insensitively:
- * on Windows Electron exposes it as `Path`, so `process.env.PATH` alone is usually undefined.
+ * True when pwsh.exe is on PATH. PowerShell 7 is an optional install, and the settings default is "PowerShell 7", so this decides whether
+ * that default is honoured or falls back to Command Prompt. Both install flavours count — MSI (real file) and Store/MSIX (WindowsApps
+ * alias) — and no subprocess is spawned: the PATH scan is cached for the session. Reads PATH case-insensitively: on Windows Electron
+ * exposes it as `Path`, so `process.env.PATH` alone is usually undefined.
  */
 function currentProcessPath(): string {
     const key = Object.keys(process.env).find(candidate => candidate.toLowerCase() === 'path')
@@ -101,8 +99,8 @@ function hasPwsh(): boolean {
 }
 
 /**
- * True when the directory exists. Guards the PATH augmentation below: only real user-bin dirs
- * are prepended, so a missing install never pollutes the shell's PATH.
+ * True when the directory exists. Guards the PATH augmentation below: only real user-bin dirs are prepended, so a missing install never
+ * pollutes the shell's PATH.
  */
 function dirExists(candidate: string): boolean {
     try {
@@ -113,10 +111,9 @@ function dirExists(candidate: string): boolean {
 }
 
 /**
- * User-level bin dirs a GUI launch typically misses. An Explorer/Start-menu launch inherits the
- * registry PATH snapshot from login time, while an interactive shell picks up per-shell additions
- * (npm global, Scoop, WinGet, the opencode CLI bin) — so `opencode` resolves outside the app but
- * not inside it until these are prepended when present.
+ * User-level bin dirs a GUI launch typically misses. An Explorer/Start-menu launch inherits the registry PATH snapshot from login time,
+ * while an interactive shell picks up per-shell additions (npm global, Scoop, WinGet, the opencode CLI bin) — so `opencode` resolves
+ * outside the app but not inside it until these are prepended when present.
  */
 function userBinCandidates(): string[] {
     if (process.platform === 'win32') {
@@ -151,12 +148,13 @@ function shellCommand(preferred: TerminalShell): { file: string; args: string[];
     const cmdArgs = ['/d', '/s', '/k', 'chcp 65001 >nul']
     // PowerShell 7 is the default, but it is installed separately: without it the request silently
     // resolves to Command Prompt so a fresh install still opens a working shell.
-    if (preferred === 'pwsh') return hasPwsh() ? { file: 'pwsh.exe', args: POWER_SHELL_ARGS, label: 'pwsh' } : { file: cmd, args: cmdArgs, label: 'cmd' }
+    if (preferred === 'pwsh')
+        return hasPwsh() ? { file: 'pwsh.exe', args: POWER_SHELL_ARGS, label: 'pwsh' } : { file: cmd, args: cmdArgs, label: 'cmd' }
     if (preferred === 'powershell') return { file: 'powershell.exe', args: POWER_SHELL_ARGS, label: 'powershell' }
     return { file: cmd, args: cmdArgs, label: 'cmd' }
 }
 
-/** xterm can briefly report 0 while a panel is hidden — never create/resize a pty with invalid dimensions. */
+/** Xterm can briefly report 0 while a panel is hidden — never create/resize a pty with invalid dimensions. */
 function clampCols(cols: number): number {
     return Math.max(2, Math.floor(cols) || 80)
 }
@@ -166,18 +164,11 @@ function clampRows(rows: number): number {
 }
 
 /**
- * Starts (or returns) the shell for a terminal id. `rows`/`cols` come from the renderer's xterm so
- * the first paint is already correctly sized. Reusing an existing session is the whole point of the
- * stable-id model: a panel that remounts (the repo tabs rebuild mid-switch) re-sends the same id and
- * gets its live shell + scrollback back instead of spawning a second one.
+ * Starts (or returns) the shell for a terminal id. `rows`/`cols` come from the renderer's xterm so the first paint is already correctly
+ * sized. Reusing an existing session is the whole point of the stable-id model: a panel that remounts (the repo tabs rebuild mid-switch)
+ * re-sends the same id and gets its live shell + scrollback back instead of spawning a second one.
  */
-export function createTerminal(
-    terminalId: string,
-    repoPath: string,
-    cols: number,
-    rows: number,
-    preferred: TerminalShell = 'pwsh'
-): void {
+export function createTerminal(terminalId: string, repoPath: string, cols: number, rows: number, preferred: TerminalShell = 'pwsh'): void {
     if (!terminalId) throw new Error('Terminal id is required')
     if (!repoPath || !fs.existsSync(repoPath)) throw new Error(`Repository path does not exist: ${repoPath}`)
     const existing = sessions.get(terminalId)
@@ -284,8 +275,8 @@ export function disposeTerminal(terminalId: string): void {
 }
 
 /**
- * Kills every shell of a repo. Only the renderer's "close repo tab" action calls this — a workspace
- * switch also closes git instances, and those shells must survive it.
+ * Kills every shell of a repo. Only the renderer's "close repo tab" action calls this — a workspace switch also closes git instances, and
+ * those shells must survive it.
  */
 export function disposeTerminalsForRepo(repoPath: string): number {
     let killed = 0

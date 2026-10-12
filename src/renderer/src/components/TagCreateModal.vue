@@ -72,19 +72,22 @@
         const push = ui.tagPushToOrigin
         try {
             let pushError: string | null = null
-            await transient.withBusy(async () => {
-                await window.api.createTag(trimmed, props.commit.hash ?? null)
-                if (push) {
-                    transient.busy = 'Pushing tag…'
-                    phase.value = 'push'
-                    try {
-                        await window.api.pushTag(trimmed)
-                    } catch (pushErr) {
-                        pushError = String(pushErr).replace(/^Error:\s*/, '')
+            await transient.withBusy(
+                async () => {
+                    await window.api.createTag(trimmed, props.commit.hash ?? null)
+                    if (push) {
+                        transient.busy = 'Pushing tag…'
+                        phase.value = 'push'
+                        try {
+                            await window.api.pushTag(trimmed)
+                        } catch (pushErr) {
+                            pushError = String(pushErr).replace(/^Error:\s*/, '')
+                        }
                     }
-                }
-                await repoStore.refreshWithTags()
-            }, push ? 'Creating and pushing tag…' : 'Creating tag…')
+                    await repoStore.refreshWithTags()
+                },
+                push ? 'Creating and pushing tag…' : 'Creating tag…'
+            )
             if (!push) {
                 notify(`Tag ${trimmed} created`, 'success')
             } else if (pushError) {

@@ -24,7 +24,7 @@ full guarded list lives in `@simple-git/argv-parser`). Keep that strip inside `b
 it repos stop opening for anyone with `EDITOR`/`VISUAL` set. `baseEnv()` also deletes **every**
 remaining `git*` key: the guard blocks any unknown variable with a `git` prefix (its parse-env step
 collects them case-insensitively), so a stray `GITLAB_TOKEN` or `GIT_CANO_LOG_LEVEL` would break
-every spawn. Keep that sweep too — the git envs we inject ourselves are added *after* `baseEnv()`.
+every spawn. Keep that sweep too — the git envs we inject ourselves are added _after_ `baseEnv()`.
 
 ## Ref names (ambiguous short names)
 

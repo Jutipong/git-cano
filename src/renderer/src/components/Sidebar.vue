@@ -20,8 +20,8 @@
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
-    import { useUpdaterStore } from '../stores/updater'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
+    import { useUpdaterStore } from '../stores/updater'
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog } from '../utils/confirm'
     import { promptDialog } from '../utils/prompt'
@@ -52,7 +52,9 @@
     const ZOOM_CHOICES = [70, 80, 90, 100, 110, 125, 140, 150]
     const appVersion = ref('')
     const updater = useUpdaterStore()
-    const showUpdateButton = computed(() => updater.status === 'available' || updater.status === 'downloading' || updater.status === 'downloaded')
+    const showUpdateButton = computed(
+        () => updater.status === 'available' || updater.status === 'downloading' || updater.status === 'downloaded'
+    )
     const updateButtonTitle = computed(() => {
         if (updater.status === 'downloaded') return `Restart to install ${updater.downloadedVersion || updater.latestVersion}`
         // macOS / dev cannot auto-update — the click opens the release page, so don't promise a download.
@@ -159,7 +161,9 @@
         if (repoStore.soloBranch && repoStore.soloBranch !== branch.name) return
         const hash =
             branch.commitHash ??
-            repoStore.commits.find(commit => commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}` || ref === `remote:${branch.name}`))?.hash
+            repoStore.commits.find(commit =>
+                commit.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}` || ref === `remote:${branch.name}`)
+            )?.hash
         if (hash) repoStore.pendingFocusHash = hash
     }
 
@@ -334,7 +338,9 @@
     function createTagHere(branch: LocalBranchMenuState['branch']) {
         const commit = branch.commitHash
             ? (repoStore.commits.find(c => c.hash === branch.commitHash) ?? null)
-            : (repoStore.commits.find(c => c.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}` || ref === `remote:${branch.name}`)) ?? null)
+            : (repoStore.commits.find(c =>
+                  c.refs.some(ref => ref === branch.name || ref === `HEAD -> ${branch.name}` || ref === `remote:${branch.name}`)
+              ) ?? null)
         const hash = commit?.hash ?? branch.commitHash ?? null
         if (!hash) {
             notify('Cannot locate commit for this branch', 'error')

@@ -213,12 +213,11 @@
     let loadMoreArmed = true
     const showToTop = ref(false)
     /**
-     * Re-solve the rendered window from the container's live height. Must also run when the container
-     * is resized without a scroll (window resize, panel width drag, and the app shell being hidden
-     * during a workspace switch), or the list stays cut at the old height — but never while it has no
-     * box (hidden shell), where `clientHeight` is 0 and the window would collapse.
-     * An empty list must not collapse the window either: commits load after the first
-     * ResizeObserver callback at boot, and the length watcher above re-solves it from there.
+     * Re-solve the rendered window from the container's live height. Must also run when the container is resized without a scroll (window
+     * resize, panel width drag, and the app shell being hidden during a workspace switch), or the list stays cut at the old height — but
+     * never while it has no box (hidden shell), where `clientHeight` is 0 and the window would collapse. An empty list must not collapse
+     * the window either: commits load after the first ResizeObserver callback at boot, and the length watcher above re-solves it from
+     * there.
      */
     function updateVisibleRange() {
         const el = scrollEl.value
@@ -288,11 +287,10 @@
     }
 
     /**
-     * Multi-select for squash: Shift+click extends a range from the last pick (or the
-     * open commit). The scope is HEAD..oldest pick on the CURRENT branch — the graph lists
-     * every ref (`log --branches --remotes --tags`), so index 0 is not necessarily HEAD and
-     * other-branch rows must never enter the range. The chain follows first parents, matching
-     * what `getSquashPlan` accepts (merge commits are rejected).
+     * Multi-select for squash: Shift+click extends a range from the last pick (or the open commit). The scope is HEAD..oldest pick on the
+     * CURRENT branch — the graph lists every ref (`log --branches --remotes --tags`), so index 0 is not necessarily HEAD and other-branch
+     * rows must never enter the range. The chain follows first parents, matching what `getSquashPlan` accepts (merge commits are
+     * rejected).
      */
     const squashPicks = ref<string[]>([])
     const headHash = computed(

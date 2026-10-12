@@ -17,17 +17,16 @@ export function repoNameFromPath(repoPath: string): string {
 }
 
 /**
- * Every repository open in ANY workspace, for cross-workspace search (the command palette's `Repo…`
- * mode). The current workspace leads — its live tabs first (they carry the real names and the active
- * flag), then other workspaces in `names` order following their persisted session.
+ * Every repository open in ANY workspace, for cross-workspace search (the command palette's `Repo…` mode). The current workspace leads —
+ * its live tabs first (they carry the real names and the active flag), then other workspaces in `names` order following their persisted
+ * session.
  *
- * The same repo MAY appear once per workspace that opens it, and those rows are deliberately NOT deduped:
- * each row is its own "switch to that workspace with this repo focused" target, so collapsing them would
- * make the other workspaces look like they don't hold the repo at all. Only the current workspace is
- * guarded, since its live tabs and its persisted session can list the same path twice mid-switch.
+ * The same repo MAY appear once per workspace that opens it, and those rows are deliberately NOT deduped: each row is its own "switch to
+ * that workspace with this repo focused" target, so collapsing them would make the other workspaces look like they don't hold the repo at
+ * all. Only the current workspace is guarded, since its live tabs and its persisted session can list the same path twice mid-switch.
  *
- * Sessions of *other* workspaces are persisted path lists, so their names are derived from the path — the
- * folder is gone by the time we look anyway.
+ * Sessions of _other_ workspaces are persisted path lists, so their names are derived from the path — the folder is gone by the time we
+ * look anyway.
  */
 export function collectWorkspaceRepos(
     names: string[],

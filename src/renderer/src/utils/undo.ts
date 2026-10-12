@@ -2,9 +2,8 @@ import { useRepoStore } from '../stores/repo'
 import { useUiTransientStore } from '../stores/uiTransient'
 
 /**
- * Shows a success toast with a timed Undo button when the main process journaled an undoable
- * action for the repo — otherwise a plain success toast. The toast window is the only gate; the
- * journal entry is id-guarded so a stale toast can't undo a newer action.
+ * Shows a success toast with a timed Undo button when the main process journaled an undoable action for the repo — otherwise a plain
+ * success toast. The toast window is the only gate; the journal entry is id-guarded so a stale toast can't undo a newer action.
  */
 export async function notifyUndoable(repoPath: string | undefined, successMessage: string): Promise<void> {
     const uiTransient = useUiTransientStore()
@@ -25,7 +24,9 @@ export async function performUndo(repoPath: string, id: number): Promise<void> {
     try {
         const done = await uiTransient.withBusy(() => window.api.undoById(id, repoPath), 'Undoing…')
         // Refresh the active tab; a background tab heals via the repo-changed watcher.
-        await useRepoStore().refresh().catch(() => {})
+        await useRepoStore()
+            .refresh()
+            .catch(() => {})
         // The stash list lives outside refresh() (StashPanel loads it on stashListTick).
         uiTransient.bumpStashList()
         uiTransient.notify(done, 'success')

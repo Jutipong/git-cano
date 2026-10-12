@@ -59,12 +59,15 @@ test('undo: a commit is journaled and undo restores HEAD', async () => {
 
 test('squash: a HEAD range collapses into one commit', async () => {
     const target = git(['rev-parse', 'HEAD~2'])
-    const plan = await page.evaluate(async ({ target }: { target: string }) => {
-        const api = (window as unknown as { api: any }).api
-        const squashPlan = await api.squashPlan(target)
-        await api.squashCommits(squashPlan.base, 'chore: squashed range')
-        return squashPlan
-    }, { target })
+    const plan = await page.evaluate(
+        async ({ target }: { target: string }) => {
+            const api = (window as unknown as { api: any }).api
+            const squashPlan = await api.squashPlan(target)
+            await api.squashCommits(squashPlan.base, 'chore: squashed range')
+            return squashPlan
+        },
+        { target }
+    )
     expect(plan.commits).toHaveLength(3)
     expect(subjects()).toEqual(['chore: squashed range', 'chore: commit 2', 'chore: commit 1'])
 })
@@ -110,13 +113,16 @@ test('interactive rebase: dropping a commit works and reflog restores it', async
 
 test('revert: appends a revert commit and journals undo', async () => {
     const head = git(['rev-parse', 'HEAD'])
-    const peek = await page.evaluate(async ({ repo, hash }: { repo: string; hash: string }) => {
-        const api = (window as unknown as { api: any }).api
-        await api.revertCommit(hash)
-        const preview = await api.undoPeek(repo)
-        await api.undoById(preview.id, repo)
-        return preview
-    }, { repo: fx.opsRepo, hash: head })
+    const peek = await page.evaluate(
+        async ({ repo, hash }: { repo: string; hash: string }) => {
+            const api = (window as unknown as { api: any }).api
+            await api.revertCommit(hash)
+            const preview = await api.undoPeek(repo)
+            await api.undoById(preview.id, repo)
+            return preview
+        },
+        { repo: fx.opsRepo, hash: head }
+    )
     expect(peek?.label).toContain('revert')
     expect(git(['rev-parse', 'HEAD'])).toBe(head)
 })

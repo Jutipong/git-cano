@@ -38,14 +38,7 @@ export const SYNC_SHORTCUT_DEFAULTS: Record<SyncShortcutId, string> = {
 }
 
 /** Shortcuts customizable in Settings → Shortcuts. '?' and zoom stay fixed. */
-export type CustomShortcutId =
-    | SyncShortcutId
-    | 'openRepo'
-    | 'cloneRepo'
-    | 'searchCommits'
-    | 'settings'
-    | 'commandPalette'
-    | 'terminal'
+export type CustomShortcutId = SyncShortcutId | 'openRepo' | 'cloneRepo' | 'searchCommits' | 'settings' | 'commandPalette' | 'terminal'
 
 export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'fetch',
@@ -59,7 +52,10 @@ export const CUSTOM_SHORTCUT_IDS: CustomShortcutId[] = [
     'terminal',
 ]
 
-/** Platform a custom shortcut override applies to. Combos stay canonical ("Ctrl+…", Cmd counts as Ctrl) — only the stored value differs per platform. */
+/**
+ * Platform a custom shortcut override applies to. Combos stay canonical ("Ctrl+…", Cmd counts as Ctrl) — only the stored value differs per
+ * platform.
+ */
 export type ShortcutPlatform = 'mac' | 'win'
 
 export const SHORTCUT_PLATFORMS: ShortcutPlatform[] = ['mac', 'win']
@@ -86,7 +82,10 @@ export const SHORTCUT_DEFAULTS: Record<CustomShortcutId, string> = {
     terminal: 'Ctrl+`',
 }
 
-/** Fixed combos a custom shortcut must not override (app zoom, close tab, terminal tabs/full height — captured before xterm / above the busy gate). */
+/**
+ * Fixed combos a custom shortcut must not override (app zoom, close tab, terminal tabs/full height — captured before xterm / above the busy
+ * gate).
+ */
 const RESERVED_COMBOS = new Set([
     'Ctrl+=',
     'Ctrl+-',
@@ -116,11 +115,7 @@ export function eventToCombo(event: KeyboardEvent): string | null {
 
 /** "Ctrl+ArrowUp" → "Ctrl+↑" for display. */
 export function formatCombo(combo: string): string {
-    return combo
-        .replaceAll('ArrowUp', '↑')
-        .replaceAll('ArrowDown', '↓')
-        .replaceAll('ArrowLeft', '←')
-        .replaceAll('ArrowRight', '→')
+    return combo.replaceAll('ArrowUp', '↑').replaceAll('ArrowDown', '↓').replaceAll('ArrowLeft', '←').replaceAll('ArrowRight', '→')
 }
 
 /** Canonical combo → macOS display ("Ctrl+Shift+ArrowDown" → "⌘+Shift+↓"). */
@@ -144,4 +139,3 @@ export function isReservedCombo(combo: string, effective: Partial<Record<string,
     }
     return false
 }
-

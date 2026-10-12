@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test'
 import { execFileSync } from 'node:child_process'
+
+import { expect, test, type Page } from '@playwright/test'
 
 import { loadFixtures } from './fixtures'
 import { launchApp, type AppHandle } from './launch'
@@ -128,9 +129,7 @@ test('Ctrl+` and the palette remember full mode across a hide; the header hide b
     // The palette toggle behaves like Ctrl+`: hide, then show straight back into the overlay.
     await fullBtn.click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
-    const paletteTerminal = page
-        .locator('.palette-item')
-        .filter({ has: page.locator('.palette-label', { hasText: /^Terminal$/ }) })
+    const paletteTerminal = page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: /^Terminal$/ }) })
     await page.keyboard.press('Control+p')
     await paletteTerminal.click()
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
@@ -166,13 +165,19 @@ test('terminal tabs rename on double-click and keep their number through a reord
     await expect(panel.locator('.terminal-tab-label')).toHaveText(['cmd 1', 'cmd 2'])
 
     // The number belongs to the tab, not the slot: dragging the second shell in front keeps its name.
-    await panel.locator('.terminal-tab').nth(1).dragTo(panel.locator('.terminal-tab').first(), {
-        targetPosition: { x: 2, y: 8 },
-    })
+    await panel
+        .locator('.terminal-tab')
+        .nth(1)
+        .dragTo(panel.locator('.terminal-tab').first(), {
+            targetPosition: { x: 2, y: 8 },
+        })
     await expect(panel.locator('.terminal-tab-label')).toHaveText(['cmd 2', 'cmd 1'])
-    await panel.locator('.terminal-tab').nth(1).dragTo(panel.locator('.terminal-tab').first(), {
-        targetPosition: { x: 2, y: 8 },
-    })
+    await panel
+        .locator('.terminal-tab')
+        .nth(1)
+        .dragTo(panel.locator('.terminal-tab').first(), {
+            targetPosition: { x: 2, y: 8 },
+        })
     await expect(panel.locator('.terminal-tab-label')).toHaveText(['cmd 1', 'cmd 2'])
 
     // Rename each so the later drag is unambiguous even if the derived labels ever collide.
@@ -189,9 +194,12 @@ test('terminal tabs rename on double-click and keep their number through a reord
     await expect(panel.locator('.terminal-tab-label')).toHaveText(['build', 'serve'])
 
     // Drag the second tab in front of the first (same interaction as the repo tabs).
-    await panel.locator('.terminal-tab').nth(1).dragTo(panel.locator('.terminal-tab').first(), {
-        targetPosition: { x: 2, y: 8 },
-    })
+    await panel
+        .locator('.terminal-tab')
+        .nth(1)
+        .dragTo(panel.locator('.terminal-tab').first(), {
+            targetPosition: { x: 2, y: 8 },
+        })
     await expect(panel.locator('.terminal-tab-label')).toHaveText(['serve', 'build'])
 
     // Reordering moved the labels, not the shells: the tab on screen is still a live shell.
@@ -211,7 +219,10 @@ test('kill all lives in the palette only, and terminates every remaining shell',
     // repos that are not on screen, so it keeps one confirm-guarded home — the palette item.
     await expect(page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]')).toHaveCount(0)
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
+    await page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) })
+        .click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -255,7 +266,10 @@ test('Ctrl+` toggles the panel, and the palette kills everything', async () => {
     await expect(page.locator('.palette-input')).toHaveCount(0)
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
+    await page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) })
+        .click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -274,18 +288,27 @@ test('the header hide button hides the panel without killing the shell', async (
     await runInTerminal('echo after-hide-ok', 'after-hide-ok')
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
+    await page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) })
+        .click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
 test('the command palette toggles the panel and offers kill all', async () => {
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: /^Terminal$/ }) }).click()
+    await page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: /^Terminal$/ }) })
+        .click()
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
+    await page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) })
+        .click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -336,7 +359,10 @@ test('Settings → Terminal picks the shell of new terminals and sizes the text 
     expect(sizeBefore).not.toBe(18)
 
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) }).click()
+    await page
+        .locator('.palette-item')
+        .filter({ has: page.locator('.palette-label', { hasText: 'Terminal Kill All' }) })
+        .click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
@@ -473,10 +499,7 @@ test('Ctrl+click opens a printed URL through the OS browser bridge, a plain clic
     await runInTerminal(`echo ${url}`, url)
 
     // The echoed command line carries the URL too; only the row without `echo` is its output.
-    const rows = page
-        .locator('.terminal-view:visible .xterm-rows > div')
-        .filter({ hasText: url })
-        .filter({ hasNotText: 'echo' })
+    const rows = page.locator('.terminal-view:visible .xterm-rows > div').filter({ hasText: url }).filter({ hasNotText: 'echo' })
     await expect(rows).toHaveCount(1)
     const row = rows.first()
 
@@ -488,9 +511,7 @@ test('Ctrl+click opens a printed URL through the OS browser bridge, a plain clic
     expect(await handle.app.evaluate(() => (globalThis as unknown as { __openedLinks: string[] }).__openedLinks)).toEqual([])
 
     await row.click({ position: { x: 24, y: 8 }, modifiers: ['Control'], force: true })
-    await expect
-        .poll(() => handle.app.evaluate(() => (globalThis as unknown as { __openedLinks: string[] }).__openedLinks))
-        .toEqual([url])
+    await expect.poll(() => handle.app.evaluate(() => (globalThis as unknown as { __openedLinks: string[] }).__openedLinks)).toEqual([url])
     // No Electron window may appear: the addon's default `window.open` handler must never run.
     expect(handle.app.windows()).toHaveLength(1)
 

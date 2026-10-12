@@ -8,10 +8,9 @@ export interface MinVisibleOptions {
 }
 
 /**
- * Stabilizes a fast-changing boolean source for display: nothing shows until it has stayed true for
- * `showDelayMs`, and once shown it remains visible for at least `minVisibleMs` (measured from the
- * moment it appeared). A source that turns true again while the minimum is running keeps the flag
- * up continuously — the hold is never restarted from scratch.
+ * Stabilizes a fast-changing boolean source for display: nothing shows until it has stayed true for `showDelayMs`, and once shown it
+ * remains visible for at least `minVisibleMs` (measured from the moment it appeared). A source that turns true again while the minimum is
+ * running keeps the flag up continuously — the hold is never restarted from scratch.
  */
 export function useMinVisible(source: () => boolean, options: MinVisibleOptions) {
     const showDelayMs = options.showDelayMs ?? 0

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { isPreviewablePath } from '../../src/renderer/src/utils/preview'
 import { stripMarkdown } from '../../src/renderer/src/utils/changelog'
+import { isPreviewablePath } from '../../src/renderer/src/utils/preview'
 import { isFreeZenId, toGoModel } from '../../src/shared/models'
 
 describe('isPreviewablePath', () => {

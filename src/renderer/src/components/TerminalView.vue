@@ -8,11 +8,11 @@
     import { primaryFontFamily, resolveTerminalFontFamily } from '../utils/terminalFont'
     import { shouldActivateTerminalLink } from '../utils/terminalLinks'
 
-    import '@xterm/xterm/css/xterm.css'
-
     import type { TerminalData, TerminalExit } from '@shared/types'
-    import type { IDisposable, Terminal } from '@xterm/xterm'
     import type { FitAddon } from '@xterm/addon-fit'
+    import type { IDisposable, Terminal } from '@xterm/xterm'
+
+    import '@xterm/xterm/css/xterm.css'
 
     const props = defineProps<{
         /** Repo path whose shell this view shows — pinned so a mid-flight tab switch can't retarget it. */
@@ -33,9 +33,9 @@
     const started = ref(false)
 
     /**
-     * A fresh pty emits escape sequences (window title, cursor/mode setup) within milliseconds, long
-     * before the shell has drawn anything — the bundled conpty.dll can then hold the actual screen
-     * for seconds. Only real text counts as "the shell is up", or the hint would blink away instantly.
+     * A fresh pty emits escape sequences (window title, cursor/mode setup) within milliseconds, long before the shell has drawn anything —
+     * the bundled conpty.dll can then hold the actual screen for seconds. Only real text counts as "the shell is up", or the hint would
+     * blink away instantly.
      */
     function hasVisibleText(data: string): boolean {
         // Built from char codes so no control character ever appears in this source file.
@@ -57,12 +57,10 @@
     let disposed = false
 
     /**
-     * The primary family comes from Settings → Terminal (default Consolas, inbox on every
-     * Windows); the stack always keeps Leelawadee UI behind it — Thai has no monospace face on
-     * Windows, so the browser falls back per codepoint and lets GPOS stack the vowels/tone marks.
-     * xterm's DOM renderer writes whole grapheme clusters into one <span>, which is what makes
-     * that shaping work — the canvas renderer (removed in xterm 6) never shaped Thai at all.
-     * A pick whose font is not installed resolves back to the default stack.
+     * The primary family comes from Settings → Terminal (default Consolas, inbox on every Windows); the stack always keeps Leelawadee UI
+     * behind it — Thai has no monospace face on Windows, so the browser falls back per codepoint and lets GPOS stack the vowels/tone marks.
+     * xterm's DOM renderer writes whole grapheme clusters into one <span>, which is what makes that shaping work — the canvas renderer
+     * (removed in xterm 6) never shaped Thai at all. A pick whose font is not installed resolves back to the default stack.
      */
     const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
 
@@ -79,9 +77,9 @@
     }
 
     /**
-     * Ctrl/Cmd+click on a URL — plain text via the web-links addon, OSC 8 via `linkHandler`.
-     * The addon's default handler calls `window.open`, which would create an Electron window
-     * instead of opening the user's browser; `app:openExternal` is the OS-browser bridge.
+     * Ctrl/Cmd+click on a URL — plain text via the web-links addon, OSC 8 via `linkHandler`. The addon's default handler calls
+     * `window.open`, which would create an Electron window instead of opening the user's browser; `app:openExternal` is the OS-browser
+     * bridge.
      */
     function openLink(event: MouseEvent, uri: string) {
         if (!shouldActivateTerminalLink(event, uri)) return
@@ -116,11 +114,10 @@
     }
 
     /**
-     * Re-solve the grid after a font change. xterm re-measures the cell box on a later task
-     * (debounced CharSizeService.measure), so fitting immediately reuses the stale cell size and
-     * the last row/column clips for some sizes. Wait for the new face, let two frames pass for
-     * the re-measure, fit, then burst refits until fallback fonts settle. Refits until cols/rows
-     * stop changing so every size in TERMINAL_FONT_SIZE_OPTIONS lands on a full grid.
+     * Re-solve the grid after a font change. xterm re-measures the cell box on a later task (debounced CharSizeService.measure), so fitting
+     * immediately reuses the stale cell size and the last row/column clips for some sizes. Wait for the new face, let two frames pass for
+     * the re-measure, fit, then burst refits until fallback fonts settle. Refits until cols/rows stop changing so every size in
+     * TERMINAL_FONT_SIZE_OPTIONS lands on a full grid.
      */
     async function refitAfterFontChange(seq: number, familyStack: string, size: number) {
         try {
@@ -164,11 +161,10 @@
     }
 
     /**
-     * TUIs draw horizontal rules as a run of `▀` half-blocks (opencode's input-box footer). At
-     * fractional display scales each glyph's antialiased edge falls a hair short of the cell, so the
-     * run shows a faint vertical seam at every boundary. Tag those spans so a solid half-height
-     * background of the same colour can sit behind the glyphs (`.terminal-bar` in modern-ui.css) —
-     * the antialiasing then blends into the identical colour and the bar reads as one crisp line.
+     * TUIs draw horizontal rules as a run of `▀` half-blocks (opencode's input-box footer). At fractional display scales each glyph's
+     * antialiased edge falls a hair short of the cell, so the run shows a faint vertical seam at every boundary. Tag those spans so a solid
+     * half-height background of the same colour can sit behind the glyphs (`.terminal-bar` in modern-ui.css) — the antialiasing then blends
+     * into the identical colour and the bar reads as one crisp line.
      */
     const BAR_RUN = /^\u2580+$/
     let barFrame = 0
@@ -188,9 +184,8 @@
     }
 
     /**
-     * xterm measures the character cell once at construction and caches it. Creating the Terminal
-     * before the stylesheets and fallback fonts are ready yields a wrong cell size, and every Thai
-     * combining mark then lands off its column.
+     * Xterm measures the character cell once at construction and caches it. Creating the Terminal before the stylesheets and fallback fonts
+     * are ready yields a wrong cell size, and every Thai combining mark then lands off its column.
      */
     async function waitForFonts(family: string) {
         const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))

@@ -1,12 +1,10 @@
 /**
- * Markdown image source helpers — shared by the main-process resolver and the
- * preview renderer so both agree on what counts as a repo-relative image.
+ * Markdown image source helpers — shared by the main-process resolver and the preview renderer so both agree on what counts as a
+ * repo-relative image.
  *
- * `marked` emits `<img src="...">` verbatim, so a relative source like
- * `docs/screenshots/01-overview.png` would resolve against the app URL instead
- * of the repository. The preview rewrites those through the `markdown:image`
- * IPC; remote (`http(s)`) and inline (`data:`/`blob:`) sources are left alone
- * for the browser (gated by the renderer's `img-src` CSP).
+ * `marked` emits `<img src="...">` verbatim, so a relative source like `docs/screenshots/01-overview.png` would resolve against the app URL
+ * instead of the repository. The preview rewrites those through the `markdown:image` IPC; remote (`http(s)`) and inline (`data:`/`blob:`)
+ * sources are left alone for the browser (gated by the renderer's `img-src` CSP).
  */
 
 /** True when the browser can load the source itself — no IPC rewrite needed. */
@@ -20,9 +18,8 @@ export function isLoadableMarkdownImageSrc(src: string): boolean {
 }
 
 /**
- * Resolve a markdown `<img src>` to a repo-relative posix path (`a/b.png`).
- * Returns null for remote/inline sources, absolute URLs, and anything that
- * would escape the repository root.
+ * Resolve a markdown `<img src>` to a repo-relative posix path (`a/b.png`). Returns null for remote/inline sources, absolute URLs, and
+ * anything that would escape the repository root.
  */
 export function resolveMarkdownImagePath(mdFile: string, src: string): string | null {
     const trimmed = src.trim()

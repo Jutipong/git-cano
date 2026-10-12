@@ -44,8 +44,8 @@ import type { FSWatcher } from 'node:fs'
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 /**
- * Last computed log per repo path — lets the renderer paint instantly (stale-while-revalidate) when switching back.
- * Bounded to the most recently used repos so a long session with many tabs can't grow it forever.
+ * Last computed log per repo path — lets the renderer paint instantly (stale-while-revalidate) when switching back. Bounded to the most
+ * recently used repos so a long session with many tabs can't grow it forever.
  */
 const logCache = new Map<string, { limit: number; commits: CommitNode[] }>()
 const LOG_CACHE_MAX_REPOS = 6
@@ -76,7 +76,14 @@ const SAFE_UNSAFE_OPTIONS = {
         allowUnsafeConfigPaths: true,
         allowUnsafeEditor: true,
     },
-    allowEnvironment: ['GIT_SSH_COMMAND', 'GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0', 'GIT_EDITOR', 'GIT_SEQUENCE_EDITOR'],
+    allowEnvironment: [
+        'GIT_SSH_COMMAND',
+        'GIT_CONFIG_COUNT',
+        'GIT_CONFIG_KEY_0',
+        'GIT_CONFIG_VALUE_0',
+        'GIT_EDITOR',
+        'GIT_SEQUENCE_EDITOR',
+    ],
 } as unknown as Partial<SimpleGitOptions>
 
 function createGit(dir: string): SimpleGit {
@@ -94,9 +101,9 @@ function createGit(dir: string): SimpleGit {
  * environment (e.g. VS Code), which simple-git blocks unless allowed. Auth credentials (SSH key / GitHub token) are NOT part of this; they
  * are injected per-command via `withAuthEnv`.
  *
- * simple-git v4's `allowEnvironment` guard throws when a git-sensitive env var is present in the env we inject — and `baseEnv()` injects the
- * whole process env. So strip the ambient names the app never wants git to honor (the user's editor/pager, stray config paths). The ones
- * `authGitEnv()` and the rebase helper inject themselves stay: they are listed in `allowEnvironment`.
+ * Simple-git v4's `allowEnvironment` guard throws when a git-sensitive env var is present in the env we inject — and `baseEnv()` injects
+ * the whole process env. So strip the ambient names the app never wants git to honor (the user's editor/pager, stray config paths). The
+ * ones `authGitEnv()` and the rebase helper inject themselves stay: they are listed in `allowEnvironment`.
  */
 const GUARDED_AMBIENT_ENV_KEYS = [
     'EDITOR',
@@ -167,8 +174,8 @@ export function plainGit(dir = ''): SimpleGit {
 /**
  * Opt-in Windows-only status accelerators (Settings → General → Performance). When enabled, each opened repo gets `core.fsmonitor` +
  * `core.untrackedCache` written to its local config once per open — they make every subsequent `git status` dramatically faster on large
- * worktrees. Never fails the open: each config write is swallowed on old/quirky git versions. The setting is hidden on macOS/Linux and
- * this gate keeps a persisted `true` from ever taking effect there.
+ * worktrees. Never fails the open: each config write is swallowed on old/quirky git versions. The setting is hidden on macOS/Linux and this
+ * gate keeps a persisted `true` from ever taking effect there.
  */
 let statusAcceleratorsEnabled = false
 
@@ -581,15 +588,22 @@ export async function getSoloLogPage(branch: string, offset: number, limit: numb
 }
 
 /**
- * Files touched by the commits visible in branch Solo (same depth as the solo log) — powers
- * Focus dimming in FilePanel. One spawn, paths only.
+ * Files touched by the commits visible in branch Solo (same depth as the solo log) — powers Focus dimming in FilePanel. One spawn, paths
+ * only.
  */
 export async function listSoloFiles(branch: string, limit = 500): Promise<string[]> {
     const rev = requireRevision(branch)
     const { git: g } = getRepo()
     await g.raw(['rev-parse', '--verify', rev])
     const text = await g.raw(['log', '--pretty=format:', '--name-only', `--max-count=${limit}`, rev, '--'])
-    return [...new Set(text.split('\n').map(line => line.trim()).filter(Boolean))]
+    return [
+        ...new Set(
+            text
+                .split('\n')
+                .map(line => line.trim())
+                .filter(Boolean)
+        ),
+    ]
 }
 
 export async function stage(paths: string[]): Promise<void> {
@@ -928,11 +942,9 @@ export async function getStashImageVersion(hash: string, file: string): Promise<
 const MARKDOWN_IMAGE_MAX_BYTES = 8 * 1024 * 1024
 
 /**
- * Repo-relative image referenced by a markdown preview (`![alt](src)`).
- * Relative sources resolve against the markdown file's directory (a leading
- * `/` anchors at the repo root); remote/inline/escaping sources resolve to
- * null so the renderer leaves them alone. Commit/stash previews read the blob
- * at that revision, otherwise the working tree is read.
+ * Repo-relative image referenced by a markdown preview (`![alt](src)`). Relative sources resolve against the markdown file's directory (a
+ * leading `/` anchors at the repo root); remote/inline/escaping sources resolve to null so the renderer leaves them alone. Commit/stash
+ * previews read the blob at that revision, otherwise the working tree is read.
  */
 export async function getMarkdownImage(
     mdFile: string,
@@ -1273,8 +1285,14 @@ export async function checkCherryPickConflicts(hash: string, target: string): Pr
     if (!base) return { supported: false, fastForward: false, conflicts: [] }
     try {
         const [mergeBase, targetHead] = await Promise.all([
-            g.raw(['merge-base', tip, rev]).then(out => out.trim(), () => ''),
-            g.raw(['rev-parse', '--verify', tip]).then(out => out.trim(), () => ''),
+            g.raw(['merge-base', tip, rev]).then(
+                out => out.trim(),
+                () => ''
+            ),
+            g.raw(['rev-parse', '--verify', tip]).then(
+                out => out.trim(),
+                () => ''
+            ),
         ])
         // Already an ancestor of the target — the real pick would come out empty.
         if (mergeBase && targetHead && (mergeBase === rev || mergeBase.startsWith(rev))) {
@@ -1328,7 +1346,10 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
     const status = await g.status()
     if (status.files.length > 0) throw new Error('Commit or stash your changes before merging')
     if (status.current === target) {
-        const headBefore = await g.revparse(['HEAD']).then(out => out.trim()).catch(() => null)
+        const headBefore = await g
+            .revparse(['HEAD'])
+            .then(out => out.trim())
+            .catch(() => null)
         const args: string[] = [source]
         if (mode === 'no-ff') args.push('--no-ff')
         else if (mode === 'ff-only') args.push('--ff-only')
@@ -1342,10 +1363,16 @@ export async function mergeInto(source: string, target: string, mode: MergeMode 
     }
 
     const ref = `refs/heads/${target}`
-    const oldTip = await g.raw(['rev-parse', '--verify', ref]).then(out => out.trim()).catch(() => null)
+    const oldTip = await g
+        .raw(['rev-parse', '--verify', ref])
+        .then(out => out.trim())
+        .catch(() => null)
     const journalTip = async () => {
         if (!oldTip) return
-        const newTip = await g.raw(['rev-parse', '--verify', ref]).then(out => out.trim()).catch(() => null)
+        const newTip = await g
+            .raw(['rev-parse', '--verify', ref])
+            .then(out => out.trim())
+            .catch(() => null)
         if (newTip && newTip !== oldTip) {
             pushUndo({ label: 'merge', doneMessage: 'Merge undone', repoPath: p, kind: 'branchTip', ref, oldTip, newTip })
         }
@@ -1654,8 +1681,8 @@ export async function resetTo(target: string, mode: 'soft' | 'mixed' | 'hard'): 
 }
 
 /**
- * HEAD reflog, newest first. This is the recovery net for history that the undo toast
- * window has already closed over (e.g. a hard reset) — the objects are still on disk.
+ * HEAD reflog, newest first. This is the recovery net for history that the undo toast window has already closed over (e.g. a hard reset) —
+ * the objects are still on disk.
  */
 export async function listReflog(limit = 100): Promise<ReflogEntry[]> {
     const { git: g } = getRepo()
@@ -1664,9 +1691,7 @@ export async function listReflog(limit = 100): Promise<ReflogEntry[]> {
     // `--date=iso-strict` makes %gd render HEAD@{<ISO 8601>}; the index is rebuilt from row order.
     // An unborn branch has no reflog at all — git exits non-zero with a raw fatal message, which
     // this recovery tool should surface as "nothing to recover", not as an error.
-    const text = await g
-        .raw(['reflog', '--date=iso-strict', `--format=%H${SEP}%h${SEP}%gd${SEP}%gs`, '-n', String(capped)])
-        .catch(() => '')
+    const text = await g.raw(['reflog', '--date=iso-strict', `--format=%H${SEP}%h${SEP}%gd${SEP}%gs`, '-n', String(capped)]).catch(() => '')
     return text
         .split('\n')
         .map(line => line.trim())
@@ -1772,9 +1797,7 @@ function toFileContent(buf: Buffer | null): FileContent {
 export async function getWorkdirFileContent(file: string, staged: boolean): Promise<FileContent> {
     const { path: p } = getRepo()
     try {
-        const buf = staged
-            ? await gitBinaryBuffer(p, ['cat-file', '-p', `:${file}`])
-            : await fs.promises.readFile(path.join(p, file))
+        const buf = staged ? await gitBinaryBuffer(p, ['cat-file', '-p', `:${file}`]) : await fs.promises.readFile(path.join(p, file))
         return toFileContent(buf)
     } catch {
         return { content: null, binary: false, tooLarge: false }
@@ -1907,11 +1930,10 @@ export async function commitMessage(message: string, amend: boolean, dir?: strin
 }
 
 /**
- * Undo journal for risky operations (commit/amend/reset/drop-stash). Each entry remembers the
- * pre-op state explicitly; the reflog is only the backstop — git never GCs the objects promptly,
- * so restoring a remembered ref is always safe. Keyed by repo path (never the mutable active
- * repo) so a tab switch mid-flight can't undo the wrong repository. The toast window is the UI
- * gate; the journal itself is just capped.
+ * Undo journal for risky operations (commit/amend/reset/drop-stash). Each entry remembers the pre-op state explicitly; the reflog is only
+ * the backstop — git never GCs the objects promptly, so restoring a remembered ref is always safe. Keyed by repo path (never the mutable
+ * active repo) so a tab switch mid-flight can't undo the wrong repository. The toast window is the UI gate; the journal itself is just
+ * capped.
  */
 type UndoKind = 'commit' | 'reset' | 'branchTip' | 'dropStash'
 
@@ -1961,8 +1983,8 @@ export function peekUndo(dir?: string): UndoPreview | null {
 }
 
 /**
- * Undoes the latest journal entry, but only when `id` still matches the top — a stale toast
- * (another operation landed meanwhile) fails loudly instead of undoing the wrong action.
+ * Undoes the latest journal entry, but only when `id` still matches the top — a stale toast (another operation landed meanwhile) fails
+ * loudly instead of undoing the wrong action.
  */
 export async function undoById(id: number, dir?: string): Promise<string> {
     const found = undoStackFor(dir)
@@ -2373,11 +2395,10 @@ export async function getBlame(file: string, rev?: string): Promise<BlameLine[]>
 }
 
 /**
- * Interactive rebase runs the real `git rebase -i` so squash/fixup/reword/drop/edit follow git's
- * own semantics (and conflicts pause in place instead of aborting). We drive it by writing the
- * todo ourselves: a tiny Node helper (run through `ELECTRON_RUN_AS_NODE`) acts as both the
- * sequence editor (writes our todo) and the commit-message editor (writes the per-commit message
- * for reword/squash, read from the command shown in COMMIT_EDITMSG's "Last command(s) done" block).
+ * Interactive rebase runs the real `git rebase -i` so squash/fixup/reword/drop/edit follow git's own semantics (and conflicts pause in
+ * place instead of aborting). We drive it by writing the todo ourselves: a tiny Node helper (run through `ELECTRON_RUN_AS_NODE`) acts as
+ * both the sequence editor (writes our todo) and the commit-message editor (writes the per-commit message for reword/squash, read from the
+ * command shown in COMMIT_EDITMSG's "Last command(s) done" block).
  */
 const INTERACTIVE_REBASE_PLAN = 'git-cano-rebase-plan.json'
 
@@ -2500,5 +2521,3 @@ export async function startInteractiveRebase(baseRef: string, entries: RebaseEnt
     const replayed = entries.filter(entry => entry.command !== 'drop').length
     return { completed: true, message: `Interactive rebase complete (${replayed} commits)` }
 }
-
-

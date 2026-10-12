@@ -1,9 +1,9 @@
 <script setup lang="ts">
     import { computed, inject, onMounted, ref, watch, type Component } from 'vue'
+    import Bash from '~icons/catppuccin/bash'
+    import Folder from '~icons/catppuccin/folder'
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
-    import Folder from '~icons/catppuccin/folder'
-    import Bash from '~icons/catppuccin/bash'
     import Rider from '~icons/logos/rider'
     import ArrowDown from '~icons/lucide/arrow-down'
     import ArrowDownToLine from '~icons/lucide/arrow-down-to-line'
@@ -184,10 +184,9 @@
     }
 
     /**
-     * Opens a repo that belongs to another workspace: `switchWorkspace` restores that workspace's whole
-     * session and lands on this repo. Not wrapped in `withBusy` — `switchWorkspace` has its own busy
-     * guard and would silently no-op. A repo whose folder vanished fails `openPath` inside the switch, so
-     * the focus check reports it instead of leaving the user on an unrelated repo.
+     * Opens a repo that belongs to another workspace: `switchWorkspace` restores that workspace's whole session and lands on this repo. Not
+     * wrapped in `withBusy` — `switchWorkspace` has its own busy guard and would silently no-op. A repo whose folder vanished fails
+     * `openPath` inside the switch, so the focus check reports it instead of leaving the user on an unrelated repo.
      */
     function openRepoInWorkspace(workspace: string, repoPath: string) {
         close()
@@ -216,7 +215,13 @@
         const items: PaletteItem[] = []
         if (repoStore.repo) {
             items.push(
-                { id: 'pull', label: 'Pull', accent: 'blue', icon: ArrowDown, run: () => execute(() => syncStore.pull(repoStore.refreshWithTags)) },
+                {
+                    id: 'pull',
+                    label: 'Pull',
+                    accent: 'blue',
+                    icon: ArrowDown,
+                    run: () => execute(() => syncStore.pull(repoStore.refreshWithTags)),
+                },
                 { id: 'push', label: 'Push', accent: 'green', icon: ArrowUp, run: () => execute(() => syncStore.push(repoStore.refresh)) },
                 {
                     id: 'fetch',
@@ -228,7 +233,13 @@
             )
         }
         items.push(
-            { id: 'repo', label: 'Repo…', hint: ws.names.length > 1 ? 'Open repo in any workspace' : 'Switch repository tab', icon: FolderGit2, run: () => enterMode('repo') },
+            {
+                id: 'repo',
+                label: 'Repo…',
+                hint: ws.names.length > 1 ? 'Open repo in any workspace' : 'Switch repository tab',
+                icon: FolderGit2,
+                run: () => enterMode('repo'),
+            },
             { id: 'branch', label: 'Branch…', hint: 'Checkout branch', icon: GitBranch, run: () => enterMode('branch') },
             ...(ws.names.length > 1
                 ? [
@@ -460,17 +471,13 @@
     const OUTER_HIT_LIMIT = 8
 
     /** Matching workspaces for the outermost level (only when there is more than one to switch between). */
-    const matchedWorkspaces = computed(() =>
-        ws.names.length > 1 ? filterPaletteItems(workspaceItems.value, search.value) : []
-    )
+    const matchedWorkspaces = computed(() => (ws.names.length > 1 ? filterPaletteItems(workspaceItems.value, search.value) : []))
 
     /** Like-style filter for the drill-in sub-modes: case-insensitive substring match on the label, plus any extra `search` text. */
     const subFiltered = computed(() => {
         const query = search.value.trim().toLowerCase()
         if (!query) return items.value
-        return items.value.filter(
-            item => item.label.toLowerCase().includes(query) || (item.search ?? '').toLowerCase().includes(query)
-        )
+        return items.value.filter(item => item.label.toLowerCase().includes(query) || (item.search ?? '').toLowerCase().includes(query))
     })
 
     /** Top repo hits for the outermost level (capped). */
@@ -499,11 +506,9 @@
     }
 
     /**
-     * Sectioned view: commands mode groups core actions under Commands and adds the
-     * query-driven Open in / Repositories / Branches / Workspaces / AI sections while
-     * searching (each stays a drill-in mode too, like Repo…/Branch…). Sub-modes stay a
-     * single untitled list. Empty groups are dropped, so the headers double as
-     * Spotlight-style group labels.
+     * Sectioned view: commands mode groups core actions under Commands and adds the query-driven Open in / Repositories / Branches /
+     * Workspaces / AI sections while searching (each stays a drill-in mode too, like Repo…/Branch…). Sub-modes stay a single untitled list.
+     * Empty groups are dropped, so the headers double as Spotlight-style group labels.
      */
     const sections = computed<PaletteSection[]>(() => {
         if (mode.value !== 'commands') return [{ items: subFiltered.value, offset: 0 }]
@@ -659,7 +664,8 @@
                             class="palette-hint">
                             <span
                                 v-if="item.badge"
-                                class="palette-badge">{{ item.badge }}</span
+                                class="palette-badge"
+                                >{{ item.badge }}</span
                             >{{ item.hint }}
                         </span>
                     </button>

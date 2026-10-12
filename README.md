@@ -19,26 +19,26 @@ A lightweight, open-source Git GUI for **Windows & macOS** — review history �
 
 ![Main overview — tabs, sidebar, graph and Changes](docs/screenshots/01-overview.png)
 
-| Commit history | Side-by-side diff |
-| --- | --- |
+| Commit history                                                           | Side-by-side diff                                                       |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
 | ![Selected commit with Committed History](docs/screenshots/02-graph.png) | ![Side-by-side diff with word highlights](docs/screenshots/03-diff.png) |
 
-| Changes & commit | Terminal panel |
-| --- | --- |
+| Changes & commit                                                    | Terminal panel                                                            |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | ![Changes panel with commit box](docs/screenshots/04-ai-commit.png) | ![Built-in terminal with multiple tabs](docs/screenshots/05-terminal.png) |
 
-| Conflict resolver | Command palette |
-| --- | --- |
+| Conflict resolver                                                   | Command palette                                                           |
+| ------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | ![Per-line conflict picks](docs/screenshots/06-rebase-conflict.png) | ![Palette Repo search across workspaces](docs/screenshots/07-palette.png) |
 
 ### 🎨 Themes
 
-| Dark | Light |
-| --- | --- |
+| Dark                                              | Light                                               |
+| ------------------------------------------------- | --------------------------------------------------- |
 | ![Dark theme](docs/screenshots/08-theme-dark.png) | ![Light theme](docs/screenshots/08-theme-light.png) |
 
-| Win9x | Win9x Dark |
-| --- | --- |
+| Win9x                                               | Win9x Dark                                                    |
+| --------------------------------------------------- | ------------------------------------------------------------- |
 | ![Win9x theme](docs/screenshots/08-theme-win9x.png) | ![Win9x Dark theme](docs/screenshots/08-theme-win9x-dark.png) |
 
 ---
@@ -49,71 +49,71 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 
 - 🪟 **Windows** — `git-cano-<version>-setup.exe`, run the installer (auto-updates in-app). It's unsigned, so SmartScreen may warn → `More info` → `Run anyway`.
 - 🍎 **macOS (Apple Silicon only)** — the `.dmg` is unsigned and manual-download (no in-app auto-update):
-  1. Open the `.dmg`, drag `Git Cano` into Applications.
-  2. Clear the quarantine flag (first install only):
-     ```bash
-     xattr -cr /Applications/Git\ Cano.app
-     ```
-  3. Right-click `Git Cano` → Open (only needed once).
+    1. Open the `.dmg`, drag `Git Cano` into Applications.
+    2. Clear the quarantine flag (first install only):
+        ```bash
+        xattr -cr /Applications/Git\ Cano.app
+        ```
+    3. Right-click `Git Cano` → Open (only needed once).
 
 ## ✨ What can it do?
 
 ### 📂 Repositories & Workspaces
 
-|     |                                                                         |
-| --- | ----------------------------------------------------------------------- |
-| 📁  | Open & clone repositories                                               |
-| 🗂️  | Multiple repos open at once as tabs                                     |
-| 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder; switcher button shows text only, no icon |
+|     |                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 📁  | Open & clone repositories                                                                                                                                                                                                                                                                                                                                                                                      |
+| 🗂️  | Multiple repos open at once as tabs                                                                                                                                                                                                                                                                                                                                                                            |
+| 🧩  | **Workspaces** — group repos, each remembers its own tabs & active repo; drag rows to reorder; switcher button shows text only, no icon                                                                                                                                                                                                                                                                        |
 | 🔎  | **Find a repo in any workspace** — the palette's `Repo…` mode lists every repo open across all workspaces and matches on repo name, full path, or workspace name; picking a repo from another workspace switches there and opens it, with a green **Active** pill on the repo you are actually on. A repo held by several workspaces gets one row per workspace, so you always know which one you will land in |
-| ⏳  | **Switch cover** — the splash appears fully opaque the instant you switch (min 1s), so tabs and panels never flicker; clicks pass through while it fades out |
-| 💾  | Session & recent-repo restore on startup                                |
-| 🔗  | "Open in" text-only button (no chevron) → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette |
-| 🎨  | Catppuccin icons — open menu (`folder-include` + rows `folder-open`/`folder-git`), repo search, Open in Folder/Terminal (`folder`/`bash`); open popup shows instantly, no animation |
+| ⏳  | **Switch cover** — the splash appears fully opaque the instant you switch (min 1s), so tabs and panels never flicker; clicks pass through while it fades out                                                                                                                                                                                                                                                   |
+| 💾  | Session & recent-repo restore on startup                                                                                                                                                                                                                                                                                                                                                                       |
+| 🔗  | "Open in" text-only button (no chevron) → Folder, Terminal, VS Code (plus Kiro / Visual Studio / Rider when installed) — also in the command palette                                                                                                                                                                                                                                                           |
+| 🎨  | Catppuccin icons — open menu (`folder-include` + rows `folder-open`/`folder-git`), repo search, Open in Folder/Terminal (`folder`/`bash`); open popup shows instantly, no animation                                                                                                                                                                                                                            |
 
 ### 📊 History & Changes
 
-|     |                                                             |
-| --- | ----------------------------------------------------------- |
-| 🌌  | Interactive commit graph (custom SVG renderer)              |
-| 🏷️  | Hover a commit node — branch/tag chips (tags first, then remote before local per branch), author avatar, email & time |
-| ⭕  | Selected commit node — static double ring + soft glow in the lane color, no distracting animation |
-| 📏  | Commits with 5+ ref chips get a taller two-line row (chips above the message) |
-| 💬  | Full-message popover — subject emphasized with author/date/hash header |
-| 🔝  | To-top button — jump back to the top after deep scrolling (commit graph & diff view) |
-| 🟢  | Selecting a commit flips the right panel to **Committed History** — green-tinted header & title, clearly distinct from working-dir Changes |
-| 🎯  | **Solo a branch** — focus on one branch, unsolo to restore; files the soloed branch never touched fade in Changes |
-| 🔍  | Search by message, author, hash, or ref                     |
-| 🧺  | Stage/unstage files — or single diff hunks                  |
-| ✅  | Commit & amend with a friendly title-length counter — risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer timed Undo |
-| 🟣  | Squash a HEAD range — `Shift+click` a range in the graph, right-click to squash N into 1 (skipping is impossible by design) |
+|     |                                                                                                                                                                                                                                  |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🌌  | Interactive commit graph (custom SVG renderer)                                                                                                                                                                                   |
+| 🏷️  | Hover a commit node — branch/tag chips (tags first, then remote before local per branch), author avatar, email & time                                                                                                            |
+| ⭕  | Selected commit node — static double ring + soft glow in the lane color, no distracting animation                                                                                                                                |
+| 📏  | Commits with 5+ ref chips get a taller two-line row (chips above the message)                                                                                                                                                    |
+| 💬  | Full-message popover — subject emphasized with author/date/hash header                                                                                                                                                           |
+| 🔝  | To-top button — jump back to the top after deep scrolling (commit graph & diff view)                                                                                                                                             |
+| 🟢  | Selecting a commit flips the right panel to **Committed History** — green-tinted header & title, clearly distinct from working-dir Changes                                                                                       |
+| 🎯  | **Solo a branch** — focus on one branch, unsolo to restore; files the soloed branch never touched fade in Changes                                                                                                                |
+| 🔍  | Search by message, author, hash, or ref                                                                                                                                                                                          |
+| 🧺  | Stage/unstage files — or single diff hunks                                                                                                                                                                                       |
+| ✅  | Commit & amend with a friendly title-length counter — risky actions (commit, revert, rebase, cherry-pick, merge, reset, squash, stash delete) offer timed Undo                                                                   |
+| 🟣  | Squash a HEAD range — `Shift+click` a range in the graph, right-click to squash N into 1 (skipping is impossible by design)                                                                                                      |
 | ↔️  | Unified / side-by-side diffs with word-level change highlights (marked words use readable text color — add/del rows carry an accent bar), each split pane has its own synced horizontal scrollbar, image diffs, binary detection |
-| 👁️  | Preview `.md` (rendered) and `.json` (pretty-printed) — right-click a file or use the **Preview** button in the diff header, read-only in a diff-sized overlay (working tree, a commit's file, or a stash's file) |
-| 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens) |
-| 🕰️  | Reflog viewer — timeline of every HEAD move with per-action colors, restore any entry (undoable) |
+| 👁️  | Preview `.md` (rendered) and `.json` (pretty-printed) — right-click a file or use the **Preview** button in the diff header, read-only in a diff-sized overlay (working tree, a commit's file, or a stash's file)                |
+| 🕵️  | Blame view & per-file history — hover any line number in the diff for instant authorship (blame lens)                                                                                                                            |
+| 🕰️  | Reflog viewer — timeline of every HEAD move with per-action colors, restore any entry (undoable)                                                                                                                                 |
 
 ### 🖥️ Terminal
 
-|     |                                                             |
-| --- | ----------------------------------------------------------- |
-| ⌨️  | **Built-in terminal panel** under the graph — the toolbar button next to the commit-search settings spawns the repo's first shell (``Ctrl+` `` toggles it, a repo you never opened has no shell at all) |
-| 🗂️  | Up to 4 shells per repo, each its own tab (`cmd 1`, `powershell 2`, …) — double-click a tab to rename it, drag tabs to reorder, like repo tabs |
-| 🔒  | Shells keep running across repo switches and workspace switches; closing the repo tab closes its shells, and **Terminal: Kill All** (palette command) ends every shell of every repo |
-| 🇹🇭  | **Thai renders correctly** — real PTY (node-pty) + xterm 6 DOM renderer with Unicode 11 widths, and Windows shells forced to UTF-8, so `git log`, `pi` and `opencode` output stays aligned instead of turning into mojibake |
-| 🔗  | Clickable URLs — **Ctrl/Cmd+click** a printed `http://localhost:3000` (any http(s) link, including OSC 8 hyperlinks) to open it in the OS default browser |
+|     |                                                                                                                                                                                                                                                                                                                                                                                        |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ⌨️  | **Built-in terminal panel** under the graph — the toolbar button next to the commit-search settings spawns the repo's first shell (``Ctrl+` `` toggles it, a repo you never opened has no shell at all)                                                                                                                                                                                |
+| 🗂️  | Up to 4 shells per repo, each its own tab (`cmd 1`, `powershell 2`, …) — double-click a tab to rename it, drag tabs to reorder, like repo tabs                                                                                                                                                                                                                                         |
+| 🔒  | Shells keep running across repo switches and workspace switches; closing the repo tab closes its shells, and **Terminal: Kill All** (palette command) ends every shell of every repo                                                                                                                                                                                                   |
+| 🇹🇭  | **Thai renders correctly** — real PTY (node-pty) + xterm 6 DOM renderer with Unicode 11 widths, and Windows shells forced to UTF-8, so `git log`, `pi` and `opencode` output stays aligned instead of turning into mojibake                                                                                                                                                            |
+| 🔗  | Clickable URLs — **Ctrl/Cmd+click** a printed `http://localhost:3000` (any http(s) link, including OSC 8 hyperlinks) to open it in the OS default browser                                                                                                                                                                                                                              |
 | ⚙️  | Terminal has its own settings — shell (PowerShell 7 by default, Command Prompt, or Windows PowerShell; Windows only, and PowerShell 7 falls back to Command Prompt where it is not installed) and font size, decoupled from the interface font size; `A−`/`A+` in the panel header, hide collapses the panel without ending its shells, and maximize expands it under the repo tab bar |
 
 ### 🌿 Branches, Tags & Remotes
 
-|      |                                                        |
-| ---- | ------------------------------------------------------ |
-| 🌱   | Create / checkout / delete / merge / rebase — right-click a branch to merge it into the current one (or drag a branch onto a branch), drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice |
+|      |                                                                                                                                                                                                                                                                                                     |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🌱   | Create / checkout / delete / merge / rebase — right-click a branch to merge it into the current one (or drag a branch onto a branch), drag a commit onto a branch to cherry-pick; cherry-pick and branch merge require a clean worktree; create/switch dialogs remember the local-changes choice    |
 | 🔀   | **Interactive rebase** — right-click a branch → rebase the current branch onto it, then reorder commits and pick / reword / squash / fixup / edit / drop (reword & squash take a custom message); conflicts and `edit` pauses resolve right in the Changes panel, and finishing offers a timed Undo |
-| 🏷️   | Tag create / delete / push — create dialogs share one look with a branch/hash chip in the header, input stays focused on every reopen |
-| 🌐   | Remotes: add, edit, test URLs                  |
-| ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token) — buttons show an inline spinner while busy |
-| 📦   | Stashes                                                |
-| 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes |
+| 🏷️   | Tag create / delete / push — create dialogs share one look with a branch/hash chip in the header, input stays focused on every reopen                                                                                                                                                               |
+| 🌐   | Remotes: add, edit, test URLs                                                                                                                                                                                                                                                                       |
+| ⬇️⬆️ | Fetch / pull / push (SSH key or GitHub token) — buttons show an inline spinner while busy                                                                                                                                                                                                           |
+| 📦   | Stashes                                                                                                                                                                                                                                                                                             |
+| 🧩   | Conflict resolver — per-line picks + manual edit, side buttons show branch/hash, conflicts jump back to Changes                                                                                                                                                                                     |
 
 ### 🤖 AI Commit Messages _(optional)_
 
@@ -155,23 +155,23 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 <details>
 <summary><b>Click to expand the cheat sheet 📋</b></summary>
 
-| Action                   | macOS 🍎              | Windows 🪟               |
-| ------------------------ | --------------------- | ------------------------ |
-| 🔄 Fetch                 | `Ctrl+Shift+↓`        | `Ctrl+Shift+↓`           |
-| ⬇️ Pull                  | `Ctrl+↓`              | `Ctrl+↓`                 |
-| ⬆️ Push                  | `Ctrl+↑`              | `Ctrl+↑`                 |
-| 📁 Open repo             | `Ctrl+O`              | `Ctrl+O`                 |
-| 📥 Clone repo            | `Ctrl+N`              | `Ctrl+N`                 |
-| ❎ Close tab             | `Ctrl+W`              | `Ctrl+W`                 |
-| 🖥️ New terminal tab      | `Ctrl+T`              | `Ctrl+T`                 |
-| 🔢 Terminal tab 1…9      | `Ctrl+1…9`            | `Ctrl+1…9`               |
-| 🔍 Search commits        | `⌘F`                  | `Ctrl+F`                 |
-| ⚙️ Settings              | `Ctrl+,`              | `Ctrl+,`                 |
-| ✨ Command palette       | `Ctrl+P` / `Shift×2`  | `Ctrl+P` / `Shift×2`     |
-| ⌨️ Show shortcuts        | `?`                   | `?`                      |
-| ✅ Commit                | `⌘↵`                  | `Ctrl+↵`                 |
-| ❌ Close / cancel        | `Esc`                 | `Esc`                    |
-| 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0`    | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
+| Action                   | macOS 🍎             | Windows 🪟                     |
+| ------------------------ | -------------------- | ------------------------------ |
+| 🔄 Fetch                 | `Ctrl+Shift+↓`       | `Ctrl+Shift+↓`                 |
+| ⬇️ Pull                  | `Ctrl+↓`             | `Ctrl+↓`                       |
+| ⬆️ Push                  | `Ctrl+↑`             | `Ctrl+↑`                       |
+| 📁 Open repo             | `Ctrl+O`             | `Ctrl+O`                       |
+| 📥 Clone repo            | `Ctrl+N`             | `Ctrl+N`                       |
+| ❎ Close tab             | `Ctrl+W`             | `Ctrl+W`                       |
+| 🖥️ New terminal tab      | `Ctrl+T`             | `Ctrl+T`                       |
+| 🔢 Terminal tab 1…9      | `Ctrl+1…9`           | `Ctrl+1…9`                     |
+| 🔍 Search commits        | `⌘F`                 | `Ctrl+F`                       |
+| ⚙️ Settings              | `Ctrl+,`             | `Ctrl+,`                       |
+| ✨ Command palette       | `Ctrl+P` / `Shift×2` | `Ctrl+P` / `Shift×2`           |
+| ⌨️ Show shortcuts        | `?`                  | `?`                            |
+| ✅ Commit                | `⌘↵`                 | `Ctrl+↵`                       |
+| ❌ Close / cancel        | `Esc`                | `Esc`                          |
+| 🔎 Zoom in / out / reset | `⌘=` / `⌘-` / `⌘0`   | `Ctrl+=` / `Ctrl+-` / `Ctrl+0` |
 
 > ✏️ Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings and Command palette are customizable per platform (macOS / Windows) in Settings → Shortcuts (persisted, with a Default button).
 
@@ -202,14 +202,14 @@ pnpm dev
 
 ## 🛠️ Commands
 
-| Command          | What it does 📌                         |
-| ---------------- | --------------------------------------- |
-| `pnpm dev`       | 🔥 Dev mode with hot reload             |
-| `pnpm build`     | 📦 Production build                     |
-| `pnpm typecheck` | 🔍 Type checking (vue-tsc + tsc)        |
-| `pnpm lint`      | 🧹 oxlint + vue-tsc                     |
-| `pnpm format`    | 💅 Format with oxfmt                    |
-| `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`            |
+| Command          | What it does 📌                      |
+| ---------------- | ------------------------------------ |
+| `pnpm dev`       | 🔥 Dev mode with hot reload          |
+| `pnpm build`     | 📦 Production build                  |
+| `pnpm typecheck` | 🔍 Type checking (vue-tsc + tsc)     |
+| `pnpm lint`      | 🧹 oxlint + vue-tsc                  |
+| `pnpm format`    | 💅 Format with oxfmt                 |
+| `pnpm dist:mac`  | 🍎 macOS `.dmg` → `release/`         |
 | `pnpm dist:win`  | 🪟 Windows Setup `.exe` → `release/` |
 
 ## 🗂️ How it's organized

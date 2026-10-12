@@ -82,19 +82,22 @@ test('log ships hasBody marker only; popover loads the body lazily', async () =>
 })
 
 test('commit:body is repo-pinned (unknown repo errors)', async () => {
-    const result = await page.evaluate(async ({ main }: { main: string }) => {
-        const api = (window as unknown as { api: any }).api
-        const log = await api.log(200)
-        const commit = log.find((c: any) => c.subject === 'feat: add notes')
-        const body = await api.commitBody(commit.hash, main)
-        let error = ''
-        try {
-            await api.commitBody(commit.hash, `${main}-not-open`)
-        } catch (e) {
-            error = String(e)
-        }
-        return { body, error }
-    }, { main: fx.mainRepo })
+    const result = await page.evaluate(
+        async ({ main }: { main: string }) => {
+            const api = (window as unknown as { api: any }).api
+            const log = await api.log(200)
+            const commit = log.find((c: any) => c.subject === 'feat: add notes')
+            const body = await api.commitBody(commit.hash, main)
+            let error = ''
+            try {
+                await api.commitBody(commit.hash, `${main}-not-open`)
+            } catch (e) {
+                error = String(e)
+            }
+            return { body, error }
+        },
+        { main: fx.mainRepo }
+    )
     expect(result.body).toContain('Body line two')
     expect(result.error).toContain('is not open')
 })
@@ -165,9 +168,9 @@ test('image diff renders blob URLs and revokes them on switch', async () => {
     await clearSelection()
     await page.locator('.file-row', { hasText: 'img.png' }).first().click()
     await expect(page.locator('.image-diff')).toBeVisible()
-    const images = await page.locator('.image-diff img').evaluateAll(imgs =>
-        imgs.map(img => ({ src: (img as HTMLImageElement).src, width: (img as HTMLImageElement).naturalWidth }))
-    )
+    const images = await page
+        .locator('.image-diff img')
+        .evaluateAll(imgs => imgs.map(img => ({ src: (img as HTMLImageElement).src, width: (img as HTMLImageElement).naturalWidth })))
     expect(images).toHaveLength(2)
     expect(images[0]!.src.startsWith('blob:')).toBe(true)
     expect(images[1]!.src.startsWith('blob:')).toBe(true)
@@ -280,7 +283,9 @@ test('clicking large commits stays within a bounded memory envelope', async () =
     const bigRow = page.locator('.graph-row', { hasText: 'feat: big commit' }).first()
     const smallRow = page.locator('.graph-row', { hasText: 'chore: add image' }).first()
     const beforeMain = await handle.app.evaluate(() => process.memoryUsage().heapUsed)
-    const beforeRenderer = await page.evaluate(() => (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0)
+    const beforeRenderer = await page.evaluate(
+        () => (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0
+    )
 
     // oxlint-disable no-await-in-loop -- sequential clicks are the scenario under test
     for (let i = 0; i < 3; i++) {
@@ -292,7 +297,9 @@ test('clicking large commits stays within a bounded memory envelope', async () =
     // oxlint-enable no-await-in-loop
 
     const afterMain = await handle.app.evaluate(() => process.memoryUsage().heapUsed)
-    const afterRenderer = await page.evaluate(() => (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0)
+    const afterRenderer = await page.evaluate(
+        () => (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory?.usedJSHeapSize ?? 0
+    )
     // oxlint-disable-next-line no-console -- the numbers are part of the test evidence
     console.log(
         `[memory] main heap ${(beforeMain / 1048576).toFixed(1)}MB → ${(afterMain / 1048576).toFixed(1)}MB; renderer JS heap ${(beforeRenderer / 1048576).toFixed(1)}MB → ${(afterRenderer / 1048576).toFixed(1)}MB`

@@ -794,8 +794,8 @@ const SECTION_LIST: Section[] = ['script', 'template', 'style', 'json', 'other']
 const SECTION_INDEX: Record<Section, number> = { script: 0, template: 1, style: 2, json: 3, other: 4 }
 
 /**
- * Per-line tokenizer snapshots for a whole diff. Stored as packed typed arrays (one byte per flag + param depth)
- * instead of an object per line, so whole-file views stay cheap; contexts are materialized only for lines that render.
+ * Per-line tokenizer snapshots for a whole diff. Stored as packed typed arrays (one byte per flag + param depth) instead of an object per
+ * line, so whole-file views stay cheap; contexts are materialized only for lines that render.
  */
 export interface LineStateStore {
     /** Tokenizer context immediately before line `index` — allocate-on-demand, safe for virtual scrolling. */
@@ -824,8 +824,7 @@ export function computeLineStates(lines: DiffLine[], filename: string): LineStat
         const content = line.text.slice(1)
         let initialSection = section
         sections[index] = SECTION_INDEX[initialSection]
-        flags[index] =
-            (state.blockComment ? 1 : 0) | (state.htmlComment ? 2 : 0) | (state.htmlString ? 4 : 0) | (state.backtick ? 8 : 0)
+        flags[index] = (state.blockComment ? 1 : 0) | (state.htmlComment ? 2 : 0) | (state.htmlString ? 4 : 0) | (state.backtick ? 8 : 0)
         depths[index] = state.paramDepth
         if (line.type !== 'hunk' && line.type !== 'meta' && content) {
             if (isSfc) {
@@ -999,10 +998,10 @@ function diffWindow(oldText: string, newText: string): { oldStart: number; oldEn
 }
 
 /**
- * Similarity between two changed lines plus the ranges that differ, when the lines are similar enough to be a renamed or
- * edited counterpart rather than two unrelated rows. Punctuation and whitespace weigh less so shared syntax alone cannot
- * make unrelated declarations look related. Pre-tokenized lines reuse their tokens; oversized generated lines fall back
- * to a bounded window around the changed region so they can still receive word-level marks.
+ * Similarity between two changed lines plus the ranges that differ, when the lines are similar enough to be a renamed or edited counterpart
+ * rather than two unrelated rows. Punctuation and whitespace weigh less so shared syntax alone cannot make unrelated declarations look
+ * related. Pre-tokenized lines reuse their tokens; oversized generated lines fall back to a bounded window around the changed region so
+ * they can still receive word-level marks.
  */
 function lineSimilarity(
     oldLine: DiffLine,
@@ -1047,9 +1046,9 @@ function lineSimilarity(
 const MIN_LINE_SIMILARITY = 0.4
 
 /**
- * Pairs deleted lines with their most similar added lines inside one del/add block. Matching is greedy and order
- * preserving, so marks never cross, and a line without a similar counterpart keeps just the row background. Blocks whose
- * candidate pairs would make the matching quadratic (for example a whole-file rewrite) are skipped entirely.
+ * Pairs deleted lines with their most similar added lines inside one del/add block. Matching is greedy and order preserving, so marks never
+ * cross, and a line without a similar counterpart keeps just the row background. Blocks whose candidate pairs would make the matching
+ * quadratic (for example a whole-file rewrite) are skipped entirely.
  */
 export function markChangedLines(deleted: DiffLine[], added: DiffLine[]): Map<DiffLine, TextRange[]> {
     const marks = new Map<DiffLine, TextRange[]>()
@@ -1099,7 +1098,7 @@ export function markHighlightedRanges(html: string, source: string, ranges: High
     if (!ranges.length || !source.length) return html
 
     const units: string[] = []
-    for (let index = 0; index < html.length; ) {
+    for (let index = 0; index < html.length;) {
         if (html[index] === '<') {
             const end = html.indexOf('>', index)
             if (end === -1) return html

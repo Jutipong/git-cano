@@ -188,7 +188,9 @@
             </div>
 
             <div class="rebase-modal-footer">
-                <span class="rebase-hint"> edit: pause here to amend · conflicts pause the rebase and are resolved in the Changes panel </span>
+                <span class="rebase-hint">
+                    edit: pause here to amend · conflicts pause the rebase and are resolved in the Changes panel
+                </span>
                 <span class="spacer" />
                 <button
                     class="btn small"

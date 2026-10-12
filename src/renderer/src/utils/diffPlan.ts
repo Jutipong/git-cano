@@ -3,10 +3,9 @@ import { buildPrefix, indexAtOffset } from './virtual'
 import type { DiffLine } from '@shared/types'
 
 /**
- * Split-view row planning, extracted from DiffView so it can be unit-tested (see tests/unit/diffPlan.test.ts).
- * The diff is grouped into hunk / context-run / change-run segments, so the side-by-side layout is resolved per
- * visible row instead of materializing one row wrapper per line — whole-file views of large files would otherwise
- * allocate a second array of row objects on top of the DiffLine array itself.
+ * Split-view row planning, extracted from DiffView so it can be unit-tested (see tests/unit/diffPlan.test.ts). The diff is grouped into
+ * hunk / context-run / change-run segments, so the side-by-side layout is resolved per visible row instead of materializing one row wrapper
+ * per line — whole-file views of large files would otherwise allocate a second array of row objects on top of the DiffLine array itself.
  */
 
 export interface SideBySideRow {
@@ -48,7 +47,7 @@ export type SplitSegment = SplitCtxSegment | SplitChangeSegment | SplitHunkSegme
 
 export interface SplitPlan {
     segments: SplitSegment[]
-    /** prefix[i] = first row of segment i; prefix[segments.length] = total row count. */
+    /** Prefix[i] = first row of segment i; prefix[segments.length] = total row count. */
     prefix: Float64Array
     totalRows: number
     /** First row of each change region (change navigation + minimap). */

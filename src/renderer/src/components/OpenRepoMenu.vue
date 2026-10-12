@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { inject, onMounted, onUnmounted, ref } from 'vue'
     import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
-    import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
     import ICatppuccinFolderInclude from '~icons/catppuccin/folder-include'
+    import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'

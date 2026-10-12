@@ -5,9 +5,9 @@ import { buildSplitPlan, splitRowAt } from '../../src/renderer/src/utils/diffPla
 import type { DiffLine } from '../../src/shared/types'
 
 /**
- * Reference implementation of the split-view row mapping — deliberately a second, simple version of the
- * algorithm. The parity fuzz below locks the segment-plan version to it, including the intentional behavior
- * change where meta rows render as separators (they used to be skipped).
+ * Reference implementation of the split-view row mapping — deliberately a second, simple version of the algorithm. The parity fuzz below
+ * locks the segment-plan version to it, including the intentional behavior change where meta rows render as separators (they used to be
+ * skipped).
  */
 function referenceRows(lines: DiffLine[]): { left?: DiffLine; right?: DiffLine; hunkHeader?: DiffLine; change?: number }[] {
     const rows: { left?: DiffLine; right?: DiffLine; hunkHeader?: DiffLine; change?: number }[] = []

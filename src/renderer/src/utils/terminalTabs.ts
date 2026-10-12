@@ -17,9 +17,8 @@ export interface TerminalTab {
 }
 
 /**
- * Tab label: the user's rename wins, otherwise the shell name plus the tab's own number (cmd 1,
- * cmd 2). The number belongs to the tab, not to its slot — dragging a tab around, or closing its
- * neighbour, never renames a live shell.
+ * Tab label: the user's rename wins, otherwise the shell name plus the tab's own number (cmd 1, cmd 2). The number belongs to the tab, not
+ * to its slot — dragging a tab around, or closing its neighbour, never renames a live shell.
  */
 export function terminalTabLabel(tab: TerminalTab): string {
     const custom = tab.name?.trim()
@@ -27,8 +26,8 @@ export function terminalTabLabel(tab: TerminalTab): string {
 }
 
 /**
- * Number for a new tab: one past the highest its own shell already uses, so a live tab never
- * changes label and the next shell of the same kind always lands on a fresh number.
+ * Number for a new tab: one past the highest its own shell already uses, so a live tab never changes label and the next shell of the same
+ * kind always lands on a fresh number.
  */
 export function nextTerminalNumber(tabs: TerminalTab[], shell: TerminalShell): number {
     let highest = 0
@@ -42,8 +41,8 @@ export function canAddTerminal(count: number): boolean {
 }
 
 /**
- * Moves one tab inside its list (drag-to-reorder). Bounds-guarded like the workspace reorder, so a
- * stale drag target is ignored instead of corrupting the list.
+ * Moves one tab inside its list (drag-to-reorder). Bounds-guarded like the workspace reorder, so a stale drag target is ignored instead of
+ * corrupting the list.
  */
 export function moveTerminalTab<T>(tabs: T[], from: number, to: number): T[] {
     if (from === to || from < 0 || to < 0 || from >= tabs.length || to >= tabs.length) return tabs

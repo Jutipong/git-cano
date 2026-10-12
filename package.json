@@ -1,129 +1,129 @@
 {
-  "name": "git-cano",
-  "version": "1.7.3",
-  "description": "git-cano - a lightweight Git GUI with basic features",
-  "author": "git-cano contributors",
-  "license": "MIT",
-  "type": "module",
-  "main": "out/main/index.js",
-  "scripts": {
-    "dev": "electron-vite dev",
-    "postinstall": "node scripts/fix-electron-path.mjs",
-    "build": "electron-vite build",
-    "start": "electron-vite preview",
-    "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
-    "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
-    "test:unit": "vitest run",
-    "test:unit:watch": "vitest",
-    "test:e2e": "electron-vite build && playwright test",
-    "test": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e",
-    "format": "oxfmt --write --ignore-path .oxfmtignore",
-    "dist:mac": "electron-vite build && electron-builder --mac dmg --arm64",
-    "dist:win": "electron-vite build && electron-builder --win nsis --x64",
-    "uplib": "pnpm update --latest"
-  },
-  "dependencies": {
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/addon-unicode11": "^0.9.0",
-    "@xterm/addon-web-links": "^0.12.0",
-    "@xterm/xterm": "^6.0.0",
-    "dompurify": "^3.4.16",
-    "electron-updater": "^6.8.10",
-    "marked": "^18.0.14",
-    "node-pty": "1.2.0-beta.15",
-    "pinia": "^4.0.3",
-    "pinia-plugin-persistedstate": "^4.7.1",
-    "simple-git": "^4.0.2",
-    "vue": "^3.5.43"
-  },
-  "devDependencies": {
-    "@iconify-json/catppuccin": "^1.2.17",
-    "@iconify-json/clarity": "^1.2.4",
-    "@iconify-json/codicon": "^1.2.73",
-    "@iconify-json/fluent-emoji-flat": "^1.2.6",
-    "@iconify-json/hugeicons": "^1.2.35",
-    "@iconify-json/icon-park-outline": "^1.2.4",
-    "@iconify-json/logos": "^1.2.15",
-    "@iconify-json/lucide": "^1.2.137",
-    "@iconify-json/mage": "^1.2.4",
-    "@iconify-json/simple-icons": "^1.2.98",
-    "@iconify-json/streamline-flex-color": "^1.2.2",
-    "@iconify-json/thesvg-color": "^1.2.14",
-    "@playwright/test": "^1.63.0",
-    "@types/node": "^26.6.3",
-    "@vitejs/plugin-vue": "^6.0.9",
-    "electron": "^44.4.5",
-    "electron-builder": "^26.17.0",
-    "electron-vite": "^5.0.0",
-    "oxfmt": "^0.71.0",
-    "oxlint": "^1.86.0",
-    "typescript": "^6.0.3",
-    "unplugin-icons": "^24.0.0",
-    "vite": "^8.3.1",
-    "vitest": "^5.0.3",
-    "vue-tsc": "^3.3.11"
-  },
-  "allowScripts": {
-    "electron@44.0.0": true,
-    "esbuild@0.28.2": true
-  },
-  "build": {
-    "appId": "com.jutipong.git-cano",
-    "productName": "Git Cano",
-    "directories": {
-      "output": "release"
+    "name": "git-cano",
+    "version": "1.7.3",
+    "description": "git-cano - a lightweight Git GUI with basic features",
+    "license": "MIT",
+    "author": "git-cano contributors",
+    "type": "module",
+    "main": "out/main/index.js",
+    "scripts": {
+        "dev": "electron-vite dev",
+        "postinstall": "node scripts/fix-electron-path.mjs",
+        "build": "electron-vite build",
+        "start": "electron-vite preview",
+        "typecheck": "vue-tsc --noEmit -p tsconfig.web.json && tsc --noEmit -p tsconfig.node.json",
+        "lint": "oxlint . && vue-tsc --noEmit -p tsconfig.web.json",
+        "test:unit": "vitest run",
+        "test:unit:watch": "vitest",
+        "test:e2e": "electron-vite build && playwright test",
+        "test": "pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:e2e",
+        "format": "oxfmt --write --ignore-path .oxfmtignore",
+        "dist:mac": "electron-vite build && electron-builder --mac dmg --arm64",
+        "dist:win": "electron-vite build && electron-builder --win nsis --x64",
+        "uplib": "pnpm update --latest"
     },
-    "icon": "build/icons/cano.png",
-    "asar": true,
-    "compression": "maximum",
-    "npmRebuild": false,
-    "asarUnpack": [
-      "**/node_modules/node-pty/**"
-    ],
-    "files": [
-      "out/**/*",
-      "package.json",
-      "!out/tsbuild/**",
-      "!**/*.map",
-      "!**/*.md",
-      "!**/LICENSE*"
-    ],
-    "mac": {
-      "icon": "build/icons/cano.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64"
-          ]
-        }
-      ],
-      "category": "public.app-category.developer-tools",
-      "identity": null
+    "dependencies": {
+        "@xterm/addon-fit": "^0.11.0",
+        "@xterm/addon-unicode11": "^0.9.0",
+        "@xterm/addon-web-links": "^0.12.0",
+        "@xterm/xterm": "^6.0.0",
+        "dompurify": "^3.4.16",
+        "electron-updater": "^6.8.10",
+        "marked": "^18.0.14",
+        "node-pty": "1.2.0-beta.15",
+        "pinia": "^4.0.3",
+        "pinia-plugin-persistedstate": "^4.7.1",
+        "simple-git": "^4.0.2",
+        "vue": "^3.5.43"
     },
-    "win": {
-      "icon": "build/icons/cano.ico",
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
-      ]
+    "devDependencies": {
+        "@iconify-json/catppuccin": "^1.2.17",
+        "@iconify-json/clarity": "^1.2.4",
+        "@iconify-json/codicon": "^1.2.73",
+        "@iconify-json/fluent-emoji-flat": "^1.2.6",
+        "@iconify-json/hugeicons": "^1.2.35",
+        "@iconify-json/icon-park-outline": "^1.2.4",
+        "@iconify-json/logos": "^1.2.15",
+        "@iconify-json/lucide": "^1.2.137",
+        "@iconify-json/mage": "^1.2.4",
+        "@iconify-json/simple-icons": "^1.2.98",
+        "@iconify-json/streamline-flex-color": "^1.2.2",
+        "@iconify-json/thesvg-color": "^1.2.14",
+        "@playwright/test": "^1.63.0",
+        "@types/node": "^26.6.3",
+        "@vitejs/plugin-vue": "^6.0.9",
+        "electron": "^44.4.5",
+        "electron-builder": "^26.17.0",
+        "electron-vite": "^5.0.0",
+        "oxfmt": "^0.71.0",
+        "oxlint": "^1.86.0",
+        "typescript": "^6.0.3",
+        "unplugin-icons": "^24.0.0",
+        "vite": "^8.3.1",
+        "vitest": "^5.0.3",
+        "vue-tsc": "^3.3.11"
     },
-    "nsis": {
-      "artifactName": "git-cano-${version}-setup.exe",
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true
+    "allowScripts": {
+        "electron@44.0.0": true,
+        "esbuild@0.28.2": true
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "Jutipong",
-        "repo": "git-cano"
-      }
-    ]
-  }
+    "build": {
+        "appId": "com.jutipong.git-cano",
+        "productName": "Git Cano",
+        "directories": {
+            "output": "release"
+        },
+        "icon": "build/icons/cano.png",
+        "asar": true,
+        "compression": "maximum",
+        "npmRebuild": false,
+        "asarUnpack": [
+            "**/node_modules/node-pty/**"
+        ],
+        "files": [
+            "out/**/*",
+            "package.json",
+            "!out/tsbuild/**",
+            "!**/*.map",
+            "!**/*.md",
+            "!**/LICENSE*"
+        ],
+        "mac": {
+            "icon": "build/icons/cano.icns",
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "arm64"
+                    ]
+                }
+            ],
+            "category": "public.app-category.developer-tools",
+            "identity": null
+        },
+        "win": {
+            "icon": "build/icons/cano.ico",
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ]
+        },
+        "nsis": {
+            "artifactName": "git-cano-${version}-setup.exe",
+            "oneClick": false,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": true
+        },
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "Jutipong",
+                "repo": "git-cano"
+            }
+        ]
+    }
 }

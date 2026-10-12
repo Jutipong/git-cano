@@ -4,10 +4,8 @@ import { loadFixtures } from './fixtures'
 import { launchApp, type AppHandle } from './launch'
 
 /**
- * A/B memory benchmark. Run explicitly:
- *   GITCANO_BENCH=1 pnpm exec playwright test tests/e2e/memory-bench.spec.ts
- * Against the old build:
- *   GITCANO_BENCH=1 GITCANO_E2E_APP_DIR=<worktree> pnpm exec playwright test tests/e2e/memory-bench.spec.ts
+ * A/B memory benchmark. Run explicitly: GITCANO_BENCH=1 pnpm exec playwright test tests/e2e/memory-bench.spec.ts Against the old build:
+ * GITCANO_BENCH=1 GITCANO_E2E_APP_DIR=<worktree> pnpm exec playwright test tests/e2e/memory-bench.spec.ts
  */
 const fx = loadFixtures()
 const bench = !!process.env.GITCANO_BENCH
@@ -67,7 +65,7 @@ test.afterAll(async () => {
     await handle?.app.close()
 })
 
-/** showEntireFile is a global setting, so only toggle it when the current title says it is off. */
+/** ShowEntireFile is a global setting, so only toggle it when the current title says it is off. */
 async function ensureEntireFile(): Promise<void> {
     const toggle = page.locator('.segmented-btn.entire-file')
     await expect(toggle).toBeVisible()

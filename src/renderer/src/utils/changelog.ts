@@ -1,7 +1,6 @@
 /**
- * Renders a GitHub release body as plain text. The changelog modal shows the
- * result inside a `pre-wrap` block and never uses v-html, so no markdown
- * library and no HTML sanitizing is needed.
+ * Renders a GitHub release body as plain text. The changelog modal shows the result inside a `pre-wrap` block and never uses v-html, so no
+ * markdown library and no HTML sanitizing is needed.
  */
 export function stripMarkdown(body: string): string {
     const lines = body

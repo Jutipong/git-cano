@@ -1,7 +1,7 @@
 /**
- * Pure PATH helpers for the built-in terminal — no node/electron imports so they stay
- * unit-testable (see `tests/unit/terminalPath.test.ts`). The main process (`src/main/terminal.ts`)
- * decides *which* candidate dirs exist and calls `mergePathValue` to prepend the missing ones.
+ * Pure PATH helpers for the built-in terminal — no node/electron imports so they stay unit-testable (see
+ * `tests/unit/terminalPath.test.ts`). The main process (`src/main/terminal.ts`) decides _which_ candidate dirs exist and calls
+ * `mergePathValue` to prepend the missing ones.
  */
 
 /** Key in an env record that holds PATH (case-insensitive) — preserves the original casing. */
@@ -17,8 +17,8 @@ export function normalizePathEntry(entry: string, caseInsensitive: boolean): str
 }
 
 /**
- * Prepends candidate dirs missing from an existing PATH value, in order, without duplicates.
- * Comparison is case-insensitive on Windows. Empty entries are dropped. Returns the joined value.
+ * Prepends candidate dirs missing from an existing PATH value, in order, without duplicates. Comparison is case-insensitive on Windows.
+ * Empty entries are dropped. Returns the joined value.
  */
 export function mergePathValue(existing: string, candidates: string[], delimiter: string, caseInsensitive: boolean): string {
     const entries = existing ? existing.split(delimiter).filter(part => part.trim() !== '') : []

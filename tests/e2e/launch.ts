@@ -19,16 +19,16 @@ export interface LaunchOptions {
     /** Extra Electron args (e.g. `--js-flags=--expose-gc` for benchmarks). */
     extraArgs?: string[]
     /**
-     * Additional workspace sessions to seed alongside `Main` (which always gets `repoPaths`), e.g.
-     * `{ Alt: [pathA, pathB] }` — every workspace's first repo is its active tab.
+     * Additional workspace sessions to seed alongside `Main` (which always gets `repoPaths`), e.g. `{ Alt: [pathA, pathB] }` — every
+     * workspace's first repo is its active tab.
      */
     workspaces?: Record<string, string[]>
 }
 
 /**
- * Launches the built app (out/) with an isolated userData dir and seeds the workspace session so every
- * fixture repo opens as a tab. Isolation relies on Chromium's `--user-data-dir` switch (Electron maps both
- * `userData` and `sessionData` to it), so the real user profile is never touched.
+ * Launches the built app (out/) with an isolated userData dir and seeds the workspace session so every fixture repo opens as a tab.
+ * Isolation relies on Chromium's `--user-data-dir` switch (Electron maps both `userData` and `sessionData` to it), so the real user profile
+ * is never touched.
  */
 export async function launchApp(repoPaths: string[], options: LaunchOptions = {}): Promise<AppHandle> {
     const { appDir = '.', debugLog = true, extraArgs = [], workspaces = {} } = options

@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import { useUiStore } from './ui'
-
 import {
     MAX_TERMINALS_PER_REPO,
     canAddTerminal,
@@ -11,6 +9,7 @@ import {
     terminalTabLabel,
     type TerminalTab,
 } from '../utils/terminalTabs'
+import { useUiStore } from './ui'
 
 import type { TerminalShell } from '@shared/types'
 
@@ -26,9 +25,9 @@ export interface RepoTerminals {
 
 export const useTerminalStore = defineStore('terminal', () => {
     /**
-     * Terminals per repo path. Memory-only (never persisted): a closed app starts with no terminal
-     * anywhere, and shells are killed on repo-tab close, on "kill all" and on app quit. A repo with no
-     * entry owns no session and shows no panel — nothing spawns until the user asks for a shell.
+     * Terminals per repo path. Memory-only (never persisted): a closed app starts with no terminal anywhere, and shells are killed on
+     * repo-tab close, on "kill all" and on app quit. A repo with no entry owns no session and shows no panel — nothing spawns until the
+     * user asks for a shell.
      */
     const terminals = ref<Record<string, RepoTerminals>>({})
     /** Monotonic id source — ids are never reused, so a remounted panel finds its live shell again. */
@@ -66,8 +65,8 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 
     /**
-     * Adds a shell tab for a repo (the graph button or the panel `+`). Returns its id, or null once
-     * the repo is at the cap. Only records the tab — the mounted panel spawns the pty for that id.
+     * Adds a shell tab for a repo (the graph button or the panel `+`). Returns its id, or null once the repo is at the cap. Only records
+     * the tab — the mounted panel spawns the pty for that id.
      */
     async function openTerminalTab(path: string): Promise<string | null> {
         const state = repoTerminals(path)
@@ -122,8 +121,8 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 
     /**
-     * Kills one shell (its tab ✕, or the shell exiting on its own). When the last one goes the repo
-     * loses its entry entirely, which unmounts the panel.
+     * Kills one shell (its tab ✕, or the shell exiting on its own). When the last one goes the repo loses its entry entirely, which
+     * unmounts the panel.
      */
     function closeTerminalTab(path: string, id: string) {
         const state = repoTerminals(path)
@@ -141,9 +140,8 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 
     /**
-     * Kills every shell of a repo — its panel ✕, and closing the repo tab itself. Shells of OTHER
-     * repos are untouched, which is what keeps a workspace switch (it closes git instances of the
-     * repos it leaves) from killing shells the user still wants.
+     * Kills every shell of a repo — its panel ✕, and closing the repo tab itself. Shells of OTHER repos are untouched, which is what keeps
+     * a workspace switch (it closes git instances of the repos it leaves) from killing shells the user still wants.
      */
     async function closeRepoTerminals(path: string): Promise<void> {
         if (!terminalExists(path)) return
@@ -159,10 +157,9 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 
     /**
-     * Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them.
-     * `keepExpanded` keeps the full-height state for the toggle-style entries (Ctrl+` / palette), so
-     * showing the panel again restores the overlay; without it the panel collapses to the bottom strip
-     * (the panel's own chevron and the toolbar button are the "back to the graph" gestures).
+     * Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them. `keepExpanded` keeps the full-height state
+     * for the toggle-style entries (Ctrl+` / palette), so showing the panel again restores the overlay; without it the panel collapses to
+     * the bottom strip (the panel's own chevron and the toolbar button are the "back to the graph" gestures).
      */
     function hideTerminals(path: string, options?: { keepExpanded?: boolean }) {
         const state = repoTerminals(path)

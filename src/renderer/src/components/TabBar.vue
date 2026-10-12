@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { nextTick, computed, onMounted, onUnmounted, ref } from 'vue'
+    import ICatppuccinSearch from '~icons/catppuccin/search'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
-    import ICatppuccinSearch from '~icons/catppuccin/search'
 
     import { useRepoStore } from '../stores/repo'
     import { useSyncStore } from '../stores/sync'

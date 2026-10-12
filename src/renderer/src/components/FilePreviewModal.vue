@@ -1,11 +1,10 @@
 <script setup lang="ts">
-    import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import { isLoadableMarkdownImageSrc } from '@shared/markdownImages'
     import DOMPurify from 'dompurify'
+    import { marked } from 'marked'
+    import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
-    import { marked } from 'marked'
-
-    import { isLoadableMarkdownImageSrc } from '@shared/markdownImages'
 
     import { useUiStore } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
@@ -32,8 +31,8 @@
     }
 
     /**
-     * The preview is a document, not a browser: never let a link navigate the app window away.
-     * http(s) links go to the OS browser instead; relative/mailto links stay inert.
+     * The preview is a document, not a browser: never let a link navigate the app window away. http(s) links go to the OS browser instead;
+     * relative/mailto links stay inert.
      */
     function onContentClick(event: MouseEvent) {
         const anchor = (event.target as HTMLElement | null)?.closest('a')
@@ -63,10 +62,9 @@
     })
 
     /**
-     * The modal is reused while it stays open (previewing another file / picking another
-     * commit-stash updates the props without remounting), so reload on every prop change.
-     * Markdown image state lives above load(): the immediate file watcher runs load()
-     * during setup, and anything touched there but declared below throws a TDZ error.
+     * The modal is reused while it stays open (previewing another file / picking another commit-stash updates the props without
+     * remounting), so reload on every prop change. Markdown image state lives above load(): the immediate file watcher runs load() during
+     * setup, and anything touched there but declared below throws a TDZ error.
      */
     const mdBody = ref<HTMLElement | null>(null)
     let mdImageUrls: string[] = []
@@ -115,10 +113,8 @@
     })
 
     /**
-     * `marked` emits relative `<img src>` verbatim, which would resolve against
-     * the app URL instead of the repo — rewrite those through the
-     * `markdown:image` IPC. Remote/inline sources stay untouched for the
-     * browser (gated by the `img-src` CSP); failures keep the alt text.
+     * `marked` emits relative `<img src>` verbatim, which would resolve against the app URL instead of the repo — rewrite those through the
+     * `markdown:image` IPC. Remote/inline sources stay untouched for the browser (gated by the `img-src` CSP); failures keep the alt text.
      */
     async function resolveMarkdownImages(): Promise<void> {
         const my = ++mdImageSeq
@@ -261,7 +257,8 @@
                     v-html="jsonHtml" />
                 <pre
                     v-else
-                    class="json-preview">{{ jsonState.pretty }}</pre>
+                    class="json-preview"
+                    >{{ jsonState.pretty }}</pre>
             </template>
         </div>
     </div>

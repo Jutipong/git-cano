@@ -1,9 +1,9 @@
 <script setup lang="ts">
     import { onBeforeUnmount, onMounted, ref, type FunctionalComponent } from 'vue'
+    import Bash from '~icons/catppuccin/bash'
+    import Folder from '~icons/catppuccin/folder'
     import VisualStudio from '~icons/catppuccin/visual-studio'
     import VisualStudioCode from '~icons/catppuccin/vscode'
-    import Folder from '~icons/catppuccin/folder'
-    import Bash from '~icons/catppuccin/bash'
     import Rider from '~icons/logos/rider'
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'

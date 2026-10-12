@@ -561,9 +561,7 @@
         const cache = paneHtmlCache[side]
         const cached = cache.get(line)
         if (cached !== undefined) return cached
-        const html = highlightLineAt(line, lineStatesBySide.value[side].context(idx), (_line, highlight) =>
-            highlight(line.text.slice(1))
-        )
+        const html = highlightLineAt(line, lineStatesBySide.value[side].context(idx), (_line, highlight) => highlight(line.text.slice(1)))
         cache.set(line, html)
         return html
     }

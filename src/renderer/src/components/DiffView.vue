@@ -13,8 +13,8 @@
 
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
-    import { formatDatePattern } from '../utils/format'
     import { buildSplitPlan, splitRowAt, type SideBySideRow, type SplitPlan } from '../utils/diffPlan'
+    import { formatDatePattern } from '../utils/format'
     import {
         markChangedLines,
         isWhitespaceOnlyChange,
@@ -334,9 +334,8 @@
     const displayName = computed(() => props.file?.path.split('/').pop() ?? '')
 
     /**
-     * Preview button — markdown/JSON only, and only while the file exists in the viewed revision: a
-     * diff whose body is all deletions means the file is gone from that tree (deleted by the
-     * commit/stash or removed from the worktree), so previewing it could only fail.
+     * Preview button — markdown/JSON only, and only while the file exists in the viewed revision: a diff whose body is all deletions means
+     * the file is gone from that tree (deleted by the commit/stash or removed from the worktree), so previewing it could only fail.
      */
     const previewable = computed(() => {
         if (!props.file || !isPreviewablePath(props.file.path)) return false
@@ -588,8 +587,7 @@
         if (!line) return ''
         const cached = htmlCache.get(line)
         if (cached !== undefined) return cached
-        const context =
-            index !== undefined ? lineStates.value.context(index) : computeLineStates([line], props.file?.path ?? '').context(0)
+        const context = index !== undefined ? lineStates.value.context(index) : computeLineStates([line], props.file?.path ?? '').context(0)
         const html = highlightLineAt(line, context, renderOne)
         htmlCache.set(line, html)
         return html
@@ -707,15 +705,7 @@
                     const leftOffset = p - segment.leftPad
                     const rightOffset = p - segment.rightPad
                     const y = (start + p) * barH
-                    drawMinimapBar(
-                        ctx,
-                        pad,
-                        y,
-                        halfW,
-                        barH,
-                        colors,
-                        leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined
-                    )
+                    drawMinimapBar(ctx, pad, y, halfW, barH, colors, leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined)
                     drawMinimapBar(
                         ctx,
                         pad + halfW + 2,

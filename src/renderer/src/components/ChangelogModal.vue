@@ -48,7 +48,9 @@
                 <strong>What's new</strong>
                 <span
                     v-if="version"
-                    class="chip">{{ version }}</span>
+                    class="chip"
+                    >{{ version }}</span
+                >
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
@@ -65,14 +67,20 @@
                 <template v-else-if="updater.notes">
                     <p
                         v-if="text"
-                        class="changelog-text">{{ text }}</p>
+                        class="changelog-text">
+                        {{ text }}
+                    </p>
                     <p
                         v-else
-                        class="changelog-empty">This release has no notes.</p>
+                        class="changelog-empty">
+                        This release has no notes.
+                    </p>
                 </template>
                 <p
                     v-else
-                    class="changelog-empty">Could not load release notes for this version.</p>
+                    class="changelog-empty">
+                    Could not load release notes for this version.
+                </p>
             </div>
             <div class="changelog-actions">
                 <button
@@ -86,7 +94,9 @@
                 </button>
                 <button
                     class="btn primary"
-                    @click="emit('close')">Close</button>
+                    @click="emit('close')">
+                    Close
+                </button>
             </div>
         </div>
     </div>

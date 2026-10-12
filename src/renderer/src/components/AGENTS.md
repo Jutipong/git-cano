@@ -172,7 +172,7 @@ Panel/modal component patterns. Loaded automatically when working under
   first ~2s because Chromium measures the cell height again when a fallback font lands.
 - **The shell is spawned before xterm is built**, and the chunks that arrive meanwhile are buffered in
   `pending` and written once the terminal is open. Waiting for the xterm chunk + `document.fonts.ready`
-  *before* spawning left a fresh panel blank for over a second. Keep the `waitForFonts()` gate for
+  _before_ spawning left a fresh panel blank for over a second. Keep the `waitForFonts()` gate for
   `new Terminal()` itself (xterm caches its cell size at construction, and a wrong size desyncs Thai
   marks), just not for the spawn.
 - Because the bundled conpty.dll (see `src/main/AGENTS.md`) withholds a new shell's first screen for
@@ -230,7 +230,7 @@ Panel/modal component patterns. Loaded automatically when working under
   Alt+Enter habit keep the key; with a shell focused it is captured before xterm and toggles
   `toggleTerminalExpand`, which hands focus back to the shell like the header button. The header
   buttons carry the combo in their tooltips (`Full height (Alt+Enter)` / `Exit full height
-  (Alt+Enter)`) — e2e locators match those titles, so update both together.
+(Alt+Enter)`) — e2e locators match those titles, so update both together.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.
@@ -259,17 +259,17 @@ Panel/modal component patterns. Loaded automatically when working under
   (`renameInputs`) do. Do not "fix" this by indexing `ref.value[0]` — the ref carries no stable type.
 - **Create-form modals share the confirm family**: `TagCreateModal.vue`, `StashCreateModal.vue`
   and `PromptDialog.vue` (branch create) all use `.confirm-dialog-overlay` + `.confirm-dialog`
-  + `.confirm-dialog-header.flow` (icon + title + optional `chip`/`prompt-chip` context) +
-  `.confirm-dialog-body` + `.confirm-dialog-actions` at `400px` (via `.tag-confirm` or
-  `:has(.prompt-input)`). Do not build new forms on `.rebase-modal`/`.tag-modal-body`.
-  `AppRadio` in a `v-for` must bind `:value="opt.value"` — without it no option ever matches
-  and clicks emit the garbage value `"on"`. The local-changes choice lives in persisted
-  `ui.localChangesMode` (default `stash`), shared by branch create and switch.
-  The global `.busy-overlay` (z-80) sits **below** `.confirm-dialog-overlay` (z-90), so a create
-  modal that stays open during `withBusy` must show its own loading: swap the primary button's
-  icon for a compact `ThinkSpinner` with a phase label (`Creating…`/`Pushing…`/`Saving…`) and
-  disable its inputs (plus `AppCheckbox` via its `disabled` prop) — never raise the busy overlay,
-  it would bury `ErrorDialog` (also z-90).
+    - `.confirm-dialog-header.flow` (icon + title + optional `chip`/`prompt-chip` context) +
+      `.confirm-dialog-body` + `.confirm-dialog-actions` at `400px` (via `.tag-confirm` or
+      `:has(.prompt-input)`). Do not build new forms on `.rebase-modal`/`.tag-modal-body`.
+      `AppRadio` in a `v-for` must bind `:value="opt.value"` — without it no option ever matches
+      and clicks emit the garbage value `"on"`. The local-changes choice lives in persisted
+      `ui.localChangesMode` (default `stash`), shared by branch create and switch.
+      The global `.busy-overlay` (z-80) sits **below** `.confirm-dialog-overlay` (z-90), so a create
+      modal that stays open during `withBusy` must show its own loading: swap the primary button's
+      icon for a compact `ThinkSpinner` with a phase label (`Creating…`/`Pushing…`/`Saving…`) and
+      disable its inputs (plus `AppCheckbox` via its `disabled` prop) — never raise the busy overlay,
+      it would bury `ErrorDialog` (also z-90).
 - **Settings-family modals keep their own structure**: `ToolsModal.vue` (720px, teal identity,
   dense `btn small` buttons, section cards) and `GraphSettingsModal.vue` (400px) stay on
   `.rebase-modal`/`.modal-overlay` — only the create forms use the confirm family. Their text

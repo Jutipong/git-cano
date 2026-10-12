@@ -8,10 +8,7 @@ const { autoUpdater } = pkg as unknown as { autoUpdater: AppUpdater }
 let getWin: () => BrowserWindow | null = () => null
 let started = false
 
-/**
- * True only for the installed Windows build (NSIS Setup .exe).
- * macOS stays manual (unsigned dmg). Dev is never auto.
- */
+/** True only for the installed Windows build (NSIS Setup .exe). macOS stays manual (unsigned dmg). Dev is never auto. */
 export function isAutoUpdateSupported(): boolean {
     if (process.platform !== 'win32') return false
     if (!app.isPackaged) return false

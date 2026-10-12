@@ -5,27 +5,27 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
 ## Layers
 
 - `tests/unit` — Vitest, `pnpm test:unit`. Pure logic only: no electron, no Vue component mounting.
-  - Main-process parsers live in `src/main/parsers.ts` (no electron imports) for this reason; keep new pure
-    helpers there or in `src/shared/` instead of inside `git.ts`.
-  - Split-view row planning lives in `src/renderer/src/utils/diffPlan.ts` for the same reason.
-  - `tests/unit/diffPlan.test.ts` is a parity fuzz against a reference implementation — when the row mapping
-    changes intentionally (e.g. meta rows became separators), update the reference in the test too.
+    - Main-process parsers live in `src/main/parsers.ts` (no electron imports) for this reason; keep new pure
+      helpers there or in `src/shared/` instead of inside `git.ts`.
+    - Split-view row planning lives in `src/renderer/src/utils/diffPlan.ts` for the same reason.
+    - `tests/unit/diffPlan.test.ts` is a parity fuzz against a reference implementation — when the row mapping
+      changes intentionally (e.g. meta rows became separators), update the reference in the test too.
 - `tests/e2e` — Playwright driving the **built** Electron app (`pnpm test:e2e` builds `out/` first).
-  - `app.spec.ts` covers the memory/payload work (lazy commit bodies, diff caps, blob-URL images, split plan,
-    tokenizer state, graph interactions, AI context cap).
-  - `conflict.spec.ts` covers the conflict flow.
-  - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
-    panel per repo, full overlay geometry, full-mode persistence across a hide (`Ctrl+`` / palette)
-    vs the header hide button collapsing to the strip, the keyboard returning to the active shell on
-    show and around the full-height toggle, terminal-only font size, rename + drag reorder,
-    the four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
-    `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
-    tab), `Alt+Enter` full-height toggle while focused vs outside, double-Shift opening the palette
-    from the focused shell (and the tap reset when another key intervenes), the `:focus-within` focus
-    edge, the palette entries, Settings → Terminal). Scope panel
-    actions with `.terminal-panel:visible` — every repo keeps its own panel mounted.
-  - `fixtures.ts` creates throwaway repos in the OS temp dir (`globalSetup` writes a metadata file the specs load).
-  - `launch.ts` is the only way to start the app in tests.
+    - `app.spec.ts` covers the memory/payload work (lazy commit bodies, diff caps, blob-URL images, split plan,
+      tokenizer state, graph interactions, AI context cap).
+    - `conflict.spec.ts` covers the conflict flow.
+    - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
+      panel per repo, full overlay geometry, full-mode persistence across a hide (`Ctrl+`` / palette)
+vs the header hide button collapsing to the strip, the keyboard returning to the active shell on
+show and around the full-height toggle, terminal-only font size, rename + drag reorder,
+the four-shell cap, splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
+      `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
+      tab), `Alt+Enter` full-height toggle while focused vs outside, double-Shift opening the palette
+      from the focused shell (and the tap reset when another key intervenes), the `:focus-within` focus
+      edge, the palette entries, Settings → Terminal). Scope panel
+      actions with `.terminal-panel:visible` — every repo keeps its own panel mounted.
+    - `fixtures.ts` creates throwaway repos in the OS temp dir (`globalSetup` writes a metadata file the specs load).
+    - `launch.ts` is the only way to start the app in tests.
 
 ## E2E rules
 

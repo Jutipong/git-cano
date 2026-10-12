@@ -21,8 +21,8 @@
     import ILucideSettings2 from '~icons/lucide/settings2'
     import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import ILucideSparkles from '~icons/lucide/sparkles'
-    import ILucideTerminal from '~icons/lucide/terminal'
     import Sun from '~icons/lucide/sun'
+    import ILucideTerminal from '~icons/lucide/terminal'
     import ILucideTrash2 from '~icons/lucide/trash-2'
     import ILucideUserRound from '~icons/lucide/user-round'
     import ILucideUsers from '~icons/lucide/users'
@@ -32,10 +32,19 @@
     import { useAiStore } from '../stores/ai'
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
+    import {
+        useUiStore,
+        DEFAULT_TERMINAL_FONT_FAMILY,
+        FONT_SIZE_OPTIONS,
+        REFRESH_INTERVAL_OPTIONS,
+        TERMINAL_FONT_FAMILY_PRESETS,
+        TERMINAL_FONT_SIZE_OPTIONS,
+        TOAST_DURATION_OPTIONS,
+        UPDATE_CHECK_HOURS_OPTIONS,
+        type ThemeOption,
+    } from '../stores/ui'
     import { useUpdaterStore } from '../stores/updater'
-    import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY, FONT_SIZE_OPTIONS, REFRESH_INTERVAL_OPTIONS, TERMINAL_FONT_FAMILY_PRESETS, TERMINAL_FONT_SIZE_OPTIONS, TOAST_DURATION_OPTIONS, UPDATE_CHECK_HOURS_OPTIONS, type ThemeOption } from '../stores/ui'
     import { confirmDialog } from '../utils/confirm'
-    import { buildTerminalFontFamily, isFontInstalled, primaryFontFamily } from '../utils/terminalFont'
     import {
         CUSTOM_SHORTCUT_IDS,
         eventToCombo,
@@ -47,6 +56,7 @@
         type CustomShortcutId,
         type ShortcutPlatform,
     } from '../utils/shortcuts'
+    import { buildTerminalFontFamily, isFontInstalled, primaryFontFamily } from '../utils/terminalFont'
     import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
@@ -165,9 +175,9 @@
     /** Terminal → its own text size, deliberately independent of the UI font size above. */
     const TERMINAL_FONT_OPTIONS = TERMINAL_FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
     /**
-     * Shell choices — PowerShell 7 is the default, and the resolver in `main/terminal.ts` falls back
-     * to Command Prompt on machines where pwsh is not installed. Hidden off Windows, following the
-     * repo's rule for Windows-only settings (elsewhere the terminal always uses `$SHELL`).
+     * Shell choices — PowerShell 7 is the default, and the resolver in `main/terminal.ts` falls back to Command Prompt on machines where
+     * pwsh is not installed. Hidden off Windows, following the repo's rule for Windows-only settings (elsewhere the terminal always uses
+     * `$SHELL`).
      */
     const TERMINAL_SHELL_OPTIONS: { value: TerminalShell; label: string }[] = [
         { value: 'cmd', label: 'Command Prompt' },
@@ -175,8 +185,10 @@
         { value: 'pwsh', label: 'PowerShell 7' },
     ]
 
-    /** Terminal → font family preset chips + custom input. The input mirrors the stored stack's
-     *  primary family; it commits on Enter/blur and reverts on Esc or tab switch. */
+    /**
+     * Terminal → font family preset chips + custom input. The input mirrors the stored stack's primary family; it commits on Enter/blur and
+     * reverts on Esc or tab switch.
+     */
     const terminalFontInput = ref(primaryFontFamily(ui.terminalFontFamily))
     const terminalFontPrimary = computed(() => primaryFontFamily(ui.terminalFontFamily))
     const terminalFontMissing = computed(() => !isFontInstalled(terminalFontPrimary.value))
@@ -1080,8 +1092,8 @@
                             </button>
                         </div>
                         <p class="tools-section-hint">
-                            Independent of the interface font size — the A− / A+ buttons in the terminal panel header change
-                            this too, and open terminals follow along.
+                            Independent of the interface font size — the A− / A+ buttons in the terminal panel header change this too, and
+                            open terminals follow along.
                         </p>
                         <span class="setting-label">Font family</span>
                         <div class="setting-choice-row">

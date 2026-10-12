@@ -1,12 +1,11 @@
 import type { OpenInTargets } from '@shared/types'
 
 /**
- * Session cache of Open-in availability per repo path. The main process walks the repo for
- * .sln/.csproj files and (on Windows) probes for VS/Rider, so the sidebar button and the command
- * palette share one result instead of re-scanning every time either one opens.
+ * Session cache of Open-in availability per repo path. The main process walks the repo for .sln/.csproj files and (on Windows) probes for
+ * VS/Rider, so the sidebar button and the command palette share one result instead of re-scanning every time either one opens.
  *
- * Module scope on purpose: a cache declared inside `<script setup>` would be recreated on every
- * component mount (palette opens are frequent) and never hit.
+ * Module scope on purpose: a cache declared inside `<script setup>` would be recreated on every component mount (palette opens are
+ * frequent) and never hit.
  */
 const cache = new Map<string, OpenInTargets>()
 /** In-flight requests joined by path, so two mounted components never run the same scan twice. */

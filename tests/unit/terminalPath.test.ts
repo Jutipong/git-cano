@@ -28,9 +28,7 @@ describe('mergePathValue', () => {
     })
 
     it('skips duplicates case-insensitively and keeps the original entry', () => {
-        expect(mergePathValue('c:\\tools;C:\\Windows', ['C:\\Tools', 'D:\\Bin'], ';', true)).toBe(
-            'D:\\Bin;c:\\tools;C:\\Windows'
-        )
+        expect(mergePathValue('c:\\tools;C:\\Windows', ['C:\\Tools', 'D:\\Bin'], ';', true)).toBe('D:\\Bin;c:\\tools;C:\\Windows')
     })
 
     it('drops empties and handles an empty base', () => {

@@ -33,12 +33,11 @@ function compareVersions(a: string, b: string): number {
 }
 
 /**
- * Shared update-check state. Not persisted — every launch starts at `idle`
- * so the sidebar update button stays hidden until a check finds a newer release.
+ * Shared update-check state. Not persisted — every launch starts at `idle` so the sidebar update button stays hidden until a check finds a
+ * newer release.
  *
- * Setup .exe (installed Windows) additionally supports in-app download/install
- * via electron-updater (`downloading` → `downloaded`); macOS stays
- * manual and falls back to opening the release page.
+ * Setup .exe (installed Windows) additionally supports in-app download/install via electron-updater (`downloading` → `downloaded`); macOS
+ * stays manual and falls back to opening the release page.
  */
 export const useUpdaterStore = defineStore('updater', () => {
     const status = ref<UpdaterStatus>('idle')
@@ -121,9 +120,8 @@ export const useUpdaterStore = defineStore('updater', () => {
     }
 
     /**
-     * Release notes for the running version, from the GitHub release body.
-     * Cached per version; a failure leaves `notes` null so the modal can say so
-     * instead of raising an error dialog.
+     * Release notes for the running version, from the GitHub release body. Cached per version; a failure leaves `notes` null so the modal
+     * can say so instead of raising an error dialog.
      */
     async function loadChangelog(version?: string): Promise<void> {
         if (notesLoading.value) return
