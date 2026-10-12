@@ -1629,11 +1629,14 @@ kbd {
 
 .section-toggle {
     display: flex;
+    flex: 1;
     align-items: center;
     gap: 3px;
+    width: 100%;
     padding: 0;
     color: var(--text-muted);
     background: transparent;
+    text-align: left;
     cursor: pointer;
 }
 .section-toggle h3 {
