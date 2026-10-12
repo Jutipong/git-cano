@@ -246,6 +246,10 @@ Panel/modal component patterns. Loaded automatically when working under
   as `.commit-close-btn` is) or the invisible ring stretches over the whole panel and swallows every
   click. A tiny variant must keep that positioned parent (`.commit-close-btn`) or pin the icon with
   `.close-x-svg { position: static; width/height: N }`.
+- **Button loading state** always swaps the icon for a compact `ThinkSpinner` (`v-if` on the busy
+  flag / `v-else` the icon — `compact` inherits the button color), never spins the icon itself
+  with `.spinning`. Precedents: `TabBar.vue` sync buttons, `FilePanel.vue` commit + refresh buttons,
+  `Sidebar.vue` tags refresh button.
 - **Modal text inputs** take focus programmatically: `v-if` modals (`TagCreateModal.vue`,
   `StashCreateModal.vue`, `CloneRepoModal.vue`) use `useTemplateRef` + `nextTick(() => el?.focus())`
   in `onMounted` — native `autofocus` alone only focuses the first open, never the reopen.

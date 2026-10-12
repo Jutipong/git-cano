@@ -695,8 +695,11 @@
                     aria-label="Refresh tags"
                     :disabled="refreshingTags || !!uiTransient.busy"
                     @click.stop="refreshTags()">
+                    <ThinkSpinner
+                        v-if="refreshingTags"
+                        compact />
                     <i-lucide-rotate-cw
-                        :class="{ spinning: refreshingTags }"
+                        v-else
                         width="14"
                         height="14" />
                 </button>

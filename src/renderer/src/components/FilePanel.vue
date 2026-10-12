@@ -708,8 +708,11 @@
                             title="Refresh changes"
                             :disabled="pending"
                             @click="refreshPanel()">
+                            <ThinkSpinner
+                                v-if="pending"
+                                compact />
                             <i-lucide-refresh-cw
-                                :class="{ spinning: pending }"
+                                v-else
                                 width="15"
                                 height="15" />
                         </button>
