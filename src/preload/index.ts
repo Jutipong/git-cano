@@ -48,7 +48,8 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 const api = {
     pickAndOpen: (): Promise<RepoStatus | null> => call('repo:pickAndOpen'),
     pickDirectory: (): Promise<string | null> => call('repo:pickDir'),
-    clone: (url: string, dest?: string): Promise<RepoStatus | null> => call('repo:clone', url, dest),
+    clone: (url: string, parent?: string, folderName?: string): Promise<RepoStatus | null> =>
+        call('repo:clone', url, parent, folderName),
     openPath: (dir: string): Promise<RepoStatus> => call('repo:openPath', dir),
     setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
@@ -82,8 +83,7 @@ const api = {
     getVersion: (): Promise<string> => call('app:getVersion'),
     getStatusAccelerators: (): Promise<boolean> => call('app:getStatusAccelerators'),
     setStatusAccelerators: (enabled: boolean): Promise<boolean> => call('app:setStatusAccelerators', enabled),
-    getDefaultOpenDir: (): Promise<string> => call('app:getDefaultOpenDir'),
-    setDefaultOpenDir: (dir: string): Promise<boolean> => call('app:setDefaultOpenDir', dir),
+    getLastCloneRoot: (): Promise<string> => call('app:getLastCloneRoot'),
     updateCanAuto: (): Promise<boolean> => call('update:canAuto'),
     updateDownload: (): Promise<string> => call('update:download'),
     updateInstall: (): Promise<boolean> => call('update:install'),

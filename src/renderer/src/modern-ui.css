@@ -2568,6 +2568,28 @@ body {
     white-space: nowrap;
 }
 
+.clone-folder-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.clone-folder-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 12px;
+    color: var(--text);
+    font-size: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
+    outline: none;
+}
+
+.clone-folder-row input:focus {
+    border-color: color-mix(in srgb, var(--teal) 45%, transparent);
+}
+
 .app-body {
     gap: 0;
     margin-top: 6px;

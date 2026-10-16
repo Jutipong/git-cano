@@ -26,7 +26,6 @@
     import ILucideTrash2 from '~icons/lucide/trash-2'
     import ILucideUserRound from '~icons/lucide/user-round'
     import ILucideUsers from '~icons/lucide/users'
-    import ILucideX from '~icons/lucide/x'
     import ILucideZap from '~icons/lucide/zap'
 
     import { useAiStore } from '../stores/ai'
@@ -89,37 +88,6 @@
             statusAccelerators.value = !next
             notify(String(error).replace(/^Error:\s*/, ''), 'error')
         }
-    }
-
-    // Default folder for directory-picker dialogs (Open from local / New repo / Clone destination),
-    // persisted main-side in settings.json — falls back to the parent of the most recent repo when empty.
-    const defaultOpenDir = ref('')
-    onMounted(async () => {
-        defaultOpenDir.value = await window.api.getDefaultOpenDir().catch(() => '')
-    })
-    async function persistDefaultOpenDir(value: string) {
-        const dir = value.trim()
-        try {
-            await window.api.setDefaultOpenDir(dir)
-            notify(dir ? 'Default open folder saved' : 'Default open folder cleared', 'success')
-        } catch (error) {
-            defaultOpenDir.value = await window.api.getDefaultOpenDir().catch(() => '')
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        }
-    }
-    async function browseDefaultOpenDir() {
-        try {
-            const dir = await window.api.pickDirectory()
-            if (!dir) return
-            defaultOpenDir.value = dir
-            await persistDefaultOpenDir(dir)
-        } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        }
-    }
-    function clearDefaultOpenDir() {
-        defaultOpenDir.value = ''
-        void persistDefaultOpenDir('')
     }
 
     // Update check against GitHub Releases; the installed Windows build (Setup .exe)
@@ -963,49 +931,6 @@
                                 {{ option.label }}
                             </button>
                         </div>
-                    </div>
-
-                    <div class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-folder-open
-                                width="13"
-                                height="13" />
-                            Folders
-                        </strong>
-                        <label class="ai-field">
-                            <span>Default folder for opening repositories</span>
-                            <div class="ai-token-row">
-                                <input
-                                    v-model="defaultOpenDir"
-                                    type="text"
-                                    placeholder="Last used folder"
-                                    autocomplete="off"
-                                    @change="persistDefaultOpenDir(defaultOpenDir)" />
-                                <button
-                                    class="btn small"
-                                    title="Browse for a folder"
-                                    @click="browseDefaultOpenDir()">
-                                    <i-lucide-folder-open
-                                        width="13"
-                                        height="13" />
-                                    Browse…
-                                </button>
-                                <button
-                                    v-if="defaultOpenDir.trim()"
-                                    class="btn danger small"
-                                    title="Clear — start from the last used folder"
-                                    @click="clearDefaultOpenDir()">
-                                    <i-lucide-x
-                                        width="13"
-                                        height="13" />
-                                    Clear
-                                </button>
-                            </div>
-                        </label>
-                        <span class="setting-hint">
-                            Folder-picker dialogs (Open from local, New repository, Clone destination) start here. When empty, the parent
-                            folder of the most recently opened repository is used.
-                        </span>
                     </div>
 
                     <div

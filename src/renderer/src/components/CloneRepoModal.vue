@@ -1,8 +1,10 @@
 <script setup lang="ts">
-    import { nextTick, useTemplateRef, computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
     import ILucideDownload from '~icons/lucide/download'
     import ILucideFolderPlus from '~icons/lucide/folder-plus'
+    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
 
+    import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, joinClonePath } from '@shared/clone'
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import CloseXIcon from './CloseXIcon.vue'
@@ -13,23 +15,48 @@
     const uiTransient = useUiTransientStore()
 
     const url = ref('')
-    const dest = ref('')
+    const parent = ref('')
+    const folder = ref('')
+    const folderEdited = ref(false)
     const busy = ref(false)
-    const pickingDest = ref(false)
+    const pickingParent = ref(false)
+    const loadingRoot = ref(true)
     const error = ref('')
     const urlInput = useTemplateRef<HTMLInputElement>('urlInput')
 
-    const folderName = computed(() => {
-        const urlText = url.value.trim()
-        const namePart = urlText.split('/').pop() || urlText
-        return namePart.replace(/\.git$/i, '')
+    const folderProblem = computed(() => (folder.value ? cloneFolderError(folder.value) : 'Folder name is required'))
+    const fullPath = computed(() => {
+        if (!parent.value.trim() || !folder.value.trim()) return ''
+        return joinClonePath(parent.value, folder.value)
     })
 
-    const canSubmit = computed(() => url.value.trim().length > 0 && dest.value.length > 0 && !busy.value && !pickingDest.value)
+    const canSubmit = computed(
+        () =>
+            url.value.trim().length > 0 &&
+            parent.value.trim().length > 0 &&
+            isValidCloneFolderName(folder.value) &&
+            !busy.value &&
+            !pickingParent.value &&
+            !loadingRoot.value,
+    )
+
+    watch(url, () => {
+        error.value = ''
+        if (!folderEdited.value) folder.value = extractRepoFolderName(url.value)
+    })
 
     onMounted(() => {
         document.addEventListener('keydown', onKey)
         nextTick(() => urlInput.value?.focus())
+        window.api
+            .getLastCloneRoot()
+            .then(root => {
+                if (root) parent.value = root
+            })
+            .catch(() => {})
+            .finally(() => {
+                loadingRoot.value = false
+            })
     })
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
@@ -37,26 +64,39 @@
         if (event.key === 'Escape') emit('close')
     }
 
-    async function pickDest() {
-        if (pickingDest.value) return
-        pickingDest.value = true
+    function onFolderInput() {
+        folderEdited.value = true
+        error.value = ''
+    }
+
+    function resetFolder() {
+        folder.value = extractRepoFolderName(url.value)
+        folderEdited.value = false
+        error.value = ''
+    }
+
+    async function pickParent() {
+        if (pickingParent.value) return
+        pickingParent.value = true
         error.value = ''
         try {
             const dir = await window.api.pickDirectory()
-            if (dir) dest.value = dir
+            if (dir) parent.value = dir
         } catch {
         } finally {
-            pickingDest.value = false
+            pickingParent.value = false
         }
     }
 
     async function submit() {
-        const trimmedUrl = url.value.trim()
         if (!canSubmit.value) return
         busy.value = true
         error.value = ''
         try {
-            const status = await uiTransient.withBusy(() => window.api.clone(trimmedUrl, dest.value), 'Cloning repository…')
+            const status = await uiTransient.withBusy(
+                () => window.api.clone(url.value.trim(), parent.value.trim(), folder.value.trim()),
+                'Cloning repository…',
+            )
             if (status) {
                 repoStore.addTab(status)
                 notify('Repository cloned', 'success')
@@ -92,22 +132,49 @@
                     spellcheck="false"
                     @input="error = ''"
                     @keydown.enter="submit()" />
-                <span class="clone-dest-label">Destination folder</span>
+                <span class="clone-dest-label">Root folder</span>
                 <button
                     type="button"
                     class="clone-dest-field"
-                    :class="{ 'has-value': !!dest }"
-                    :disabled="pickingDest"
-                    @click="pickDest()">
+                    :class="{ 'has-value': !!parent }"
+                    :disabled="pickingParent || loadingRoot"
+                    @click="pickParent()">
                     <i-lucide-folder-plus
                         width="14"
                         height="14" />
-                    <span class="clone-dest-text">{{ dest || (pickingDest ? 'Choosing folder…' : 'Choose destination folder') }}</span>
+                    <span class="clone-dest-text">{{
+                        parent || (loadingRoot ? 'Loading last folder…' : pickingParent ? 'Choosing folder…' : 'Choose root folder')
+                    }}</span>
                 </button>
+                <span class="clone-dest-label">Folder name</span>
+                <div class="clone-folder-row">
+                    <input
+                        v-model="folder"
+                        placeholder="repo-folder"
+                        spellcheck="false"
+                        autocomplete="off"
+                        @input="onFolderInput()"
+                        @keydown.enter="submit()" />
+                    <button
+                        v-if="folderEdited"
+                        type="button"
+                        class="btn small"
+                        title="Reset to name from URL"
+                        @click="resetFolder()">
+                        <i-lucide-rotate-ccw
+                            width="13"
+                            height="13" />
+                    </button>
+                </div>
                 <div
-                    v-if="dest && url.trim()"
+                    v-if="fullPath"
                     class="clone-dest-hint">
-                    Will clone into {{ dest }}/{{ folderName }}
+                    Will clone into {{ fullPath }}
+                </div>
+                <div
+                    v-if="folderProblem && (folder || url.trim())"
+                    class="tag-modal-error">
+                    {{ folderProblem }}
                 </div>
                 <div
                     v-if="error"

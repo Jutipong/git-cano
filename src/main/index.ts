@@ -137,6 +137,7 @@ import {
 } from './terminal'
 import { downloadUpdate, initAutoUpdater, installUpdate, isAutoUpdateSupported, openReleasePage } from './updater'
 
+import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, sanitizeCloneFolderName } from '@shared/clone'
 import type { LocalChangesMode, MergeMode, TerminalShell } from '@shared/types'
 
 let win: BrowserWindow | null = null
@@ -453,10 +454,10 @@ ipcMain.on('app:log', (_e, level: string, message: unknown) => {
     log(safeLevel, 'renderer', summarize(message))
 })
 
-/** Main-process app settings (currently: the opt-in Windows status accelerators + the default folder-picker directory). */
+/** Main-process app settings (currently: the opt-in Windows status accelerators + the last clone root). */
 interface AppSettings {
     statusAccelerators?: boolean
-    defaultOpenDir?: string
+    lastCloneRoot?: string
 }
 
 function appSettingsFile(): string {
@@ -478,14 +479,15 @@ function writeAppSettings(patch: AppSettings): void {
 }
 
 /**
- * Starting directory for every folder-picker dialog: the user's configured default folder when it exists on disk, otherwise the parent of
+ * Starting directory for every folder-picker dialog: the last successfully used
+ * clone root when it still exists on disk, otherwise the parent of
  * the most recently opened repository, otherwise left to the OS.
  */
 function startDir(): string | undefined {
-    const configured = readAppSettings().defaultOpenDir?.trim()
-    if (configured) {
+    const lastRoot = readAppSettings().lastCloneRoot?.trim()
+    if (lastRoot) {
         try {
-            if (fs.statSync(configured).isDirectory()) return configured
+            if (fs.statSync(lastRoot).isDirectory()) return lastRoot
         } catch {}
     }
     try {
@@ -574,21 +576,7 @@ app.whenReady().then(() => {
         writeAppSettings({ statusAccelerators: enabled })
         return enabled
     })
-    handle('app:getDefaultOpenDir', () => readAppSettings().defaultOpenDir ?? '')
-    handle('app:setDefaultOpenDir', (_dir: string) => {
-        const dir = String(_dir).trim()
-        if (dir) {
-            let stat: fs.Stats
-            try {
-                stat = fs.statSync(dir)
-            } catch {
-                throw new Error(`Folder does not exist: ${dir}`)
-            }
-            if (!stat.isDirectory()) throw new Error(`Not a directory: ${dir}`)
-        }
-        writeAppSettings({ defaultOpenDir: dir || undefined })
-        return true
-    })
+    handle('app:getLastCloneRoot', () => readAppSettings().lastCloneRoot ?? '')
     handle('repo:pickAndOpen', async () => {
         const res = await dialog.showOpenDialog({ properties: ['openDirectory'], defaultPath: startDir() })
         if (res.canceled || !res.filePaths[0]) return null
@@ -603,22 +591,27 @@ app.whenReady().then(() => {
         if (res.canceled || !res.filePaths[0]) return null
         return res.filePaths[0]
     })
-    handle('repo:clone', async (_url: string, _dest?: string) => {
-        const url = _url as string
-        let dest = _dest as string | undefined
-        if (!dest) {
+    handle('repo:clone', async (_url: string, _parent?: string, _folder?: string) => {
+        const url = String(_url ?? '').trim()
+        if (!url) throw new Error('Repository URL is required')
+        let parent = typeof _parent === 'string' ? _parent.trim() : ''
+        if (!parent) {
             const res = await dialog.showOpenDialog({
                 title: 'Choose destination folder',
                 properties: ['openDirectory', 'createDirectory'],
                 defaultPath: startDir(),
             })
             if (res.canceled || !res.filePaths[0]) return null
-            dest = res.filePaths[0]
+            parent = res.filePaths[0]
         }
-        const destPath = path.join(dest, path.basename(url, '.git'))
+        let folder = typeof _folder === 'string' ? sanitizeCloneFolderName(_folder) : ''
+        if (!folder) folder = extractRepoFolderName(url) || path.basename(url, '.git')
+        if (!isValidCloneFolderName(folder)) throw new Error(cloneFolderError(folder) || 'Invalid folder name')
+        const destPath = path.join(parent, folder)
         const g = plainGit()
         g.env({ ...baseEnv(), ...authGitEnv() })
         await g.clone(url, destPath)
+        writeAppSettings({ lastCloneRoot: parent })
         return openRepo(destPath)
     })
     handle('repo:openPath', (_dir: string) => openRepo(_dir as string))
