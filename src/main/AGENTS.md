@@ -302,9 +302,8 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   the Close role stays as a `visible: false` item purely to keep the
   `Cmd/Ctrl+Shift+W` close-window accelerator registered — dropping it outright would
   take the shortcut with it.
-- Release flow per version: bump `package.json` version → `pnpm dist:win` (Windows:
-  Setup `.exe` via NSIS) / `pnpm dist:mac` (Mac, arm64 dmg) →
-  `git tag v<version>` → GitHub Release from that tag with the `release/` assets
-  uploaded (`release/` is gitignored, never committed). The `latest.yml` next to the
-  Setup `.exe` is required — it is the electron-updater feed. Unsigned macOS builds stay
-  manual-download (SmartScreen/Gatekeeper bypass stays in README).
+- Release flow & checklist live in the root `AGENTS.md` → Releasing. Per version the
+  Setup `.exe` comes from `pnpm dist:win` (NSIS) and the Mac arm64 dmg from
+  `pnpm dist:mac`; the `latest.yml` next to the Setup `.exe` is required — it is the
+  electron-updater feed. `release/` is gitignored, never committed. Unsigned macOS
+  builds stay manual-download (SmartScreen/Gatekeeper bypass stays in README).

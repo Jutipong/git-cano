@@ -36,6 +36,33 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
   (microsoft/node-pty#921, fixed by #922, shipped only in the 1.2.0 betas) — never let
   `pnpm update --latest` / `uplib` pull the stable line back over it.
 
+## Releasing
+
+When the user asks for a release (e.g. "release", "build .exe and release"),
+that request is the explicit permission to commit, tag, push and publish.
+Follow this checklist in order:
+
+1. Pick the version: small fixes and features extend the current patch line
+   (`1.7.x` style); minor bumps are saved for headline features.
+2. `pnpm test` — the release gate (lint + typecheck + unit + e2e). Stop on failure.
+3. Set the same version in `package.json` and commit only that change as
+   `chore: release <version>`; the tag points at this commit.
+4. `pnpm dist:win` → `release/git-cano-<version>-setup.exe`, its `.blockmap`,
+   and `latest.yml` (the electron-updater feed — it must be attached).
+5. Write `release/v<version>-release-notes.md` in the opencode release-note
+   style: area sections (`## Core`, `## UI`, …) with `### Improvements` /
+   `### Bugfixes` bullets — no emoji sections, no Install section. The GitHub
+   release title is `v<version> — <short description>`.
+6. `git tag v<version>`, then push `main` and the tag.
+7. Create the GitHub release from that tag with the release notes and the three
+   files from step 4 attached. If `gh` is missing, install it
+   (`scoop install gh`). Publishing uses a fine-grained PAT (Contents read and
+   write) from `GH_TOKEN`, or from `%TEMP%\opencode\gh-token.txt` when the user
+   drops it there — read it, never echo it.
+8. Verify the release lists all three assets and `latest.yml` names the new
+   version. `release/` is gitignored and never committed; macOS `.dmg`s only
+   ship when built on a Mac.
+
 ## Architecture
 
 Data flows one direction: **component → window.api (preload IPC) → main process → git.ts → simple-git**.
