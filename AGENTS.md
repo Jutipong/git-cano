@@ -55,10 +55,13 @@ Follow this checklist in order:
    release title is `v<version> — <short description>`.
 6. `git tag v<version>`, then push `main` and the tag.
 7. Create the GitHub release from that tag with the release notes and the three
-   files from step 4 attached. If `gh` is missing, install it
-   (`scoop install gh`). Publishing uses a fine-grained PAT (Contents read and
-   write) from `GH_TOKEN`, or from `%TEMP%\opencode\gh-token.txt` when the user
-   drops it there — read it, never echo it.
+   files from step 4 attached. Drive the GitHub REST API straight from the shell
+   (create via `Invoke-RestMethod`, upload assets with `curl.exe` against a
+   curl-config file so the token never sits in a command line) — a `gh` CLI is
+   optional, not required. The token (fine-grained PAT with Contents read and
+   write) comes from `GH_TOKEN`, from `%TEMP%\opencode\gh-token.txt` when the
+   user drops it there, or from the credential Git already stored for
+   github.com (`git credential fill`) — read it into a variable, never echo it.
 8. Verify the release lists all three assets and `latest.yml` names the new
    version. `release/` is gitignored and never committed; macOS `.dmg`s only
    ship when built on a Mac.
