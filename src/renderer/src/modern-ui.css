@@ -8032,6 +8032,32 @@ body {
     align-items: center;
 }
 
+.shortcuts-group-title {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    gap: 10px;
+    margin: 16px 0 2px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.shortcuts-group-title.is-first {
+    margin-top: 8px;
+}
+
+.shortcuts-group-title::after {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--line-soft) 12%, transparent);
+    content: '';
+    opacity: 0.9;
+}
+
 .shortcuts-head {
     padding-bottom: 2px;
     color: var(--text-muted);

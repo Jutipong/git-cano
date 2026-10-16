@@ -115,16 +115,16 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 ## Keyboard shortcuts
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
-  `ShortcutsModal.vue`, shown in this order: Fetch, Pull, Push, Open repo,
-  Clone repo, Close tab / terminal, Toggle terminal, New terminal tab, Terminal tab 1…9,
-  Terminal full height, Search commits, Open settings,
-  Command palette, Show shortcuts — with
-  dividers under the header, after Push, and after Command palette. Every
+  `ShortcutsModal.vue`, grouped by `SHORTCUT_GROUPS` in this order: Sync (Fetch,
+  Pull, Push), Repository (Open repo, Clone repo, Close tab / terminal), Terminal
+  (Toggle terminal, New terminal tab, Terminal tab 1…9, Terminal full height),
+  General (Search commits, Open settings, Command palette, Show shortcuts) — with
+  a divider under the header and a titled section per group. Every
   entry there must have a real handler. The global `keydown` handler in
   `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
   (`Ctrl/⌘+F` while a diff is open, `Enter` in its search box for next
   match). When adding a shortcut, add the entry to `SHORTCUTS` (with
-  `mac`/`win` keys) and wire the handler.
+  `group` + `mac`/`win` keys) and wire the handler.
 - Sync defaults (`SYNC_SHORTCUT_DEFAULTS`): Push `Ctrl+ArrowUp`, Pull
   `Ctrl+ArrowDown`, Fetch `Ctrl+Shift+ArrowDown`. `eventToCombo()` normalizes
   events to canonical combos (`Cmd` counts as `Ctrl`); `formatCombo()` renders

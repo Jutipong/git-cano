@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 
 import {
     CUSTOM_SHORTCUT_IDS,
+    SHORTCUTS,
     SHORTCUT_DEFAULTS,
+    SHORTCUT_GROUPS,
     eventToCombo,
     formatCombo,
     formatComboMac,
@@ -73,6 +75,17 @@ describe('shortcut catalog', () => {
     it('has a default for every customizable id', () => {
         for (const id of CUSTOM_SHORTCUT_IDS) {
             expect(SHORTCUT_DEFAULTS[id]).toBeTruthy()
+        }
+    })
+
+    it('assigns every shortcut to a known group', () => {
+        const groupIds = new Set(SHORTCUT_GROUPS.map(group => group.id))
+        expect(SHORTCUTS.length).toBeGreaterThan(0)
+        for (const shortcut of SHORTCUTS) {
+            expect(groupIds.has(shortcut.group)).toBe(true)
+        }
+        for (const group of SHORTCUT_GROUPS) {
+            expect(SHORTCUTS.some(shortcut => shortcut.group === group.id)).toBe(true)
         }
     })
 })

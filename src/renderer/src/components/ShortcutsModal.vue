@@ -2,29 +2,32 @@
     import { computed, onBeforeUnmount, onMounted } from 'vue'
 
     import { useUiStore } from '../stores/ui'
-    import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, formatCombo, formatComboMac, isMac, type CustomShortcutId } from '../utils/shortcuts'
+    import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, SHORTCUT_GROUPS, formatCombo, formatComboMac, isMac, type CustomShortcutId } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
 
     const ui = useUiStore()
 
-    const rows = computed(() =>
-        SHORTCUTS.map(shortcut => {
-            if ((CUSTOM_SHORTCUT_IDS as string[]).includes(shortcut.id)) {
-                const macCombo = ui.getShortcut(shortcut.id as CustomShortcutId, 'mac')
-                const winCombo = ui.getShortcut(shortcut.id as CustomShortcutId, 'win')
-                const mac = [formatComboMac(macCombo)]
-                const win = [formatCombo(winCombo)]
-                // Command palette always keeps double-Shift as a fixed alternative.
-                if (shortcut.id === 'commandPalette') {
-                    mac.push('Shift+Shift')
-                    win.push('Shift+Shift')
+    const groups = computed(() =>
+        SHORTCUT_GROUPS.map(group => ({
+            ...group,
+            items: SHORTCUTS.filter(shortcut => shortcut.group === group.id).map(shortcut => {
+                if ((CUSTOM_SHORTCUT_IDS as string[]).includes(shortcut.id)) {
+                    const macCombo = ui.getShortcut(shortcut.id as CustomShortcutId, 'mac')
+                    const winCombo = ui.getShortcut(shortcut.id as CustomShortcutId, 'win')
+                    const mac = [formatComboMac(macCombo)]
+                    const win = [formatCombo(winCombo)]
+                    // Command palette always keeps double-Shift as a fixed alternative.
+                    if (shortcut.id === 'commandPalette') {
+                        mac.push('Shift+Shift')
+                        win.push('Shift+Shift')
+                    }
+                    return { ...shortcut, mac, win }
                 }
-                return { ...shortcut, mac, win }
-            }
-            return shortcut
-        })
+                return shortcut
+            }),
+        }))
     )
 
     onMounted(() => document.addEventListener('keydown', onKey))
@@ -60,27 +63,32 @@
                         class="shortcuts-divider"
                         aria-hidden="true" />
                     <template
-                        v-for="shortcut in rows"
-                        :key="shortcut.id">
-                        <span class="shortcuts-label">{{ shortcut.label }}</span>
-                        <span class="shortcuts-keys">
-                            <kbd
-                                v-for="key in shortcut.mac"
-                                :key="key"
-                                >{{ key }}</kbd
-                            >
-                        </span>
-                        <span class="shortcuts-keys">
-                            <kbd
-                                v-for="key in shortcut.win"
-                                :key="key"
-                                >{{ key }}</kbd
-                            >
-                        </span>
+                        v-for="(group, groupIndex) in groups"
+                        :key="group.id">
                         <span
-                            v-if="shortcut.id === 'push' || shortcut.id === 'commandPalette'"
-                            class="shortcuts-divider"
-                            aria-hidden="true" />
+                            class="shortcuts-group-title"
+                            :class="{ 'is-first': groupIndex === 0 }"
+                            >{{ group.title }}</span
+                        >
+                        <template
+                            v-for="shortcut in group.items"
+                            :key="shortcut.id">
+                            <span class="shortcuts-label">{{ shortcut.label }}</span>
+                            <span class="shortcuts-keys">
+                                <kbd
+                                    v-for="key in shortcut.mac"
+                                    :key="key"
+                                    >{{ key }}</kbd
+                                >
+                            </span>
+                            <span class="shortcuts-keys">
+                                <kbd
+                                    v-for="key in shortcut.win"
+                                    :key="key"
+                                    >{{ key }}</kbd
+                                >
+                            </span>
+                        </template>
                     </template>
                 </div>
                 <p

@@ -4,28 +4,43 @@ export const isMac = /mac/i.test(navigator.platform)
 /** Windows-only features (e.g. the git status accelerators) gate their UI on this. */
 export const isWindows = /win/i.test(navigator.platform)
 
+export type ShortcutGroupId = 'sync' | 'repo' | 'terminal' | 'general'
+
+export interface ShortcutGroup {
+    id: ShortcutGroupId
+    title: string
+}
+
+export const SHORTCUT_GROUPS: ShortcutGroup[] = [
+    { id: 'sync', title: 'Sync' },
+    { id: 'repo', title: 'Repository' },
+    { id: 'terminal', title: 'Terminal' },
+    { id: 'general', title: 'General' },
+]
+
 export interface ShortcutDef {
     id: string
     label: string
+    group: ShortcutGroupId
     mac: string[]
     win: string[]
 }
 
 export const SHORTCUTS: ShortcutDef[] = [
-    { id: 'fetch', label: 'Fetch', mac: ['Ctrl+Shift+↓'], win: ['Ctrl+Shift+↓'] },
-    { id: 'pull', label: 'Pull', mac: ['Ctrl+↓'], win: ['Ctrl+↓'] },
-    { id: 'push', label: 'Push', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
-    { id: 'openRepo', label: 'Open repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
-    { id: 'cloneRepo', label: 'Clone repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
-    { id: 'closeTab', label: 'Close tab / terminal', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
-    { id: 'terminal', label: 'Toggle terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
-    { id: 'terminalNewTab', label: 'New terminal tab', mac: ['Ctrl+T'], win: ['Ctrl+T'] },
-    { id: 'terminalTabJump', label: 'Terminal tab 1…9', mac: ['Ctrl+1…9'], win: ['Ctrl+1…9'] },
-    { id: 'terminalFullHeight', label: 'Terminal full height', mac: ['Alt+Enter'], win: ['Alt+Enter'] },
-    { id: 'searchCommits', label: 'Search commits', mac: ['⌘F'], win: ['Ctrl+F'] },
-    { id: 'settings', label: 'Open settings', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
-    { id: 'commandPalette', label: 'Command palette', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
-    { id: 'shortcuts', label: 'Show shortcuts', mac: ['?'], win: ['?'] },
+    { id: 'fetch', label: 'Fetch', group: 'sync', mac: ['Ctrl+Shift+↓'], win: ['Ctrl+Shift+↓'] },
+    { id: 'pull', label: 'Pull', group: 'sync', mac: ['Ctrl+↓'], win: ['Ctrl+↓'] },
+    { id: 'push', label: 'Push', group: 'sync', mac: ['Ctrl+↑'], win: ['Ctrl+↑'] },
+    { id: 'openRepo', label: 'Open repo', group: 'repo', mac: ['Ctrl+O'], win: ['Ctrl+O'] },
+    { id: 'cloneRepo', label: 'Clone repo', group: 'repo', mac: ['Ctrl+N'], win: ['Ctrl+N'] },
+    { id: 'closeTab', label: 'Close tab / terminal', group: 'repo', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
+    { id: 'terminal', label: 'Toggle terminal', group: 'terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
+    { id: 'terminalNewTab', label: 'New terminal tab', group: 'terminal', mac: ['Ctrl+T'], win: ['Ctrl+T'] },
+    { id: 'terminalTabJump', label: 'Terminal tab 1…9', group: 'terminal', mac: ['Ctrl+1…9'], win: ['Ctrl+1…9'] },
+    { id: 'terminalFullHeight', label: 'Terminal full height', group: 'terminal', mac: ['Alt+Enter'], win: ['Alt+Enter'] },
+    { id: 'searchCommits', label: 'Search commits', group: 'general', mac: ['⌘F'], win: ['Ctrl+F'] },
+    { id: 'settings', label: 'Open settings', group: 'general', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
+    { id: 'commandPalette', label: 'Command palette', group: 'general', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
+    { id: 'shortcuts', label: 'Show shortcuts', group: 'general', mac: ['?'], win: ['?'] },
 ]
 
 export type SyncShortcutId = 'push' | 'pull' | 'fetch'
