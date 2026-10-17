@@ -4986,14 +4986,16 @@ body {
     opacity: 0.45;
 }
 
+/* แบ่งครึ่ง pill เท่ากับปุ่ม Commit เสมอ — flex-basis: 0 หารที่ content box
+   ฉะนั้น padding ของสองปุ่มต้องเท่ากัน ไม่งั้นครึ่งซ้าย/ขวาจะกว้างไม่เท่ากัน */
 .commit-group .commit-push-btn {
     display: inline-flex;
-    flex: 0 0 auto;
+    flex: 1 1 0;
     align-items: center;
     justify-content: center;
     gap: 6px;
     min-height: 30px;
-    padding: 0 14px;
+    padding: 0 12px;
     color: var(--red);
     background: transparent;
     border: 0;
