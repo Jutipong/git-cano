@@ -5,7 +5,7 @@
     import ILucideMinimize from '~icons/lucide/minimize'
     import ILucidePlus from '~icons/lucide/plus'
 
-    import { useTerminalStore, MAX_TERMINALS_PER_REPO } from '../stores/terminal'
+    import { useTerminalStore } from '../stores/terminal'
     import { useUiStore, TERMINAL_FONT_SIZE_OPTIONS } from '../stores/ui'
     import CloseXIcon from './CloseXIcon.vue'
     import TerminalView from './TerminalView.vue'
@@ -33,7 +33,7 @@
 
     const tabs = computed(() => terminalStore.repoTerminals(props.repoPath)?.tabs ?? [])
     const activeId = computed(() => terminalStore.repoTerminals(props.repoPath)?.activeId ?? null)
-    const atCap = computed(() => tabs.value.length >= MAX_TERMINALS_PER_REPO)
+    const atCap = computed(() => tabs.value.length >= terminalStore.maxPerRepo)
 
     /** Header A− / A+ step through TERMINAL_FONT_SIZE_OPTIONS; disable whichever end is exhausted. */
     const fontStep = computed(() => {
@@ -56,11 +56,17 @@
     }
 
     const views = ref<Record<string, { focus: () => void } | null>>({})
+    /** Tab pills by id — the strip scrolls once the tabs overflow it, so the active one has to follow. */
+    const tabEls = ref<Record<string, HTMLElement | null>>({})
 
     // The active tab can also change without a click (closing the showing tab hands over to its
-    // neighbour) — keep the keyboard on whatever is on screen.
+    // neighbour, Ctrl+Tab cycles) — keep the keyboard on whatever is on screen and its pill in view.
     watch(activeId, id => {
-        if (id) void nextTick(() => views.value[id]?.focus())
+        if (!id) return
+        void nextTick(() => {
+            views.value[id]?.focus()
+            tabEls.value[id]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
+        })
     })
 
     /**
@@ -140,6 +146,7 @@
                 <span
                     v-for="tab in tabs"
                     :key="tab.id"
+                    :ref="el => (tabEls[tab.id] = el as HTMLElement | null)"
                     class="terminal-tab"
                     :class="{ active: tab.id === activeId, dragging: tab.id === draggingId }"
                     :draggable="renamingId !== tab.id"
@@ -173,7 +180,7 @@
                 </span>
                 <button
                     class="terminal-tab-add"
-                    :title="atCap ? `Maximum ${MAX_TERMINALS_PER_REPO} terminals per repo` : 'New terminal'"
+                    :title="atCap ? `Maximum ${terminalStore.maxPerRepo} terminals per repo` : 'New terminal'"
                     :disabled="atCap"
                     @click="emit('add-tab')">
                     <i-lucide-plus

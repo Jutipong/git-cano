@@ -14,6 +14,7 @@
     import ILucideKeyboard from '~icons/lucide/keyboard'
     import Moon from '~icons/lucide/moon'
     import ILucidePalette from '~icons/lucide/palette'
+    import ILucidePanelTop from '~icons/lucide/panel-top'
     import ILucidePlus from '~icons/lucide/plus'
     import ILucideRefreshCw from '~icons/lucide/refresh-cw'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
@@ -38,6 +39,7 @@
         REFRESH_INTERVAL_OPTIONS,
         TERMINAL_FONT_FAMILY_PRESETS,
         TERMINAL_FONT_SIZE_OPTIONS,
+        TERMINAL_MAX_TABS_OPTIONS,
         TOAST_DURATION_OPTIONS,
         UPDATE_CHECK_HOURS_OPTIONS,
         type ThemeOption,
@@ -1048,6 +1050,31 @@
                             v-if="terminalFontMissing"
                             class="tools-section-hint">
                             Font not installed — using default.
+                        </p>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-panel-top
+                                width="13"
+                                height="13" />
+                            Tabs
+                        </strong>
+                        <span class="setting-label">Maximum tabs per repo</span>
+                        <div class="setting-choice-row">
+                            <button
+                                v-for="value in TERMINAL_MAX_TABS_OPTIONS"
+                                :key="value"
+                                type="button"
+                                class="setting-chip"
+                                :class="{ active: ui.terminalMaxTabs === value }"
+                                @click="ui.terminalMaxTabs = value">
+                                {{ value }}
+                            </button>
+                        </div>
+                        <p class="tools-section-hint">
+                            Each tab runs its own shell process. Lowering the limit keeps open shells running — it only stops new ones.
+                            Ctrl+Tab cycles through the tabs while the terminal panel has focus.
                         </p>
                     </div>
 

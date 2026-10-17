@@ -50,6 +50,7 @@
     import { promptDialog } from './utils/prompt'
     import { eventToCombo } from './utils/shortcuts'
     import { SPLASH_MIN_MS } from './utils/splash'
+    import { nextTerminalTabId } from './utils/terminalTabs'
     import { notifyUndoable } from './utils/undo'
 
     import type { CommitNode, RepoStatus } from '@shared/types'
@@ -253,9 +254,9 @@
         let lastShiftTap = 0
 
         /**
-         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs (Ctrl+T / Ctrl+1…9), Ctrl+W while the
-         * terminal panel is focused (closes the shell's tab), Alt+Enter while it is focused (toggles full height) and commit-search focus.
-         * Returns true when it handled the combo (and preventDefault()s it).
+         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs (Ctrl+T / Ctrl+1…9), Ctrl+Tab while
+         * the terminal panel is focused (next tab, wrapping), Ctrl+W while it is focused (closes the shell's tab), Alt+Enter while it is
+         * focused (toggles full height) and commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
          *
          * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell would otherwise swallow Ctrl+P / Ctrl+,
          * / Ctrl+O entirely — the capture-phase listener below grabs them first and stops the event there, which also keeps the
@@ -304,6 +305,14 @@
             if (terminalTab && repoStore.repo && terminalStore.terminalExists(activeRepoPath.value ?? '')) {
                 event.preventDefault()
                 jumpToTerminalTab(Number(terminalTab[1]))
+                return true
+            }
+            // Ctrl+Tab cycles the tabs of the repo on screen, but only while the keyboard is inside the
+            // terminal panel (like Ctrl+W / Alt+Enter) — the capture twin reaches it before xterm sees the
+            // key, and wrapping keeps every tab one press away. Fewer than two tabs is a silent no-op.
+            if (combo === 'Ctrl+Tab' && isTerminalPanelFocused()) {
+                event.preventDefault()
+                cycleTerminalTab()
                 return true
             }
             // Ctrl+W with the keyboard in the terminal panel targets the shell's tab, not the repo
@@ -574,6 +583,18 @@
         // focuses through the panel's activeId watcher already; this also covers jumping to the
         // tab that stayed active while the panel sat hidden.
         void nextTick(() => terminalPanels.value[path]?.focusActive())
+    }
+
+    /**
+     * Ctrl+Tab — activate the next tab of the active repo, wrapping from the last back to the first. Called only while the keyboard is
+     * inside the terminal panel, so the panel's activeId watcher hands the keyboard (and the scroll position) to the new tab.
+     */
+    function cycleTerminalTab() {
+        const path = activeRepoPath.value
+        const state = path ? terminalStore.repoTerminals(path) : undefined
+        const next = state ? nextTerminalTabId(state.tabs, state.activeId) : null
+        if (!path || !next) return
+        terminalStore.setActiveTerminal(path, next)
     }
 
     /** True while the keyboard focus sits inside a terminal panel (hidden panels can't hold focus). */

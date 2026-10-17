@@ -135,7 +135,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   palette, Toggle terminal. Click Change… under macOS or Windows then press keys
   (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab / terminal tab,
-  terminal tabs `Ctrl+T` / `Ctrl+1…9`, `Alt+Enter` terminal full height) or other customized ids
+  terminal tabs `Ctrl+T` / `Ctrl+1…9` / `Ctrl+Tab`, `Alt+Enter` terminal full height) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
   default-equal values are pruned, legacy single-string values migrate to both platforms) with `getShortcut(id, platform?)` /
@@ -154,7 +154,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
   killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` and terminal tab jump `Ctrl+1…9` (fixed, capture-phase; a missing
-  tab/jump past the end and the per-repo cap are silent no-ops),
+  tab/jump past the end and the per-repo cap — Settings → Terminal → Tabs, default 4 — are silent no-ops),
+  Next terminal tab `Ctrl+Tab` (fixed, capture-phase; cycles with wrap only while the keyboard is
+  inside a terminal panel, like Ctrl+W / Alt+Enter — a single tab is a silent no-op),
   Terminal full height `Alt+Enter` (fixed, capture-phase; toggles the overlay only while the
   keyboard is inside a terminal panel — with focus anywhere else the key falls through untouched;
   the header buttons' tooltips carry the combo),
@@ -165,7 +167,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Esc` to close diff/deselect.
 - **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
   a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
-  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+W and Alt+Enter into a
+  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+Tab / Ctrl+W / Alt+Enter into a
   focused terminal, commit search). The capture gate routes Ctrl/Cmd **and** Alt — only the exact app
   combos act, every other Alt key still reaches the shell. xterm stops
   propagation of character keys, so without the capture listener every one of those combos dies while

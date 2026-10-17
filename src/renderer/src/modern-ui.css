@@ -6429,14 +6429,25 @@ body {
 }
 
 /* Terminal tabs live in the header row: one pill per shell ("1 zsh"), a ✕ that kills just that
-   shell, and `+` to spawn another one up to MAX_TERMINALS_PER_REPO. */
+   shell, and `+` to spawn another one up to the per-repo cap (Settings → Terminal → Tabs). The
+   strip scrolls once the pills outgrow it (same hidden-scrollbar treatment as `.tab-scroll`), so
+   even the raised cap never pushes a tab out of reach. */
 .terminal-tabs {
     display: flex;
     flex: 1 1 auto;
     min-width: 0;
     align-items: center;
     gap: 4px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+
+    scrollbar-width: none;
+}
+
+.terminal-tabs::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
 }
 
 .terminal-tab {

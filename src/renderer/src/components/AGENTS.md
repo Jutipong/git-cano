@@ -184,6 +184,8 @@ Panel/modal component patterns. Loaded automatically when working under
   must not rename a live shell. Rename is a double-click on the label (inline input, Enter/blur
   commits, Esc cancels, blank restores the derived label). Reorder is drag-to-reorder with the live
   `dragover` swap used by the repo tabs, so the id (and its live shell) has to travel with the tab.
+  The strip scrolls horizontally once the pills outgrow it (hidden scrollbar, the `.tab-scroll`
+  treatment) and the active pill follows via `scrollIntoView` in the panel's activeId watcher.
 - Header buttons sit in two `.segmented` pills (the diff header's group style): `[A− A+]` for the
   font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`, same `gap: 6px`
   and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
@@ -213,11 +215,15 @@ Panel/modal component patterns. Loaded automatically when working under
   that takes the interrupt away from the shell.
 - **Terminal tab shortcuts are fixed and capture-phase**: `Ctrl+T` opens a shell and `Ctrl+1…9`
   activates the Nth tab of the active repo (`newTerminalTab` / `jumpToTerminalTab` in `App.vue`,
-  reached through `handleAppShortcut`), like Windows Terminal. They must stay in the capture handler —
-  xterm swallows the keys — which is also why a shell/TUI never sees them (deliberate exception to
-  the "keep shell combos in the bubble handler" rule). A missing tab and the per-repo cap are silent
-  no-ops (no toast); a hidden panel is shown first. The combos are reserved in `isReservedCombo` and
-  documented in `SHORTCUTS`.
+  reached through `handleAppShortcut`), like Windows Terminal. `Ctrl+Tab` cycles to the next tab,
+  wrapping from the last back to the first — scoped to a focused panel (the same
+  `isTerminalPanelFocused()` guard as Ctrl+W / Alt+Enter) so it never hijacks the gesture outside the
+  terminal; the panel's activeId watcher hands the keyboard to the new shell. They must stay in the
+  capture handler — xterm swallows the keys — which is also why a shell/TUI never sees them
+  (deliberate exception to the "keep shell combos in the bubble handler" rule). A missing tab, a
+  single tab and the per-repo cap (Settings → Terminal → Tabs, default 4) are silent no-ops (no
+  toast); a hidden panel is shown first. The combos are reserved in `isReservedCombo` and documented
+  in `SHORTCUTS`.
 - **Ctrl+W follows the keyboard**: while focus is inside a terminal panel (`isTerminalPanelFocused()`
   in `App.vue`, consulted by the capture-phase twin), Ctrl+W closes the repo's active terminal tab
   through the same confirm as its ✕ — a cancelled confirm hands focus back to the shell, so the next

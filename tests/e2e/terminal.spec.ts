@@ -420,6 +420,51 @@ test('a repo stops at four shells', async () => {
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
+test('the tab limit setting raises the cap, and lowering it keeps open shells', async () => {
+    const readUi = () => page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}'))
+
+    // Settings → Terminal → Tabs: raise the per-repo cap to 6.
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    await page.locator('.setting-chip', { hasText: /^6$/ }).click()
+    expect((await readUi()).terminalMaxTabs).toBe(6)
+    await page.locator('.tools-modal .commit-close-btn').click()
+
+    // Ctrl+T spawns up to the new cap, then goes silent like the fixed one did.
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(2)
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(3)
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(4)
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(5)
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(6)
+    await expect(panel.locator('.terminal-tab-add')).toBeDisabled()
+    await expect(panel.locator('.terminal-tab-add')).toHaveAttribute('title', 'Maximum 6 terminals per repo')
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(6)
+
+    // Lowering the limit back to 4 must not kill anything — the six shells keep running, the panel
+    // just refuses to add a seventh until the count drops below the limit again.
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    await page.locator('.setting-chip', { hasText: /^4$/ }).click()
+    expect((await readUi()).terminalMaxTabs).toBe(4)
+    await page.locator('.tools-modal .commit-close-btn').click()
+    await expect(panel.locator('.terminal-tab')).toHaveCount(6)
+    await expect(panel.locator('.terminal-tab-add')).toBeDisabled()
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(6)
+
+    await panel.locator('.diff-close-btn').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close 6 terminals' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
 test('Ctrl+T opens a shell and Ctrl+1…9 switch between terminal tabs', async () => {
     await page.locator('.graph-terminal-btn').click()
     const panel = page.locator('.terminal-panel:visible')
@@ -446,6 +491,36 @@ test('Ctrl+T opens a shell and Ctrl+1…9 switch between terminal tabs', async (
     await page.keyboard.press('Control+2')
     await expect(page.locator('.terminal-panel')).toBeVisible()
     await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+
+    await panel.locator('.diff-close-btn').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close 3 terminals' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
+test('Ctrl+Tab cycles the focused terminal tabs and wraps around', async () => {
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await page.keyboard.press('Control+t')
+    await page.keyboard.press('Control+t')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(3)
+
+    // Ctrl+T leaves the keyboard in the newest shell, so the presses below come from inside the panel.
+    const shell = page.locator('.terminal-view:visible .xterm-helper-textarea')
+    await expect(shell).toBeFocused()
+    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
+
+    // Third tab → first (wrap), then forward one a press, keyboard staying in the shell.
+    await page.keyboard.press('Control+Tab')
+    await expect(panel.locator('.terminal-tab').nth(0)).toHaveClass(/active/)
+    await expect(shell).toBeFocused()
+    await page.keyboard.press('Control+Tab')
+    await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+
+    // With the keyboard outside the panel the combo is not the app's — the active tab must not move.
+    await page.locator('.commit-search input').click()
+    await page.keyboard.press('Control+Tab')
+    await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+    await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
 
     await panel.locator('.diff-close-btn').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close 3 terminals' }).click()

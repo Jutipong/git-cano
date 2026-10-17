@@ -1,8 +1,5 @@
 import type { TerminalShell } from '@shared/types'
 
-/** Shells a single repo may hold at once (the terminal panel's `+` button stops here). */
-export const MAX_TERMINALS_PER_REPO = 4
-
 export interface TerminalTab {
     /** Stable id — also the pty key in the main process. */
     id: string
@@ -35,9 +32,20 @@ export function nextTerminalNumber(tabs: TerminalTab[], shell: TerminalShell): n
     return highest + 1
 }
 
-/** True when the repo can take one more shell. */
-export function canAddTerminal(count: number): boolean {
-    return count < MAX_TERMINALS_PER_REPO
+/** True when the repo can take one more shell — `max` is the per-repo cap from Settings → Terminal → Tabs. */
+export function canAddTerminal(count: number, max: number): boolean {
+    return count < max
+}
+
+/**
+ * The tab after `activeId`, wrapping from the last back to the first (Ctrl+Tab while the panel has focus). Null when a press could not
+ * change anything — fewer than two tabs, or an id that is no longer in the list — so callers treat it as a silent no-op.
+ */
+export function nextTerminalTabId(tabs: Pick<TerminalTab, 'id'>[], activeId: string | null): string | null {
+    if (tabs.length < 2) return null
+    const index = tabs.findIndex(tab => tab.id === activeId)
+    if (index < 0) return null
+    return tabs[(index + 1) % tabs.length]!.id
 }
 
 /**

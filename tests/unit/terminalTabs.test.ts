@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-    MAX_TERMINALS_PER_REPO,
     canAddTerminal,
     moveTerminalTab,
     nextTerminalNumber,
+    nextTerminalTabId,
     terminalTabLabel,
     type TerminalTab,
 } from '../../src/renderer/src/utils/terminalTabs'
@@ -41,11 +41,30 @@ describe('nextTerminalNumber', () => {
 })
 
 describe('canAddTerminal', () => {
-    it('stops at the per-repo cap', () => {
-        expect(canAddTerminal(0)).toBe(true)
-        expect(canAddTerminal(MAX_TERMINALS_PER_REPO - 1)).toBe(true)
-        expect(canAddTerminal(MAX_TERMINALS_PER_REPO)).toBe(false)
-        expect(canAddTerminal(MAX_TERMINALS_PER_REPO + 2)).toBe(false)
+    it('stops at the given per-repo cap', () => {
+        expect(canAddTerminal(0, 4)).toBe(true)
+        expect(canAddTerminal(3, 4)).toBe(true)
+        expect(canAddTerminal(4, 4)).toBe(false)
+        expect(canAddTerminal(6, 4)).toBe(false)
+        expect(canAddTerminal(5, 6)).toBe(true)
+        expect(canAddTerminal(6, 6)).toBe(false)
+    })
+})
+
+describe('nextTerminalTabId', () => {
+    const tabs = [{ id: 't1' }, { id: 't2' }, { id: 't3' }]
+
+    it('advances to the next tab and wraps from the last back to the first', () => {
+        expect(nextTerminalTabId(tabs, 't1')).toBe('t2')
+        expect(nextTerminalTabId(tabs, 't2')).toBe('t3')
+        expect(nextTerminalTabId(tabs, 't3')).toBe('t1')
+    })
+
+    it('is a no-op with fewer than two tabs, an unknown id or no active tab', () => {
+        expect(nextTerminalTabId([], null)).toBeNull()
+        expect(nextTerminalTabId([{ id: 't1' }], 't1')).toBeNull()
+        expect(nextTerminalTabId(tabs, 'gone')).toBeNull()
+        expect(nextTerminalTabId(tabs, null)).toBeNull()
     })
 })
 

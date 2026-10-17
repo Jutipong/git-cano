@@ -2,7 +2,6 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import {
-    MAX_TERMINALS_PER_REPO,
     canAddTerminal,
     moveTerminalTab,
     nextTerminalNumber,
@@ -70,8 +69,8 @@ export const useTerminalStore = defineStore('terminal', () => {
      */
     async function openTerminalTab(path: string): Promise<string | null> {
         const state = repoTerminals(path)
-        if (!path || !canAddTerminal(state?.tabs.length ?? 0)) return null
         const ui = useUiStore()
+        if (!path || !canAddTerminal(state?.tabs.length ?? 0, ui.terminalMaxTabs)) return null
         const shell: TerminalShell = ui.terminalShell
         const shellLabel = await window.api.terminalShell(shell).catch(() => 'shell')
         // Re-read: if the repo's shells were killed while the label was being resolved, there is no
@@ -188,8 +187,8 @@ export const useTerminalStore = defineStore('terminal', () => {
         return total
     }
 
-    /** Cap for the panel `+` button — kept here so the header and the palette share one source. */
-    const maxPerRepo = computed(() => MAX_TERMINALS_PER_REPO)
+    /** Current per-repo cap (Settings → Terminal → Tabs) — the panel `+` and its title share this one source. */
+    const maxPerRepo = computed(() => useUiStore().terminalMaxTabs)
 
     return {
         terminals,
@@ -214,5 +213,4 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 })
 
-export { MAX_TERMINALS_PER_REPO }
 export type { TerminalTab }

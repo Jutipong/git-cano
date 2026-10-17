@@ -71,6 +71,13 @@ export const DEFAULT_TERMINAL_FONT_SIZE = 14
 const LEGACY_TERMINAL_FONT_SIZE = 13
 
 /**
+ * Tabs a single repo may hold at once (Settings → Terminal → Tabs). Each tab is its own shell process, so this stays a short list — the
+ * default is the historical cap.
+ */
+export const TERMINAL_MAX_TABS_OPTIONS = [4, 6, 8, 10]
+export const DEFAULT_TERMINAL_MAX_TABS = 4
+
+/**
  * Terminal font family — Consolas leads (inbox on every Windows), Leelawadee UI covers the Thai glyphs Consolas lacks, monospace catches
  * macOS/Linux. Persisted; blank resets to default.
  */
@@ -191,6 +198,10 @@ export const useUiStore = defineStore(
             // PowerShell 7 is the default; legacy persisted values ('default' from older builds) and
             // anything unknown migrate to it. A machine without pwsh resolves to cmd at spawn time.
             if (saved !== 'cmd' && saved !== 'powershell' && saved !== 'pwsh') terminalShell.value = 'pwsh'
+        })
+        const terminalMaxTabs = ref(DEFAULT_TERMINAL_MAX_TABS)
+        watchEffect(() => {
+            if (!TERMINAL_MAX_TABS_OPTIONS.includes(terminalMaxTabs.value)) terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
         })
 
         /** Header A− / A+ in the terminal panel — steps the terminal scale only. */
@@ -359,6 +370,7 @@ export const useUiStore = defineStore(
             terminalFontSize.value = DEFAULT_TERMINAL_FONT_SIZE
             terminalShell.value = 'pwsh'
             terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
+            terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
         }
 
         watchEffect(() => {
@@ -396,6 +408,7 @@ export const useUiStore = defineStore(
             stepTerminalFontSize,
             terminalFontFamily,
             terminalShell,
+            terminalMaxTabs,
             codeFontSize,
             zoomCodeFontSize,
             repoTabColors,
@@ -441,6 +454,7 @@ export const useUiStore = defineStore(
                 'terminalFontSize',
                 'terminalFontFamily',
                 'terminalShell',
+                'terminalMaxTabs',
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',
