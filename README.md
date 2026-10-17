@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🔀 git-cano
+<img src="build/icons/cano.png" alt="git-cano logo" width="140" />
+
+# git-cano
 
 ### Everyday Git, without the clutter ✨
 
@@ -219,12 +221,15 @@ src/
 ├── 🖥️ main/              # Electron main process + ALL git operations
 │   ├── index.ts       #   Window + IPC handlers
 │   ├── git.ts         #   Git logic (simple-git)
-│   └── opencode.ts    #   AI commit-message generation
+│   ├── opencode.ts    #   AI commit-message generation
+│   ├── terminal.ts    #   PTY sessions for the terminal panel
+│   └── updater.ts     #   Windows in-app update download/install
 ├── 🌉 preload/           # Secure window.api bridge
 ├── 📦 shared/            # Shared types + graph helpers
 └── 🎨 renderer/src/
     ├── components/    # Vue SFCs — one per panel / modal / menu
-    ├── stores/        # Pinia: repo, workspace, ui, sync, ai, feedback
+    ├── stores/        # Pinia: repo, ui, uiTransient, sync, ai, workspace,
+    │                  #   terminal, switch, updater, auth, prompt, confirm
     ├── utils/         # Formatting, shortcuts, dialogs
     ├── styles.css     # Base styles
     └── modern-ui.css  # Modern UI overrides ✨
