@@ -167,6 +167,39 @@ test('the full-width setting widens the full-height overlay over the Changes pan
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
+test('the full-width setting floats the docked strip across all three columns', async () => {
+    const app = await page.locator('.app').boundingBox()
+    const rightPane = await page.locator('.right-pane').boundingBox()
+
+    // Docked + setting off: the strip nests inside the graph column, in front of the Changes pane.
+    await expect(page.locator('.terminal-panel.terminal-docked-full')).toHaveCount(0)
+    const docked = await page.locator('.terminal-panel:visible').boundingBox()
+    expect(docked!.x + docked!.width).toBeLessThanOrEqual(rightPane!.x + 1)
+
+    // Flipping the setting floats it: full window width, pinned to the bottom, graph still on screen.
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
+    await page.locator('.tools-modal .commit-close-btn').click()
+    const floating = page.locator('.terminal-panel.terminal-docked-full')
+    await expect(floating).toHaveCount(1)
+    await expect(page.locator('.graph-view')).toBeVisible()
+    const float = await floating.boundingBox()
+    expect(float!.x).toBeLessThanOrEqual(app!.x + 7)
+    expect(float!.x + float!.width).toBeGreaterThanOrEqual(app!.x + app!.width - 7)
+    expect(float!.y + float!.height).toBeGreaterThanOrEqual(app!.y + app!.height - 7)
+    // The full-width drag handle rides the floating panel's top edge.
+    await expect(page.locator('.terminal-splitter-full')).toHaveCount(1)
+
+    // Restore the shipped default so the serial tests below start where the file expects them to.
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
+    await page.locator('.tools-modal .commit-close-btn').click()
+    await expect(page.locator('.terminal-panel.terminal-docked-full')).toHaveCount(0)
+    await expect(page.locator('.terminal-splitter-full')).toHaveCount(0)
+})
+
 test('full mode survives a hide from every reachable gesture; only the minimize button leaves it', async () => {
     const panel = page.locator('.terminal-panel:visible')
     const fullBtn = panel.locator('.icon-btn[title="Full height (Alt+Enter)"]')

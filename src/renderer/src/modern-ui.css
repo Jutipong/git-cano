@@ -6365,8 +6365,9 @@ body {
 }
 
 /* Docked only: round the bottom corners to nest inside the center-column card
-   (outer radius minus the card's 1px border, floored for the square themes). */
-.terminal-panel:not(.terminal-overlay) {
+   (outer radius minus the card's 1px border, floored for the square themes). The docked-full
+   float (below) is a full card and keeps the shared radius. */
+.terminal-panel:not(.terminal-overlay):not(.terminal-docked-full) {
     border-radius: 0 0 max(0px, calc(var(--radius-card) - 1px)) max(0px, calc(var(--radius-card) - 1px));
 }
 
@@ -6397,6 +6398,44 @@ body {
     right: 6px;
 }
 
+/* Docked + Settings → Terminal → Full height (`ui.terminalFullWidth`): the strip stops nesting
+   inside the graph column and floats over the bottom of all three columns instead — same card
+   look as the expanded overlay, with its height still set inline from `terminalStore.terminalHeight`.
+   Toggling the setting moves the panel between this and the plain docked strip. */
+.terminal-panel.terminal-docked-full {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: 6px;
+    z-index: 9;
+    height: auto;
+    overflow: hidden;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
+    box-shadow: 0 3px 14px var(--shadow);
+}
+
+/* The full-width drag handle that replaces the in-column `.terminal-splitter` while the strip
+   floats: it rides the panel's top edge via the `--terminal-height` custom property on `.app`. */
+.terminal-splitter-full {
+    position: absolute;
+    left: 6px;
+    right: 6px;
+    bottom: calc(6px + var(--terminal-height));
+    width: auto;
+    height: 5px;
+    margin: 0;
+    z-index: 10;
+    background: transparent;
+    cursor: row-resize;
+}
+
+.terminal-splitter-full:hover,
+.terminal-splitter-full:active {
+    background: var(--teal);
+    opacity: 0.75;
+}
+
 /* Keyboard focus inside the panel: a teal edge marks where Ctrl+W closes the shell's tab instead
    of the repo's tab. `:focus-within` matches the exact condition the shortcut checks
    (isTerminalPanelFocused in App.vue), so the edge always predicts what Ctrl+W will do.
@@ -6411,6 +6450,13 @@ body {
 }
 
 .terminal-panel.terminal-overlay:focus-within {
+    border-color: color-mix(in srgb, var(--teal) 45%, var(--line-soft));
+    box-shadow:
+        0 3px 14px var(--shadow),
+        0 0 0 1px color-mix(in srgb, var(--teal) 40%, transparent);
+}
+
+.terminal-panel.terminal-docked-full:focus-within {
     border-color: color-mix(in srgb, var(--teal) 45%, var(--line-soft));
     box-shadow:
         0 3px 14px var(--shadow),

@@ -233,7 +233,10 @@ Panel/modal component patterns. Loaded automatically when working under
   `right: calc(var(--right-panel-width) + 12px)` clears the Changes pane — Settings → Terminal →
   Full height sets `ui.terminalFullWidth`, which adds `.terminal-overlay-window` (`top: 6px`,
   `right: 6px`) so the overlay covers all three columns and the repo tab bar) and hides the graph — it carries
-  `.icon-btn.active` while expanded. Hide (`chevron-down`) only flips `hidden`: it never touches the
+  `.icon-btn.active` while expanded. The same setting makes the **docked** strip teleport to `.app`
+  too, as `.terminal-docked-full` (`left/right/bottom: 6px`, height from `terminalStore`), floating
+  over the bottom of all three columns; its full-width drag handle is `.terminal-splitter-full`
+  (rides `--terminal-height` on `.app`) instead of the in-column `.terminal-splitter`. Hide (`chevron-down`) only flips `hidden`: it never touches the
   shells and never resizes, so a full-height panel comes back as the overlay (same as the `Ctrl+` /
   palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is
   the only way back to the strip. The ✕ kills every shell of THIS

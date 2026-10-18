@@ -1096,8 +1096,9 @@
                             Cover the whole window (all three columns + tab bar)
                         </AppCheckbox>
                         <span class="setting-hint">
-                            On: the full-height terminal (Alt+Enter) covers the whole window — all three columns and up over the repo tab
-                            bar. Off: it stops below the tab bar and in front of the Changes pane, which stays visible.
+                            On: the terminal covers the whole window — the docked strip floats across all three columns at the bottom, and
+                            the maximized overlay (Alt+Enter) also rises over the repo tab bar. Off: the strip stays in the graph column and
+                            the overlay stops below the tab bar, in front of the Changes pane.
                         </span>
                     </div>
 

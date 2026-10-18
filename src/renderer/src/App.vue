@@ -901,6 +901,7 @@
         :style="{
             '--sidebar-width': `${ui.sidebarWidth}px`,
             '--right-panel-width': `${ui.rightPanelWidth}px`,
+            '--terminal-height': `${terminalStore.terminalHeight}px`,
         }">
         <!--
             The app shell also stays mounted while a workspace switch is in flight
@@ -961,26 +962,33 @@
                                 @reset-soft="commit => resetTo(commit, 'soft')"
                                 @reset-hard="commit => resetTo(commit, 'hard')"
                                 @toggle-terminal="toggleTerminal" />
-                            <div
-                                v-if="
-                                    activeRepoPath &&
-                                    terminalStore.panelVisible(activeRepoPath) &&
-                                    !terminalStore.isExpanded(activeRepoPath)
-                                "
-                                class="terminal-splitter"
-                                @mousedown="beginTerminalResize" />
+                            <Teleport
+                                to=".app"
+                                :disabled="!ui.terminalFullWidth">
+                                <div
+                                    v-if="
+                                        activeRepoPath &&
+                                        terminalStore.panelVisible(activeRepoPath) &&
+                                        !terminalStore.isExpanded(activeRepoPath)
+                                    "
+                                    class="terminal-splitter"
+                                    :class="{ 'terminal-splitter-full': ui.terminalFullWidth }"
+                                    @mousedown="beginTerminalResize" />
+                            </Teleport>
                             <!--
                                 One panel per repo that owns a shell, kept mounted for the whole session:
                                 hidden repos keep their xterm buffers and pty alive across repo switches,
                                 workspace switches and the panel toggle. Expanded panels teleport into
-                                `.app` so they float over the graph without moving the repo tab bar.
+                                `.app` to float over the graph without moving the repo tab bar, and with
+                                Settings → Terminal → Full height the docked strip teleports there too,
+                                so it spans all three columns at the bottom instead of just the graph.
                             -->
                             <template
                                 v-for="path in terminalPaths"
                                 :key="path">
                                 <Teleport
                                     to=".app"
-                                    :disabled="!isExpandedTerminal(path)">
+                                    :disabled="!(isExpandedTerminal(path) || (ui.terminalFullWidth && isTerminalVisible(path)))">
                                     <TerminalPanel
                                         v-show="isTerminalVisible(path)"
                                         :ref="el => (terminalPanels[path] = el as { focusActive: () => void } | null)"
@@ -990,6 +998,8 @@
                                         :class="{
                                             'terminal-overlay': isExpandedTerminal(path),
                                             'terminal-overlay-window': isExpandedTerminal(path) && ui.terminalFullWidth,
+                                            'terminal-docked-full':
+                                                !isExpandedTerminal(path) && ui.terminalFullWidth && isTerminalVisible(path),
                                         }"
                                         :style="isExpandedTerminal(path) ? undefined : { height: `${terminalStore.terminalHeight}px` }"
                                         @add-tab="addTerminalTab(path)"

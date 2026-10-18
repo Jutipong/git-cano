@@ -37,7 +37,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   shell you left behind is still there (and still running) when you come back. The graph is only
   hidden while a panel is expanded (teleported to `.app`, under the repo tab bar); the overlay
   clears the Changes pane by default, and Settings → Terminal → Full height (`ui.terminalFullWidth`)
-  turns it into a whole-window card — all three columns and up over the repo tab bar. **Hiding never
+  turns the terminal into a whole-window card — the docked strip floats across all three columns at
+  the bottom (`.terminal-docked-full`), and the expanded overlay spans all three columns and rises
+  over the repo tab bar (`.terminal-overlay-window`). **Hiding never
   resizes**: `hideTerminals(path)` keeps the full-height state, so every gesture that hides the panel
   (`Ctrl+` / palette / the header's chevron — the toolbar button is unreachable while expanded, the
   overlay hides the graph) shows it back exactly as it was; only the header's minimize button leaves

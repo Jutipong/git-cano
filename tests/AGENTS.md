@@ -15,7 +15,7 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
       tokenizer state, graph interactions, AI context cap).
     - `conflict.spec.ts` covers the conflict flow.
     - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
-      panel per repo, full overlay geometry, full-mode persistence across every hide gesture (`Ctrl+`` /
+      panel per repo, full overlay geometry, the docked full-width strip, full-mode persistence across every hide gesture (`Ctrl+`` /
       palette / the header chevron) — hiding never resizes; the minimize button is the only way out of
       full mode — the keyboard returning to the active shell on show and around the full-height toggle,
       terminal-only font size, rename + drag reorder,
