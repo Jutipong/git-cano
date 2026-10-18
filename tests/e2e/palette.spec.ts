@@ -90,3 +90,19 @@ test('outer search finds workspaces and switches to the picked one', async () =>
     await expect(page.locator('.repo-tab')).toHaveCount(1)
     await expect(page.locator('.repo-tab.active')).toContainText('extra-1')
 })
+
+test('outer search finds Settings tabs and opens the picked one', async () => {
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-input').fill('shortcut')
+
+    // Settings-tab names surface as their own section, like repos/branches.
+    await expect(page.locator('.palette-section-header', { hasText: 'Settings' })).toBeVisible()
+    await page.locator('.palette-item', { hasText: 'Shortcuts' }).click()
+
+    await expect(page.locator('.palette')).toBeHidden()
+    await expect(page.locator('.tools-modal')).toBeVisible()
+    await expect(page.locator('.tools-tabs .graph-filter.active')).toContainText('Shortcuts')
+
+    await page.locator('.tools-modal .commit-close-btn').click()
+    await expect(page.locator('.tools-modal')).toHaveCount(0)
+})

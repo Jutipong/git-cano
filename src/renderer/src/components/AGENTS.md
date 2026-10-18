@@ -24,7 +24,11 @@ Panel/modal component patterns. Loaded automatically when working under
   Repo…/Branch…/AI…/Open in… excepted) — otherwise the palette stays open over the next dialog.
   AI actions live behind an `AI…` drill-in mode (`Sparkles` chip), gated by `aiCanRun`.
   Typing at the outermost level additionally surfaces query-driven `Open in` / `Repositories` /
-  `Branches` / `Workspaces` / `AI` sections (top hits only — the full lists stay in their drill-in modes).
+  `Branches` / `Workspaces` / `AI` / `Settings` sections (top hits only — the full lists stay in
+  their drill-in modes; Settings is flat by design). The Settings rows are the Tools modal's tabs
+  by name (`SETTINGS_TABS` in `utils/settingsTabs.ts`) and open it straight on the picked tab — the
+  modal watches `props.initialTab` so an already-open modal follows a palette pick (the palette z-95
+  opens over the modal).
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
@@ -299,6 +303,8 @@ Panel/modal component patterns. Loaded automatically when working under
   icons are `17px`, and the readonly column checks match the `18px` checkbox boxes. Its tab strip is
   a single non-wrapping row of equal-width pills (`flex: 1 1 0`), six tabs (Appearance / General /
   Remotes / AI / Terminal / Shortcuts) measuring ~110px each in the ~680px strip, so a seventh tab
-  needs a measured width check, not a guess.
+  needs a measured width check, not a guess — and its key/label belongs in `SETTINGS_TABS`
+  (`utils/settingsTabs.ts`), the single source of truth shared by the store's `toolsTab`, the modal
+  strip and the palette's Settings rows.
 - **Settings (`ToolsModal.vue`) has no Zoom control** — zoom lives only in the `App.vue`
   global handler (`⌘/Ctrl + − 0`, Ctrl/⌘+wheel). Do not re-add Zoom chips.

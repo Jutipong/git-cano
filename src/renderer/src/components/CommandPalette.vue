@@ -12,10 +12,14 @@
     import FolderGit2 from '~icons/lucide/folder-git2'
     import FolderOpen from '~icons/lucide/folder-open'
     import GitBranch from '~icons/lucide/git-branch'
+    import Globe2 from '~icons/lucide/globe2'
     import History from '~icons/lucide/history'
+    import Keyboard from '~icons/lucide/keyboard'
     import Layers from '~icons/lucide/layers'
+    import Palette from '~icons/lucide/palette'
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
+    import SlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import Sparkles from '~icons/lucide/sparkles'
     import Terminal from '~icons/lucide/terminal'
     import Trash2 from '~icons/lucide/trash-2'
@@ -31,6 +35,7 @@
     import { resolveCheckoutMode } from '../utils/checkout'
     import { fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
     import { filterPaletteItems, withOffsets } from '../utils/palette'
+    import { SETTINGS_TABS, type SettingsTabKey } from '../utils/settingsTabs'
     import { collectWorkspaceRepos, repoNameFromPath } from '../utils/workspaceRepos'
 
     import type { BranchInfo, OpenInTargets } from '@shared/types'
@@ -403,6 +408,30 @@
         },
     ])
 
+    /** Per-tab icons matching the Settings modal's tab strip. */
+    const SETTINGS_TAB_ICONS: Record<SettingsTabKey, Component> = {
+        appearance: Palette,
+        general: SlidersHorizontal,
+        auth: Globe2,
+        ai: Sparkles,
+        terminal: Terminal,
+        shortcuts: Keyboard,
+    }
+
+    /** The Settings modal's tabs by name — the flat, query-driven twin of its tab strip; picking one opens it on that tab. */
+    const settingsItems = computed<PaletteItem[]>(() =>
+        SETTINGS_TABS.map(item => ({
+            id: `settings:${item.key}`,
+            label: item.label,
+            icon: SETTINGS_TAB_ICONS[item.key],
+            run: () => {
+                close()
+                repoStore.toolsTab = item.key
+                repoStore.toolsOpen = true
+            },
+        }))
+    )
+
     /** Same options/conditions as OpenInButton, driven by the active repo path. */
     const openInItems = computed<PaletteItem[]>(() => {
         if (!repoStore.repo) return []
@@ -507,8 +536,8 @@
 
     /**
      * Sectioned view: commands mode groups core actions under Commands and adds the query-driven Open in / Repositories / Branches /
-     * Workspaces / AI sections while searching (each stays a drill-in mode too, like Repo…/Branch…). Sub-modes stay a single untitled list.
-     * Empty groups are dropped, so the headers double as Spotlight-style group labels.
+     * Workspaces / AI / Settings sections while searching (each stays a drill-in mode too, like Repo…/Branch… — Settings is flat only).
+     * Sub-modes stay a single untitled list. Empty groups are dropped, so the headers double as Spotlight-style group labels.
      */
     const sections = computed<PaletteSection[]>(() => {
         if (mode.value !== 'commands') return [{ items: subFiltered.value, offset: 0 }]
@@ -522,7 +551,8 @@
                 { title: 'Repositories', items: matchedRepos.value },
                 { title: 'Branches', items: matchedBranches.value },
                 { title: 'Workspaces', items: matchedWorkspaces.value },
-                { title: 'AI', items: aiCanRun.value ? filterPaletteItems(aiItems.value, query) : [] }
+                { title: 'AI', items: aiCanRun.value ? filterPaletteItems(aiItems.value, query) : [] },
+                { title: 'Settings', items: filterPaletteItems(settingsItems.value, query) }
             )
         }
         return withOffsets(groups.filter(group => group.items.length > 0))
@@ -538,7 +568,7 @@
     watch(active, () => document.querySelector('.palette-item.active')?.scrollIntoView({ block: 'nearest' }))
 
     const PLACEHOLDERS: Record<Mode, string> = {
-        commands: 'Type a command, repo, or workspace…',
+        commands: 'Type a command, repo, or setting…',
         repo: ws.names.length > 1 ? 'Search repo or workspace…' : 'Search repo…',
         branch: 'Search branch…',
         workspace: 'Search workspace…',

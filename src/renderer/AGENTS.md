@@ -239,10 +239,11 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   with % title) and `downloaded` (`lucide:rotate-cw` = restart to install) — never on
   version-loaded alone; its divider is gated the same way. On macOS and in dev
   (`updateCanAuto() === false`) the button opens the GitHub release page directly
-  (`updater.openRelease()` → `update:openRelease`) — no Settings detour, so nothing may
-  deep-link `repoStore.toolsTab = 'general'`; the Updates section is reached via
-  Settings → General like any other tab. (Windows in-app download/install lives in
-  `src/main/AGENTS.md`.)
+  (`updater.openRelease()` → `update:openRelease`) — no Settings detour, so the update flow
+  must not deep-link `repoStore.toolsTab = 'general'`; the Updates section is reached via
+  Settings → General like any other tab. (Palette Settings rows are explicit user picks,
+  not a detour — see `components/AGENTS.md`.) Windows in-app download/install lives in
+  `src/main/AGENTS.md`.
 - Cadence lives in `ui.updateCheckHours` (`0` = manual only, default 2); `App.vue`
   schedules one silent check 30s after launch plus the interval, rescheduled on change.
   `checkForUpdate()` never clobbers an in-flight download or a staged install.

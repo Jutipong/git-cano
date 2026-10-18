@@ -47,6 +47,7 @@
     } from '../stores/ui'
     import { useUpdaterStore } from '../stores/updater'
     import { confirmDialog } from '../utils/confirm'
+    import { SETTINGS_TABS, type SettingsTabKey } from '../utils/settingsTabs'
     import {
         CUSTOM_SHORTCUT_IDS,
         eventToCombo,
@@ -69,7 +70,7 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const props = defineProps<{
-        initialTab?: 'appearance' | 'general' | 'auth' | 'ai' | 'shortcuts' | 'terminal'
+        initialTab?: SettingsTabKey
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
@@ -128,15 +129,9 @@
         void updater.openRelease(notify)
     }
 
-    const TABS = [
-        { key: 'appearance', label: 'Appearance' },
-        { key: 'general', label: 'General' },
-        { key: 'auth', label: 'Remotes' },
-        { key: 'ai', label: 'AI' },
-        { key: 'terminal', label: 'Terminal' },
-        { key: 'shortcuts', label: 'Shortcuts' },
-    ] as const
-    const tab = ref(props.initialTab ?? 'appearance')
+    /** Tab strip content comes from the shared list so the command palette's Settings rows stay in step. */
+    const TABS = SETTINGS_TABS
+    const tab = ref<SettingsTabKey>(props.initialTab ?? 'appearance')
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
@@ -177,6 +172,15 @@
     watch(tab, value => {
         if (value === 'terminal') syncTerminalFontInput()
     })
+
+    // The palette's Settings rows land while this modal may already be open (the palette opens over it), so a late
+    // `initialTab` has to switch the visible tab too — a prop read only at setup would leave the modal on the old tab.
+    watch(
+        () => props.initialTab,
+        value => {
+            if (value) tab.value = value
+        }
+    )
 
     const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
     const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark' && !option.value.startsWith('win9x')))

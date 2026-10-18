@@ -6,6 +6,7 @@ import { useTerminalStore } from './terminal'
 import { useUiTransientStore } from './uiTransient'
 import { useWorkspaceStore } from './workspace'
 
+import type { SettingsTabKey } from '../utils/settingsTabs'
 import type { BranchInfo, CommitFile, CommitNode, RepoState, RepoStatus, StashEntry } from '@shared/types'
 
 const PAGE_SIZE = 500
@@ -121,8 +122,8 @@ export const useRepoStore = defineStore('repo', () => {
     const shortcutsOpen = ref(false)
     /** Whether the command palette overlay is open. */
     const commandPaletteOpen = ref(false)
-    /** Which tab the tools modal should show when it opens (e.g. 'ai' from the AI commit dropdown). */
-    const toolsTab = ref<'appearance' | 'general' | 'shortcuts' | 'auth' | 'ai' | 'terminal'>('appearance')
+    /** Which tab the tools modal should show when it opens — the command palette's Settings rows set it before flipping `toolsOpen`. */
+    const toolsTab = ref<SettingsTabKey>('appearance')
 
     const pendingFocusHash = ref<string | null>(null)
     /** Branch soloed in the graph (GitKraken-style focus) — view-only filter, never persisted. */
