@@ -231,7 +231,7 @@ Panel/modal component patterns. Loaded automatically when working under
   and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: calc(var(--right-panel-width) + 12px)` clears the Changes pane — Settings → Terminal →
-  Full height sets `ui.terminalFullWidth`, which adds `.terminal-overlay-window` (`top: 6px`,
+  Full window sets `ui.terminalFullWidth`, which adds `.terminal-overlay-window` (`top: 6px`,
   `right: 6px`) so the overlay covers all three columns and the repo tab bar) and hides the graph — it carries
   `.icon-btn.active` while expanded. The same setting makes the **docked** strip teleport to `.app`
   too, as `.terminal-docked-full` (`left/right/bottom: 6px`, height from `terminalStore`), floating

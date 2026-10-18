@@ -146,7 +146,7 @@ test('the full-width setting widens the full-height overlay over the Changes pan
     // and the top rises over the repo tab bar (`.terminal-overlay-window`).
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
-    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Terminal covers the whole window' }).click()
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}').terminalFullWidth)).toBe(true)
     await page.locator('.tools-modal .commit-close-btn').click()
     const widened = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
@@ -157,7 +157,7 @@ test('the full-width setting widens the full-height overlay over the Changes pan
     // Restore the shipped default so the serial tests below start where the file expects them to.
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
-    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Terminal covers the whole window' }).click()
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}').terminalFullWidth)).toBe(false)
     await page.locator('.tools-modal .commit-close-btn').click()
     // Dropping the setting puts the overlay back under the tab bar before it is closed.
@@ -179,7 +179,7 @@ test('the full-width setting floats the docked strip across all three columns', 
     // Flipping the setting floats it: full window width, pinned to the bottom, graph still on screen.
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
-    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Terminal covers the whole window' }).click()
     await page.locator('.tools-modal .commit-close-btn').click()
     const floating = page.locator('.terminal-panel.terminal-docked-full')
     await expect(floating).toHaveCount(1)
@@ -194,7 +194,7 @@ test('the full-width setting floats the docked strip across all three columns', 
     // Restore the shipped default so the serial tests below start where the file expects them to.
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
-    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Terminal covers the whole window' }).click()
     await page.locator('.tools-modal .commit-close-btn').click()
     await expect(page.locator('.terminal-panel.terminal-docked-full')).toHaveCount(0)
     await expect(page.locator('.terminal-splitter-full')).toHaveCount(0)

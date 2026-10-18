@@ -1088,17 +1088,16 @@
                             <i-lucide-maximize
                                 width="13"
                                 height="13" />
-                            Full height
+                            Full window
                         </strong>
                         <AppCheckbox
                             class="setting-toggle"
                             v-model="ui.terminalFullWidth">
-                            Cover the whole window (all three columns + tab bar)
+                            Terminal covers the whole window
                         </AppCheckbox>
                         <span class="setting-hint">
-                            On: the terminal covers the whole window — the docked strip floats across all three columns at the bottom, and
-                            the maximized overlay (Alt+Enter) also rises over the repo tab bar. Off: the strip stays in the graph column and
-                            the overlay stops below the tab bar, in front of the Changes pane.
+                            On: the docked strip spans all three columns, and the maximized panel (Alt+Enter) also covers the repo tab bar.
+                            Off: both stay inside the graph column, below the tab bar and clear of the Changes pane.
                         </span>
                     </div>
 

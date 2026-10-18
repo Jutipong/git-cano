@@ -36,7 +36,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   repo path, and keeps it mounted across repo switches, workspace switches and the toggle, so a
   shell you left behind is still there (and still running) when you come back. The graph is only
   hidden while a panel is expanded (teleported to `.app`, under the repo tab bar); the overlay
-  clears the Changes pane by default, and Settings → Terminal → Full height (`ui.terminalFullWidth`)
+  clears the Changes pane by default, and Settings → Terminal → Full window (`ui.terminalFullWidth`)
   turns the terminal into a whole-window card — the docked strip floats across all three columns at
   the bottom (`.terminal-docked-full`), and the expanded overlay spans all three columns and rises
   over the repo tab bar (`.terminal-overlay-window`). **Hiding never

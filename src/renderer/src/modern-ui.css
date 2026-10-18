@@ -6389,7 +6389,7 @@ body {
     box-shadow: 0 3px 14px var(--shadow);
 }
 
-/* Settings → Terminal → Full height (`ui.terminalFullWidth`): the overlay becomes a whole-window
+/* Settings → Terminal → Full window (`ui.terminalFullWidth`): the overlay becomes a whole-window
    card — it spans all three columns (`right: 6px`) and rises over the repo tab bar (`top: 6px`,
    the same inset `.diff-overlay` uses), leaving only the app's uniform 6px frame. Off (default) it
    stays under the tab bar and in front of the Changes pane. */
@@ -6398,7 +6398,7 @@ body {
     right: 6px;
 }
 
-/* Docked + Settings → Terminal → Full height (`ui.terminalFullWidth`): the strip stops nesting
+/* Docked + Settings → Terminal → Full window (`ui.terminalFullWidth`): the strip stops nesting
    inside the graph column and floats over the bottom of all three columns instead — same card
    look as the expanded overlay, with its height still set inline from `terminalStore.terminalHeight`.
    Toggling the setting moves the panel between this and the plain docked strip. */
