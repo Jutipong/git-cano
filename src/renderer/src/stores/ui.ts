@@ -216,10 +216,10 @@ export const useUiStore = defineStore(
             if (!TERMINAL_MAX_TABS_OPTIONS.includes(terminalMaxTabs.value)) terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
         })
         /**
-         * Settings → Terminal → Full window: the terminal covers the whole window. The docked strip floats across all three columns at the
+         * Settings → Terminal → Full window: the terminal covers the whole window. The docked strip spans all three columns at the
          * bottom (`.terminal-docked-full`) and the expanded overlay spans all three columns and rises over the repo tab bar
-         * (`.terminal-overlay-window`). Off (default) is the shipped look — the strip sits in the graph column and the overlay stays under
-         * the tab bar, clear of the right pane.
+         * (`.terminal-overlay-window`). Off (default) the strip floats over the Sidebar + Graph columns (`.terminal-docked-wide`) and
+         * the overlay stays under the tab bar, clear of the right pane.
          */
         const terminalFullWidth = ref(false)
 

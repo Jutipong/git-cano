@@ -1097,7 +1097,8 @@
                         </AppCheckbox>
                         <span class="setting-hint">
                             On: the docked strip spans all three columns, and the maximized panel (Alt+Enter) also covers the repo tab bar.
-                            Off: both stay inside the graph column, below the tab bar and clear of the Changes pane.
+                            Off: the strip floats over the Sidebar and Graph columns, and the maximized panel stays below the tab bar, clear of
+                            the Changes pane.
                         </span>
                     </div>
 

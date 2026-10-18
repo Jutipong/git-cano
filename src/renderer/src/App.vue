@@ -971,9 +971,11 @@
                                 @reset-soft="commit => resetTo(commit, 'soft')"
                                 @reset-hard="commit => resetTo(commit, 'hard')"
                                 @toggle-terminal="toggleTerminal" />
-                            <Teleport
-                                to=".app"
-                                :disabled="!ui.terminalFullWidth">
+                            <!--
+                                The docked strip always floats over the columns, so its drag handle lives in `.app`
+                                too and matches the strip's own width (Sidebar + Graph, or all three).
+                            -->
+                            <Teleport to=".app">
                                 <div
                                     v-if="
                                         activeRepoPath &&
@@ -981,23 +983,24 @@
                                         !terminalStore.isExpanded(activeRepoPath)
                                     "
                                     class="terminal-splitter"
-                                    :class="{ 'terminal-splitter-full': ui.terminalFullWidth }"
+                                    :class="ui.terminalFullWidth ? 'terminal-splitter-full' : 'terminal-splitter-wide'"
                                     @mousedown="beginTerminalResize" />
                             </Teleport>
                             <!--
                                 One panel per repo that owns a shell, kept mounted for the whole session:
                                 hidden repos keep their xterm buffers and pty alive across repo switches,
                                 workspace switches and the panel toggle. Expanded panels teleport into
-                                `.app` to float over the graph without moving the repo tab bar, and with
-                                Settings → Terminal → Full window the docked strip teleports there too,
-                                so it spans all three columns at the bottom instead of just the graph.
+                                `.app` to float over the graph without moving the repo tab bar, and the
+                                docked strip teleports there too — it always floats over the bottom of the
+                                columns (Sidebar + Graph by default, all three with Settings → Terminal →
+                                Full window) instead of nesting inside the graph column.
                             -->
                             <template
                                 v-for="path in terminalPaths"
                                 :key="path">
                                 <Teleport
                                     to=".app"
-                                    :disabled="!(isExpandedTerminal(path) || (ui.terminalFullWidth && isTerminalVisible(path)))">
+                                    :disabled="!isTerminalVisible(path)">
                                     <TerminalPanel
                                         v-show="isTerminalVisible(path)"
                                         :ref="el => (terminalPanels[path] = el as { focusActive: () => void } | null)"
@@ -1007,6 +1010,8 @@
                                         :class="{
                                             'terminal-overlay': isExpandedTerminal(path),
                                             'terminal-overlay-window': isExpandedTerminal(path) && ui.terminalFullWidth,
+                                            'terminal-docked-wide':
+                                                !isExpandedTerminal(path) && !ui.terminalFullWidth && isTerminalVisible(path),
                                             'terminal-docked-full':
                                                 !isExpandedTerminal(path) && ui.terminalFullWidth && isTerminalVisible(path),
                                         }"

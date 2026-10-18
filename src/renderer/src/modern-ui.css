@@ -6339,13 +6339,30 @@ body {
     }
 }
 
+/* The docked strip's drag handle rides the panel's top edge via the `--terminal-height` custom
+   property on `.app`, so it lives in `.app` too — absolutely positioned, never in flow. Its
+   left/right come from the `-wide` (Sidebar + Graph, the default) or `-full` (all three columns)
+   variant below so it always matches the strip it resizes. */
 .terminal-splitter {
-    z-index: 4;
+    position: absolute;
+    bottom: calc(6px + var(--terminal-height));
     height: 5px;
-    flex: 0 0 5px;
-    margin: -2px 0;
+    margin: 0;
+    z-index: 10;
     background: transparent;
     cursor: row-resize;
+}
+
+.terminal-splitter-wide {
+    left: 6px;
+    right: calc(var(--right-panel-width) + 12px);
+    width: auto;
+}
+
+.terminal-splitter-full {
+    left: 6px;
+    right: 6px;
+    width: auto;
 }
 
 .terminal-splitter:hover,
@@ -6362,13 +6379,6 @@ body {
     min-height: 0;
     background: var(--canvas);
     border-top: 1px solid var(--line-soft);
-}
-
-/* Docked only: round the bottom corners to nest inside the center-column card
-   (outer radius minus the card's 1px border, floored for the square themes). The docked-full
-   float (below) is a full card and keeps the shared radius. */
-.terminal-panel:not(.terminal-overlay):not(.terminal-docked-full) {
-    border-radius: 0 0 max(0px, calc(var(--radius-card) - 1px)) max(0px, calc(var(--radius-card) - 1px));
 }
 
 /* Expanded: teleported to `.app` and styled as a card that lines up with the other columns —
@@ -6398,14 +6408,13 @@ body {
     right: 6px;
 }
 
-/* Docked + Settings → Terminal → Full window (`ui.terminalFullWidth`): the strip stops nesting
-   inside the graph column and floats over the bottom of all three columns instead — same card
-   look as the expanded overlay, with its height still set inline from `terminalStore.terminalHeight`.
-   Toggling the setting moves the panel between this and the plain docked strip. */
+/* Docked strip: it never nests inside a column any more — both states are the same floating card
+   over the bottom of the columns, with only its right edge changing. Height still comes from the
+   inline `terminalStore.terminalHeight`. */
+.terminal-panel.terminal-docked-wide,
 .terminal-panel.terminal-docked-full {
     position: absolute;
     left: 6px;
-    right: 6px;
     bottom: 6px;
     z-index: 9;
     height: auto;
@@ -6415,25 +6424,16 @@ body {
     box-shadow: 0 3px 14px var(--shadow);
 }
 
-/* The full-width drag handle that replaces the in-column `.terminal-splitter` while the strip
-   floats: it rides the panel's top edge via the `--terminal-height` custom property on `.app`. */
-.terminal-splitter-full {
-    position: absolute;
-    left: 6px;
-    right: 6px;
-    bottom: calc(6px + var(--terminal-height));
-    width: auto;
-    height: 5px;
-    margin: 0;
-    z-index: 10;
-    background: transparent;
-    cursor: row-resize;
+/* Default (Settings → Terminal → Full window off): Sidebar + Graph — the app's 6px frame on the
+   left, and on the right the same edge the maximized overlay uses (the resizable
+   `--right-panel-width` + the 6px `.panel-splitter` gap), so it stays clear of the Changes pane. */
+.terminal-panel.terminal-docked-wide {
+    right: calc(var(--right-panel-width) + 12px);
 }
 
-.terminal-splitter-full:hover,
-.terminal-splitter-full:active {
-    background: var(--teal);
-    opacity: 0.75;
+/* Full window on: all three columns, reaching the app's 6px frame on both sides. */
+.terminal-panel.terminal-docked-full {
+    right: 6px;
 }
 
 /* Keyboard focus inside the panel: a teal edge marks where Ctrl+W closes the shell's tab instead
@@ -6456,6 +6456,7 @@ body {
         0 0 0 1px color-mix(in srgb, var(--teal) 40%, transparent);
 }
 
+.terminal-panel.terminal-docked-wide:focus-within,
 .terminal-panel.terminal-docked-full:focus-within {
     border-color: color-mix(in srgb, var(--teal) 45%, var(--line-soft));
     box-shadow:

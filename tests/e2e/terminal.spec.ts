@@ -167,22 +167,34 @@ test('the full-width setting widens the full-height overlay over the Changes pan
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
-test('the full-width setting floats the docked strip across all three columns', async () => {
+test('the docked strip floats over the Sidebar + Graph, and Full window widens it to three columns', async () => {
     const app = await page.locator('.app').boundingBox()
     const rightPane = await page.locator('.right-pane').boundingBox()
 
-    // Docked + setting off: the strip nests inside the graph column, in front of the Changes pane.
+    // Docked, setting off (the shipped default): the strip floats over the bottom of the Sidebar +
+    // Graph columns — the app's 6px frame on the left, and on the right the maximized overlay's own
+    // edge, 6px in front of the Changes pane.
+    const strip = page.locator('.terminal-panel.terminal-docked-wide')
+    await expect(strip).toHaveCount(1)
     await expect(page.locator('.terminal-panel.terminal-docked-full')).toHaveCount(0)
-    const docked = await page.locator('.terminal-panel:visible').boundingBox()
+    const docked = await strip.boundingBox()
+    expect(docked!.x).toBeLessThanOrEqual(app!.x + 7)
     expect(docked!.x + docked!.width).toBeLessThanOrEqual(rightPane!.x + 1)
+    expect(docked!.x + docked!.width).toBeGreaterThanOrEqual(rightPane!.x - 12)
+    expect(docked!.y + docked!.height).toBeGreaterThanOrEqual(app!.y + app!.height - 7)
+    // The drag handle follows the strip's width, and the float does not displace the graph.
+    await expect(page.locator('.terminal-splitter-wide')).toHaveCount(1)
+    await expect(page.locator('.terminal-splitter-full')).toHaveCount(0)
+    await expect(page.locator('.graph-view')).toBeVisible()
 
-    // Flipping the setting floats it: full window width, pinned to the bottom, graph still on screen.
+    // Full window floats the same card across all three columns instead.
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
     await page.locator('.setting-toggle', { hasText: 'Terminal covers the whole window' }).click()
     await page.locator('.tools-modal .commit-close-btn').click()
     const floating = page.locator('.terminal-panel.terminal-docked-full')
     await expect(floating).toHaveCount(1)
+    await expect(page.locator('.terminal-panel.terminal-docked-wide')).toHaveCount(0)
     await expect(page.locator('.graph-view')).toBeVisible()
     const float = await floating.boundingBox()
     expect(float!.x).toBeLessThanOrEqual(app!.x + 7)
@@ -190,6 +202,7 @@ test('the full-width setting floats the docked strip across all three columns', 
     expect(float!.y + float!.height).toBeGreaterThanOrEqual(app!.y + app!.height - 7)
     // The full-width drag handle rides the floating panel's top edge.
     await expect(page.locator('.terminal-splitter-full')).toHaveCount(1)
+    await expect(page.locator('.terminal-splitter-wide')).toHaveCount(0)
 
     // Restore the shipped default so the serial tests below start where the file expects them to.
     await page.keyboard.press('Control+,')
@@ -197,7 +210,9 @@ test('the full-width setting floats the docked strip across all three columns', 
     await page.locator('.setting-toggle', { hasText: 'Terminal covers the whole window' }).click()
     await page.locator('.tools-modal .commit-close-btn').click()
     await expect(page.locator('.terminal-panel.terminal-docked-full')).toHaveCount(0)
+    await expect(page.locator('.terminal-panel.terminal-docked-wide')).toHaveCount(1)
     await expect(page.locator('.terminal-splitter-full')).toHaveCount(0)
+    await expect(page.locator('.terminal-splitter-wide')).toHaveCount(1)
 })
 
 test('full mode survives a hide from every reachable gesture; only the minimize button leaves it', async () => {
