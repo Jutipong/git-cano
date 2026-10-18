@@ -110,4 +110,9 @@ test('outer search finds Settings tabs and opens the picked one', async () => {
 
     await page.locator('.tools-modal .commit-close-btn').click()
     await expect(page.locator('.tools-modal')).toHaveCount(0)
+
+    // Closing clears the palette's deep-link: a plain reopen lands on Appearance again.
+    await page.keyboard.press('Control+,')
+    await expect(page.locator('.tools-tabs .graph-filter.active')).toContainText('Appearance')
+    await page.locator('.tools-modal .commit-close-btn').click()
 })

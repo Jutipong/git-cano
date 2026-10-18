@@ -160,6 +160,15 @@
             .catch((error: unknown) => uiTransient.notify(String(error), 'error'))
     }
 
+    /**
+     * `repoStore.toolsTab` is a one-shot deep-link for the command palette's Settings rows; clearing it on close keeps a plain open
+     * (Ctrl+, / the sidebar gear / the palette's plain Settings row) on the Appearance tab instead of the last palette pick.
+     */
+    function closeTools() {
+        toolsOpen.value = false
+        repoStore.toolsTab = 'appearance'
+    }
+
     const autoRefreshTimer = ref<ReturnType<typeof setInterval> | null>(null)
     let refreshTimer: ReturnType<typeof setTimeout> | null = null
 
@@ -980,7 +989,7 @@
                                 hidden repos keep their xterm buffers and pty alive across repo switches,
                                 workspace switches and the panel toggle. Expanded panels teleport into
                                 `.app` to float over the graph without moving the repo tab bar, and with
-                                Settings → Terminal → Full height the docked strip teleports there too,
+                                Settings → Terminal → Full window the docked strip teleports there too,
                                 so it spans all three columns at the bottom instead of just the graph.
                             -->
                             <template
@@ -1131,7 +1140,7 @@
             v-if="toolsOpen"
             :initial-tab="repoStore.toolsTab"
             :refresh="repoStore.refresh"
-            @close="toolsOpen = false" />
+            @close="closeTools" />
         <ReflogModal
             v-if="repoStore.reflogOpen"
             @close="repoStore.reflogOpen = false" />

@@ -334,6 +334,9 @@ Panel/modal component patterns. Loaded automatically when working under
   Remotes / AI / Terminal / Shortcuts) measuring ~110px each in the ~680px strip, so a seventh tab
   needs a measured width check, not a guess — and its key/label belongs in `SETTINGS_TABS`
   (`utils/settingsTabs.ts`), the single source of truth shared by the store's `toolsTab`, the modal
-  strip and the palette's Settings rows.
+  strip and the palette's Settings rows. `repoStore.toolsTab` is a **one-shot deep-link** for those
+  palette rows: `closeTools` in `App.vue` clears it back to `'appearance'` on every close (Esc / ✕),
+  so a plain open (`Ctrl+,` / the sidebar gear / the palette's plain Settings row) always starts on
+  Appearance instead of the last palette pick — never treat it as "remember the last tab".
 - **Settings (`ToolsModal.vue`) has no Zoom control** — zoom lives only in the `App.vue`
   global handler (`⌘/Ctrl + − 0`, Ctrl/⌘+wheel). Do not re-add Zoom chips.
