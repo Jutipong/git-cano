@@ -20,9 +20,10 @@ app-level UI rules live in `src/renderer/AGENTS.md`.
   `src/renderer/AGENTS.md`).
 - `terminal.ts` — the terminal panel's shells, keyed by repo path (memory-only, never persisted):
   tab list + label/rename/reorder, which tab shows, hidden/expanded state, panel height, and the
-  close / kill-all actions that ask the main process to kill PTYs. Hiding only forgets the
-  full-height state for the plain hide gestures; `hideTerminals(path, { keepExpanded })` (Ctrl+` /
-palette toggle) carries it across the hide so the overlay comes back. Panel lifetime rules are load
+  close / kill-all actions that ask the main process to kill PTYs. Hiding is not resizing:
+  `hideTerminals(path)` keeps `expanded` and only flips `hidden`, so every hide gesture (the header
+  chevron, Ctrl+` / the palette) brings the overlay back as it was — the minimize button is the only
+  way out of full mode. Panel lifetime rules are load
 bearing: closing the REPO TAB kills that repo's shells (`repo.ts closeTab`calls`closeRepoTerminals`), while a workspace switch must not — it only recycles git instances.
 Terminal preferences (`ui.terminalShell`, `ui.terminalFontSize`, `ui.terminalFontFamily`, `ui.terminalMaxTabs`) are persisted in `ui.ts`, but
   live terminal sessions are not.

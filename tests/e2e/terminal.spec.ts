@@ -105,30 +105,30 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
-test('Ctrl+` and the palette remember full mode across a hide; the header hide button collapses to the strip', async () => {
+test('full mode survives a hide from every reachable gesture; only the minimize button leaves it', async () => {
     const panel = page.locator('.terminal-panel:visible')
     const fullBtn = panel.locator('.icon-btn[title="Full height (Alt+Enter)"]')
+    const overlay = page.locator('.terminal-panel.terminal-overlay')
 
     // Ctrl+` hides the overlay and brings it back untouched, keyboard included.
     await fullBtn.click()
-    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await expect(overlay).toHaveCount(1)
     await page.keyboard.press('Control+`')
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
     await page.keyboard.press('Control+`')
     await expect(panel).toBeVisible()
-    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await expect(overlay).toHaveCount(1)
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 
-    // The header hide button drops the full-height state: the next show lands on the bottom strip.
+    // The header hide button hides, it does not resize: the next show lands straight back in the overlay.
     await panel.locator('.icon-btn[title*="Hide panel"]').click()
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
     await page.keyboard.press('Control+`')
     await expect(panel).toBeVisible()
-    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
+    await expect(overlay).toHaveCount(1)
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 
-    // The palette toggle behaves like Ctrl+`: hide, then show straight back into the overlay.
-    await fullBtn.click()
-    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    // The palette toggle behaves the same: hide, then show straight back into the overlay.
     const paletteTerminal = page.locator('.palette-item').filter({ has: page.locator('.palette-label', { hasText: /^Terminal$/ }) })
     await page.keyboard.press('Control+p')
     await paletteTerminal.click()
@@ -136,12 +136,14 @@ test('Ctrl+` and the palette remember full mode across a hide; the header hide b
     await page.keyboard.press('Control+p')
     await paletteTerminal.click()
     await expect(panel).toBeVisible()
-    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    await expect(overlay).toHaveCount(1)
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 
-    // Leave the suite where the neighbouring tests expect it: bottom strip, panel visible.
+    // The graph toolbar button has no full-mode case to cover: the overlay hides GraphView (`v-show`), so the
+    // button is unreachable while the panel is expanded. The minimize button is the only way back to the strip.
     await panel.locator('.icon-btn[title="Exit full height (Alt+Enter)"]').click()
-    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
+    await expect(overlay).toHaveCount(0)
+    await expect(panel).toBeVisible()
 })
 
 test('font size buttons change the terminal scale only', async () => {
@@ -204,6 +206,40 @@ test('terminal tabs rename on double-click and keep their number through a reord
 
     // Reordering moved the labels, not the shells: the tab on screen is still a live shell.
     await runInTerminal('echo after-reorder-ok', 'after-reorder-ok')
+})
+
+test('the whole tab pill is clickable, so switching needs no aim at the label', async () => {
+    const panel = page.locator('.terminal-panel:visible')
+    const tabs = panel.locator('.terminal-tab')
+    await expect(tabs).toHaveCount(2)
+
+    // A short label ("cmd 1") still gets a comfortable 120px pill — read from the computed style so the
+    // window's zoom cannot skew the number.
+    expect(await tabs.first().evaluate(el => getComputedStyle(el).minWidth)).toBe('120px')
+
+    // Park the active shell on the first tab through its label — the one target that always worked.
+    await tabs.first().locator('.terminal-tab-label').click()
+    await expect(tabs.first()).toHaveClass(/active/)
+
+    // The pill's own band above the label, and the gap the ✕ leaves in front of it, used to be inert:
+    // nothing there was the label. Both must switch shells like any other part of the tab.
+    await tabs.nth(1).click({ position: { x: 12, y: 3 } })
+    await expect(tabs.nth(1)).toHaveClass(/active/)
+    await tabs.first().click({ position: { x: 75, y: 16 } })
+    await expect(tabs.first()).toHaveClass(/active/)
+
+    // The ✕ stays out of the hit test while it is invisible — a press on the tab's right side must not
+    // kill the shell — and becomes clickable the moment the pill is hovered.
+    const closeBtn = tabs.nth(1).locator('.terminal-tab-close')
+    expect(await closeBtn.evaluate(el => getComputedStyle(el).pointerEvents)).toBe('none')
+    await tabs.nth(1).hover()
+    expect(await closeBtn.evaluate(el => getComputedStyle(el).pointerEvents)).toBe('auto')
+
+    // Double-clicking the pill itself renames too (the handler used to live on the label alone).
+    await tabs.first().dblclick({ position: { x: 12, y: 3 } })
+    await expect(panel.locator('.terminal-tab-rename')).toBeFocused()
+    await page.keyboard.press('Escape')
+    await expect(panel.locator('.terminal-tab-rename')).toHaveCount(0)
 })
 
 test('closing the repo tab kills its shells, and the other repo keeps working', async () => {

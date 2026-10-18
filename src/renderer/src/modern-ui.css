@@ -6453,8 +6453,9 @@ body {
 .terminal-tab {
     display: inline-flex;
     flex: 0 1 auto;
-    /* Short labels ("cmd 1") still get a comfortable pill; longer ones grow and truncate. */
-    min-width: 88px;
+    /* Short labels ("cmd 1") still get a comfortable pill; longer ones grow and truncate. The whole pill is
+       the tab's click target (its label is a plain span), so nothing inside this width is a dead zone. */
+    min-width: 120px;
     align-items: center;
     /* 31px = the auto height of the right-hand `.segmented` groups (25px buttons + 2px padding +
        1px border per side), so every pill in the strip lines up — same scale as diff-view. */
@@ -6511,6 +6512,9 @@ body {
     background: transparent;
     border: none;
     border-radius: 50%;
+    /* Invisible until the pill is hovered (or the tab is active) — and not clickable while it is: the ✕ sits on the
+       right of the tab, so hit-testing it while hidden would swallow a press meant for the tab underneath it. */
+    pointer-events: none;
     opacity: 0;
     transition:
         opacity 0.15s ease,
@@ -6525,9 +6529,11 @@ body {
     height: 13px;
 }
 
-/* Keep the ✕ of the showing tab visible — it is the only way to kill it. */
+/* Keep the ✕ of the showing tab visible — it is the only way to kill it. Showing it also makes it clickable again
+   (it is pointer-events: none while hidden, so an unseen ✕ never eats a press meant for the tab itself). */
 .terminal-tab:hover .terminal-tab-close,
 .terminal-tab.active .terminal-tab-close {
+    pointer-events: auto;
     opacity: 1;
 }
 
@@ -6628,9 +6634,11 @@ body {
     height: 0;
 }
 
-/* Inline rename of a terminal tab (double-click its label) — sized like the label it replaces. */
+/* Inline rename of a terminal tab (double-click its label) — fills the slot the label occupied, so the pill keeps
+   its 120px-minimum width instead of jumping the moment rename starts. */
 .terminal-tab-rename {
-    width: 104px;
+    flex: 1 1 0;
+    width: 0;
     min-width: 0;
     padding: 3px 5px 3px 9px;
     color: var(--text);

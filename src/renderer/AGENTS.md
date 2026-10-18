@@ -35,10 +35,11 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   ✕ buttons' job alone. `App.vue` mounts one `TerminalPanel` per repo that owns a shell, keyed by
   repo path, and keeps it mounted across repo switches, workspace switches and the toggle, so a
   shell you left behind is still there (and still running) when you come back. The graph is only
-  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). `Ctrl+` / the
-  palette toggle remember the full-height state across a hide (the overlay comes back), while the
-  panel's own hide button is the collapse-to-strip gesture (`hideTerminals(path, { keepExpanded })`
-  in `terminal.ts`). Showing the panel (`Ctrl+` / palette / toolbar) and the maximize/restore toggle
+  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). **Hiding never
+  resizes**: `hideTerminals(path)` keeps the full-height state, so every gesture that hides the panel
+  (`Ctrl+` / palette / the header's chevron — the toolbar button is unreachable while expanded, the
+  overlay hides the graph) shows it back exactly as it was; only the header's minimize button leaves
+  full mode. Showing the panel (`Ctrl+` / palette / toolbar) and the maximize/restore toggle
   always hand the keyboard back to the active shell (`TerminalPanel.focusActive()` — the teleport
   move would otherwise drop focus to `<body>`) — a repo/workspace switch only makes a panel
   visible and must not steal focus. Drag the

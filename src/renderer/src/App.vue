@@ -290,7 +290,7 @@
             // Killing every shell is palette-only (confirm-guarded) — no shortcut, too easy to fat-finger.
             if (combo === ui.getShortcut('terminal') && repoStore.repo) {
                 event.preventDefault()
-                void toggleTerminal({ keepExpanded: true })
+                void toggleTerminal()
                 return true
             }
             // Terminal tabs of the active repo (fixed Windows-Terminal-style combos, captured before
@@ -619,16 +619,16 @@
 
     /**
      * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has none, otherwise show or hide the
-     * panel. It never kills anything — the ✕ buttons own that. `keepExpanded` stays off for the toolbar button, which doubles as the "back
-     * to the graph" gesture; the keyboard/palette toggle passes it, so a full-height panel comes back as an overlay. Showing always hands
-     * the keyboard back to the active shell — a repo/workspace switch does not (the panel only becomes visible there, the user never asked
-     * to switch into the terminal).
+     * panel. It never kills anything — the ✕ buttons own that. Hiding never resizes either: the full-height state survives, so any gesture
+     * that shows the panel again brings the overlay straight back (the header's minimize button is the only way down to the strip).
+     * Showing always hands the keyboard back to the active shell — a repo/workspace switch does not (the panel only becomes visible there,
+     * the user never asked to switch into the terminal).
      */
-    async function toggleTerminal(options?: { keepExpanded?: boolean }) {
+    async function toggleTerminal() {
         const path = repoStore.tabs[repoStore.activeTab]?.path
         if (!path) return
         if (terminalStore.terminalExists(path)) {
-            if (terminalStore.panelVisible(path)) terminalStore.hideTerminals(path, options)
+            if (terminalStore.panelVisible(path)) terminalStore.hideTerminals(path)
             else {
                 terminalStore.showTerminals(path)
                 // Hidden panels are `display: none`, which blurred the shell's textarea.
@@ -1130,7 +1130,7 @@
             v-if="repoStore.commandPaletteOpen"
             @close="repoStore.commandPaletteOpen = false"
             @open-repo="openNewRepo"
-            @toggle-terminal="toggleTerminal({ keepExpanded: true })"
+            @toggle-terminal="toggleTerminal"
             @kill-all-terminals="killAllTerminals" />
         <ChangelogModal
             v-if="updater.changelogOpen"

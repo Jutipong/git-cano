@@ -15,9 +15,12 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
       tokenizer state, graph interactions, AI context cap).
     - `conflict.spec.ts` covers the conflict flow.
     - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
-      panel per repo, full overlay geometry, full-mode persistence across a hide (`Ctrl+`` / palette)
-vs the header hide button collapsing to the strip, the keyboard returning to the active shell on
-show and around the full-height toggle, terminal-only font size, rename + drag reorder,
+      panel per repo, full overlay geometry, full-mode persistence across every hide gesture (`Ctrl+`` /
+      palette / the header chevron) — hiding never resizes; the minimize button is the only way out of
+      full mode — the keyboard returning to the active shell on show and around the full-height toggle,
+      terminal-only font size, rename + drag reorder,
+the whole pill being the tab's click target (label, blank pill area and a ✕ that is only
+interactive while the pill is hovered),
 the four-shell default cap (raisable in Settings → Terminal → Tabs, and lowering it never kills an
 open shell), `Ctrl+Tab` cycling while the panel is focused (wrap + outside-panel no-op),
 splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,

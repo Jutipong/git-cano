@@ -55,6 +55,22 @@
         void nextTick(() => views.value[id]?.focus())
     }
 
+    /**
+     * The whole pill is the click target, like the repo tabs — the label is a plain span and the ✕ stops its own clicks,
+     * so a press anywhere on the tab switches shells instead of only landing on the text. Guarded while THIS tab is
+     * being renamed: `activate` below would pull the caret back out of the inline rename input.
+     */
+    function onTabClick(id: string) {
+        if (renamingId.value === id) return
+        activate(id)
+    }
+
+    /** Double-click anywhere on the pill starts a rename; the guard keeps the input's own word-select from restarting it. */
+    function onTabDblClick(id: string) {
+        if (renamingId.value === id) return
+        startRename(id)
+    }
+
     const views = ref<Record<string, { focus: () => void } | null>>({})
     /** Tab pills by id — the strip scrolls once the tabs overflow it, so the active one has to follow. */
     const tabEls = ref<Record<string, HTMLElement | null>>({})
@@ -149,10 +165,13 @@
                     :ref="el => (tabEls[tab.id] = el as HTMLElement | null)"
                     class="terminal-tab"
                     :class="{ active: tab.id === activeId, dragging: tab.id === draggingId }"
+                    :title="`${tabLabel(tab.id)} — double-click to rename`"
                     :draggable="renamingId !== tab.id"
                     @dragstart="onDragStart(tab.id, $event)"
                     @dragover="onDragOver(tabs.indexOf(tab), $event)"
-                    @dragend="onDragEnd">
+                    @dragend="onDragEnd"
+                    @click="onTabClick(tab.id)"
+                    @dblclick="onTabDblClick(tab.id)">
                     <input
                         v-if="renamingId === tab.id"
                         :ref="el => (renameInputs[tab.id] = el as HTMLInputElement | null)"
@@ -163,18 +182,16 @@
                         @keydown.enter.prevent="commitRename"
                         @keydown.esc.prevent="cancelRename"
                         @blur="commitRename" />
-                    <button
+                    <span
                         v-else
-                        class="terminal-tab-label"
-                        :title="`${tabLabel(tab.id)} — double-click to rename`"
-                        @click="activate(tab.id)"
-                        @dblclick="startRename(tab.id)">
+                        class="terminal-tab-label">
                         {{ tabLabel(tab.id) }}
-                    </button>
+                    </span>
                     <button
                         class="terminal-tab-close"
                         :title="`Close ${tabLabel(tab.id)}`"
-                        @click.stop="emit('close-tab', tab.id)">
+                        @click.stop="emit('close-tab', tab.id)"
+                        @dblclick.stop>
                         <CloseXIcon />
                     </button>
                 </span>

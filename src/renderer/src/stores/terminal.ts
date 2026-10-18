@@ -156,14 +156,14 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 
     /**
-     * Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them. `keepExpanded` keeps the full-height state
-     * for the toggle-style entries (Ctrl+` / palette), so showing the panel again restores the overlay; without it the panel collapses to
-     * the bottom strip (the panel's own chevron and the toolbar button are the "back to the graph" gestures).
+     * Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them. Hiding is not resizing: the full-height
+     * state survives every hide gesture (the header chevron, Ctrl+` / the palette, the graph toolbar), so showing the panel again puts it
+     * back exactly as it was. The header's minimize button is the only way out of full mode.
      */
-    function hideTerminals(path: string, options?: { keepExpanded?: boolean }) {
+    function hideTerminals(path: string) {
         const state = repoTerminals(path)
         if (!state || state.hidden) return
-        setRepoTerminals(path, { ...state, hidden: true, expanded: options?.keepExpanded ? state.expanded : false })
+        setRepoTerminals(path, { ...state, hidden: true })
     }
 
     /** Expands the panel to the full-height overlay or back to the bottom strip. */

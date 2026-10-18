@@ -186,18 +186,25 @@ Panel/modal component patterns. Loaded automatically when working under
   `dragover` swap used by the repo tabs, so the id (and its live shell) has to travel with the tab.
   The strip scrolls horizontally once the pills outgrow it (hidden scrollbar, the `.tab-scroll`
   treatment) and the active pill follows via `scrollIntoView` in the panel's activeId watcher.
+- **The whole pill is the tab's click target, not its label** (as with the repo tabs): the label is a
+  plain span, `@click`/`@dblclick`/`:title` sit on `.terminal-tab`, and `onTabClick`/`onTabDblClick`
+  bail while that tab is being renamed — an unguarded `activate()` would pull the caret out of the
+  inline rename input. The ✕ keeps `@click.stop` and is `pointer-events: none` until the pill is
+  hovered (or the tab is active) so the invisible ✕ can't swallow a press meant for the tab; CSS
+  reveals it and re-enables it in one rule. Do not move the handlers back onto the label — that left
+  the pill's own width and height as dead zones.
 - Header buttons sit in two `.segmented` pills (the diff header's group style): `[A− A+]` for the
   font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`, same `gap: 6px`
   and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: rightPanelWidth + 12px` clears the Changes pane) and hides the graph — it carries
-  `.icon-btn.active` while expanded. Hide (`chevron-down`) never touches the shells and drops the
-  full-height state — the panel comes back as the bottom strip; the `Ctrl+` / palette toggle keeps
-  it instead (`hideTerminals(path, { keepExpanded })` in `terminal.ts`), so showing the panel again
-  restores the overlay. The ✕ kills every shell of THIS
+  `.icon-btn.active` while expanded. Hide (`chevron-down`) only flips `hidden`: it never touches the
+  shells and never resizes, so a full-height panel comes back as the overlay (same as the `Ctrl+` /
+  palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is
+  the only way back to the strip. The ✕ kills every shell of THIS
   repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
   strip shares the diff-view scale: 31px pills (tab, `+`, the two `.segmented` groups), 25px
-  buttons with 15px icons inside them, a 12px mono tab label and an 88px tab minimum; the
+  buttons with 15px icons inside them, a 12px mono tab label and a 120px tab minimum; the
   header's 10px side padding matches the xterm inset — keep those in step with the diff header
   instead of inventing a second compact scale.
 - **Links open in the OS browser**: `@xterm/addon-web-links` handles plain-text URLs and the
