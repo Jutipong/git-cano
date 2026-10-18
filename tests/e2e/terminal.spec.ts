@@ -54,6 +54,30 @@ test('graph toolbar button spawns one shell, then toggles the panel', async () =
     await runInTerminal('echo git-cano-terminal-ok', 'git-cano-terminal-ok')
 })
 
+test('the grid fills the panel width instead of leaving a scrollbar-sized dead band', async () => {
+    // FitAddon's proposeDimensions keeps DEFAULT_SCROLL_BAR_WIDTH (14px) out of the width it solves for even though
+    // modern-ui.css hides the viewport scrollbar; sizing the grid from that alone left a dead band along the panel's
+    // right edge (a TUI painting its own background shows it as a differently-coloured strip). The gap must stay
+    // below one cell (8.4px at the default 14px terminal font) — 14-22px means the allowance leaked back in.
+    if ((await page.locator('.terminal-panel:visible').count()) === 0) await page.locator('.graph-terminal-btn').click()
+    await expect(page.locator('.terminal-view:visible .xterm-screen')).toHaveCount(1)
+
+    const gap = await page.evaluate(() => {
+        const panel = [...document.querySelectorAll<HTMLElement>('.terminal-panel')].find(el => el.offsetParent !== null)
+        const host = panel?.querySelector<HTMLElement>('.terminal-host')
+        const xterm = panel?.querySelector<HTMLElement>('.xterm')
+        const screen = panel?.querySelector<HTMLElement>('.xterm-screen')
+        if (!host || !xterm || !screen) return null
+        const style = getComputedStyle(xterm)
+        const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
+        return host.clientWidth - padding - screen.offsetWidth
+    })
+
+    expect(gap).not.toBeNull()
+    expect(gap as number).toBeGreaterThan(-2)
+    expect(gap as number).toBeLessThan(12)
+})
+
 test('the second repo owns its own panel and keeps its shell while the first is on screen', async () => {
     await page.locator('.repo-tab').nth(1).click()
     await expect(page.locator('.repo-tab.active')).toHaveCount(1)

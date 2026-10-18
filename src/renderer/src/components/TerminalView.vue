@@ -86,16 +86,44 @@
         void window.api.openExternal(uri).catch(() => {})
     }
 
+    /**
+     * Solve the grid from the box the terminal actually paints into. FitAddon keeps a scrollbar column set
+     * (`DEFAULT_SCROLL_BAR_WIDTH`, 14px) out of the width it proposes even though `modern-ui.css` hides the viewport
+     * scrollbar, so the grid always stopped up to two columns short of the panel and left a dead band along its right
+     * edge — a TUI that paints its own background (opencode's sidebar) shows that band as a differently-coloured strip.
+     * `rows` still comes from the addon (its height maths has no such allowance); `cols` is solved here from the
+     * painted screen's own cell width, so there is no xterm internals dependency and no flip-flop against the addon's
+     * conservative width guess. The public refresh after a resize replaces the full clear the addon used to force.
+     */
+    function fitGrid() {
+        if (!term || !fit || !term.cols || !term.rows) return
+        const hostEl = host.value
+        const element = term.element
+        const screen = element?.querySelector<HTMLElement>('.xterm-screen')
+        if (!hostEl || !element || !screen || screen.offsetWidth === 0) return
+        let rows = term.rows
+        try {
+            const proposed = fit.proposeDimensions()
+            if (proposed && Number.isFinite(proposed.rows) && proposed.rows > 0) rows = proposed.rows
+        } catch {
+            // The addon cannot measure yet (hidden/collapsed box) — keep the current rows.
+        }
+        const style = getComputedStyle(element)
+        const padding = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0)
+        const cellWidth = screen.offsetWidth / term.cols
+        if (cellWidth <= 0) return
+        const cols = Math.max(2, Math.floor((hostEl.clientWidth - padding) / cellWidth))
+        if (cols === term.cols && rows === term.rows) return
+        term.resize(cols, rows)
+        term.refresh(0, term.rows - 1)
+    }
+
     function resizePty() {
         if (!term || !fit) return
         // A hidden view (a sibling tab is showing, or the whole panel is toggled away) has no box —
         // fitting it would report 0 cols/rows.
         if (!host.value || host.value.clientWidth === 0 || host.value.clientHeight === 0) return
-        try {
-            fit.fit()
-        } catch {
-            return
-        }
+        fitGrid()
         void window.api.terminalResize(props.terminalId, term.cols, term.rows).catch(() => {})
     }
 

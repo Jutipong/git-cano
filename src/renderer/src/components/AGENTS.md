@@ -165,6 +165,30 @@ Panel/modal component patterns. Loaded automatically when working under
   (`.xterm-rows > div` → `overflow-x: clip; overflow-y: visible`, `!important`) because a Thai tone
   mark stacked over an upper vowel (`ที่`, `น้ำ`) rises above the 1.0 cell and the clip erased it.
   Do not drop that override.
+- **The grid is solved by `fitGrid()`, never by `fit.fit()` directly.** FitAddon keeps a scrollbar
+  column set (`DEFAULT_SCROLL_BAR_WIDTH`, 14px) out of the width it proposes even though
+  `modern-ui.css` hides the viewport scrollbar, so `fit.fit()` alone left the grid up to two columns
+  short of the panel with a dead band along its right edge — a TUI that paints its own background
+  (opencode's sidebar) shows that band as a differently-coloured strip and reads as a cut-off layout.
+  `fitGrid()` keeps the addon's `rows` (its height maths has no such allowance) but derives `cols`
+  from the painted `.xterm-screen` cell width, then forces a full repaint with the public `refresh()`
+  (replacing the addon's private `_renderService.clear()`). Do not call `fit.fit()` as well: it
+  proposes the 14px-narrower grid again on every refit, so the two would flip-flop — resizing and
+  repainting the screen twice per fit.
+- **The app's `<html> { zoom }` (UI font size / zoom) is not a terminal bug.** CSS zoom scales what
+  the terminal paints *and* the box it is given, while xterm's canvas/`offsetWidth` cell measurements
+  stay in the same unzoomed layout space — `canvas.measureText` and `offsetWidth` deliberately ignore
+  zoom, `getBoundingClientRect` does not, so comparing the two falsely suggests a mismatch. The fit
+  re-runs on every zoom change because `ResizeObserver` reports the host's layout (unzoomed) size.
+  Do not "fix" this by cancelling the zoom inside `.terminal-host` or by pre-multiplying `fontSize`.
+- **A blinking caret is the TUI's repaint cadence, not a font property.** xterm draws the caret as a
+  cell of the grid (block/bar/underline/outline, `cursorBlink: true` here) and blinks it with a 1s
+  `step-end` CSS animation scoped to `.xterm-rows.focus` — so an unfocused terminal shows the steady
+  `cursorInactiveStyle` outline instead. The animation restarts whenever xterm rebuilds that cell's
+  span, and a TUI redraws the caret's row on every keystroke (and on every streamed frame), which is
+  why the caret looks solid while typing and blinks when idle. Reported "some fonts don't blink" is
+  the same thing one step removed: the font changes the TUI's layout/repaint (and colour-sequence)
+  cadence, not the caret. Do not "fix" it with DOM hacks; per-font behaviour here is expected.
 - `markBars()` (TerminalView) tags spans that are a pure run of `▀` with `.terminal-bar`, and
   `modern-ui.css` paints a solid half-height `currentColor` layer behind them. That layer closes
   both the 1px seam against the filled row above and the per-cell antialiased vertical seams
