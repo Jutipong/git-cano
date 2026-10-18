@@ -28,7 +28,8 @@ Panel/modal component patterns. Loaded automatically when working under
   their drill-in modes; Settings is flat by design). The Settings rows are the Tools modal's tabs
   by name (`SETTINGS_TABS` in `utils/settingsTabs.ts`) and open it straight on the picked tab — the
   modal watches `props.initialTab` so an already-open modal follows a palette pick (the palette z-95
-  opens over the modal).
+  opens over the modal). Each row also carries a `search: 'settings'` text, so typing setting(s)
+  lists every tab.
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.

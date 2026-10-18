@@ -93,9 +93,14 @@ test('outer search finds workspaces and switches to the picked one', async () =>
 
 test('outer search finds Settings tabs and opens the picked one', async () => {
     await page.keyboard.press('Control+p')
-    await page.locator('.palette-input').fill('shortcut')
 
-    // Settings-tab names surface as their own section, like repos/branches.
+    // "setting(s)" answers with the tab rows too, not just the base Settings command.
+    await page.locator('.palette-input').fill('setting')
+    await expect(page.locator('.palette-item .palette-label', { hasText: /^Appearance$/ })).toBeVisible()
+    await expect(page.locator('.palette-item .palette-label', { hasText: /^General$/ })).toBeVisible()
+
+    // Typed tab names surface as their own section, like repos/branches.
+    await page.locator('.palette-input').fill('shortcut')
     await expect(page.locator('.palette-section-header', { hasText: 'Settings' })).toBeVisible()
     await page.locator('.palette-item', { hasText: 'Shortcuts' }).click()
 

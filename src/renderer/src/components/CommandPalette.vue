@@ -418,11 +418,15 @@
         shortcuts: Keyboard,
     }
 
-    /** The Settings modal's tabs by name — the flat, query-driven twin of its tab strip; picking one opens it on that tab. */
+    /**
+     * The Settings modal's tabs by name — the flat, query-driven twin of its tab strip; picking one opens it on that tab. The `search` text
+     * has each row answer to "setting(s)" as well (never rendered — matching only).
+     */
     const settingsItems = computed<PaletteItem[]>(() =>
         SETTINGS_TABS.map(item => ({
             id: `settings:${item.key}`,
             label: item.label,
+            search: 'settings',
             icon: SETTINGS_TAB_ICONS[item.key],
             run: () => {
                 close()
