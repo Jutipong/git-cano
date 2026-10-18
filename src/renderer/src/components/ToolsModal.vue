@@ -12,6 +12,7 @@
     import ILucideGlobe2 from '~icons/lucide/globe2'
     import ILucideKeyRound from '~icons/lucide/key-round'
     import ILucideKeyboard from '~icons/lucide/keyboard'
+    import ILucideMaximize from '~icons/lucide/maximize'
     import Moon from '~icons/lucide/moon'
     import ILucidePalette from '~icons/lucide/palette'
     import ILucidePanelTop from '~icons/lucide/panel-top'
@@ -1076,6 +1077,24 @@
                             Each tab runs its own shell process. Lowering the limit keeps open shells running — it only stops new ones.
                             Ctrl+Tab cycles through the tabs while the terminal panel has focus.
                         </p>
+                    </div>
+
+                    <div class="tools-section">
+                        <strong class="tools-section-title">
+                            <i-lucide-maximize
+                                width="13"
+                                height="13" />
+                            Full height
+                        </strong>
+                        <AppCheckbox
+                            class="setting-toggle"
+                            v-model="ui.terminalFullWidth">
+                            Cover the whole window width (all three columns)
+                        </AppCheckbox>
+                        <span class="setting-hint">
+                            On: the full-height terminal (Alt+Enter) spans all three columns and covers the Changes pane. Off: it stops at the
+                            Changes pane, which stays visible.
+                        </span>
                     </div>
 
                     <div class="tools-actions tools-reset-row">

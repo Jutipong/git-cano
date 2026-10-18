@@ -990,7 +990,7 @@
                                         :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
                                         :style="
                                             isExpandedTerminal(path)
-                                                ? { right: `${ui.rightPanelWidth + 12}px` }
+                                                ? { right: ui.terminalFullWidth ? '6px' : `${ui.rightPanelWidth + 12}px` }
                                                 : { height: `${terminalStore.terminalHeight}px` }
                                         "
                                         @add-tab="addTerminalTab(path)"

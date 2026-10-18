@@ -35,7 +35,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   ✕ buttons' job alone. `App.vue` mounts one `TerminalPanel` per repo that owns a shell, keyed by
   repo path, and keeps it mounted across repo switches, workspace switches and the toggle, so a
   shell you left behind is still there (and still running) when you come back. The graph is only
-  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar). **Hiding never
+  hidden while a panel is expanded (teleported to `.app`, under the repo tab bar); the overlay
+  clears the Changes pane by default, and Settings → Terminal → Full height (`ui.terminalFullWidth`)
+  widens it to all three columns. **Hiding never
   resizes**: `hideTerminals(path)` keeps the full-height state, so every gesture that hides the panel
   (`Ctrl+` / palette / the header's chevron — the toolbar button is unreachable while expanded, the
   overlay hides the graph) shows it back exactly as it was; only the header's minimize button leaves

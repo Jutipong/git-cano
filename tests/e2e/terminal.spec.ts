@@ -105,6 +105,35 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
+test('the full-width setting widens the full-height overlay over the Changes pane', async () => {
+    const app = await page.locator('.app').boundingBox()
+    const rightPane = await page.locator('.right-pane').boundingBox()
+
+    // Off by default: the overlay stops 6px in front of the Changes pane (app padding + splitter gap).
+    await page.locator('.terminal-panel:visible .icon-btn[title="Full height (Alt+Enter)"]').click()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
+    const contained = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
+    expect(contained!.x + contained!.width).toBeLessThanOrEqual(rightPane!.x + 1)
+
+    // Flipping the setting re-lays the open overlay live: the right edge lands on `.app`'s 6px padding.
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Cover the whole window width' }).click()
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}').terminalFullWidth)).toBe(true)
+    await page.locator('.tools-modal .commit-close-btn').click()
+    const widened = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
+    expect(widened!.x + widened!.width).toBeGreaterThanOrEqual(app!.x + app!.width - 7)
+
+    // Restore the shipped default so the serial tests below start where the file expects them to.
+    await page.keyboard.press('Control+,')
+    await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Cover the whole window width' }).click()
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}').terminalFullWidth)).toBe(false)
+    await page.locator('.tools-modal .commit-close-btn').click()
+    await page.locator('.terminal-panel:visible .icon-btn[title="Exit full height (Alt+Enter)"]').click()
+    await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
+})
+
 test('full mode survives a hide from every reachable gesture; only the minimize button leaves it', async () => {
     const panel = page.locator('.terminal-panel:visible')
     const fullBtn = panel.locator('.icon-btn[title="Full height (Alt+Enter)"]')

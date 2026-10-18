@@ -6373,7 +6373,9 @@ body {
 /* Expanded: teleported to `.app` and styled as a card that lines up with the other columns —
    left/bottom match `.app`'s 6px padding, top starts where `.app-body` does (48px tab bar + the
    body's 6px margin), and the inline `right: rightPanelWidth + 12px` (app padding + the 6px
-   `.panel-splitter` gap) clears the right pane. Same border/radius/shadow as the cards. */
+   `.panel-splitter` gap) clears the right pane. Settings → Terminal → Full height
+   (`ui.terminalFullWidth`) drops that inline right to 6px, so the overlay covers all three columns.
+   Same border/radius/shadow as the cards. */
 .terminal-panel.terminal-overlay {
     position: absolute;
     top: 60px;

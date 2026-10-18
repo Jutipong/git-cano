@@ -203,6 +203,11 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             if (!TERMINAL_MAX_TABS_OPTIONS.includes(terminalMaxTabs.value)) terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
         })
+        /**
+         * Settings → Terminal → Full height: the expanded terminal spans all three columns and covers the
+         * Changes pane. Off (default) is the shipped look — the overlay clears the right pane.
+         */
+        const terminalFullWidth = ref(false)
 
         /** Header A− / A+ in the terminal panel — steps the terminal scale only. */
         function stepTerminalFontSize(direction: number) {
@@ -371,6 +376,7 @@ export const useUiStore = defineStore(
             terminalShell.value = 'pwsh'
             terminalFontFamily.value = DEFAULT_TERMINAL_FONT_FAMILY
             terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
+            terminalFullWidth.value = false
         }
 
         watchEffect(() => {
@@ -409,6 +415,7 @@ export const useUiStore = defineStore(
             terminalFontFamily,
             terminalShell,
             terminalMaxTabs,
+            terminalFullWidth,
             codeFontSize,
             zoomCodeFontSize,
             repoTabColors,
@@ -455,6 +462,7 @@ export const useUiStore = defineStore(
                 'terminalFontFamily',
                 'terminalShell',
                 'terminalMaxTabs',
+                'terminalFullWidth',
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',
