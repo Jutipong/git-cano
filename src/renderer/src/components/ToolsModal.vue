@@ -1093,11 +1093,11 @@
                         <AppCheckbox
                             class="setting-toggle"
                             v-model="ui.terminalFullWidth">
-                            Cover the whole window width (all three columns)
+                            Cover the whole window (all three columns + tab bar)
                         </AppCheckbox>
                         <span class="setting-hint">
-                            On: the full-height terminal (Alt+Enter) spans all three columns and covers the Changes pane. Off: it stops at the
-                            Changes pane, which stays visible.
+                            On: the full-height terminal (Alt+Enter) covers the whole window — all three columns and up over the repo tab
+                            bar. Off: it stops below the tab bar and in front of the Changes pane, which stays visible.
                         </span>
                     </div>
 

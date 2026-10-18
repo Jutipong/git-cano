@@ -204,8 +204,9 @@ export const useUiStore = defineStore(
             if (!TERMINAL_MAX_TABS_OPTIONS.includes(terminalMaxTabs.value)) terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
         })
         /**
-         * Settings → Terminal → Full height: the expanded terminal spans all three columns and covers the
-         * Changes pane. Off (default) is the shipped look — the overlay clears the right pane.
+         * Settings → Terminal → Full height: the expanded terminal becomes a whole-window overlay — it spans all three columns (`right:
+         * 6px`, covering the Changes pane) and rises over the repo tab bar (`top: 6px`) via `.terminal-overlay-window` in modern-ui.css.
+         * Off (default) is the shipped look — the overlay sits under the tab bar and clears the right pane.
          */
         const terminalFullWidth = ref(false)
 

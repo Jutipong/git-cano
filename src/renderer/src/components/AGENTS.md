@@ -205,8 +205,9 @@ Panel/modal component patterns. Loaded automatically when working under
   font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`, same `gap: 6px`
   and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
-  `right: rightPanelWidth + 12px` clears the Changes pane — or `right: 6px`, all three columns,
-  when Settings → Terminal → Full height sets `ui.terminalFullWidth`) and hides the graph — it carries
+  `right: calc(var(--right-panel-width) + 12px)` clears the Changes pane — Settings → Terminal →
+  Full height sets `ui.terminalFullWidth`, which adds `.terminal-overlay-window` (`top: 6px`,
+  `right: 6px`) so the overlay covers all three columns and the repo tab bar) and hides the graph — it carries
   `.icon-btn.active` while expanded. Hide (`chevron-down`) only flips `hidden`: it never touches the
   shells and never resizes, so a full-height panel comes back as the overlay (same as the `Ctrl+` /
   palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is

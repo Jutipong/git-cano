@@ -987,12 +987,11 @@
                                         :repo-path="path"
                                         :expanded="isExpandedTerminal(path)"
                                         :visible="isTerminalVisible(path)"
-                                        :class="{ 'terminal-overlay': isExpandedTerminal(path) }"
-                                        :style="
-                                            isExpandedTerminal(path)
-                                                ? { right: ui.terminalFullWidth ? '6px' : `${ui.rightPanelWidth + 12}px` }
-                                                : { height: `${terminalStore.terminalHeight}px` }
-                                        "
+                                        :class="{
+                                            'terminal-overlay': isExpandedTerminal(path),
+                                            'terminal-overlay-window': isExpandedTerminal(path) && ui.terminalFullWidth,
+                                        }"
+                                        :style="isExpandedTerminal(path) ? undefined : { height: `${terminalStore.terminalHeight}px` }"
                                         @add-tab="addTerminalTab(path)"
                                         @close="confirmCloseTerminal(path)"
                                         @close-tab="id => confirmCloseTerminalTab(path, id)"

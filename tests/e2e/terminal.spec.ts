@@ -105,31 +105,40 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
 
-test('the full-width setting widens the full-height overlay over the Changes pane', async () => {
+test('the full-width setting widens the full-height overlay over the Changes pane and the tab bar', async () => {
     const app = await page.locator('.app').boundingBox()
     const rightPane = await page.locator('.right-pane').boundingBox()
+    const tabs = await page.locator('.tab-bar').boundingBox()
 
-    // Off by default: the overlay stops 6px in front of the Changes pane (app padding + splitter gap).
+    // Off by default: the overlay stops 6px in front of the Changes pane (app padding + splitter gap)
+    // and starts under the repo tab bar.
     await page.locator('.terminal-panel:visible .icon-btn[title="Full height (Alt+Enter)"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(1)
     const contained = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
     expect(contained!.x + contained!.width).toBeLessThanOrEqual(rightPane!.x + 1)
+    expect(contained!.y).toBeGreaterThan(tabs!.y + tabs!.height - 1)
 
-    // Flipping the setting re-lays the open overlay live: the right edge lands on `.app`'s 6px padding.
+    // Flipping the setting re-lays the open overlay live: the right edge lands on `.app`'s 6px padding
+    // and the top rises over the repo tab bar (`.terminal-overlay-window`).
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
-    await page.locator('.setting-toggle', { hasText: 'Cover the whole window width' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}').terminalFullWidth)).toBe(true)
     await page.locator('.tools-modal .commit-close-btn').click()
     const widened = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
     expect(widened!.x + widened!.width).toBeGreaterThanOrEqual(app!.x + app!.width - 7)
+    // The overlay now covers the tab bar instead of starting below it.
+    expect(widened!.y).toBeLessThanOrEqual(tabs!.y + 1)
 
     // Restore the shipped default so the serial tests below start where the file expects them to.
     await page.keyboard.press('Control+,')
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
-    await page.locator('.setting-toggle', { hasText: 'Cover the whole window width' }).click()
+    await page.locator('.setting-toggle', { hasText: 'Cover the whole window' }).click()
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}').terminalFullWidth)).toBe(false)
     await page.locator('.tools-modal .commit-close-btn').click()
+    // Dropping the setting puts the overlay back under the tab bar before it is closed.
+    const restored = await page.locator('.terminal-panel.terminal-overlay').boundingBox()
+    expect(restored!.y).toBeGreaterThan(tabs!.y + tabs!.height - 1)
     await page.locator('.terminal-panel:visible .icon-btn[title="Exit full height (Alt+Enter)"]').click()
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
