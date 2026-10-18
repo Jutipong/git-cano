@@ -503,10 +503,18 @@ test('Settings → Terminal picks a font family with fallback to default', async
     await page.locator('.tools-tabs .graph-filter', { hasText: 'Terminal' }).click()
     const readUi = () => page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}'))
 
-    // A preset chip persists the full stack (primary + Thai fallback).
-    await page.locator('.setting-chip', { hasText: 'JetBrains Mono' }).click()
-    expect((await readUi()).terminalFontFamily).toContain('JetBrains Mono')
-    expect((await readUi()).terminalFontFamily).toContain('Leelawadee UI')
+    // A preset chip persists the full stack (primary + Thai fallback). Exact labels: "Maple Mono" is a substring of
+    // "Maple Mono NF", so a hasText match would hit two chips.
+    const pickPreset = async (label: string) => {
+        await page.getByRole('button', { name: label, exact: true }).click()
+        expect((await readUi()).terminalFontFamily).toContain(label)
+        expect((await readUi()).terminalFontFamily).toContain('Leelawadee UI')
+    }
+    await pickPreset('JetBrains Mono')
+    await pickPreset('Cascadia Code NF')
+    await pickPreset('JetBrainsMono NFM')
+    await pickPreset('Maple Mono')
+    await pickPreset('Maple Mono NF')
 
     // Custom input commits on Enter; an uninstalled face reports the fallback hint.
     const input = page.locator('.tools-modal input[placeholder="e.g. Fira Code"]')

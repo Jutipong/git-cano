@@ -82,8 +82,20 @@ export const DEFAULT_TERMINAL_MAX_TABS = 4
  * macOS/Linux. Persisted; blank resets to default.
  */
 export const DEFAULT_TERMINAL_FONT_FAMILY = "'Consolas', 'Leelawadee UI', monospace"
-/** Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied). */
-export const TERMINAL_FONT_FAMILY_PRESETS = ['Consolas', 'Cascadia Mono', 'JetBrains Mono']
+/**
+ * Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied). The Nerd Font entries use the family name
+ * the font file itself declares (`nameID 1`), which CoreText and DirectWrite both resolve — `JetBrainsMono NFM` (not `NF`) because
+ * the `NF` cut paints its icons up to ~1.9 cells wide, so they bleed over the neighbouring cell in a 1-cell terminal grid.
+ */
+export const TERMINAL_FONT_FAMILY_PRESETS = [
+    'Consolas',
+    'Cascadia Mono',
+    'Cascadia Code NF',
+    'JetBrains Mono',
+    'JetBrainsMono NFM',
+    'Maple Mono',
+    'Maple Mono NF',
+]
 
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
 export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
