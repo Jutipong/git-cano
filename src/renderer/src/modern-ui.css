@@ -6613,6 +6613,16 @@ body {
     box-sizing: border-box;
 }
 
+/* xterm's DOM renderer sets an inline `overflow: hidden` on every row, sized to the 1.0 line-height
+   cell. Thai stacks a tone mark above an upper vowel (ที่, น้ำ) higher than that cell, so the clip
+   erased the mark ("ที่นี่" read "ทีนี"). Let rows spill vertically like a native terminal draws
+   glyphs past their cell — a later row paints over an earlier one, and a redraw replaces the row's
+   own overflow. The x axis stays clipped so nothing escapes the grid sideways. */
+.terminal-host .xterm-rows > div {
+    overflow-x: clip !important;
+    overflow-y: visible !important;
+}
+
 /* TerminalView.markBars() flags runs of `▀` (opencode's input-box footer). At fractional display
    scales each glyph's antialiased edge falls a hair short of the cell, which opens a 1px seam
    between the filled row above and the bar's top edge and leaves a faint vertical seam at every

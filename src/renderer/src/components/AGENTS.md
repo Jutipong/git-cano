@@ -156,6 +156,10 @@ Panel/modal component patterns. Loaded automatically when working under
   during construction, and a wrong cell size pushes every combining mark off its column). The
   `.xterm` padding lives on `.xterm`, never on `.terminal-host` — FitAddon subtracts `.xterm`'s own
   padding from the parent's height, so padding on the container clips the last row.
+  xterm's DOM renderer puts an inline `overflow: hidden` on every row; `modern-ui.css` overrides it
+  (`.xterm-rows > div` → `overflow-x: clip; overflow-y: visible`, `!important`) because a Thai tone
+  mark stacked over an upper vowel (`ที่`, `น้ำ`) rises above the 1.0 cell and the clip erased it.
+  Do not drop that override.
 - `markBars()` (TerminalView) tags spans that are a pure run of `▀` with `.terminal-bar`, and
   `modern-ui.css` paints a solid half-height `currentColor` layer behind them. That layer closes
   both the 1px seam against the filled row above and the per-cell antialiased vertical seams
