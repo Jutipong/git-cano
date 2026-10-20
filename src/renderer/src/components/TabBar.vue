@@ -1,6 +1,5 @@
 <script setup lang="ts">
-    import { nextTick, computed, onMounted, onUnmounted, ref } from 'vue'
-    import ICatppuccinSearch from '~icons/catppuccin/search'
+    import { nextTick, computed, ref } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
 
@@ -78,54 +77,6 @@
     function actPush() {
         void syncStore.push(props.refresh)
     }
-    const searchOpen = ref(false)
-    const searchQuery = ref('')
-    const searchInput = ref<HTMLInputElement | null>(null)
-
-    const searchResults = computed(() => {
-        const query = searchQuery.value.trim().toLowerCase()
-        return props.tabs
-            .map((tab, index) => ({ tab, index }))
-            .filter(({ tab }) => tab.name.toLowerCase().includes(query))
-            .slice(0, 6)
-    })
-
-    function toggleSearch() {
-        if (searchOpen.value) {
-            closeSearch()
-            return
-        }
-        searchOpen.value = true
-        nextTick(() => searchInput.value?.focus())
-    }
-
-    function closeSearch() {
-        searchOpen.value = false
-        searchQuery.value = ''
-    }
-
-    function pickResult(index: number) {
-        emit('select', index)
-        closeSearch()
-    }
-
-    function onSearchKeydown(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            closeSearch()
-        } else if (event.key === 'Enter' && searchResults.value.length) {
-            pickResult(searchResults.value[0].index)
-        }
-    }
-
-    function onDocPointerDown(event: PointerEvent) {
-        if (!searchOpen.value) return
-        if ((event.target as HTMLElement | null)?.closest('.tab-actions')) return
-        closeSearch()
-    }
-
-    onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
-    onUnmounted(() => document.removeEventListener('pointerdown', onDocPointerDown))
 
     function onDragStart(tab: Tab, e: DragEvent) {
         draggingPath.value = tab.path
@@ -185,63 +136,12 @@
     <div
         v-if="tabs.length"
         class="tab-bar">
-        <div
-            class="tab-actions"
-            :class="{ 'search-open': searchOpen }">
-            <template v-if="searchOpen">
-                <div class="tab-search-field">
-                    <i-catppuccin-search
-                        width="15"
-                        height="15" />
-                    <input
-                        ref="searchInput"
-                        v-model="searchQuery"
-                        class="tab-search-input"
-                        type="text"
-                        placeholder="Search open repos…"
-                        @keydown="onSearchKeydown" />
-                    <button
-                        v-if="searchQuery"
-                        type="button"
-                        class="search-clear"
-                        aria-label="Clear repository search"
-                        @click="searchQuery = ''">
-                        ×
-                    </button>
-                </div>
-                <div class="tab-search-pop">
-                    <button
-                        v-for="{ tab, index } in searchResults"
-                        :key="tab.path"
-                        class="tab-search-result"
-                        :class="{ active: index === activeIndex }"
-                        :title="tab.path"
-                        @click="pickResult(index)">
-                        <span class="tab-search-result-name">{{ tab.name }}</span>
-                    </button>
-                    <div
-                        v-if="!searchResults.length"
-                        class="tab-search-empty">
-                        No matching repository
-                    </div>
-                </div>
-            </template>
-            <template v-else>
-                <WorkspaceButton />
-                <span class="tab-actions-sep" />
-                <OpenInButton :path="activePath" />
-                <span class="tab-actions-sep" />
-                <button
-                    class="icon-btn tab-search"
-                    title="Search open repositories"
-                    @click="toggleSearch">
-                    <i-catppuccin-search
-                        width="15"
-                        height="15" />
-                </button>
-                <span class="tab-actions-sep" />
-                <OpenRepoMenu @clone="emit('clone')" />
-            </template>
+        <div class="tab-actions">
+            <WorkspaceButton />
+            <span class="tab-actions-sep" />
+            <OpenInButton :path="activePath" />
+            <span class="tab-actions-sep" />
+            <OpenRepoMenu @clone="emit('clone')" />
         </div>
         <div class="tab-group">
             <div class="tab-scroll">
