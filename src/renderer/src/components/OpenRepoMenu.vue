@@ -1,8 +1,8 @@
 <script setup lang="ts">
     import { inject, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
     import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
-    import ICatppuccinFolderInclude from '~icons/catppuccin/folder-include'
     import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
+    import ILucideFolderPlus from '~icons/lucide/folder-plus'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
@@ -76,7 +76,7 @@
             aria-haspopup="menu"
             :aria-expanded="open"
             @click="toggle($event)">
-            <i-catppuccin-folder-include
+            <i-lucide-folder-plus
                 width="15"
                 height="15" />
         </button>
@@ -87,7 +87,7 @@
             aria-haspopup="menu"
             :aria-expanded="open"
             @click="toggle()">
-            <i-catppuccin-folder-include
+            <i-lucide-folder-plus
                 width="15"
                 height="15" />
             {{ props.label }}
