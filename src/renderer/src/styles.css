@@ -150,7 +150,7 @@
     --conflict-theirs-bg: #c4b295;
     --conflict-base-bg: #b3aa97;
     --shadow: 4px 4px 0 #111111;
-    --focus-ring: 2px solid var(--teal);
+    --focus-ring: 1px solid color-mix(in srgb, var(--teal) 60%, transparent);
     --focus-offset: 1px;
     --radius-card: 0px;
     --radius-pill: 0px;
@@ -262,7 +262,7 @@
     --duration: 150ms;
     --duration-slow: 200ms;
 
-    --focus-ring: 2px solid color-mix(in srgb, var(--teal) 70%, transparent);
+    --focus-ring: 1px solid color-mix(in srgb, var(--teal) 60%, transparent);
     --focus-offset: 1px;
 
     --z-fullscreen: 60;

@@ -5716,14 +5716,13 @@ body {
 /* Product decision: only text inputs and links show a focus ring. Buttons, tabs,
    popup menus, list rows and splitters intentionally have no visible focus cue;
    the terminal panel keeps its `:focus-within` teal edge. `* { outline: none }`
-   also suppresses the UA default ring that would otherwise appear. */
+   also suppresses the UA default ring that would otherwise appear. `:where()`
+   keeps this rule at zero specificity so fields that already declare
+   `outline: none` and show focus with their border keep a single ring. */
 *:focus-visible {
     outline: none;
 }
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible,
-a[href]:focus-visible {
+:where(input, textarea, select, a[href]):focus-visible {
     outline: var(--focus-ring);
     outline-offset: var(--focus-offset);
 }
