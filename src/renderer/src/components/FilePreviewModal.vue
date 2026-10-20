@@ -2,11 +2,12 @@
     import { isLoadableMarkdownImageSrc } from '@shared/markdownImages'
     import DOMPurify from 'dompurify'
     import { marked } from 'marked'
-    import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
 
     import { useUiStore } from '../stores/ui'
+    import { useModalA11y } from '../utils/modalA11y'
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { FileContent, GitImage } from '@shared/types'
@@ -19,6 +20,14 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
 
     const ui = useUiStore()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
+
     const isFullscreen = ref(false)
     const loading = ref(true)
     const result = ref<FileContent | null>(null)
@@ -42,15 +51,7 @@
         if (/^https?:\/\//i.test(href)) void window.api.openExternal(href).catch(() => {})
     }
 
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            emit('close')
-        }
-    }
-    onMounted(() => document.addEventListener('keydown', onKey))
     onBeforeUnmount(() => {
-        document.removeEventListener('keydown', onKey)
         revokeMarkdownImages()
     })
 
@@ -182,10 +183,15 @@
 
 <template>
     <div
+        ref="dialog"
         class="preview-view"
-        :class="{ fullscreen: isFullscreen }">
+        :class="{ fullscreen: isFullscreen }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="preview-title"
+        tabindex="-1">
         <div class="diff-header">
-            <strong>Preview</strong>
+            <strong id="preview-title">Preview</strong>
             <code class="rebase-base">{{ file }}</code>
             <span class="diff-source">· {{ sourceLabel }}</span>
             <span
@@ -211,6 +217,7 @@
                     <button
                         class="icon-btn danger diff-close-btn"
                         title="Close preview"
+                        aria-label="Close preview"
                         @click="emit('close')">
                         <CloseXIcon />
                     </button>

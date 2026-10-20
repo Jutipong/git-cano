@@ -4,6 +4,8 @@
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
 
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
+
     import type { StashEntry } from '@shared/types'
 
     export interface StashMenuState {
@@ -21,21 +23,18 @@
     }>()
     const root = ref<HTMLElement | null>(null)
 
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: () => emit('close'),
+    })
+
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function act(kind: 'apply' | 'pop' | 'drop') {
         const stash = props.menu?.stash
@@ -60,6 +59,7 @@
         v-if="menu"
         ref="root"
         class="stash-menu"
+        role="menu"
         :style="menuStyle()">
         <button
             class="stash-menu-item"

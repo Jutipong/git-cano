@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onUnmounted, reactive, watch, inject, onMounted, ref } from 'vue'
+    import { computed, onBeforeUnmount, onUnmounted, reactive, watch, inject, onMounted, nextTick, ref, useTemplateRef } from 'vue'
     import ILucideBell from '~icons/lucide/bell'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
@@ -47,6 +47,7 @@
     } from '../stores/ui'
     import { useUpdaterStore } from '../stores/updater'
     import { confirmDialog } from '../utils/confirm'
+    import { useModalA11y } from '../utils/modalA11y'
     import { SETTINGS_TABS, type SettingsTabKey } from '../utils/settingsTabs'
     import {
         CUSTOM_SHORTCUT_IDS,
@@ -74,6 +75,13 @@
         refresh: () => Promise<unknown>
     }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const ui = useUiStore()
     const repoStore = useRepoStore()
@@ -132,6 +140,20 @@
     /** Tab strip content comes from the shared list so the command palette's Settings rows stay in step. */
     const TABS = SETTINGS_TABS
     const tab = ref<SettingsTabKey>(props.initialTab ?? 'appearance')
+
+    function onSettingsTabKeydown(event: KeyboardEvent, key: SettingsTabKey) {
+        const index = TABS.findIndex(item => item.key === key)
+        if (index < 0) return
+        let next = index
+        if (event.key === 'ArrowLeft') next = (index - 1 + TABS.length) % TABS.length
+        else if (event.key === 'ArrowRight') next = (index + 1) % TABS.length
+        else if (event.key === 'Home') next = 0
+        else if (event.key === 'End') next = TABS.length - 1
+        else return
+        event.preventDefault()
+        tab.value = TABS[next].key
+        void nextTick(() => document.getElementById(`settings-tab-${TABS[next].key}`)?.focus())
+    }
 
     const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
     const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
@@ -652,13 +674,6 @@
         { immediate: true }
     )
 
-    onMounted(() => window.addEventListener('keydown', onKeydown))
-    onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
-
-    function onKeydown(e: KeyboardEvent) {
-        if (e.key === 'Escape') emit('close')
-    }
-
     function openShortcuts() {
         recording.value = null
         repoStore.shortcutsOpen = true
@@ -667,29 +682,48 @@
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal tools-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal tools-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tools-modal-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
-                <strong class="tools-modal-title">
+                <strong
+                    id="tools-modal-title"
+                    class="tools-modal-title">
                     <i-lucide-settings2
                         width="17"
-                        height="17" />
+                        height="17"
+                        aria-hidden="true" />
                     Settings
                 </strong>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
                     title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>
             </div>
-            <div class="tools-tabs">
+            <div
+                class="tools-tabs"
+                role="tablist"
+                aria-label="Settings sections">
                 <button
                     v-for="tabItem in TABS"
                     :key="tabItem.key"
+                    :id="`settings-tab-${tabItem.key}`"
                     class="graph-filter"
                     :class="{ active: tab === tabItem.key }"
-                    @click="tab = tabItem.key">
+                    role="tab"
+                    :aria-selected="tab === tabItem.key"
+                    aria-controls="settings-panel"
+                    :tabindex="tab === tabItem.key ? 0 : -1"
+                    @click="tab = tabItem.key"
+                    @keydown="onSettingsTabKeydown($event, tabItem.key)">
                     <i-lucide-palette
                         v-if="tabItem.key === 'appearance'"
                         width="13"
@@ -717,7 +751,11 @@
                     {{ tabItem.label }}
                 </button>
             </div>
-            <div class="tools-body general-body">
+            <div
+                id="settings-panel"
+                class="tools-body general-body"
+                role="tabpanel"
+                :aria-labelledby="`settings-tab-${tab}`">
                 <template v-if="tab === 'appearance'">
                     <div class="tools-section">
                         <strong class="tools-section-title">
@@ -726,8 +764,15 @@
                                 height="13" />
                             Appearance
                         </strong>
-                        <span class="setting-label">Theme</span>
-                        <div class="theme-rows">
+                        <span
+                            id="theme-label"
+                            class="setting-label"
+                            >Theme</span
+                        >
+                        <div
+                            class="theme-rows"
+                            role="group"
+                            aria-labelledby="theme-label">
                             <div class="setting-choice-row">
                                 <button
                                     v-for="option in darkThemeOptions"
@@ -735,6 +780,7 @@
                                     type="button"
                                     class="setting-chip"
                                     :class="{ active: ui.theme === option.value }"
+                                    :aria-pressed="ui.theme === option.value"
                                     @click="ui.setTheme(option.value)">
                                     <component
                                         :is="themeIcon(option)"
@@ -750,6 +796,7 @@
                                     type="button"
                                     class="setting-chip"
                                     :class="{ active: ui.theme === option.value }"
+                                    :aria-pressed="ui.theme === option.value"
                                     @click="ui.setTheme(option.value)">
                                     <component
                                         :is="themeIcon(option)"
@@ -765,6 +812,7 @@
                                     type="button"
                                     class="setting-chip"
                                     :class="{ active: ui.theme === option.value }"
+                                    :aria-pressed="ui.theme === option.value"
                                     @click="ui.setTheme(option.value)">
                                     <component
                                         :is="themeIcon(option)"
@@ -774,14 +822,22 @@
                                 </button>
                             </div>
                         </div>
-                        <span class="setting-label">Font size</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="appearance-font-size-label"
+                            class="setting-label"
+                            >Font size</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="appearance-font-size-label">
                             <button
                                 v-for="option in FONT_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.fontSize === option.value }"
+                                :aria-pressed="ui.fontSize === option.value"
                                 @click="ui.fontSize = option.value">
                                 {{ option.label }}
                             </button>
@@ -810,14 +866,22 @@
                                 height="13" />
                             Refresh
                         </strong>
-                        <span class="setting-label">Auto-refresh interval</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="refresh-interval-label"
+                            class="setting-label"
+                            >Auto-refresh interval</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="refresh-interval-label">
                             <button
                                 v-for="option in REFRESH_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.refreshInterval === option.value }"
+                                :aria-pressed="ui.refreshInterval === option.value"
                                 @click="ui.refreshInterval = option.value">
                                 {{ option.label }}
                             </button>
@@ -831,14 +895,22 @@
                                 height="13" />
                             Updates
                         </strong>
-                        <span class="setting-label">Check for updates every</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="update-check-label"
+                            class="setting-label"
+                            >Check for updates every</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="update-check-label">
                             <button
                                 v-for="option in UPDATE_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.updateCheckHours === option.value }"
+                                :aria-pressed="ui.updateCheckHours === option.value"
                                 @click="ui.updateCheckHours = option.value">
                                 {{ option.label }}
                             </button>
@@ -926,14 +998,22 @@
                                 height="13" />
                             Notifications
                         </strong>
-                        <span class="setting-label">Toast auto-dismiss after</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="toast-duration-label"
+                            class="setting-label"
+                            >Toast auto-dismiss after</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="toast-duration-label">
                             <button
                                 v-for="option in TOAST_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.toastDurationSec === option.value }"
+                                :aria-pressed="ui.toastDurationSec === option.value"
                                 @click="ui.toastDurationSec = option.value">
                                 {{ option.label }}
                             </button>
@@ -985,14 +1065,22 @@
                                 height="13" />
                             Shell
                         </strong>
-                        <span class="setting-label">Shell for new terminals</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="terminal-shell-label"
+                            class="setting-label"
+                            >Shell for new terminals</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="terminal-shell-label">
                             <button
                                 v-for="option in TERMINAL_SHELL_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.terminalShell === option.value }"
+                                :aria-pressed="ui.terminalShell === option.value"
                                 @click="ui.terminalShell = option.value">
                                 {{ option.label }}
                             </button>
@@ -1011,14 +1099,22 @@
                                 height="13" />
                             Text
                         </strong>
-                        <span class="setting-label">Font size</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="terminal-font-size-label"
+                            class="setting-label"
+                            >Font size</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="terminal-font-size-label">
                             <button
                                 v-for="option in TERMINAL_FONT_OPTIONS"
                                 :key="option.value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.terminalFontSize === option.value }"
+                                :aria-pressed="ui.terminalFontSize === option.value"
                                 @click="ui.terminalFontSize = option.value">
                                 {{ option.label }}
                             </button>
@@ -1027,14 +1123,22 @@
                             Independent of the interface font size — the A− / A+ buttons in the terminal panel header change this too, and
                             open terminals follow along.
                         </p>
-                        <span class="setting-label">Font family</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="terminal-font-family-label"
+                            class="setting-label"
+                            >Font family</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="terminal-font-family-label">
                             <button
                                 v-for="name in TERMINAL_FONT_FAMILY_PRESETS"
                                 :key="name"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: terminalFontPrimary === name }"
+                                :aria-pressed="terminalFontPrimary === name"
                                 @click="setTerminalFontPreset(name)">
                                 {{ name }}
                             </button>
@@ -1065,14 +1169,22 @@
                                 height="13" />
                             Tabs
                         </strong>
-                        <span class="setting-label">Maximum tabs per repo</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="terminal-max-tabs-label"
+                            class="setting-label"
+                            >Maximum tabs per repo</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="terminal-max-tabs-label">
                             <button
                                 v-for="value in TERMINAL_MAX_TABS_OPTIONS"
                                 :key="value"
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.terminalMaxTabs === value }"
+                                :aria-pressed="ui.terminalMaxTabs === value"
                                 @click="ui.terminalMaxTabs = value">
                                 {{ value }}
                             </button>
@@ -1755,12 +1867,20 @@
                     </div>
                     <div class="tools-section">
                         <strong class="tools-section-title">Commit message</strong>
-                        <span class="setting-label">Format before generating</span>
-                        <div class="setting-choice-row">
+                        <span
+                            id="format-before-label"
+                            class="setting-label"
+                            >Format before generating</span
+                        >
+                        <div
+                            class="setting-choice-row"
+                            role="group"
+                            aria-labelledby="format-before-label">
                             <button
                                 type="button"
                                 class="setting-chip"
                                 :class="{ active: ui.formatBeforeGenerate }"
+                                :aria-pressed="ui.formatBeforeGenerate"
                                 @click="ui.formatBeforeGenerate = !ui.formatBeforeGenerate">
                                 <i-lucide-check
                                     v-if="ui.formatBeforeGenerate"

@@ -1,10 +1,11 @@
 <script setup lang="ts">
-    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, inject, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
 
     import { useUiStore } from '../stores/ui'
     import { formatDateTime } from '../utils/format'
+    import { useModalA11y } from '../utils/modalA11y'
     import CloseXIcon from './CloseXIcon.vue'
 
     interface BlameLine {
@@ -19,6 +20,13 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})
     const ui = useUiStore()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const isFullscreen = ref(false)
 
@@ -31,15 +39,6 @@
 
     const lines = ref<BlameLine[]>([])
     const loading = ref(true)
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            emit('close')
-        }
-    }
-    onMounted(() => document.addEventListener('keydown', onKey))
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
     onMounted(async () => {
         try {
@@ -63,10 +62,15 @@
 
 <template>
     <div
+        ref="dialog"
         class="blame-view"
-        :class="{ fullscreen: isFullscreen }">
+        :class="{ fullscreen: isFullscreen }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="blame-title"
+        tabindex="-1">
         <div class="diff-header">
-            <strong>Blame</strong>
+            <strong id="blame-title">Blame</strong>
             <code class="rebase-base">{{ file }}</code>
             <span
                 v-if="loading"
@@ -91,6 +95,7 @@
                     <button
                         class="icon-btn danger diff-close-btn"
                         title="Close blame"
+                        aria-label="Close blame"
                         @click="emit('close')">
                         <CloseXIcon />
                     </button>

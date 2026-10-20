@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, ref, watch } from 'vue'
+    import { computed, ref, useTemplateRef, watch } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucidePlus from '~icons/lucide/plus'
@@ -7,6 +7,7 @@
 
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore } from '../stores/uiTransient'
+    import { useModalA11y } from '../utils/modalA11y'
     import CloseXIcon from './CloseXIcon.vue'
 
     import type { CommitNode, RebaseCommand } from '@shared/types'
@@ -33,6 +34,15 @@
     const entries = ref<Entry[] | null>(null)
     const running = ref(false)
     const error = ref<string | null>(null)
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => {
+            if (!running.value) emit('cancel')
+        },
+    })
 
     const activeCount = computed(() => entries.value?.filter(entry => entry.command !== 'drop').length ?? 0)
 
@@ -94,13 +104,21 @@
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rebase-editor-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
-                <strong>Interactive rebase onto</strong>
+                <strong id="rebase-editor-title">Interactive rebase onto</strong>
                 <code class="rebase-base">{{ baseRef }}</code>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
+                    title="Close"
+                    aria-label="Close"
                     :disabled="running"
                     @click="emit('cancel')">
                     <CloseXIcon />

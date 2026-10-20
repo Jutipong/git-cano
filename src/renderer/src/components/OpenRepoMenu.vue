@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { inject, onMounted, onUnmounted, ref } from 'vue'
+    import { inject, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
     import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
     import ICatppuccinFolderInclude from '~icons/catppuccin/folder-include'
     import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
@@ -7,6 +7,7 @@
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
     import { formatCombo } from '../utils/shortcuts'
 
     const props = withDefaults(
@@ -23,6 +24,15 @@
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
     const open = ref(false)
+    const pop = useTemplateRef<HTMLElement>('pop')
+
+    useMenuKeyboard({
+        active: () => open.value,
+        container: pop,
+        onClose: () => {
+            open.value = false
+        },
+    })
 
     function toggle(event?: MouseEvent) {
         open.value = !open.value
@@ -46,24 +56,14 @@
         emit('clone')
     }
 
-    function onKeydown(event: KeyboardEvent) {
-        if (event.key === 'Escape') open.value = false
-    }
-
     function onDocPointerDown(event: PointerEvent) {
         if (!open.value) return
         if ((event.target as HTMLElement | null)?.closest('.open-repo-wrap')) return
         open.value = false
     }
 
-    onMounted(() => {
-        document.addEventListener('pointerdown', onDocPointerDown)
-        document.addEventListener('keydown', onKeydown)
-    })
-    onUnmounted(() => {
-        document.removeEventListener('pointerdown', onDocPointerDown)
-        document.removeEventListener('keydown', onKeydown)
-    })
+    onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
+    onUnmounted(() => document.removeEventListener('pointerdown', onDocPointerDown))
 </script>
 
 <template>
@@ -73,6 +73,8 @@
             class="icon-btn tab-new"
             :class="{ open }"
             title="Open from local or clone a repository"
+            aria-haspopup="menu"
+            :aria-expanded="open"
             @click="toggle($event)">
             <i-catppuccin-folder-include
                 width="15"
@@ -82,6 +84,8 @@
             v-else
             class="btn primary"
             :class="{ open }"
+            aria-haspopup="menu"
+            :aria-expanded="open"
             @click="toggle()">
             <i-catppuccin-folder-include
                 width="15"
@@ -90,8 +94,10 @@
         </button>
         <div
             v-if="open"
+            ref="pop"
             class="open-repo-pop"
-            role="menu">
+            role="menu"
+            aria-label="Open repository">
             <div class="open-repo-label">Open repository</div>
             <button
                 class="open-repo-item"

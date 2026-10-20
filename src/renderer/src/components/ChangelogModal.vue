@@ -1,18 +1,25 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted } from 'vue'
+    import { computed, onMounted, useTemplateRef } from 'vue'
     import ILucideExternalLink from '~icons/lucide/external-link'
 
     import { useUpdaterStore } from '../stores/updater'
     import { stripMarkdown } from '../utils/changelog'
+    import { useModalA11y } from '../utils/modalA11y'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const updater = useUpdaterStore()
 
     onMounted(() => {
-        document.addEventListener('keydown', onKey)
         // currentVersion may be empty when no update check has run yet this session.
         void window.api
             .getVersion()
@@ -31,21 +38,19 @@
         if (releasePageUrl.value) void window.api.openReleasePage(releasePageUrl.value)
     }
 
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            emit('close')
-        }
-    }
 </script>
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal changelog-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal changelog-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="changelog-modal-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
-                <strong>What's new</strong>
+                <strong id="changelog-modal-title">What's new</strong>
                 <span
                     v-if="version"
                     class="chip"
@@ -54,6 +59,8 @@
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
+                    title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>

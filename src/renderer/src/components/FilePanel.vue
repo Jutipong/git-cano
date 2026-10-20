@@ -27,6 +27,7 @@
     import { confirmDialog } from '../utils/confirm'
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
+    import { handleListKeydown } from '../utils/listKeyboard'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
     import CollapseAllButton from './CollapseAllButton.vue'
@@ -269,6 +270,16 @@
     function toggleDir(path: string) {
         if (collapsedDirs.has(path)) collapsedDirs.delete(path)
         else collapsedDirs.add(path)
+    }
+    function expandFileDir(row: HTMLElement): boolean {
+        if (!row.classList.contains('dir-row')) return false
+        if (row.getAttribute('aria-expanded') === 'false') row.click()
+        return true
+    }
+    function collapseFileDir(row: HTMLElement): boolean {
+        if (!row.classList.contains('dir-row')) return false
+        if (row.getAttribute('aria-expanded') === 'true') row.click()
+        return true
     }
     /** Every folder that exists in the current file set (including nested ones hidden inside collapsed folders). */
     const allDirPaths = computed(() => {
@@ -661,6 +672,8 @@
 <template>
     <div
         class="file-panel"
+        role="region"
+        aria-label="Changes"
         :class="{ 'commit-mode': isDetails }">
         <div
             class="panel-heading"
@@ -730,7 +743,18 @@
             </div>
         </div>
 
-        <div class="file-groups">
+        <div
+            class="file-groups"
+            tabindex="0"
+            role="listbox"
+            aria-label="Files"
+            @keydown="
+                event =>
+                    handleListKeydown(event, '.dir-row, .file-row', {
+                        onArrowRight: expandFileDir,
+                        onArrowLeft: collapseFileDir,
+                    })
+            ">
             <div
                 v-if="loading"
                 class="diff-loading">
@@ -755,7 +779,7 @@
                     :key="row.key">
                     <div
                         v-if="row.kind === 'dir'"
-                        class="dir-row"
+                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="toggleDir(row.fullPath)"
                         @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
@@ -784,7 +808,7 @@
                     </div>
                     <div
                         v-else
-                        class="file-row"
+                        class="file-row" tabindex="-1" role="option" :aria-selected="selected?.path === row.fullPath"
                         :class="{ selected: selected?.path === row.fullPath, 'file-dimmed': dimmedBySolo(row.file!) }"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="emit('select', { path: row.fullPath, staged: unifiedStaged(row.file!) })"
@@ -889,7 +913,7 @@
                     <div
                         v-for="file in conflictedFiles"
                         :key="file.path"
-                        class="file-row"
+                        class="file-row" tabindex="-1" role="option" :aria-selected="selected?.path === file.path"
                         :class="{ selected: selected?.path === file.path }"
                         :title="`${file.path} — click to resolve conflicts`"
                         @click="emit('select', { path: file.path, staged: true })"
@@ -938,7 +962,7 @@
                         :key="row.key">
                         <div
                             v-if="row.kind === 'dir'"
-                            class="dir-row"
+                            class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
                             :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                             @click="toggleDir(row.fullPath)"
                             @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
@@ -978,7 +1002,7 @@
                         </div>
                         <div
                             v-else
-                            class="file-row"
+                            class="file-row" tabindex="-1" role="option" :aria-selected="selected?.path === row.fullPath"
                             :class="{
                                 selected: selected?.path === row.fullPath && selected.staged,
                                 'file-dimmed': dimmedBySolo(row.file!),
@@ -1041,7 +1065,7 @@
                     :key="row.key">
                     <div
                         v-if="row.kind === 'dir'"
-                        class="dir-row"
+                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="toggleDir(row.fullPath)"
                         @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
@@ -1090,7 +1114,7 @@
                     </div>
                     <div
                         v-else
-                        class="file-row"
+                        class="file-row" tabindex="-1" role="option" :aria-selected="selected?.path === row.fullPath"
                         :class="{
                             selected: selected?.path === row.fullPath && !selected.staged,
                             'file-dimmed': dimmedBySolo(row.file!),
@@ -1165,7 +1189,7 @@
                     :key="row.key">
                     <div
                         v-if="row.kind === 'dir'"
-                        class="dir-row"
+                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                         @click="toggleDir(row.fullPath)"
                         @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
@@ -1196,7 +1220,7 @@
                         v-else
                         class="commit-file-block">
                         <div
-                            class="file-row"
+                            class="file-row" tabindex="-1" role="option" :aria-selected="selected?.path === row.fullPath"
                             :class="{ selected: selected?.path === row.fullPath }"
                             :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
                             @click="emit('select', { path: row.fullPath, staged: false })"

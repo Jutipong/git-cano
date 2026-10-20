@@ -1,76 +1,3 @@
-:root,
-:root[data-theme='dark'] {
-    --canvas: #101014;
-    --surface-0: #14141a;
-    --surface-1: #1b1b24;
-    --surface-2: #21212e;
-    --surface-3: #272734;
-    --surface-hover: #2d2d40;
-    --surface-selected: #30304a;
-    --line: #2b2b3a;
-    --line-soft: rgba(41, 168, 255, 0.15);
-    --text: #e8e8f0;
-    --text-secondary: #b6b6c9;
-    --text-muted: #85859b;
-    --teal: #29a8ff;
-    --teal-dark: #0087e0;
-    --blue: #66d9ff;
-    --green: #4ed665;
-    --orange: #ffa028;
-    --red: #f45868;
-    --purple: #9d7bff;
-    --pink: #ff6fae;
-    --yellow: #ffd60a;
-    --diff-bg: #1b1b24;
-    --diff-inline-bg: #30304a;
-    /* Word-level diff highlight strength and add/del row tint, overridable per theme. */
-    --diff-row-tint: 15%;
-    --diff-mark-strength: 45%;
-    --toast-bg: #1b1b24;
-    --toast-border: #2b2b3a;
-    --conflict-bg: #30304a;
-    --conflict-border: #29a8ff;
-    --conflict-text: #ffd60a;
-    --shadow: rgba(0, 0, 0, 0.5);
-    --radius-card: 12px;
-    --radius-pill: 999px;
-}
-
-:root[data-theme='light'] {
-    --canvas: #b3afa5;
-    --surface-0: #b7b3a9;
-    --surface-1: #bdb9ae;
-    --surface-2: #a8a499;
-    --surface-3: #9c988d;
-    --surface-hover: #a19d92;
-    --surface-selected: #9c988d;
-    --line: #8b877b;
-    --line-soft: rgba(50, 45, 35, 0.24);
-    --text: #232a2e;
-    --text-secondary: #454d52;
-    --text-muted: #4b5257;
-    --teal: #003fae;
-    --teal-dark: #002f86;
-    --blue: #084d9e;
-    --green: #095c2b;
-    --orange: #8c2c08;
-    --red: #9a0e1b;
-    --purple: #4c1da3;
-    --pink: #960f4e;
-    --yellow: #635100;
-    --diff-bg: #bdb9ae;
-    --diff-inline-bg: #a8a499;
-    --diff-mark-strength: 27%;
-    --toast-bg: #bdb9ae;
-    --toast-border: #8b877b;
-    --conflict-bg: #bfb088;
-    --conflict-border: #a08c52;
-    --conflict-text: #4e3d06;
-    --shadow: rgba(45, 40, 30, 0.24);
-    --radius-card: 12px;
-    --radius-pill: 999px;
-}
-
 /* ===== Light theme — eye-strain tuning (dim warm gray + vivid accents) ===== */
 /* flat backdrop: no glow hotspot on dim paper */
 :root[data-theme='light'] .app,
@@ -128,158 +55,18 @@
     background: color-mix(in srgb, var(--orange) 60%, transparent);
 }
 
+/* Counts sit on surface-3, where the secondary text token is below AA on the light themes. */
+:root[data-theme='light'] .sidebar-section h3 span.section-count,
+:root[data-theme='light-retro'] .sidebar-section h3 span.section-count {
+    color: var(--text);
+}
+
 :root[data-theme='dark'] mark {
     background: #0f3f6e;
 }
 
-:root[data-theme='dark-modern'] {
-    --canvas: #050507;
-    --surface-0: #060609;
-    --surface-1: #0a0a0e;
-    --surface-2: #0e0e13;
-    --surface-3: #12121a;
-    --surface-hover: #16161f;
-    --surface-selected: #1a1a26;
-    --line: #262632;
-    --line-soft: rgba(255, 255, 255, 0.14);
-    --text: #c2c2cb;
-    --text-secondary: #94949e;
-    --text-muted: #74747e;
-    --teal: #0078d4;
-    --teal-dark: #026ec1;
-    --blue: #4daafc;
-    --green: #2ea043;
-    --orange: #e2c08d;
-    --red: #f85149;
-    --purple: #c586c0;
-    --pink: #ff7eb6;
-    --yellow: #cca700;
-    --diff-bg: #0a0a0e;
-    --diff-inline-bg: #1a1a26;
-    --toast-bg: #0a0a0e;
-    --toast-border: #262632;
-    --conflict-bg: #1a1a26;
-    --conflict-border: #616161;
-    --conflict-text: #e2c08d;
-    --shadow: rgba(0, 0, 0, 0.8);
-    --radius-card: 12px;
-    --radius-pill: 999px;
-}
-
 :root[data-theme='dark-modern'] mark {
     background: #613214;
-}
-
-:root[data-theme='dark-neon'] {
-    --canvas: #08080c;
-    --surface-0: #0a0a10;
-    --surface-1: #0e0e15;
-    --surface-2: #12121b;
-    --surface-3: #171722;
-    --surface-hover: #1b1b28;
-    --surface-selected: #202034;
-    --line: #2a2a3c;
-    --line-soft: rgba(189, 147, 249, 0.2);
-    --text: #c2c2ce;
-    --text-secondary: #8f8fa0;
-    --text-muted: #7a7a8c;
-    --teal: #00e5ff;
-    --teal-dark: #00b8d9;
-    --blue: #8be9fd;
-    --green: #50fa7b;
-    --orange: #ffb86c;
-    --red: #ff5555;
-    --purple: #ff79c6;
-    --pink: #ff79c6;
-    --yellow: #f1fa8c;
-    --diff-bg: #0e0e15;
-    --diff-inline-bg: #202034;
-    --toast-bg: #0e0e15;
-    --toast-border: #2a2a3c;
-    --conflict-bg: #202034;
-    --conflict-border: #bd93f9;
-    --conflict-text: #f1fa8c;
-    --shadow: rgba(0, 0, 0, 0.7);
-    --radius-card: 12px;
-    --radius-pill: 999px;
-}
-
-:root[data-theme='dark-neon'] mark {
-    background: #4a2a6e;
-}
-
-:root[data-theme='terminal'] {
-    --canvas: #252b42;
-    --surface-0: #252b42;
-    --surface-1: #2a3049;
-    --surface-2: #2a3049;
-    --surface-3: #313956;
-    --surface-hover: #343d5e;
-    --surface-selected: #3c466e;
-    --line: #4a557e;
-    --line-soft: rgba(95, 143, 255, 0.4);
-    --text: #aeb7d2;
-    --text-secondary: #949cbd;
-    --text-muted: #939cba;
-    --teal: #5f8fff;
-    --teal-dark: #4d7ddb;
-    --blue: #45c8ff;
-    --green: #4fd06a;
-    --orange: #ff9e57;
-    --red: #ff5f7a;
-    --purple: #b58cff;
-    --pink: #ff7eb6;
-    --yellow: #f0b429;
-    --diff-bg: #272d46;
-    --diff-inline-bg: #3c466e;
-    --toast-bg: #2b324c;
-    --toast-border: #434d73;
-    --conflict-bg: #3c466e;
-    --conflict-border: #5f8fff;
-    --conflict-text: #f0b429;
-    --shadow: rgba(0, 0, 0, 0.55);
-    --radius-card: 0px;
-    --radius-pill: 0px;
-    --font-ui: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
-}
-
-:root[data-theme='terminal'] mark {
-    background: #384364;
-}
-
-:root[data-theme='light-retro'] {
-    --canvas: #b3aa97;
-    --surface-0: #b7b09c;
-    --surface-1: #bdb6a1;
-    --surface-2: #aaa393;
-    --surface-3: #9e9787;
-    --surface-hover: #a39c88;
-    --surface-selected: #9e9787;
-    --line: #2b2b2b;
-    --line-soft: rgba(50, 45, 35, 0.24);
-    --text: #211d14;
-    --text-secondary: #3e3a2d;
-    --text-muted: #57503f;
-    --teal: #000000;
-    --teal-dark: #000000;
-    --blue: #084d9e;
-    --green: #095c2b;
-    --orange: #8c2c08;
-    --red: #9a0e1b;
-    --purple: #4c1da3;
-    --pink: #960f4e;
-    --yellow: #635100;
-    --diff-bg: #bdb6a1;
-    --diff-inline-bg: #aaa393;
-    --toast-bg: #bdb6a1;
-    --toast-border: #2b2b2b;
-    --conflict-bg: #bfb088;
-    --conflict-border: #a08c52;
-    --conflict-text: #4e3d06;
-    --shadow: 4px 4px 0 #111111;
-    --radius-card: 0px;
-    --radius-pill: 0px;
-    --font-ui: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
 }
 
 :root[data-theme='light-retro'] mark {
@@ -358,12 +145,6 @@
     background: rgba(0, 0, 0, 0.22);
 }
 
-/* stepped focus ring instead of the soft glow */
-:root[data-theme='light-retro'] *:focus-visible {
-    outline: 2px solid var(--teal);
-    outline-offset: 1px;
-}
-
 /* chunky stepped scrollbars */
 :root[data-theme='light-retro'] ::-webkit-scrollbar {
     width: 12px;
@@ -401,76 +182,6 @@
 }
 
 /* ===== Win9x chrome — Win95 classic gray + raised/sunken bevels (win9x-opencode theme only) ===== */
-
-:root[data-theme='win9x-opencode'] {
-    --canvas: #c0c0c0;
-    --surface-0: #c0c0c0;
-    --surface-1: #c0c0c0;
-    --surface-2: #c0c0c0;
-    --surface-3: #b8b8b8;
-    --surface-hover: #c8c8c8;
-    --surface-selected: #c0c0c0;
-    --line: #808080;
-    --line-soft: #808080;
-    --text: #000000;
-    --text-secondary: #1a1a1a;
-    --text-muted: #404040;
-    --teal: #000080;
-    --teal-dark: #000080;
-    --blue: #084d9e;
-    --green: #095c2b;
-    --orange: #8c2c08;
-    --red: #9a0e1b;
-    --purple: #4c1da3;
-    --pink: #960f4e;
-    --yellow: #635100;
-    --diff-bg: #ffffff;
-    --diff-inline-bg: #f0f0f0;
-    --diff-mark-strength: 27%;
-    --toast-bg: #c0c0c0;
-    --toast-border: #808080;
-    --conflict-bg: #ffffe1;
-    --conflict-border: #000000;
-    --conflict-text: #000000;
-    --shadow: rgba(0, 0, 0, 0);
-    --radius-card: 0px;
-    --radius-pill: 0px;
-}
-
-:root[data-theme='win9x-dark'] {
-    --canvas: #1a1d29;
-    --surface-0: #1a1d29;
-    --surface-1: #1a1d29;
-    --surface-2: #1a1d29;
-    --surface-3: #151824;
-    --surface-hover: #252b40;
-    --surface-selected: #1a1d29;
-    --line: #0a0b12;
-    --line-soft: #0a0b12;
-    --text: #e8eaf2;
-    --text-secondary: #c2c6d8;
-    --text-muted: #8d94ad;
-    --teal: #7aa2ff;
-    --teal-dark: #5f8fff;
-    --blue: #66d9ff;
-    --green: #4ed665;
-    --orange: #ffa028;
-    --red: #f45868;
-    --purple: #9d7bff;
-    --pink: #ff6fae;
-    --yellow: #ffd60a;
-    --diff-bg: #101218;
-    --diff-inline-bg: #232637;
-    --diff-mark-strength: 45%;
-    --toast-bg: #1a1d29;
-    --toast-border: #0a0b12;
-    --conflict-bg: #232637;
-    --conflict-border: #5a6080;
-    --conflict-text: #e8eaf2;
-    --shadow: rgba(0, 0, 0, 0);
-    --radius-card: 0px;
-    --radius-pill: 0px;
-}
 
 :root[data-theme='win9x-opencode'] mark {
     background: #ffff00;
@@ -684,12 +395,6 @@
     color: #ffffff;
 }
 
-/* dotted focus rect instead of the soft glow */
-:root[data-theme='win9x-opencode'] *:focus-visible {
-    outline: 1px dotted #000000;
-    outline-offset: -4px;
-}
-
 /* edit fields show focus with the caret, not a dotted rect (like real Win95) */
 :root[data-theme='win9x-opencode'] :is(input, textarea, select):focus-visible {
     outline: none;
@@ -866,7 +571,6 @@
     :is(
         .context-menu-item:hover,
         .file-context-menu-item:hover,
-        .file-context-menu-item.has-sub:focus-visible,
         .file-context-menu-wrap:hover > .file-context-menu-item,
         .palette-item:hover,
         .palette-item.active,
@@ -885,7 +589,6 @@
     :is(
         .context-menu-item:hover,
         .file-context-menu-item:hover,
-        .file-context-menu-item.has-sub:focus-visible,
         .file-context-menu-wrap:hover > .file-context-menu-item,
         .palette-item:hover,
         .palette-item.active,
@@ -1136,12 +839,6 @@
     color: #ffffff;
 }
 
-/* dotted focus rect instead of the soft glow */
-:root[data-theme='win9x-dark'] *:focus-visible {
-    outline: 1px dotted #e8eaf2;
-    outline-offset: -4px;
-}
-
 /* edit fields show focus with the caret, not a dotted rect (like real Win95) */
 :root[data-theme='win9x-dark'] :is(input, textarea, select):focus-visible {
     outline: none;
@@ -1312,7 +1009,6 @@
     :is(
         .context-menu-item:hover,
         .file-context-menu-item:hover,
-        .file-context-menu-item.has-sub:focus-visible,
         .file-context-menu-wrap:hover > .file-context-menu-item,
         .palette-item:hover,
         .palette-item.active,
@@ -1331,7 +1027,6 @@
     :is(
         .context-menu-item:hover,
         .file-context-menu-item:hover,
-        .file-context-menu-item.has-sub:focus-visible,
         .file-context-menu-wrap:hover > .file-context-menu-item,
         .palette-item:hover,
         .palette-item.active,
@@ -1392,180 +1087,6 @@
 :root[data-theme='win9x-dark'] .workspace-add-input.invalid {
     outline: 2px dotted #f45868;
     outline-offset: -4px;
-}
-
-/* ===== Terminal chrome — full TUI treatment (terminal theme only) ===== */
-
-/* CRT backdrop: dot-grid baked BEHIND content so text stays sharp (no scanlines — they turn to noise on low-clarity screens) */
-:root[data-theme='terminal'] .app {
-    background: radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px), var(--canvas);
-    background-size:
-        12px 12px,
-        auto;
-}
-
-:root[data-theme='terminal'] .app-empty {
-    background: radial-gradient(circle, rgba(138, 170, 240, 0.2) 1px, transparent 1.4px), var(--canvas);
-    background-size:
-        12px 12px,
-        auto;
-}
-
-/* bracketed TUI section titles */
-:root[data-theme='terminal'] .sidebar-section h3::before {
-    content: '[';
-    margin-right: 2px;
-    color: var(--teal);
-}
-
-:root[data-theme='terminal'] .sidebar-section h3::after {
-    content: ']';
-    margin-left: 6px;
-    color: var(--teal);
-}
-
-:root[data-theme='terminal'] :is(.sidebar-section h3, .tools-section-title) {
-    text-transform: uppercase;
-}
-
-:root[data-theme='terminal'] .tools-section-title::before {
-    content: '[ ';
-    color: var(--teal);
-}
-
-:root[data-theme='terminal'] .tools-section-title::after {
-    content: ' ]';
-    color: var(--teal);
-}
-
-:root[data-theme='terminal'] .sidebar-section h3 {
-    color: var(--text-secondary);
-}
-
-/* settings section titles read like TUI headers */
-:root[data-theme='terminal'] .tools-section-title {
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-/* chunky TUI keys */
-:root[data-theme='terminal'] kbd {
-    padding: 1px 5px;
-    color: var(--teal);
-    background: var(--surface-3);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-    opacity: 1;
-}
-
-/* terminal caret + selection */
-:root[data-theme='terminal'] :is(input, textarea) {
-    caret-color: var(--teal);
-}
-
-:root[data-theme='terminal'] ::selection {
-    background: rgba(138, 170, 240, 0.3);
-}
-
-/* ---- raw pass: flat, instant, stark (no depth, no fades) ---- */
-:root[data-theme='terminal'] :is(*, *::before, *::after) {
-    box-shadow: none !important;
-    text-shadow: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-}
-
-/* thin solid focus ring instead of the soft glow */
-:root[data-theme='terminal'] *:focus-visible {
-    outline: 1px solid var(--teal);
-    outline-offset: 1px;
-}
-
-/* flat chunky scrollbars */
-:root[data-theme='terminal'] ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-}
-
-:root[data-theme='terminal'] ::-webkit-scrollbar-thumb {
-    background: var(--line);
-    border: 2px solid var(--canvas);
-    border-radius: 0;
-}
-
-:root[data-theme='terminal'] ::-webkit-scrollbar-thumb:hover {
-    background: var(--teal);
-}
-
-:root[data-theme='terminal'] .sidebar > .sidebar-section > .section-body {
-    scrollbar-color: var(--line) transparent;
-}
-
-:root[data-theme='terminal'] ::-webkit-scrollbar-track,
-:root[data-theme='terminal'] ::-webkit-scrollbar-corner {
-    background: transparent;
-}
-
-:root[data-theme='terminal'] .node-ring {
-    border-radius: 50%;
-}
-
-/* ===== TUI surfaces (terminal theme only) ===== */
-
-/* square corners everywhere — explicit circles like .node-ring keep theirs */
-:root[data-theme='terminal'] :is(*, *::before, *::after) {
-    border-radius: 0;
-}
-
-/* full-bleed rows so inverse selection spans the pane like a terminal cursor */
-:root[data-theme='terminal'] :is(.branch-row, .file-row, .stash-row) {
-    margin-right: 0;
-    margin-left: 0;
-}
-
-/* inverse-video selection — solid accent block, dark text */
-:root[data-theme='terminal'] :is(.branch-row.current, .file-row.selected, .stash-row.selected, .history-row.selected) {
-    color: #141a2e;
-    background: var(--teal);
-    border-left-color: transparent;
-}
-
-:root[data-theme='terminal']
-    :is(.branch-row.current, .file-row.selected, .stash-row.selected, .history-row.selected)
-    :is(span, div, svg, button) {
-    color: inherit;
-}
-
-/* graph: lane art stays vivid, subject area goes inverse */
-:root[data-theme='terminal'] .graph-row.selected::after {
-    inset: 0 0 0 var(--graph-w, 64px);
-    background: var(--teal);
-    border-radius: 0;
-    opacity: 1;
-}
-
-:root[data-theme='terminal']
-    .graph-row.selected
-    :is(.subject-line, .subject-text, .commit-author, .commit-hash, .commit-date, .msg-toggle) {
-    color: #141a2e;
-}
-
-/* double-frame TUI panes/dialogs — outline paints a second frame without moving layout */
-:root[data-theme='terminal']
-    :is(
-        .sidebar,
-        .center-column,
-        .right-pane,
-        .tab-group,
-        .tab-actions,
-        .tab-sync-actions,
-        .diff-overlay,
-        .modal-overlay > div,
-        .confirm-dialog,
-        .error-dialog
-    ) {
-    outline: 1px solid var(--line);
-    outline-offset: 2px;
 }
 
 body {
@@ -2011,7 +1532,7 @@ body {
 
 .repo-tab-menu {
     position: fixed;
-    z-index: 1000;
+    z-index: var(--z-fixed-menu);
     width: 220px;
     padding: 10px;
     color: var(--text);
@@ -2232,7 +1753,7 @@ body {
     text-align: left;
     background: transparent;
     border: none;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
 }
 
@@ -2331,14 +1852,14 @@ body {
     color: var(--red);
     font-size: 11px;
     background: color-mix(in srgb, var(--red) 10%, transparent);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .workspace-row {
     display: flex;
     align-items: center;
     gap: 2px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .workspace-row.dragging {
@@ -2411,7 +1932,7 @@ body {
     position: absolute;
     top: calc(100% + 6px);
     right: 0;
-    z-index: 60;
+    z-index: var(--z-popover);
     display: flex;
     flex-direction: column;
     gap: 1px;
@@ -2419,7 +1940,7 @@ body {
     padding: 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 18px 50px var(--shadow);
 }
 
@@ -2444,12 +1965,11 @@ body {
     text-align: left;
     background: transparent;
     border: none;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
 }
 
-.open-repo-item:hover,
-.open-repo-item:focus-visible {
+.open-repo-item:hover {
     color: var(--text);
     background: var(--surface-hover);
     outline: none;
@@ -2463,8 +1983,7 @@ body {
     color: var(--text-muted);
 }
 
-.open-repo-item:hover .open-repo-icon,
-.open-repo-item:focus-visible .open-repo-icon {
+.open-repo-item:hover .open-repo-icon {
     color: var(--text);
 }
 
@@ -2483,8 +2002,7 @@ body {
     line-height: 1.35;
 }
 
-.open-repo-item:hover .open-repo-title,
-.open-repo-item:focus-visible .open-repo-title {
+.open-repo-item:hover .open-repo-title {
     color: var(--text);
 }
 
@@ -3019,7 +2537,7 @@ body {
     width: 28px;
     height: 28px;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 .sidebar .section-search {
     display: flex;
@@ -3085,7 +2603,7 @@ body {
     margin: 10px 10px 16px;
     background: var(--surface-1);
     border-color: var(--line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .sidebar-section h3,
@@ -3429,10 +2947,6 @@ body {
     background: color-mix(in srgb, var(--green) 20%, var(--surface-0));
 }
 
-:root[data-theme='terminal'] .panel-heading.commit-mode {
-    background: color-mix(in srgb, var(--green) 20%, var(--surface-0));
-}
-
 :root[data-theme='light-retro'] .panel-heading.commit-mode {
     background: color-mix(in srgb, var(--green) 14%, var(--surface-0));
 }
@@ -3567,7 +3081,7 @@ body {
 /* Avatar hover tooltip (ref chips / author / email / commit time), delayed 500ms */
 .avatar-tip {
     position: fixed;
-    z-index: 95;
+    z-index: var(--z-overlay);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -3632,7 +3146,7 @@ body {
 /* Blame lens tooltip in DiffView — same card language as .avatar-tip */
 .blame-lens-tip {
     position: fixed;
-    z-index: 95;
+    z-index: var(--z-overlay);
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -4000,7 +3514,7 @@ body {
 
 .file-context-menu {
     position: fixed;
-    z-index: 60;
+    z-index: var(--z-popover);
     min-width: 210px;
     padding: 4px;
     background: var(--surface-2);
@@ -4019,14 +3533,13 @@ body {
     color: var(--text-secondary);
     background: transparent;
     border: 0;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     font-size: 11px;
     text-align: left;
 }
 
-.file-context-menu-item:hover,
-.file-context-menu-item.has-sub:focus-visible {
+.file-context-menu-item:hover {
     color: var(--text);
     background: color-mix(in srgb, var(--teal) 16%, transparent);
     outline: none;
@@ -4061,7 +3574,7 @@ body {
     position: absolute;
     top: -5px;
     left: calc(100% + 5px);
-    z-index: 61;
+    z-index: var(--z-popover-sub);
     display: none;
     min-width: 260px;
     padding: 4px;
@@ -4071,11 +3584,13 @@ body {
     box-shadow: 0 18px 50px var(--shadow);
 }
 
-.file-context-menu-wrap:hover .file-context-menu-sub {
+.file-context-menu-wrap:hover .file-context-menu-sub,
+.file-context-menu-wrap.keyboard-open .file-context-menu-sub {
     display: block;
 }
 
-.file-context-menu-wrap:hover > .file-context-menu-item {
+.file-context-menu-wrap:hover > .file-context-menu-item,
+.file-context-menu-wrap.keyboard-open > .file-context-menu-item {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -4122,7 +3637,7 @@ body {
     color: var(--text-muted);
     background: transparent;
     border: 0;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     font-size: 11px;
     transition:
         color 0.15s ease,
@@ -4245,7 +3760,7 @@ body {
 
 .cb-ai-menu {
     position: fixed;
-    z-index: 60;
+    z-index: var(--z-popover);
     min-width: 168px;
     padding: 5px;
     background: var(--surface-2);
@@ -4555,7 +4070,7 @@ body {
 .busy-overlay {
     position: fixed;
     inset: 0;
-    z-index: 80;
+    z-index: var(--z-busy);
     display: grid;
     place-items: center;
     background: color-mix(in srgb, var(--canvas) 50%, transparent);
@@ -4797,11 +4312,13 @@ body {
     box-shadow: 0 18px 50px var(--shadow);
 }
 
-.commit-menu-wrap:hover .commit-menu-sub {
+.commit-menu-wrap:hover .commit-menu-sub,
+.commit-menu-wrap.keyboard-open .commit-menu-sub {
     display: block;
 }
 
-.commit-menu-wrap:hover > .commit-menu-item {
+.commit-menu-wrap:hover > .commit-menu-item,
+.commit-menu-wrap.keyboard-open > .commit-menu-item {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -5046,7 +4563,7 @@ body {
     color: var(--orange);
     background: color-mix(in srgb, var(--orange) 10%, transparent);
     border: 1px solid color-mix(in srgb, var(--orange) 35%, transparent);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     font-size: 12px;
 }
 
@@ -5065,7 +4582,7 @@ body {
     max-height: 220px;
     overflow: auto;
     border: 1px solid var(--line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .squash-row {
@@ -5084,7 +4601,7 @@ body {
 .squash-badge {
     flex: 0 0 auto;
     padding: 1px 7px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 10px;
 }
 
@@ -5125,7 +4642,7 @@ body {
     color: var(--text);
     background: var(--surface-0);
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     outline: none;
     resize: vertical;
     font-family: inherit;
@@ -5171,7 +4688,7 @@ body {
     align-items: start;
     column-gap: 10px;
     padding: 5px 8px 5px 0;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     transition: background 0.12s ease;
 }
 
@@ -5237,7 +4754,7 @@ body {
     padding: 1px 8px;
     color: var(--node-color, var(--text-muted));
     background: color-mix(in srgb, var(--node-color, var(--text-muted)) 14%, transparent);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 10px;
     font-weight: 600;
 }
@@ -5267,7 +4784,7 @@ body {
 .reflog-badge {
     flex: 0 0 auto;
     padding: 1px 7px;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 10px;
 }
 
@@ -5342,7 +4859,7 @@ body {
 .error-dialog-overlay {
     position: fixed;
     inset: 0;
-    z-index: 90;
+    z-index: var(--z-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5400,7 +4917,7 @@ body {
 .confirm-dialog-overlay {
     position: fixed;
     inset: 0;
-    z-index: 90;
+    z-index: var(--z-dialog);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -5868,7 +5385,7 @@ body {
     position: absolute;
     bottom: calc(100% + 8px);
     left: 0;
-    z-index: 60;
+    z-index: var(--z-popover);
     min-width: 112px;
     padding: 5px;
     background: var(--surface-2);
@@ -5958,7 +5475,7 @@ body {
 
 .toast-stack {
     position: fixed;
-    z-index: 70;
+    z-index: var(--z-toast);
     top: 60px;
     left: 50%;
     translate: -50% 0;
@@ -6044,7 +5561,7 @@ body {
     color: #fff;
     background: color-mix(in srgb, var(--toast-accent, var(--teal)) 62%, #0b0f14);
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
@@ -6196,15 +5713,25 @@ body {
     scrollbar-width: thin;
 }
 
+/* Product decision: only text inputs and links show a focus ring. Buttons, tabs,
+   popup menus, list rows and splitters intentionally have no visible focus cue;
+   the terminal panel keeps its `:focus-within` teal edge. `* { outline: none }`
+   also suppresses the UA default ring that would otherwise appear. */
 *:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--teal) 70%, transparent);
-    outline-offset: 1px;
+    outline: none;
+}
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a[href]:focus-visible {
+    outline: var(--focus-ring);
+    outline-offset: var(--focus-offset);
 }
 
 .splash-screen {
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: var(--z-splash);
     display: grid;
     place-items: center;
     background: radial-gradient(circle at 50% 32%, color-mix(in srgb, var(--teal) 9%, transparent), transparent 44%), var(--canvas);
@@ -6824,7 +6351,7 @@ body {
     justify-content: center;
     width: 18px;
     height: 18px;
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: var(--teal);
     color: #fff;
 }
@@ -6909,7 +6436,7 @@ body {
     padding: 1px 6px;
     color: var(--teal);
     background: color-mix(in srgb, var(--teal) 10%, transparent);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     font-size: 10px;
 }
 
@@ -7005,7 +6532,7 @@ body {
     pointer-events: none;
     background: color-mix(in srgb, var(--teal) 14%, transparent);
     border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
 }
 
 .diff-body {
@@ -7078,14 +6605,6 @@ body {
 
 :root[data-theme='dark-modern'] .diff-body::-webkit-scrollbar-thumb {
     background: #0e0e13;
-}
-
-:root[data-theme='dark-neon'] .diff-body::-webkit-scrollbar-thumb {
-    background: #14141f;
-}
-
-:root[data-theme='terminal'] .diff-body::-webkit-scrollbar-thumb {
-    background: #343d5e;
 }
 
 :root[data-theme='light-retro'] .diff-body::-webkit-scrollbar-thumb {
@@ -7415,7 +6934,7 @@ body {
     overflow-y: auto;
     background: var(--surface-1);
     border: 1px solid var(--line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 10px 24px rgb(0 0 0 / 22%);
 }
 
@@ -7428,7 +6947,7 @@ body {
     color: var(--text);
     text-align: left;
     background: transparent;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
 }
 
@@ -7483,13 +7002,13 @@ body {
     margin-top: 8px;
     overflow: hidden;
     background: color-mix(in srgb, var(--teal) 18%, transparent);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
 }
 
 .update-progress-bar {
     height: 100%;
     background: var(--teal);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     transition: width 0.3s ease;
 }
 
@@ -7507,7 +7026,7 @@ body {
     gap: 4px 10px;
     padding: 3px 6px;
     margin: 0 -6px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .shortcut-row:not(.shortcut-head-row):hover {
@@ -7762,7 +7281,7 @@ body {
     color: var(--green);
     background: color-mix(in srgb, var(--green) 14%, var(--surface-2));
     border: 1px solid color-mix(in srgb, var(--green) 55%, var(--line));
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 10px;
     font-weight: 700;
     white-space: nowrap;
@@ -7840,7 +7359,7 @@ body {
     padding: 0;
     color: transparent;
     border: 1px solid var(--line);
-    border-radius: 4px;
+    border-radius: var(--radius-xs);
     background: var(--surface-2);
     cursor: pointer;
 }
@@ -8207,7 +7726,7 @@ body {
     );
     border: 1px solid var(--line);
     border-bottom-width: 2px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
     font-family: var(--font-mono);
     font-size: 11.5px;
@@ -8280,7 +7799,7 @@ body {
 .palette-overlay {
     position: fixed;
     inset: 0;
-    z-index: 95;
+    z-index: var(--z-overlay);
     display: flex;
     align-items: flex-start;
     justify-content: center;
@@ -8304,8 +7823,15 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--line);
+    margin: 10px 12px;
+    padding: 7px 12px;
+    background: var(--surface-1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
+}
+
+.palette-input-row:focus-within {
+    border-color: var(--teal);
 }
 
 .palette-search-ic {
@@ -8316,12 +7842,21 @@ body {
 .palette-input {
     flex: 1;
     min-width: 0;
+    padding: 0;
     color: var(--text);
     background: none;
     border: none;
     outline: none;
     font-family: var(--font-ui);
     font-size: 13px;
+}
+
+/* Chromeless inputs live inside a styled field — the field border is the focus cue. */
+.palette-input:focus-visible,
+.commit-search input:focus-visible,
+.workspace-add-input:focus-visible,
+.terminal-tab-rename:focus-visible {
+    outline: none;
 }
 
 .palette-input::placeholder {
@@ -8629,7 +8164,7 @@ body {
 }
 .preview-view.fullscreen {
     position: fixed;
-    z-index: 60;
+    z-index: var(--z-fullscreen);
     inset: 0 !important;
     box-shadow: none;
 }
@@ -8677,7 +8212,7 @@ body {
     font-size: 0.88em;
     background: color-mix(in srgb, var(--surface-hover) 60%, transparent);
     border: 1px solid var(--line-soft);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
 }
 .md-preview pre {
     padding: 12px 14px;
@@ -8732,7 +8267,7 @@ body {
     display: block;
     margin: 12px auto;
     border: 1px solid var(--line-soft);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 .md-preview p > a:only-child {
     display: block;
@@ -8748,7 +8283,7 @@ body {
     max-width: 100%;
     height: auto;
     border: 1px solid var(--line-soft);
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
 }
 .json-preview {
     max-width: 860px;
@@ -8774,4 +8309,16 @@ body {
 }
 .json-preview .jl {
     color: var(--purple, #bf5af2);
+}
+
+/* Respect the OS reduced-motion setting for every decorative transition/animation. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

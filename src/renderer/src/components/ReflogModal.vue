@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideHistory from '~icons/lucide/history'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
 
@@ -7,6 +7,8 @@
     import { useUiTransientStore } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
     import { formatCommitDate } from '../utils/format'
+    import { handleListKeydown } from '../utils/listKeyboard'
+    import { useModalA11y } from '../utils/modalA11y'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
 
@@ -14,6 +16,13 @@
 
     const emit = defineEmits<{ (e: 'close'): void }>()
     const repoStore = useRepoStore()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const entries = ref<ReflogEntry[]>([])
     const loading = ref(true)
@@ -52,7 +61,6 @@
     }
 
     onMounted(async () => {
-        document.addEventListener('keydown', onKey)
         try {
             entries.value = await window.api.reflog(200)
         } catch (err) {
@@ -61,10 +69,8 @@
             loading.value = false
         }
     })
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
+    function activateReflogRow(row: HTMLElement): void {
+        row.querySelector<HTMLButtonElement>('.reflog-restore:not([disabled])')?.click()
     }
 
     function actionLabel(action: string): string {
@@ -109,16 +115,25 @@
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal reflog-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal reflog-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reflog-modal-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
                 <i-lucide-history
                     width="15"
-                    height="15" />
-                <strong>Reflog</strong>
+                    height="15"
+                    aria-hidden="true" />
+                <strong id="reflog-modal-title">Reflog</strong>
                 <code class="rebase-base">HEAD movement history</code>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
+                    title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>
@@ -148,7 +163,11 @@
 
             <div
                 v-else
-                class="reflog-list">
+                class="reflog-list"
+                tabindex="0"
+                role="listbox"
+                aria-label="Reflog entries"
+                @keydown="event => handleListKeydown(event, '.reflog-row', { onActivate: activateReflogRow })">
                 <template
                     v-for="group in groups"
                     :key="group.key">
@@ -157,6 +176,8 @@
                         v-for="(entry, position) in group.entries"
                         :key="entry.selector"
                         class="reflog-row"
+                        tabindex="-1"
+                        role="option"
                         :class="[`k-${actionKind(entry.action)}`, { current: entry.index === 0, first: position === 0 }]">
                         <span class="reflog-track">
                             <span class="reflog-node" />

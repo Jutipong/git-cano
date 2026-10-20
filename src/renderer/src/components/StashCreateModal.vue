@@ -1,10 +1,11 @@
 <script setup lang="ts">
-    import { nextTick, useTemplateRef, computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { useTemplateRef, computed, inject, onMounted, ref } from 'vue'
     import ILucideArchive from '~icons/lucide/archive'
     import ILucideCheck from '~icons/lucide/check'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import { useModalA11y } from '../utils/modalA11y'
     import ThinkSpinner from './ThinkSpinner.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -17,6 +18,14 @@
     const busy = ref(false)
     const error = ref('')
     const messageInput = useTemplateRef<HTMLInputElement>('messageInput')
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        initialFocus: messageInput,
+        onClose: () => emit('close'),
+    })
 
     const normalizeMessage = (value: string) => value.replace(/^On [^:]+: /, '').trim()
 
@@ -26,18 +35,11 @@
     })
 
     onMounted(async () => {
-        document.addEventListener('keydown', onKey)
-        nextTick(() => messageInput.value?.focus())
         try {
             const stashes = await window.api.stashes()
             existing.value = stashes.map(stash => stash.message)
         } catch {}
     })
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
     async function submit() {
         const text = message.value.trim()
@@ -66,12 +68,19 @@
 
 <template>
     <div class="confirm-dialog-overlay">
-        <div class="confirm-dialog">
+        <div
+            ref="dialog"
+            class="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stash-create-title"
+            tabindex="-1">
             <div class="confirm-dialog-header flow">
                 <i-lucide-archive
                     width="17"
-                    height="17" />
-                <strong>Create stash</strong>
+                    height="17"
+                    aria-hidden="true" />
+                <strong id="stash-create-title">Create stash</strong>
             </div>
             <div class="confirm-dialog-body">
                 <input

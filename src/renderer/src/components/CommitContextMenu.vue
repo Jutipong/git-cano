@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import Cherry from '~icons/lucide/cherry'
     import ChevronRight from '~icons/lucide/chevron-right'
     import CircleCheck from '~icons/lucide/circle-check'
@@ -11,6 +11,8 @@
     import Tag from '~icons/lucide/tag'
     import Trash2 from '~icons/lucide/trash2'
     import Undo2 from '~icons/lucide/undo-2'
+
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
 
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { CommitNode } from '@shared/types'
@@ -37,22 +39,58 @@
 
     const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
     const root = ref<HTMLElement | null>(null)
+    const submenuOpen = ref(false)
+
+    function close() {
+        submenuOpen.value = false
+        emit('close')
+    }
+
+    function focusSubmenuTrigger() {
+        void nextTick(() => root.value?.querySelector<HTMLElement>('.commit-menu-wrap > .has-sub')?.focus())
+    }
+
+    function focusSubmenuFirst() {
+        void nextTick(() => root.value?.querySelector<HTMLElement>('.commit-menu-sub button')?.focus())
+    }
+
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: close,
+        onEscape: () => {
+            if (!submenuOpen.value) return false
+            submenuOpen.value = false
+            focusSubmenuTrigger()
+            return true
+        },
+        onArrowRight: item => {
+            if (!item.classList.contains('has-sub')) return false
+            submenuOpen.value = true
+            focusSubmenuFirst()
+            return true
+        },
+        onArrowLeft: () => {
+            if (!submenuOpen.value) return false
+            submenuOpen.value = false
+            focusSubmenuTrigger()
+            return true
+        },
+    })
+
+    watch(
+        () => props.menu,
+        current => {
+            if (!current) submenuOpen.value = false
+        }
+    )
 
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     type CommitAction = 'checkout' | 'create-branch' | 'create-tag' | 'cherry-pick' | 'squash' | 'revert' | 'reset-soft' | 'reset-hard'
 
@@ -94,6 +132,7 @@
         v-if="menu"
         ref="root"
         class="commit-menu"
+        role="menu"
         :style="menuStyle()">
         <button
             class="commit-menu-item"
@@ -153,8 +192,13 @@
                 height="13" />
             Revert this commit
         </button>
-        <div class="commit-menu-wrap">
-            <button class="commit-menu-item has-sub">
+        <div
+            class="commit-menu-wrap"
+            :class="{ 'keyboard-open': submenuOpen }">
+            <button
+                class="commit-menu-item has-sub"
+                aria-haspopup="menu"
+                :aria-expanded="submenuOpen">
                 <RotateCcw
                     class="commit-menu-ic"
                     width="13"
@@ -165,7 +209,10 @@
                     width="12"
                     height="12" />
             </button>
-            <div class="commit-menu-sub">
+            <div
+                class="commit-menu-sub"
+                role="menu"
+                aria-label="Reset options">
                 <button
                     class="commit-menu-item"
                     @click="act('reset-soft')">

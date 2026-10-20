@@ -24,6 +24,7 @@
     import { useUpdaterStore } from '../stores/updater'
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog } from '../utils/confirm'
+    import { handleListKeydown } from '../utils/listKeyboard'
     import { promptDialog } from '../utils/prompt'
     import CollapseAllButton from './CollapseAllButton.vue'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
@@ -461,6 +462,7 @@
 <template>
     <aside
         class="sidebar"
+        aria-label="Sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
         <div class="sidebar-toolbar">
             <img
@@ -513,12 +515,19 @@
                 </button>
             </div>
 
-            <div class="section-body">
+            <div
+                class="section-body"
+                tabindex="0"
+                role="listbox"
+                aria-label="Local branches"
+                @keydown="event => handleListKeydown(event, '.branch-row')">
                 <template v-if="localExpanded || searching">
                     <div
                         v-for="branch in localFiltered"
                         :key="branch.name"
                         class="branch-row"
+                        tabindex="-1"
+                        role="option"
                         :class="{
                             current: branch.current,
                             'drop-target': dropTarget === branch.name,
@@ -617,7 +626,12 @@
                     </h3>
                 </button>
             </div>
-            <div class="section-body">
+            <div
+                class="section-body"
+                tabindex="0"
+                role="listbox"
+                aria-label="Remote branches"
+                @keydown="event => handleListKeydown(event, '.branch-row')">
                 <template v-if="remoteExpanded || searching">
                     <div
                         v-if="remote.length === 0"
@@ -628,6 +642,8 @@
                         v-for="branch in remoteFiltered"
                         :key="branch.name"
                         class="branch-row remote"
+                        tabindex="-1"
+                        role="option"
                         :class="{
                             current: isRemoteCurrent(branch.name),
                             soloed: repoStore.soloBranch === branch.name,
@@ -704,7 +720,12 @@
                         height="14" />
                 </button>
             </div>
-            <div class="section-body">
+            <div
+                class="section-body"
+                tabindex="0"
+                role="listbox"
+                aria-label="Tags"
+                @keydown="event => handleListKeydown(event, '.branch-row')">
                 <template v-if="tagsExpanded || searching">
                     <div
                         v-if="loadingTags"
@@ -726,6 +747,8 @@
                             v-for="tag in tagsFiltered"
                             :key="tag.name"
                             class="branch-row tag-row"
+                            tabindex="-1"
+                            role="option"
                             :class="{ active: activeTag === tag.name }"
                             :title="`${tag.name} (${tag.hash ? tag.hash.slice(0, 7) : '?'}) · Click to locate`"
                             @click="focusTag(tag)"

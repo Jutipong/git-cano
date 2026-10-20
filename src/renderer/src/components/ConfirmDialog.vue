@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { useTemplateRef, computed, onBeforeUnmount, onMounted, watch } from 'vue'
+    import { useTemplateRef, computed, onBeforeUnmount, onMounted } from 'vue'
     import ILucideAlertTriangle from '~icons/lucide/alert-triangle'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideGitBranch from '~icons/lucide/git-branch'
@@ -10,10 +10,12 @@
     import ILucideZap from '~icons/lucide/zap'
 
     import { useConfirmStore } from '../stores/confirm'
+    import { useModalA11y } from '../utils/modalA11y'
     import AppCheckbox from './AppCheckbox.vue'
 
     const confirmStore = useConfirmStore()
     const confirmBtn = useTemplateRef<HTMLButtonElement>('confirmBtn')
+    const dialog = useTemplateRef<HTMLElement>('dialog')
 
     const conflict = computed(() => confirmStore.current?.status?.kind === 'warn')
     const forcePush = computed(() => confirmStore.current?.confirmIcon === 'force-push')
@@ -25,18 +27,19 @@
     })
 
     function onKey(event: KeyboardEvent) {
-        if (!confirmStore.current) return
-        if (event.key === 'Escape') confirmStore.settle(false)
-        else if (event.key === 'Enter') confirmStore.settle(true)
+        if (!confirmStore.current || event.key !== 'Enter') return
+        // Let the focused button handle its own Enter (Cancel must cancel, not confirm).
+        if (event.target instanceof Element && event.target.closest('button')) return
+        event.preventDefault()
+        confirmStore.settle(true)
     }
 
-    watch(
-        () => confirmStore.current,
-        value => {
-            if (value) confirmBtn.value?.focus()
-        },
-        { flush: 'post' }
-    )
+    useModalA11y({
+        active: () => !!confirmStore.current,
+        container: dialog,
+        initialFocus: confirmBtn,
+        onClose: () => confirmStore.settle(false),
+    })
 
     onMounted(() => document.addEventListener('keydown', onKey))
     onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
@@ -46,19 +49,28 @@
     <div
         v-if="confirmStore.current"
         class="confirm-dialog-overlay">
-        <div class="confirm-dialog">
+        <div
+            ref="dialog"
+            class="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-dialog-title"
+            aria-describedby="confirm-dialog-message"
+            tabindex="-1">
             <div
                 class="confirm-dialog-header"
                 :class="{ orange: forcePush, flow: confirmStore.current.flow && !confirmStore.current.danger, conflict }">
                 <i-lucide-git-merge
                     v-if="confirmStore.current.flow && !confirmStore.current.danger"
                     width="16"
-                    height="16" />
+                    height="16"
+                    aria-hidden="true" />
                 <i-lucide-alert-triangle
                     v-else-if="confirmStore.current.danger"
                     width="17"
-                    height="17" />
-                <strong>{{ confirmStore.current.title ?? 'Confirm' }}</strong>
+                    height="17"
+                    aria-hidden="true" />
+                <strong id="confirm-dialog-title">{{ confirmStore.current.title ?? 'Confirm' }}</strong>
             </div>
             <div class="confirm-dialog-body">
                 <div
@@ -67,7 +79,8 @@
                     <span class="confirm-flow-chip">
                         <i-lucide-git-branch
                             width="12"
-                            height="12" />
+                            height="12"
+                            aria-hidden="true" />
                         {{ confirmStore.current.flow.from }}
                     </span>
                     <span
@@ -117,7 +130,8 @@
                         :class="{ conflict, danger: confirmStore.current.danger && !conflict }">
                         <i-lucide-git-branch
                             width="12"
-                            height="12" />
+                            height="12"
+                            aria-hidden="true" />
                         {{ confirmStore.current.flow.to }}
                     </span>
                 </div>
@@ -128,18 +142,21 @@
                     <i-lucide-check
                         v-if="confirmStore.current.status.kind === 'ok'"
                         width="14"
-                        height="14" />
+                        height="14"
+                        aria-hidden="true" />
                     <i-lucide-alert-triangle
                         v-else-if="confirmStore.current.status.kind === 'warn'"
                         width="14"
-                        height="14" />
+                        height="14"
+                        aria-hidden="true" />
                     <i-lucide-info
                         v-else
                         width="14"
-                        height="14" />
+                        height="14"
+                        aria-hidden="true" />
                     <span>{{ confirmStore.current.status.text }}</span>
                 </div>
-                <pre>{{ confirmStore.current.message }}</pre>
+                <pre id="confirm-dialog-message">{{ confirmStore.current.message }}</pre>
                 <AppCheckbox
                     v-if="confirmStore.current.checkOption"
                     v-model="checked"
@@ -161,15 +178,18 @@
                     <i-lucide-zap
                         v-if="confirmStore.current.confirmIcon === 'force-push'"
                         width="13"
-                        height="13" />
+                        height="13"
+                        aria-hidden="true" />
                     <i-lucide-rotate-ccw
                         v-else-if="confirmStore.current.confirmIcon === 'reset'"
                         width="13"
-                        height="13" />
+                        height="13"
+                        aria-hidden="true" />
                     <i-lucide-trash2
                         v-else-if="confirmStore.current.danger"
                         width="13"
-                        height="13" />
+                        height="13"
+                        aria-hidden="true" />
                     {{ confirmStore.current.confirmLabel ?? 'Confirm' }}
                 </button>
             </div>

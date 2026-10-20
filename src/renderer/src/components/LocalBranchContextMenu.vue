@@ -12,6 +12,8 @@
     import Trash2 from '~icons/lucide/trash2'
     import Zap from '~icons/lucide/zap'
 
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
+
     export interface LocalBranchMenuState {
         x: number
         y: number
@@ -40,21 +42,18 @@
     }>()
     const root = ref<HTMLElement | null>(null)
 
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: () => emit('close'),
+    })
+
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function act(
         kind:
@@ -100,6 +99,7 @@
         v-if="menu"
         ref="root"
         class="local-branch-menu"
+        role="menu"
         :style="menuStyle()">
         <button
             class="local-branch-menu-item"

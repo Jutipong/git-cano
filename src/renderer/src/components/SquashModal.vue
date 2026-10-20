@@ -1,8 +1,9 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, onMounted, ref, useTemplateRef } from 'vue'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore } from '../stores/uiTransient'
+    import { useModalA11y } from '../utils/modalA11y'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
 
@@ -11,6 +12,13 @@
     const props = defineProps<{ commit: CommitNode }>()
     const emit = defineEmits<{ (e: 'close'): void; (e: 'complete', message: string): void }>()
     const repoStore = useRepoStore()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const plan = ref<SquashPlan | null>(null)
     const message = ref('')
@@ -28,7 +36,6 @@
     const newestFirst = computed(() => (plan.value ? [...plan.value.commits].reverse() : []))
 
     onMounted(async () => {
-        document.addEventListener('keydown', onKey)
         try {
             plan.value = await window.api.squashPlan(props.commit.hash)
             message.value = plan.value.defaultMessage
@@ -38,12 +45,6 @@
             loading.value = false
         }
     })
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
-
     async function submit() {
         if (!plan.value || busy.value || !message.value.trim() || plan.value.dirty) return
         busy.value = true
@@ -63,13 +64,21 @@
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal squash-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal squash-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="squash-modal-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
-                <strong>Squash {{ plan ? `${plan.commits.length} into 1` : 'commits' }}</strong>
+                <strong id="squash-modal-title">Squash {{ plan ? `${plan.commits.length} into 1` : 'commits' }}</strong>
                 <code class="rebase-base">onto {{ plan ? plan.base.slice(0, 7) : commit.shortHash }}</code>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
+                    title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>

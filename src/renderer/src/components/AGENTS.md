@@ -7,6 +7,12 @@ Panel/modal component patterns. Loaded automatically when working under
 
 ## Context menus
 
+- **Keyboard behaviour is shared**: every menu root is `role="menu"` and calls
+  `useMenuKeyboard` (`utils/menuKeyboard.ts`) — no local document Escape listeners. The
+  composable focuses the first item, cycles with Arrow Up/Down + Home/End, closes on
+  Escape/Tab and restores focus. Submenu triggers need `aria-haspopup="menu"`,
+  `:aria-expanded="submenuOpen"` and a `.keyboard-open` class (alongside `:hover`);
+  ArrowRight opens/focuses the submenu, ArrowLeft/Escape closes it back to the trigger.
 - **Context menus are per-feature SFCs**: `CommitContextMenu.vue` (graph commits),
   `LocalBranchContextMenu.vue` (local branches), `TagContextMenu.vue`,
   `StashContextMenu.vue`, `RepoTabContextMenu.vue`, `FileContextMenu.vue`. The shared

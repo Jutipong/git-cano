@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted } from 'vue'
+    import { computed, useTemplateRef } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideLock from '~icons/lucide/lock'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
@@ -7,10 +7,18 @@
 
     import { useUiStore, COMMIT_COLUMN_DEFAULTS, type CommitColumn } from '../stores/ui'
     import { formatDatePattern } from '../utils/format'
+    import { useModalA11y } from '../utils/modalA11y'
     import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const ui = useUiStore()
 
@@ -32,28 +40,29 @@
         return formatDatePattern(new Date().toISOString(), pattern)
     })
 
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            emit('close')
-        }
-    }
-    onMounted(() => document.addEventListener('keydown', onKey))
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
+
 </script>
 
 <template>
     <div class="modal-overlay">
-        <div class="graph-settings-modal">
+        <div
+            ref="dialog"
+            class="graph-settings-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="graph-settings-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
                 <i-lucide-sliders-horizontal
                     width="17"
-                    height="17" />
-                <strong>Commit history settings</strong>
+                    height="17"
+                    aria-hidden="true" />
+                <strong id="graph-settings-title">Commit history settings</strong>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
                     title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>

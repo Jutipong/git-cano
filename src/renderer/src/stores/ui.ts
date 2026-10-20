@@ -13,7 +13,7 @@ import {
 
 import type { LocalChangesMode, TerminalShell } from '@shared/types'
 
-export type Theme = 'dark' | 'light' | 'dark-modern' | 'dark-neon' | 'terminal' | 'light-retro' | 'win9x-opencode' | 'win9x-dark'
+export type Theme = 'dark' | 'light' | 'dark-modern' | 'light-retro' | 'win9x-opencode' | 'win9x-dark'
 
 export type AiCommitMode = 'off' | 'commit' | 'commit-push'
 
@@ -120,8 +120,6 @@ export interface ThemeOption {
 const themeOptions: ThemeOption[] = [
     { value: 'dark', label: 'Dark', description: 'Deep navy with vivid blue accents', icon: 'moon', kind: 'dark' },
     { value: 'dark-modern', label: 'Dark Modern', description: 'Deep black with VS Code accents', icon: 'moon', kind: 'dark' },
-    { value: 'dark-neon', label: 'Dark Neon', description: 'Pitch black with vivid neon accents', icon: 'moon', kind: 'dark' },
-    { value: 'terminal', label: 'Dark Retro', description: 'Dusty navy TUI with blue accents', icon: 'moon', kind: 'dark' },
     { value: 'light', label: 'Light', description: 'Bright and clear', icon: 'sun', kind: 'light' },
     { value: 'light-retro', label: 'Light Retro', description: 'Mono paper with faded vintage accents', icon: 'sun', kind: 'light' },
     { value: 'win9x-opencode', label: 'Win9x', description: 'Win95 gray with raised bevels', icon: 'sun', kind: 'light' },
@@ -138,8 +136,6 @@ export const useUiStore = defineStore(
                 savedTheme !== 'dark' &&
                 savedTheme !== 'light' &&
                 savedTheme !== 'dark-modern' &&
-                savedTheme !== 'dark-neon' &&
-                savedTheme !== 'terminal' &&
                 savedTheme !== 'light-retro' &&
                 savedTheme !== 'win9x-opencode' &&
                 savedTheme !== 'win9x-dark'

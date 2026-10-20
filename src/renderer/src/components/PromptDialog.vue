@@ -1,10 +1,11 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideGitBranch from '~icons/lucide/git-branch'
 
     import { usePromptStore, type PromptResult } from '../stores/prompt'
     import { useUiStore } from '../stores/ui'
+    import { useModalA11y } from '../utils/modalA11y'
     import AppCheckbox from './AppCheckbox.vue'
     import AppRadio from './AppRadio.vue'
 
@@ -13,6 +14,7 @@
     const promptStore = usePromptStore()
     const ui = useUiStore()
     const input = ref<HTMLInputElement | null>(null)
+    const dialog = useTemplateRef<HTMLElement>('dialog')
     const value = ref('')
     const error = ref('')
     const checkout = ref(true)
@@ -58,10 +60,19 @@
     }
 
     function onKey(event: KeyboardEvent) {
-        if (!promptStore.current) return
-        if (event.key === 'Escape') promptStore.settle(null)
-        else if (event.key === 'Enter') submit()
+        if (!promptStore.current || event.key !== 'Enter') return
+        // Let the focused button handle its own Enter (Cancel must cancel, not submit).
+        if (event.target instanceof Element && event.target.closest('button')) return
+        event.preventDefault()
+        submit()
     }
+
+    useModalA11y({
+        active: () => !!promptStore.current,
+        container: dialog,
+        initialFocus: input,
+        onClose: () => promptStore.settle(null),
+    })
 
     watch(
         () => promptStore.current,
@@ -70,7 +81,6 @@
             error.value = ''
             checkout.value = current?.branchOptions?.checkout ?? true
             localChanges.value = ui.localChangesMode ?? 'stash'
-            if (current) input.value?.focus()
         },
         { flush: 'post' }
     )
@@ -87,12 +97,20 @@
     <div
         v-if="promptStore.current"
         class="confirm-dialog-overlay">
-        <div class="confirm-dialog">
+        <div
+            ref="dialog"
+            class="confirm-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="prompt-dialog-title"
+            :aria-describedby="promptStore.current.message ? 'prompt-dialog-message' : undefined"
+            tabindex="-1">
             <div class="confirm-dialog-header flow">
                 <i-lucide-git-branch
                     width="17"
-                    height="17" />
-                <strong>{{ promptStore.current.title }}</strong>
+                    height="17"
+                    aria-hidden="true" />
+                <strong id="prompt-dialog-title">{{ promptStore.current.title }}</strong>
                 <code
                     v-if="promptStore.current.chip"
                     class="rebase-base prompt-chip"
@@ -101,17 +119,24 @@
                 >
             </div>
             <div class="confirm-dialog-body">
-                <pre v-if="promptStore.current.message">{{ promptStore.current.message }}</pre>
+                <pre
+                    v-if="promptStore.current.message"
+                    id="prompt-dialog-message"
+                    >{{ promptStore.current.message }}</pre>
                 <input
                     ref="input"
                     v-model="value"
                     class="prompt-input"
                     :placeholder="promptStore.current.placeholder ?? ''"
                     spellcheck="false"
+                    :aria-invalid="!!(error || isDuplicate)"
+                    :aria-describedby="error || isDuplicate ? 'prompt-error' : undefined"
                     @input="error = ''" />
                 <span
                     v-if="error || isDuplicate"
+                    id="prompt-error"
                     class="prompt-error"
+                    role="alert"
                     >{{ error || `${value.trim()} already exists` }}</span
                 >
                 <template v-if="isBranch">
@@ -149,7 +174,8 @@
                     @click="submit()">
                     <i-lucide-check
                         width="13"
-                        height="13" />
+                        height="13"
+                        aria-hidden="true" />
                     {{ promptStore.current.confirmLabel ?? 'OK' }}
                 </button>
             </div>

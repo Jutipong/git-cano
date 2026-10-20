@@ -10,6 +10,7 @@
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
     import { formatDateTime } from '../utils/format'
+    import { handleListKeydown } from '../utils/listKeyboard'
     import { notifyUndoable } from '../utils/undo'
     import StashContextMenu, { type StashMenuState } from './StashContextMenu.vue'
 
@@ -131,7 +132,11 @@
         </div>
         <div
             v-if="expanded || filterActive"
-            class="section-body">
+            class="section-body"
+            tabindex="0"
+            role="listbox"
+            aria-label="Stashes"
+            @keydown="event => handleListKeydown(event, '.stash-row')">
             <div
                 v-if="stashes.length === 0"
                 class="sidebar-empty">
@@ -141,6 +146,9 @@
                 v-for="row in filteredRows"
                 :key="`${row.stash.hash}-${row.stash.index}`"
                 class="stash-row"
+                tabindex="-1"
+                role="option"
+                :aria-selected="repoStore.selectedStash?.hash === row.stash.hash"
                 :class="{ selected: repoStore.selectedStash?.hash === row.stash.hash }"
                 @click="toggleStash(row.stash)"
                 @contextmenu.prevent="menu = { x: $event.clientX, y: $event.clientY, stash: row.stash }">

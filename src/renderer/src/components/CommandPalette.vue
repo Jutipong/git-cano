@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, inject, onMounted, ref, watch, type Component } from 'vue'
+    import { computed, inject, onMounted, ref, useTemplateRef, watch, type Component } from 'vue'
     import Bash from '~icons/catppuccin/bash'
     import Folder from '~icons/catppuccin/folder'
     import VisualStudio from '~icons/catppuccin/visual-studio'
@@ -33,6 +33,7 @@
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { useWorkspaceStore } from '../stores/workspace'
     import { resolveCheckoutMode } from '../utils/checkout'
+    import { useModalA11y } from '../utils/modalA11y'
     import { fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
     import { filterPaletteItems, withOffsets } from '../utils/palette'
     import { SETTINGS_TABS, type SettingsTabKey } from '../utils/settingsTabs'
@@ -60,6 +61,17 @@
     const search = ref('')
     const active = ref(0)
     const input = ref<HTMLInputElement | null>(null)
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        initialFocus: input,
+        onClose: () => {
+            if (mode.value === 'commands') close()
+            else backToCommands()
+        },
+    })
     /** Fallback branch list for the rare case the store hasn't loaded one for the active repo yet. */
     const fetchedLocal = ref<BranchInfo[] | null>(null)
     /** Availability of conditional Open-in targets for the repo the palette was opened on. */
@@ -604,12 +616,7 @@
     }
 
     function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.preventDefault()
-            event.stopPropagation()
-            if (mode.value === 'commands') close()
-            else backToCommands()
-        } else if (event.key === 'ArrowDown') {
+        if (event.key === 'ArrowDown') {
             event.preventDefault()
             event.stopPropagation()
             move(1)
@@ -634,9 +641,12 @@
         class="palette-overlay"
         @mousedown.self="close">
         <div
+            ref="dialog"
             class="palette"
             role="dialog"
-            aria-label="Command palette">
+            aria-modal="true"
+            aria-label="Command palette"
+            tabindex="-1">
             <div class="palette-input-row">
                 <button
                     v-if="mode !== 'commands'"

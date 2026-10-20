@@ -4,6 +4,8 @@
     import Copy from '~icons/lucide/copy'
     import Trash2 from '~icons/lucide/trash2'
 
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
+
     export interface TagMenuState {
         x: number
         y: number
@@ -23,21 +25,18 @@
     }>()
     const root = ref<HTMLElement | null>(null)
 
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: () => emit('close'),
+    })
+
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function act(kind: 'copyName' | 'delete' | 'push' | 'deleteRemote') {
         const tag = props.menu?.tag
@@ -63,6 +62,7 @@
         v-if="menu"
         ref="root"
         class="tag-menu"
+        role="menu"
         :style="menuStyle()">
         <button
             v-if="menu && !menu.checkingRemote && !menu.onRemote && menu.canPush"

@@ -88,6 +88,8 @@
     <button
         class="open-in-btn"
         title="Open active repository in external app"
+        aria-haspopup="menu"
+        :aria-expanded="!!openInMenu"
         @click="toggleOpenIn">
         <span>Open in</span>
     </button>

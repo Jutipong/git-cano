@@ -132,6 +132,13 @@
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
+    const terminalMaxHeight = ref(Math.max(160, Math.round(window.innerHeight * 0.7)))
+
+    function updateTerminalMaxHeight() {
+        terminalMaxHeight.value = Math.max(160, Math.round(window.innerHeight * 0.7))
+    }
+    onMounted(() => window.addEventListener('resize', updateTerminalMaxHeight))
+    onUnmounted(() => window.removeEventListener('resize', updateTerminalMaxHeight))
     const tagTarget = ref<{ hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null } | null>(
         null
     )
@@ -517,6 +524,37 @@
         window.addEventListener('mouseup', onEnd)
     }
     /** Vertical drag for the bottom terminal panel — pulls the top edge, so delta grows downward. */
+    /** Keyboard twin of the panel drag handles: arrows step, Shift+Arrow steps faster, Home/End jump to the bounds. */
+    function resizePanelByKey(side: 'left' | 'right', event: KeyboardEvent) {
+        const step = event.shiftKey ? 40 : 10
+        const min = side === 'left' ? SIDEBAR_MIN_WIDTH : RIGHT_PANEL_MIN_WIDTH
+        const max = side === 'left' ? 380 : 500
+        const current = side === 'left' ? ui.sidebarWidth : ui.rightPanelWidth
+        let next = current
+        if (event.key === 'ArrowLeft') next = current + (side === 'left' ? -step : step)
+        else if (event.key === 'ArrowRight') next = current + (side === 'left' ? step : -step)
+        else if (event.key === 'Home') next = min
+        else if (event.key === 'End') next = max
+        else return
+        event.preventDefault()
+        next = Math.min(max, Math.max(min, next))
+        if (side === 'left') ui.sidebarWidth = next
+        else ui.rightPanelWidth = next
+    }
+
+    function resizeTerminalByKey(event: KeyboardEvent) {
+        const step = event.shiftKey ? 40 : 10
+        const current = terminalStore.terminalHeight
+        let next = current
+        if (event.key === 'ArrowUp') next = current + step
+        else if (event.key === 'ArrowDown') next = current - step
+        else if (event.key === 'Home') next = 120
+        else if (event.key === 'End') next = terminalMaxHeight.value
+        else return
+        event.preventDefault()
+        terminalStore.terminalHeight = Math.min(terminalMaxHeight.value, Math.max(120, next))
+    }
+
     function beginTerminalResize(event: MouseEvent) {
         event.preventDefault()
         const startY = event.clientY
@@ -943,7 +981,15 @@
                     @create-tag="tagTarget = $event" />
                 <div
                     class="panel-splitter"
-                    @mousedown="event => beginResize('left', event)" />
+                    role="separator"
+                    aria-orientation="vertical"
+                    aria-label="Resize sidebar"
+                    :aria-valuenow="ui.sidebarWidth"
+                    :aria-valuemin="SIDEBAR_MIN_WIDTH"
+                    :aria-valuemax="380"
+                    tabindex="0"
+                    @mousedown="event => beginResize('left', event)"
+                    @keydown="resizePanelByKey('left', $event)" />
                 <div
                     v-if="loadingRepoVisible"
                     class="busy-overlay">
@@ -984,7 +1030,15 @@
                                     "
                                     class="terminal-splitter"
                                     :class="ui.terminalFullWidth ? 'terminal-splitter-full' : 'terminal-splitter-wide'"
-                                    @mousedown="beginTerminalResize" />
+                                    role="separator"
+                                    aria-orientation="horizontal"
+                                    aria-label="Resize terminal panel"
+                                    :aria-valuenow="terminalStore.terminalHeight"
+                                    :aria-valuemin="120"
+                                    :aria-valuemax="terminalMaxHeight"
+                                    tabindex="0"
+                                    @mousedown="beginTerminalResize"
+                                    @keydown="resizeTerminalByKey" />
                             </Teleport>
                             <!--
                                 One panel per repo that owns a shell, kept mounted for the whole session:
@@ -1027,7 +1081,15 @@
                         </div>
                         <div
                             class="panel-splitter"
-                            @mousedown="event => beginResize('right', event)" />
+                            role="separator"
+                            aria-orientation="vertical"
+                            aria-label="Resize changes panel"
+                            :aria-valuenow="ui.rightPanelWidth"
+                            :aria-valuemin="RIGHT_PANEL_MIN_WIDTH"
+                            :aria-valuemax="500"
+                            tabindex="0"
+                            @mousedown="event => beginResize('right', event)"
+                            @keydown="resizePanelByKey('right', $event)" />
                         <div
                             class="right-pane"
                             :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">

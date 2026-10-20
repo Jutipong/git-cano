@@ -39,6 +39,28 @@
     const draggingPath = ref<string | null>(null)
     const activePath = computed(() => props.tabs[props.activeIndex]?.path ?? '')
 
+    function focusTab(index: number) {
+        document.querySelectorAll<HTMLElement>('.tab-track .repo-tab')[index]?.focus()
+    }
+
+    function onTabKeydown(event: KeyboardEvent, index: number) {
+        const count = props.tabs.length
+        if (!count) return
+        let next = index
+        if (event.key === 'ArrowLeft') next = (index - 1 + count) % count
+        else if (event.key === 'ArrowRight') next = (index + 1) % count
+        else if (event.key === 'Home') next = 0
+        else if (event.key === 'End') next = count - 1
+        else if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            emit('select', index)
+            return
+        } else return
+        event.preventDefault()
+        emit('select', next)
+        void nextTick(() => focusTab(next))
+    }
+
     const ui = useUiStore()
 
     const syncStore = useSyncStore()
@@ -226,20 +248,26 @@
                 <TransitionGroup
                     name="tab"
                     tag="div"
-                    class="tab-track">
+                    class="tab-track"
+                    role="tablist"
+                    aria-label="Open repositories">
                     <div
                         v-for="(tab, index) in tabs"
                         :key="tab.path"
                         class="repo-tab"
                         :class="{ active: index === activeIndex, dragging: tab.path === draggingPath }"
                         :title="tab.path"
+                        role="tab"
+                        :aria-selected="index === activeIndex"
+                        :tabindex="index === activeIndex ? 0 : -1"
                         draggable="true"
                         @dragstart="onDragStart(tab, $event)"
                         @dragover="onDragOver(index, $event)"
                         @drop="onDrop($event)"
                         @dragend="onDragEnd"
                         @contextmenu.prevent.stop="openTabMenu(tab, $event)"
-                        @click="emit('select', index)">
+                        @click="emit('select', index)"
+                        @keydown="onTabKeydown($event, index)">
                         <span
                             v-if="ui.repoTabColors[tab.path]"
                             class="repo-tab-color-dot"
@@ -248,7 +276,9 @@
                         <span class="repo-tab-name">{{ tab.name }}</span>
                         <button
                             class="icon-btn danger commit-close-btn tab-close"
+                            tabindex="-1"
                             :title="`Close ${tab.name}`"
+                            :aria-label="`Close ${tab.name}`"
                             @click.stop="emit('close', index)">
                             <CloseXIcon />
                         </button>

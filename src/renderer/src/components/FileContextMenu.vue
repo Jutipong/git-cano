@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ChevronRight from '~icons/lucide/chevron-right'
     import Eye from '~icons/lucide/eye'
     import File from '~icons/lucide/file'
@@ -8,6 +8,7 @@
     import History from '~icons/lucide/history'
     import ScanSearch from '~icons/lucide/scan-search'
 
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
     import { isPreviewablePath } from '../utils/preview'
 
     import type { ToastKind } from '../stores/uiTransient'
@@ -38,6 +39,51 @@
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const root = ref<HTMLElement | null>(null)
     const submenuLeft = computed(() => (props.menu?.x ?? 0) > window.innerWidth - 430)
+    const submenuOpen = ref(false)
+
+    function close() {
+        submenuOpen.value = false
+        emit('close')
+    }
+
+    function focusSubmenuTrigger() {
+        void nextTick(() => root.value?.querySelector<HTMLElement>('.file-context-menu-wrap > .has-sub')?.focus())
+    }
+
+    function focusSubmenuFirst() {
+        void nextTick(() => root.value?.querySelector<HTMLElement>('.file-context-menu-sub button')?.focus())
+    }
+
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: close,
+        onEscape: () => {
+            if (!submenuOpen.value) return false
+            submenuOpen.value = false
+            focusSubmenuTrigger()
+            return true
+        },
+        onArrowRight: item => {
+            if (!item.classList.contains('has-sub')) return false
+            submenuOpen.value = true
+            focusSubmenuFirst()
+            return true
+        },
+        onArrowLeft: () => {
+            if (!submenuOpen.value) return false
+            submenuOpen.value = false
+            focusSubmenuTrigger()
+            return true
+        },
+    })
+
+    watch(
+        () => props.menu,
+        current => {
+            if (!current) submenuOpen.value = false
+        }
+    )
 
     const fileName = computed(() => props.menu?.path.split('/').pop() ?? '')
     const fileExtension = computed(() => {
@@ -54,20 +100,11 @@
     })
 
     function onDocMouseDown(event: MouseEvent) {
-        if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
-    }
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
+        if (props.menu && root.value && !root.value.contains(event.target as Node)) close()
     }
 
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function menuStyle() {
         if (!props.menu) return {}
@@ -108,6 +145,7 @@
         v-if="menu"
         ref="root"
         class="file-context-menu"
+        role="menu"
         :class="{ 'submenu-left': submenuLeft }"
         :style="menuStyle()">
         <button
@@ -157,10 +195,13 @@
             class="file-context-menu-separator" />
         <div
             v-if="menu.workdir && !menu.deleted"
-            class="file-context-menu-wrap">
+            class="file-context-menu-wrap"
+            :class="{ 'keyboard-open': submenuOpen }">
             <button
                 class="file-context-menu-item has-sub"
-                type="button">
+                type="button"
+                aria-haspopup="menu"
+                :aria-expanded="submenuOpen">
                 <Folder
                     class="file-context-menu-icon"
                     width="13"
@@ -171,7 +212,10 @@
                     width="12"
                     height="12" />
             </button>
-            <div class="file-context-menu-sub">
+            <div
+                class="file-context-menu-sub"
+                role="menu"
+                aria-label="Ignore options">
                 <button
                     v-if="!menu.directory"
                     class="file-context-menu-item"

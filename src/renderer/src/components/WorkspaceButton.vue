@@ -195,6 +195,8 @@
         <button
             class="workspace-btn"
             title="Work spaces"
+            aria-haspopup="menu"
+            :aria-expanded="open"
             :disabled="switching"
             @click="toggle">
             <ThinkSpinner

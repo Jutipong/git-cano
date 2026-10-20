@@ -1,11 +1,12 @@
 <script setup lang="ts">
-    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
+    import { computed, inject, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideTag from '~icons/lucide/tag'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import { useModalA11y } from '../utils/modalA11y'
     import AppCheckbox from './AppCheckbox.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
@@ -23,20 +24,21 @@
     const error = ref('')
     const ui = useUiStore()
     const nameInput = useTemplateRef<HTMLInputElement>('nameInput')
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        initialFocus: nameInput,
+        onClose: () => emit('close'),
+    })
 
     onMounted(async () => {
-        document.addEventListener('keydown', onKey)
-        nextTick(() => nameInput.value?.focus())
         try {
             const tags = await window.api.tags()
             existing.value = tags.map(tag => tag.name)
         } catch {}
     })
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
     const head = computed(() => {
         const branch = props.commit.branchName?.trim() ?? ''
@@ -106,12 +108,19 @@
 
 <template>
     <div class="confirm-dialog-overlay">
-        <div class="confirm-dialog tag-confirm">
+        <div
+            ref="dialog"
+            class="confirm-dialog tag-confirm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tag-create-title"
+            tabindex="-1">
             <div class="confirm-dialog-header flow">
                 <i-lucide-tag
                     width="17"
-                    height="17" />
-                <strong>Create tag</strong>
+                    height="17"
+                    aria-hidden="true" />
+                <strong id="tag-create-title">Create tag</strong>
                 <code
                     class="rebase-base prompt-chip"
                     :title="headTitle"

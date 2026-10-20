@@ -13,6 +13,9 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
 - `tests/e2e` — Playwright driving the **built** Electron app (`pnpm test:e2e` builds `out/` first).
     - `app.spec.ts` covers the memory/payload work (lazy commit bodies, diff caps, blob-URL images, split plan,
       tokenizer state, graph interactions, AI context cap).
+    - `keyboard.spec.ts` covers the graph listbox keys, commit/file/branch menus + submenus, repo/Settings
+      tab roving focus, list rows (sidebar/files/history/reflog) and splitter resizing. Terminal tab keys
+      live in `terminal.spec.ts` (Windows).
     - `conflict.spec.ts` covers the conflict flow.
     - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
       panel per repo, full overlay geometry, the docked full-width strip, full-mode persistence across every hide gesture (`Ctrl+`` /
@@ -39,6 +42,9 @@ splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
   overwrite the real `%APPDATA%\git-cano` profile (recent.json + workspace localStorage).
 - Specs are `serial` and each spec file launches its own app; fixtures are shared per run, so do not commit in a
   repo another spec asserts on unless the spec owns that repo. Add new fixture repos in `fixtures.ts` instead.
+- `terminal.spec.ts` is Windows-only: it pins Command Prompt and asserts PowerShell tab labels. It calls
+  `test.skip(process.platform !== 'win32', …)` so local macOS/Linux runs skip the whole suite; CI still runs it
+  on Windows. Keep that guard unless the shell assertions are made cross-platform first.
 - Use UI assertions for behavior and `window.api` for setup/verification:
   `(window as unknown as { api: any }).api.<call>()`. Never assert on renderer internals.
 - Determinism: no network. The AI test uses a fake token and only asserts the call fails fast with bounded memory.

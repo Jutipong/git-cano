@@ -105,13 +105,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   overlays to their raw source booleans.
 - **Styling** has two layers: `styles.css` (base) and `modern-ui.css` (loaded after, overrides
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
-  `12px` radius; rows/buttons use pill (`999px`) shapes — except the `terminal` theme, which
-  intentionally uses square corners (`--radius-card/pill: 0`), bracket titles, scanlines baked
-  into the backdrop (not an overlay layer), and a `12px` background grid. Terminal palette is
-  dusty navy with blue accents (see the `terminal` `ThemeOption` description in `ui.ts`);
-  its graph lanes live in `GraphView.vue` (`TERMINAL_COLORS` + `TERMINAL_FIRST_LANE_COLOR`,
-  8 entries, must stay mutually distinct). Dark palettes use `color-mix` for tints; light is a
-  warm-gray base — keep both legible on low-clarity Windows displays.
+  `12px` radius; rows/buttons use pill (`999px`) shapes. Dark palettes use `color-mix` for tints;
+  light is a warm-gray base — keep both legible on low-clarity Windows displays.
 - **Windows-only settings hide on macOS/Linux**: General → Performance status accelerators render
   only when `isWindows` (`utils/shortcuts.ts`), and main forces them off outside win32
   (`setStatusAccelerators()` in `main/git.ts`). Settings → Terminal hides its shell section the same
@@ -119,6 +114,79 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   terminal always spawns `$SHELL`, and PowerShell 7 — the default — falls back to Command Prompt where
   pwsh is not installed). A persisted `true` must never take effect
   there — gate new Windows-only toggles the same way instead of leaving them visible-but-inert.
+
+## Design tokens & style guard
+
+- Theme colors live in the `:root[data-theme='…']` blocks of `styles.css` — the single
+  source of truth. `modern-ui.css` only holds component overrides; never add a theme-token
+  declaration there. Use `var(--…)` for every color in selectors; raw hex belongs only in a
+  token declaration (a line starting with `--`). Shared, theme-independent tokens sit in the
+  `:root` block at the end of those theme blocks: spacing (`--space-1…7` = 4/6/8/10/12/16/24px), type
+  (`--font-xs…2xl` = 10/11/12/13/14/16/18px), radius (`--radius-xs/sm/md` = 4/6/8px
+  plus the existing `--radius-card`/`--radius-pill`), motion
+  (`--duration-fast`/`--duration`/`--duration-slow`), focus
+  (`--focus-ring`/`--focus-offset`, overridden by the retro/win9x themes) and
+  z-index layers below.
+- New font sizes use the scale above. Legacy sizes outside it (8, 9, 9.5, 10.5, 11.5,
+  12.5, 15, 34) are frozen: do not add more, but do not round the existing ones either —
+  the dense layouts depend on them.
+- Global stacking layers use the tokens: fullscreen 60, popover 60 / submenu 61, toast 70,
+  busy 80, dialog 90, overlay (command palette, tooltips) 95, splash 200, fixed menu 1000.
+  Values 1–50 stay component-local; add a new global layer only by updating both the token
+  block and this list.
+- `pnpm check:styles` (chained into `pnpm lint`) ratchets the drift: raw hex, raw
+  `rgba()`/`hsl()` color functions outside a token declaration, and off-scale numeric font
+  sizes may never increase per file. Safe cleanup lowers the counts; refresh the baseline with
+  `node scripts/check-styles.mjs --update` only after they went down, and include
+  `scripts/style-baseline.json` in the change. `--update` refuses to raise a count
+  (`--force` is only for a deliberate migration). Do not raise a baseline to land a new
+  one-off value — use a token or add a real scale entry instead.
+- Raw colour literals are allowed only for: syntax-token palettes (`.tok-*`, markdown/JSON
+  preview), win9x/light-retro bevel and shadow values, checkerboard/transparency patterns,
+  and fixed white/dark text on a deliberately coloured surface. A reusable theme colour or
+  surface tint must be a `--token` in `styles.css`.
+- Visual consistency fixes are bounded: only duplicated inconsistencies, accessibility
+  (invisible focus, contrast below 4.5:1), clear alignment/clipping bugs, or exact
+  token replacements. They need approval before landing and must be checked across all
+  themes; do not fold palette, layout, font-weight or animation changes into a token pass.
+
+## Keyboard navigation
+
+- **Commit graph** (`GraphView.vue`): `.graph-scroll` is the single tab stop
+  (`role="listbox"` + `aria-activedescendant`); rows are `role="option"` with
+  `aria-selected`. Arrow Up/Down, Home/End and PageUp/PageDown move the selection,
+  Enter/Space select, `t` toggles the full message, and Shift+F10 / the ContextMenu key
+  opens the commit menu at the selected row. Keep the inline `.msg-toggle` at
+  `tabindex="-1"` so the graph stays one tab stop; mouse clicks still work. Focus is shown
+  by the selected row, not a panel border — do not add an outline to `.graph-scroll:focus-visible`.
+  The teal focus edge belongs to the terminal panel (`.terminal-panel:focus-within`) only.
+- **Popup menus**: `useMenuKeyboard` (`utils/menuKeyboard.ts`) focuses the first enabled
+  item, handles Arrow Up/Down, Home/End, Escape and Tab, and restores focus to the
+  trigger. Every menu root is `role="menu"`; item roles are tagged at open time. Submenu
+  triggers carry `aria-haspopup`/`aria-expanded`, use `.keyboard-open` (in addition to
+  `:hover`) to show, ArrowRight opens and focuses the first submenu item, ArrowLeft/Escape
+  closes it. Do not add per-menu document Escape listeners next to the composable.
+- **Tabs**: repo tabs (`TabBar.vue`), terminal tabs (`TerminalPanel.vue`) and Settings tabs
+  (`ToolsModal.vue`) are `role="tablist"` / `role="tab"` with `aria-selected` and a roving
+  tabindex (active 0, the rest -1). Arrow Left/Right and Home/End move and activate the tab.
+  Tab close buttons stay `tabindex="-1"` (Ctrl+W closes the active tab); Settings content is
+  a `role="tabpanel"` tied to the active tab.
+- **List rows**: sidebar branches/tags, stashes, the Changes file list, Reflog and file
+  History use `handleListKeydown` (`utils/listKeyboard.ts`). The list container is the single
+  tab stop (`role="listbox"`); rows are `tabindex="-1"`. Arrow Up/Down/Home/End focus rows,
+  Enter/Space replay the row click, Shift+F10 / ContextMenu replays its contextmenu handler.
+  The file tree's Left/Right collapse/expand a focused folder. Do not make every row a tab stop.
+- **Splitters**: sidebar/changes `.panel-splitter` and `.terminal-splitter` are
+  `role="separator"` with `aria-orientation` and `aria-value*`. Arrows resize by 10px,
+  Shift+Arrow by 40px, Home/End jump to the bounds; mouse dragging stays unchanged.
+- **Focus rings are limited to text inputs and links** (product decision): only `input`,
+  `textarea`, `select` and `a[href]` get the global `:focus-visible` ring. Buttons, tabs,
+  popup menus, list rows and splitters intentionally have no visible focus cue; their
+  hover/active/selected states carry the UI. The terminal panel keeps its `:focus-within`
+  teal edge. Never reintroduce a global `*:focus-visible` outline. Chromeless inputs inside
+  a styled field (`.palette-input`, `.commit-search input`, `.workspace-add-input`,
+  `.terminal-tab-rename`) suppress the outline and use the field border instead; the
+  command palette's field is a pill like the create-branch prompt input.
 
 ## Keyboard shortcuts
 

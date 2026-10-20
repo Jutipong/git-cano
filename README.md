@@ -131,7 +131,7 @@ Download the latest release from **GitHub Releases** (`Jutipong/git-cano`):
 
 ### 🎨 Themes & branding
 
-- 🌑 Dark / Dark Modern / Dark Neon, 💻 Terminal TUI (square corners, scanlines, dusty-navy palette), ☀️ Light
+- 🌑 Dark / Dark Modern, ☀️ Light / Light Retro, 🪟 Win9x / Win9x Dark
 - 🖌️ Commit-graph lane colors adapt per theme
 - 🛶 Cano logo in the sidebar toolbar, splash screen & empty state
 

@@ -7,6 +7,9 @@ import { launchApp, type AppHandle } from './launch'
 
 const fx = loadFixtures()
 
+// This suite pins Command Prompt and asserts PowerShell tab labels, both of which only exist on Windows.
+test.skip(process.platform !== 'win32', 'terminal suite is Windows-only')
+
 test.describe.configure({ mode: 'serial' })
 
 let handle: AppHandle
@@ -316,6 +319,21 @@ test('terminal tabs rename on double-click and keep their number through a reord
 
     // Reordering moved the labels, not the shells: the tab on screen is still a live shell.
     await runInTerminal('echo after-reorder-ok', 'after-reorder-ok')
+})
+
+test('terminal tabs move with the arrow keys without leaving the strip', async () => {
+    const panel = page.locator('.terminal-panel:visible')
+    const active = panel.locator('.terminal-tab.active')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(2)
+    await active.focus()
+    const before = await active.locator('.terminal-tab-label').textContent()
+
+    await page.keyboard.press('ArrowRight')
+    await expect(panel.locator('.terminal-tab.active')).toBeFocused()
+    expect(await panel.locator('.terminal-tab.active .terminal-tab-label').textContent()).not.toBe(before)
+
+    await page.keyboard.press('ArrowLeft')
+    await expect(panel.locator('.terminal-tab.active .terminal-tab-label')).toHaveText(before ?? '')
 })
 
 test('the whole tab pill is clickable, so switching needs no aim at the label', async () => {

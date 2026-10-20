@@ -55,6 +55,9 @@ test('ignore submenu is only offered for worktree files', async () => {
     await expect(page.locator('.file-context-menu-wrap')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.locator('.file-context-menu')).toHaveCount(0)
+    // The preview/history tests leave the floating diff open; Escape closes only the top layer at a time.
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.diff-view')).toHaveCount(0)
 
     await page.locator('.graph-row').nth(1).click()
     const commitFile = page.locator('.commit-file-block .file-row').first()

@@ -12,7 +12,7 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 ## Commands
 
 - `pnpm dev` — development with hot reload
-- `pnpm lint` — oxlint + vue-tsc; run before every commit
+- `pnpm lint` — oxlint + vue-tsc + style guard (`check:styles`); run before every commit
 - `pnpm typecheck` — vue-tsc + tsc only
 - `pnpm test:unit` — Vitest unit tests for pure logic (`tests/unit`)
 - `pnpm test:e2e` — Playwright Electron E2E; builds `out/` first (`tests/e2e`) — see `tests/AGENTS.md`

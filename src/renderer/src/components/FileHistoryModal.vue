@@ -1,9 +1,11 @@
 <script setup lang="ts">
-    import { inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { inject, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
 
     import { useUiStore } from '../stores/ui'
+    import { handleListKeydown } from '../utils/listKeyboard'
+    import { useModalA11y } from '../utils/modalA11y'
     import CloseXIcon from './CloseXIcon.vue'
 
     interface Props {
@@ -13,6 +15,13 @@
     const emit = defineEmits<{ (e: 'close'): void }>()
     const notify = inject<(m: string) => void>('notify', () => {})
     const ui = useUiStore()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const isFullscreen = ref(false)
 
@@ -29,15 +38,6 @@
         author: string
         subject: string
     }
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            emit('close')
-        }
-    }
-    onMounted(() => document.addEventListener('keydown', onKey))
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
 
     const history = ref<HistoryCommit[]>([])
     const selectedHash = ref<string | null>(null)
@@ -64,10 +64,15 @@
 
 <template>
     <div
+        ref="dialog"
         class="history-view"
-        :class="{ fullscreen: isFullscreen }">
+        :class="{ fullscreen: isFullscreen }"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="history-title"
+        tabindex="-1">
         <div class="diff-header">
-            <strong>History of</strong>
+            <strong id="history-title">History of</strong>
             <code class="rebase-base">{{ file }}</code>
             <div class="diff-header-center">
                 <div class="segmented diff-header-actions">
@@ -87,6 +92,7 @@
                     <button
                         class="icon-btn danger diff-close-btn"
                         title="Close history"
+                        aria-label="Close history"
                         @click="emit('close')">
                         <CloseXIcon />
                     </button>
@@ -94,11 +100,19 @@
             </div>
         </div>
         <div class="history-body">
-            <div class="history-list">
+            <div
+                class="history-list"
+                tabindex="0"
+                role="listbox"
+                aria-label="File history"
+                @keydown="event => handleListKeydown(event, '.history-row')">
                 <div
                     v-for="commit in history"
                     :key="commit.hash"
                     class="history-row"
+                    tabindex="-1"
+                    role="option"
+                    :aria-selected="selectedHash === commit.hash"
                     :class="{ selected: selectedHash === commit.hash }"
                     @click="select(commit.hash)">
                     <code>{{ commit.shortHash }}</code>

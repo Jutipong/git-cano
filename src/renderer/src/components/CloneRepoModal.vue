@@ -1,5 +1,5 @@
 <script setup lang="ts">
-    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue'
+    import { computed, inject, onMounted, ref, useTemplateRef, watch } from 'vue'
     import ILucideDownload from '~icons/lucide/download'
     import ILucideFolderPlus from '~icons/lucide/folder-plus'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
@@ -7,6 +7,7 @@
     import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, joinClonePath } from '@shared/clone'
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import { useModalA11y } from '../utils/modalA11y'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
@@ -23,6 +24,14 @@
     const loadingRoot = ref(true)
     const error = ref('')
     const urlInput = useTemplateRef<HTMLInputElement>('urlInput')
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        initialFocus: urlInput,
+        onClose: () => emit('close'),
+    })
 
     const folderProblem = computed(() => (folder.value ? cloneFolderError(folder.value) : 'Folder name is required'))
     const fullPath = computed(() => {
@@ -46,8 +55,6 @@
     })
 
     onMounted(() => {
-        document.addEventListener('keydown', onKey)
-        nextTick(() => urlInput.value?.focus())
         window.api
             .getLastCloneRoot()
             .then(root => {
@@ -58,11 +65,6 @@
                 loadingRoot.value = false
             })
     })
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
 
     function onFolderInput() {
         folderEdited.value = true
@@ -112,13 +114,20 @@
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal clone-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal clone-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="clone-repo-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
-                <strong>Clone repository</strong>
+                <strong id="clone-repo-title">Clone repository</strong>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
                     title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>

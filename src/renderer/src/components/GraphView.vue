@@ -53,9 +53,6 @@
     const FIRST_LANE_COLOR = '#F05272'
     /* Shared hue families: lanes/chips are calmer, avatars are the vivid accent. */
     const COLORS = ['#5CDA72', '#E276E6', '#F08A46', '#45B0E6', '#EE6871', '#9B82E0', '#31D0B3', '#D36DDD']
-    /** Slightly toned palette for the terminal theme. */
-    const TERMINAL_FIRST_LANE_COLOR = '#F06C82'
-    const TERMINAL_COLORS = ['#69D987', '#C58AE0', '#ED9A64', '#68C4E9', '#88A9E6', '#9E91E3', '#55D6B9', '#DF91C3']
     /** Deep dusty palette for the light-retro theme — dim paper needs darker tones to tell lanes apart. 8 entries, mutually distinct. */
     const LIGHT_RETRO_FIRST_LANE_COLOR = '#1A1A1A'
     const LIGHT_RETRO_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#4A4A4A', '#1F6B5E', '#713C4D']
@@ -73,6 +70,7 @@
     const terminalStore = useTerminalStore()
     const ui = useUiStore()
     const selectedHash = ref<string | null>(null)
+    const activeDescendantId = computed(() => (selectedHash.value ? `graph-row-${selectedHash.value}` : undefined))
     const showSettings = ref(false)
     const menu = ref<CommitMenuState | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
@@ -87,14 +85,13 @@
     const expandedAbove = ref(false)
     const expandedMaxH = ref(240)
 
-    function toggleMessage(commit: CommitNode, event: MouseEvent) {
+    function toggleMessageAt(commit: CommitNode, row: HTMLElement | null) {
         if (expandedHash.value === commit.hash) {
             expandedHash.value = null
             return
         }
         // open toward whichever side has more room so the popover never falls off the graph
         const container = scrollEl.value
-        const row = (event.currentTarget as HTMLElement | null)?.closest('.graph-row')
         if (container && row) {
             const rect = container.getBoundingClientRect()
             const rowRect = row.getBoundingClientRect()
@@ -105,6 +102,10 @@
         }
         expandedHash.value = commit.hash
         void loadBody(commit)
+    }
+
+    function toggleMessage(commit: CommitNode, event: MouseEvent) {
+        toggleMessageAt(commit, (event.currentTarget as HTMLElement | null)?.closest('.graph-row') ?? null)
     }
 
     function onKeydown(event: KeyboardEvent) {
@@ -272,18 +273,93 @@
         animateScrollTo(0)
     }
 
-    function openMenu(commit: CommitNode, event: MouseEvent) {
+    function openMenuAt(commit: CommitNode, x: number, y: number) {
         select(commit)
         const clickedIdx = chainIndex.value.get(commit.hash) ?? -1
         if (squashOldestChainIdx.value >= 0 && clickedIdx >= 0 && clickedIdx <= squashOldestChainIdx.value) {
             const oldest = headChain.value[squashOldestChainIdx.value]!
-            menu.value = { x: event.clientX, y: event.clientY, commit: oldest, squashCount: squashOldestChainIdx.value + 1 }
+            menu.value = { x, y, commit: oldest, squashCount: squashOldestChainIdx.value + 1 }
         } else {
             clearSquashPicks()
             // Only commits below HEAD on the current branch can be squashed — HEAD itself has nothing to squash.
             const count = clickedIdx > 0 ? clickedIdx + 1 : 0
-            menu.value = { x: event.clientX, y: event.clientY, commit, squashCount: count }
+            menu.value = { x, y, commit, squashCount: count }
         }
+    }
+
+    function openMenu(commit: CommitNode, event: MouseEvent) {
+        openMenuAt(commit, event.clientX, event.clientY)
+    }
+
+    function openMenuAtRow(commit: CommitNode) {
+        const row = document.getElementById(`graph-row-${commit.hash}`)?.getBoundingClientRect()
+        const container = scrollEl.value?.getBoundingClientRect()
+        openMenuAt(commit, row ? row.left + 24 : (container?.left ?? 0) + 24, row ? row.bottom - 4 : (container?.top ?? 0) + 100)
+    }
+
+    function scrollRowIntoView(index: number) {
+        const el = scrollEl.value
+        if (!el) return
+        const top = rowTop(index)
+        const height = rowHeightAt(index)
+        if (top < el.scrollTop) el.scrollTop = top
+        else if (top + height > el.scrollTop + el.clientHeight) el.scrollTop = top + height - el.clientHeight
+        onScroll()
+    }
+
+    function onGraphKeydown(event: KeyboardEvent) {
+        const list = visibleCommits.value
+        if (!list.length) return
+        const current = selectedHash.value ? (rowIndex.value.get(selectedHash.value) ?? -1) : -1
+        const page = Math.max(1, Math.floor((scrollEl.value?.clientHeight ?? 300) / 30))
+        let next = current
+        switch (event.key) {
+            case 'ArrowDown':
+                next = current < 0 ? 0 : Math.min(list.length - 1, current + 1)
+                break
+            case 'ArrowUp':
+                next = current < 0 ? 0 : Math.max(0, current - 1)
+                break
+            case 'Home':
+                next = 0
+                break
+            case 'End':
+                next = list.length - 1
+                break
+            case 'PageDown':
+                next = Math.min(list.length - 1, Math.max(0, current) + page)
+                break
+            case 'PageUp':
+                next = Math.max(0, Math.max(0, current) - page)
+                break
+            case 'Enter':
+            case ' ':
+                if (current < 0) return
+                event.preventDefault()
+                select(list[current])
+                return
+            case 't':
+            case 'T':
+                if (current < 0) return
+                event.preventDefault()
+                toggleMessageAt(list[current], document.getElementById(`graph-row-${list[current].hash}`))
+                return
+            case 'F10':
+                if (!event.shiftKey || current < 0) return
+                event.preventDefault()
+                openMenuAtRow(list[current])
+                return
+            case 'ContextMenu':
+                if (current < 0) return
+                event.preventDefault()
+                openMenuAtRow(list[current])
+                return
+            default:
+                return
+        }
+        event.preventDefault()
+        select(list[next])
+        scrollRowIntoView(next)
     }
 
     /**
@@ -393,7 +469,6 @@
     }
 
     function lanePalette(): string[] {
-        if (ui.theme === 'terminal') return TERMINAL_COLORS
         if (ui.theme === 'light-retro') return LIGHT_RETRO_COLORS
         if (ui.theme === 'win9x-opencode') return LIGHT_RETRO_COLORS
         return COLORS
@@ -401,7 +476,6 @@
 
     function nodeColor(commit: CommitNode) {
         if (commit.lane === 0) {
-            if (ui.theme === 'terminal') return TERMINAL_FIRST_LANE_COLOR
             if (ui.theme === 'light-retro') return LIGHT_RETRO_FIRST_LANE_COLOR
             if (ui.theme === 'win9x-opencode') return LIGHT_RETRO_FIRST_LANE_COLOR
             return FIRST_LANE_COLOR
@@ -523,13 +597,26 @@
         const sample = visibleCommits.value[0]?.shortHash ?? 'abcdef12345'
         return Math.round(Math.max(HASH_MIN_W, measureText(sample, 11, MONO_FONT) + 10))
     })
+    /** Pick whichever chip label colour has the higher WCAG contrast against the lane colour. */
     function contrastText(hex: string): string {
         if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return '#f5f7fa'
-        const r = parseInt(hex.slice(1, 3), 16)
-        const g = parseInt(hex.slice(3, 5), 16)
-        const b = parseInt(hex.slice(5, 7), 16)
-        const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
-        return luminance > 150 ? '#122d2c' : '#f5f7fa'
+        const channel = (value: number) => {
+            const v = value / 255
+            return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+        }
+        const luminance = (r: number, g: number, b: number) => 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b)
+        const ratio = (a: number, b: number) => {
+            const [high, low] = a > b ? [a, b] : [b, a]
+            return (high + 0.05) / (low + 0.05)
+        }
+        const background = luminance(
+            parseInt(hex.slice(1, 3), 16),
+            parseInt(hex.slice(3, 5), 16),
+            parseInt(hex.slice(5, 7), 16)
+        )
+        const dark = luminance(0x12, 0x2d, 0x2c)
+        const light = luminance(0xf5, 0xf7, 0xfa)
+        return ratio(background, dark) >= ratio(background, light) ? '#122d2c' : '#f5f7fa'
     }
 
     type RefKind = 'head' | 'local' | 'remote' | 'tag'
@@ -846,6 +933,11 @@
         <div
             ref="scrollEl"
             class="graph-scroll"
+            tabindex="0"
+            role="listbox"
+            aria-label="Commit history"
+            :aria-activedescendant="activeDescendantId"
+            @keydown="onGraphKeydown"
             @scroll.passive="onScroll">
             <template v-if="totalHeight > 0">
                 <svg
@@ -896,8 +988,11 @@
                     aria-hidden="true" />
                 <div
                     v-for="commit in renderedCommits"
+                    :id="`graph-row-${commit.hash}`"
                     :key="commit.hash"
                     class="graph-row"
+                    role="option"
+                    :aria-selected="selectedHash === commit.hash"
                     :class="{
                         selected: selectedHash === commit.hash,
                         'msg-expanded': expandedHash === commit.hash,
@@ -978,6 +1073,8 @@
                             <button
                                 v-if="commit.body || commit.hasBody || bodies[commit.hash] !== undefined"
                                 class="msg-toggle"
+                                tabindex="-1"
+                                :aria-expanded="expandedHash === commit.hash"
                                 :title="expandedHash === commit.hash ? 'Collapse message' : 'Show full message'"
                                 @click.stop="toggleMessage(commit, $event)">
                                 <i-lucide-chevron-down

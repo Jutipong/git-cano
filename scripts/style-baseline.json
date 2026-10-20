@@ -1,0 +1,19 @@
+{
+    "files": {
+        "src/renderer/src/components/KittScanner.vue": {
+            "hex": 0,
+            "colorFn": 0,
+            "fontSize": 1
+        },
+        "src/renderer/src/modern-ui.css": {
+            "hex": 202,
+            "colorFn": 10,
+            "fontSize": 16
+        },
+        "src/renderer/src/styles.css": {
+            "hex": 13,
+            "colorFn": 16,
+            "fontSize": 3
+        }
+    }
+}

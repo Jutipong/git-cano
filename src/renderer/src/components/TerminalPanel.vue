@@ -65,6 +65,29 @@
         activate(id)
     }
 
+    /** Arrow keys move between pills without stealing the keyboard from the strip into the shell. */
+    let keyboardTabNav = false
+    function onTabKeydown(event: KeyboardEvent, id: string) {
+        if (renamingId.value === id) return
+        const list = tabs.value
+        const index = list.findIndex(tab => tab.id === id)
+        if (index < 0) return
+        let next = index
+        if (event.key === 'ArrowLeft') next = (index - 1 + list.length) % list.length
+        else if (event.key === 'ArrowRight') next = (index + 1) % list.length
+        else if (event.key === 'Home') next = 0
+        else if (event.key === 'End') next = list.length - 1
+        else if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault()
+            activate(id)
+            return
+        } else return
+        event.preventDefault()
+        keyboardTabNav = true
+        activate(list[next].id)
+        void nextTick(() => tabEls.value[list[next].id]?.focus())
+    }
+
     /** Double-click anywhere on the pill starts a rename; the guard keeps the input's own word-select from restarting it. */
     function onTabDblClick(id: string) {
         if (renamingId.value === id) return
@@ -79,8 +102,10 @@
     // neighbour, Ctrl+Tab cycles) — keep the keyboard on whatever is on screen and its pill in view.
     watch(activeId, id => {
         if (!id) return
+        const keepOnStrip = keyboardTabNav
+        keyboardTabNav = false
         void nextTick(() => {
-            views.value[id]?.focus()
+            if (!keepOnStrip) views.value[id]?.focus()
             tabEls.value[id]?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
         })
     })
@@ -156,9 +181,14 @@
 </script>
 
 <template>
-    <section class="terminal-panel">
+    <section
+        class="terminal-panel"
+        aria-label="Terminal">
         <header class="terminal-header">
-            <span class="terminal-tabs">
+            <span
+                class="terminal-tabs"
+                role="tablist"
+                aria-label="Terminal tabs">
                 <span
                     v-for="tab in tabs"
                     :key="tab.id"
@@ -166,12 +196,16 @@
                     class="terminal-tab"
                     :class="{ active: tab.id === activeId, dragging: tab.id === draggingId }"
                     :title="`${tabLabel(tab.id)} — double-click to rename`"
+                    role="tab"
+                    :aria-selected="tab.id === activeId"
+                    :tabindex="tab.id === activeId ? 0 : -1"
                     :draggable="renamingId !== tab.id"
                     @dragstart="onDragStart(tab.id, $event)"
                     @dragover="onDragOver(tabs.indexOf(tab), $event)"
                     @dragend="onDragEnd"
                     @click="onTabClick(tab.id)"
-                    @dblclick="onTabDblClick(tab.id)">
+                    @dblclick="onTabDblClick(tab.id)"
+                    @keydown="onTabKeydown($event, tab.id)">
                     <input
                         v-if="renamingId === tab.id"
                         :ref="el => (renameInputs[tab.id] = el as HTMLInputElement | null)"
@@ -189,7 +223,9 @@
                     </span>
                     <button
                         class="terminal-tab-close"
+                        tabindex="-1"
                         :title="`Close ${tabLabel(tab.id)}`"
+                        :aria-label="`Close ${tabLabel(tab.id)}`"
                         @click.stop="emit('close-tab', tab.id)"
                         @dblclick.stop>
                         <CloseXIcon />

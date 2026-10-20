@@ -3,6 +3,7 @@
     import Check from '~icons/lucide/check'
 
     import { REPO_TAB_COLOR_OPTIONS } from '../stores/ui'
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
 
     export interface RepoTabMenuState {
         x: number
@@ -19,6 +20,12 @@
     }>()
     const root = ref<HTMLElement | null>(null)
 
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: () => emit('close'),
+    })
+
     const HEX_RE = /^#[0-9a-f]{6}$/i
     const pickerValue = computed(() => {
         const color = props.menu?.color
@@ -29,18 +36,8 @@
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
 
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
-
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function menuStyle() {
         if (!props.menu) return {}
@@ -65,6 +62,7 @@
         v-if="menu"
         ref="root"
         class="repo-tab-menu"
+        role="menu"
         :style="menuStyle()">
         <div class="repo-tab-menu-title">Tab color</div>
         <div class="repo-tab-menu-repo">{{ menu.name }}</div>

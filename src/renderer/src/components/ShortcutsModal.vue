@@ -1,11 +1,19 @@
 <script setup lang="ts">
-    import { computed, onBeforeUnmount, onMounted } from 'vue'
+    import { computed, useTemplateRef } from 'vue'
 
     import { useUiStore } from '../stores/ui'
+    import { useModalA11y } from '../utils/modalA11y'
     import { CUSTOM_SHORTCUT_IDS, SHORTCUTS, SHORTCUT_GROUPS, formatCombo, formatComboMac, isMac, type CustomShortcutId } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
 
     const emit = defineEmits<{ (e: 'close'): void }>()
+    const dialog = useTemplateRef<HTMLElement>('dialog')
+
+    useModalA11y({
+        active: () => true,
+        container: dialog,
+        onClose: () => emit('close'),
+    })
 
     const ui = useUiStore()
 
@@ -30,26 +38,24 @@
         }))
     )
 
-    onMounted(() => document.addEventListener('keydown', onKey))
-    onBeforeUnmount(() => document.removeEventListener('keydown', onKey))
-
-    function onKey(event: KeyboardEvent) {
-        // Stop at the top dialog — Settings may be open underneath and must stay open.
-        if (event.key === 'Escape') {
-            event.stopPropagation()
-            emit('close')
-        }
-    }
 </script>
 
 <template>
     <div class="modal-overlay">
-        <div class="rebase-modal shortcuts-modal">
+        <div
+            ref="dialog"
+            class="rebase-modal shortcuts-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcuts-modal-title"
+            tabindex="-1">
             <div class="rebase-modal-header">
-                <strong>Keyboard shortcuts</strong>
+                <strong id="shortcuts-modal-title">Keyboard shortcuts</strong>
                 <span class="spacer" />
                 <button
                     class="icon-btn danger commit-close-btn"
+                    title="Close"
+                    aria-label="Close"
                     @click="emit('close')">
                     <CloseXIcon />
                 </button>

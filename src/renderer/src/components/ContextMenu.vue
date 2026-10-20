@@ -13,6 +13,8 @@
     import Zap from '~icons/lucide/zap'
     import Kiro from '~icons/thesvg-color/kiro'
 
+    import { useMenuKeyboard } from '../utils/menuKeyboard'
+
     import type { MenuItem } from '@shared/types'
 
     export interface MenuState {
@@ -26,6 +28,12 @@
     const props = defineProps<{ menu: MenuState | null }>()
     const emit = defineEmits<{ (e: 'close'): void }>()
     const root = ref<HTMLElement | null>(null)
+
+    useMenuKeyboard({
+        active: () => !!props.menu,
+        container: root,
+        onClose: () => emit('close'),
+    })
 
     const ICONS: Record<string, FunctionalComponent> = {
         'circle-check': CircleCheck,
@@ -45,18 +53,8 @@
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) emit('close')
     }
-    function onKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') emit('close')
-    }
-
-    onMounted(() => {
-        document.addEventListener('mousedown', onDocMouseDown)
-        document.addEventListener('keydown', onKey)
-    })
-    onBeforeUnmount(() => {
-        document.removeEventListener('mousedown', onDocMouseDown)
-        document.removeEventListener('keydown', onKey)
-    })
+    onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
+    onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function menuStyle() {
         if (!props.menu) return {}
@@ -73,6 +71,7 @@
         v-if="menu"
         ref="root"
         class="context-menu"
+        role="menu"
         :style="menuStyle()">
         <template
             v-for="(item, index) in menu.items"
