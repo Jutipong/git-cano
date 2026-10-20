@@ -175,12 +175,15 @@ Panel/modal component patterns. Loaded automatically when working under
   (replacing the addon's private `_renderService.clear()`). Do not call `fit.fit()` as well: it
   proposes the 14px-narrower grid again on every refit, so the two would flip-flop — resizing and
   repainting the screen twice per fit.
-- **The app's `<html> { zoom }` (UI font size / zoom) is not a terminal bug.** CSS zoom scales what
-  the terminal paints *and* the box it is given, while xterm's canvas/`offsetWidth` cell measurements
-  stay in the same unzoomed layout space — `canvas.measureText` and `offsetWidth` deliberately ignore
-  zoom, `getBoundingClientRect` does not, so comparing the two falsely suggests a mismatch. The fit
-  re-runs on every zoom change because `ResizeObserver` reports the host's layout (unzoomed) size.
-  Do not "fix" this by cancelling the zoom inside `.terminal-host` or by pre-multiplying `fontSize`.
+- **Terminal text size is absolute against the UI font size, but still follows the app zoom.** xterm's
+  cell metrics live in unzoomed CSS px, while `<html> { zoom }` carries both the UI font scale and the
+  explicit zoom. `TerminalView` therefore passes `terminalFontPx(ui.terminalFontSize, ui.fontScale)` to
+  xterm: Settings → Terminal's px value is what the terminal actually paints at UI font sizes 12–16,
+  and the user's app zoom still magnifies the whole window. Do not counter-zoom `.terminal-host` or
+  pre-multiply the box size — the fit already solves in unzoomed space (`offsetWidth`/`canvas.measureText`
+  ignore zoom; `getBoundingClientRect` does not), and the grid stays aligned when only the xterm
+  `fontSize` is scaled. If the app zoom itself is ever meant to leave terminal text unscaled, that is a
+  separate product decision.
 - **A blinking caret is the TUI's repaint cadence, not a font property.** xterm draws the caret as a
   cell of the grid (block/bar/underline/outline, `cursorBlink: true` here) and blinks it with a 1s
   `step-end` CSS animation scoped to `.xterm-rows.focus` — so an unfocused terminal shows the steady
@@ -192,10 +195,13 @@ Panel/modal component patterns. Loaded automatically when working under
 - `markBars()` (TerminalView) tags spans that are a pure run of `▀` with `.terminal-bar`, and
   `modern-ui.css` paints a solid half-height `currentColor` layer behind them. That layer closes
   both the 1px seam against the filled row above and the per-cell antialiased vertical seams
-  (opencode's `╹▀▀▀…` footer otherwise reads as stripes). Retag after `term.onRender` — xterm
-  recycles and rewrites those spans on every refresh. Do not raise the rows' `line-height` to fix
-  the top seam: the opencode block-art wordmark only tiles at xterm's cell-height line-height (a
-  taller line box shifts the `█` strokes off the row boundaries and breaks the art).
+  (opencode's `╹▀▀▀…` footer otherwise reads as stripes). The same pass tags meter spans
+  (`████░░░`, sys-status's sidebar bars) with `.terminal-block` + `--block-count`, whose full-height
+  background covers only the filled `█` cells so the `░` track keeps its dither. Retag after
+  `term.onRender` — xterm recycles and rewrites those spans on every refresh. Do not raise the
+  rows' `line-height` to fix the top seam: the opencode block-art wordmark only tiles at xterm's
+  cell-height line-height (a taller line box shifts the `█` strokes off the row boundaries and
+  breaks the art).
 - **Do not add `convertEol`.** ConPTY already emits CRLF, and the reference POC leaves it off: with
   the extra CR, TUI output (opencode/pi redraws) gets different cursor semantics. Measured without
   it: LF-only output still lands in one column (no staircase) and opencode's box/logo stay intact.

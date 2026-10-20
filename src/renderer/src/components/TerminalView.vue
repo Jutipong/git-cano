@@ -4,8 +4,9 @@
 
     import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY } from '../stores/ui'
     import { isMac } from '../utils/shortcuts'
+    import { fullBlockCells } from '../utils/terminalBars'
     import { terminalCopyDecision } from '../utils/terminalCopy'
-    import { primaryFontFamily, resolveTerminalFontFamily } from '../utils/terminalFont'
+    import { primaryFontFamily, resolveTerminalFontFamily, terminalFontPx } from '../utils/terminalFont'
     import { shouldActivateTerminalLink } from '../utils/terminalLinks'
 
     import type { TerminalData, TerminalExit } from '@shared/types'
@@ -63,6 +64,14 @@
      * (removed in xterm 6) never shaped Thai at all. A pick whose font is not installed resolves back to the default stack.
      */
     const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
+
+    /**
+     * xterm's cell metrics live in unzoomed CSS px, while the app's `<html> { zoom }` carries the UI font scale. Dividing it out
+     * keeps Settings → Terminal's size absolute at any UI font size; the app zoom still magnifies the window.
+     */
+    function fontSizePx(): number {
+        return terminalFontPx(ui.terminalFontSize, ui.fontScale)
+    }
 
     /** Reads the app's live theme tokens so xterm matches whichever theme is active. */
     function themeColors() {
@@ -189,12 +198,14 @@
     }
 
     /**
-     * TUIs draw horizontal rules as a run of `▀` half-blocks (opencode's input-box footer). At fractional display scales each glyph's
-     * antialiased edge falls a hair short of the cell, so the run shows a faint vertical seam at every boundary. Tag those spans so a solid
-     * half-height background of the same colour can sit behind the glyphs (`.terminal-bar` in modern-ui.css) — the antialiasing then blends
-     * into the identical colour and the bar reads as one crisp line.
+     * TUIs paint bars and rules with half/full block glyphs — opencode's input-box footer uses `▀`, the sys-status sidebar meters use
+     * `█` + `░`. At fractional display scales each glyph's antialiased edge falls a hair short of the cell, so a run shows a faint
+     * vertical seam at every boundary. Tag those spans so a solid background in the glyph's own colour can sit behind them
+     * (`.terminal-bar` / `.terminal-block` in modern-ui.css) — the antialiasing then blends into the identical colour.
      */
     const BAR_RUN = /^\u2580+$/
+    /** A single `█` is a scrollbar cell or block-art dot, not a meter — only paint runs. */
+    const MIN_BLOCK_CELLS = 2
     let barFrame = 0
     function markBars() {
         barFrame = 0
@@ -202,8 +213,14 @@
         if (!root) return
         for (const span of root.querySelectorAll<HTMLElement>('span')) {
             // A cursor span paints its own block — leave it alone so the cursor stays visible.
-            const bar = BAR_RUN.test(span.textContent ?? '') && !span.classList.contains('xterm-cursor')
-            span.classList.toggle('terminal-bar', bar)
+            const cursor = span.classList.contains('xterm-cursor')
+            const text = span.textContent ?? ''
+            span.classList.toggle('terminal-bar', !cursor && BAR_RUN.test(text))
+            const cells = cursor ? 0 : fullBlockCells(text)
+            const block = cells >= MIN_BLOCK_CELLS
+            span.classList.toggle('terminal-block', block)
+            if (block) span.style.setProperty('--block-count', String(cells))
+            else if (span.style.getPropertyValue('--block-count')) span.style.removeProperty('--block-count')
         }
     }
     function scheduleBars() {
@@ -215,7 +232,7 @@
      * Xterm measures the character cell once at construction and caches it. Creating the Terminal before the stylesheets and fallback fonts
      * are ready yields a wrong cell size, and every Thai combining mark then lands off its column.
      */
-    async function waitForFonts(family: string) {
+    async function waitForFonts(family: string, size: number) {
         const sheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))
         await Promise.all(
             sheets.map(
@@ -234,7 +251,7 @@
         // Preload the picked face before xterm measures its cell — otherwise the first measure
         // uses a fallback metric and Thai marks drift off their column until the fonts settle.
         try {
-            await document.fonts.load(`14px "${family}"`)
+            await document.fonts.load(`${size}px "${family}"`)
         } catch {
             // Uninstalled faces resolve to the default stack before this point; a load failure
             // here just means xterm measures a fallback — never fatal.
@@ -270,7 +287,7 @@
             failed.value = String(error).replace(/^Error:\s*/, '')
         })
 
-        await waitForFonts(primaryFontFamily(family))
+        await waitForFonts(primaryFontFamily(family), fontSizePx())
         if (disposed || !host.value) return
         // Loaded lazily so the terminal chunk (xterm) only ships when a panel actually opens.
         const [{ Terminal }, { FitAddon }, { Unicode11Addon }, { WebLinksAddon }] = await Promise.all([
@@ -285,7 +302,7 @@
         term = new Terminal({
             cursorBlink: true,
             fontFamily: family,
-            fontSize: ui.terminalFontSize,
+            fontSize: fontSizePx(),
             // Must be exactly 1.0: block-element ASCII art (opencode's logo) fills the em box, and a
             // taller cell leaves a visible gap in the art.
             lineHeight: 1.0,
@@ -372,14 +389,14 @@
         // so refitting immediately would compute cols/rows from the stale cell size and clip x/y
         // for some sizes — refitAfterFontChange waits for the face + stable grid instead.
         watch(
-            () => [ui.terminalFontSize, ui.terminalFontFamily] as const,
+            () => [ui.terminalFontSize, ui.terminalFontFamily, ui.fontScale] as const,
             () => {
                 if (!term) return
                 const familyStack = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
-                term.options.fontSize = ui.terminalFontSize
+                term.options.fontSize = fontSizePx()
                 term.options.fontFamily = familyStack
                 fontRefitSeq += 1
-                void refitAfterFontChange(fontRefitSeq, familyStack, ui.terminalFontSize)
+                void refitAfterFontChange(fontRefitSeq, familyStack, fontSizePx())
             }
         )
     })
