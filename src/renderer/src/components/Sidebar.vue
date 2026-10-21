@@ -137,6 +137,7 @@
     }
 
     const search = ref('')
+    const searchInput = ref<HTMLInputElement | null>(null)
     const searching = computed(() => search.value.trim().length > 0)
     const matchText = (text: string) => text.toLowerCase().includes(search.value.trim().toLowerCase())
     const localFiltered = computed(() => local.value.filter(b => matchText(b.name)))
@@ -475,11 +476,13 @@
                     width="12"
                     height="12" />
                 <input
+                    ref="searchInput"
                     v-model="search"
                     class="section-search-input"
                     type="text"
                     placeholder="Search…"
-                    aria-label="Search sidebar" />
+                    aria-label="Search sidebar"
+                    @keydown.escape.stop="searchInput?.blur()" />
                 <button
                     v-if="search"
                     type="button"

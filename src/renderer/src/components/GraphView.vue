@@ -75,6 +75,7 @@
     const menu = ref<CommitMenuState | null>(null)
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
+    const searchInput = ref<HTMLInputElement | null>(null)
     const sbw = ref(0)
     function updateSbw() {
         const el = scrollEl.value
@@ -886,8 +887,10 @@
                         width="13"
                         height="13" />
                     <input
+                        ref="searchInput"
                         v-model="uiTransient.searchQuery"
-                        placeholder="Search commits" />
+                        placeholder="Search commits"
+                        @keydown.escape.stop="searchInput?.blur()" />
                     <button
                         v-if="uiTransient.searchQuery"
                         type="button"
