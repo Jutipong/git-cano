@@ -6143,6 +6143,16 @@ body {
     background-repeat: no-repeat;
 }
 
+/* `markBars()` also flags sys-status-style meters: a span of filled `█` cells followed by a `░`
+   track in the same colour. Its filled cells hit the same subpixel seam as `▀`, so paint a solid
+   layer behind exactly those cells — the `░` track is left alone, preserving the dither. `1ch` is
+   one cell in the terminal stack; the half pixel swallows the right edge's antialiasing. */
+.terminal-host .xterm-rows .terminal-block {
+    background-image: linear-gradient(currentColor, currentColor);
+    background-size: calc(var(--block-count, 0) * 1ch + 0.5px) 100%;
+    background-repeat: no-repeat;
+}
+
 /* xterm draws its own scroll affordance, so hide Chromium's scrollbar that TUIs otherwise trigger. */
 .terminal-host .xterm-viewport {
     background: transparent !important;

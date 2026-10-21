@@ -419,6 +419,7 @@ export const useUiStore = defineStore(
             toastDurationSec,
             fontSize,
             zoom,
+            fontScale,
             stepZoom,
             terminalFontSize,
             stepTerminalFontSize,
