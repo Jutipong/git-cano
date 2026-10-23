@@ -227,7 +227,7 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
 
 ## Open in external apps
 
-- `runCmd()` (`main/index.ts`) launches every "Open in" target (VS Code, Terminal, Kiro, Rider,
+- `runCmd()` (`src/main/openIn.ts`) launches every "Open in" target (VS Code, Terminal, Kiro, Rider,
   Visual Studio). It must spawn with `detached: true` + `unref()`: libuv puts every non-detached
   child in a kill-on-close Windows job, so quitting git-cano would terminate the launched app
   (VS Code closed along with it). Never couple the launched app's lifetime to git-cano.
