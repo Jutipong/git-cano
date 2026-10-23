@@ -42,3 +42,18 @@ for (const tab of TABS) {
         await expect(page.locator('.tools-modal')).toHaveCount(0)
     })
 }
+
+test('an unsaved AI token survives a trip to another tab', async () => {
+    await page.keyboard.press('Control+,')
+    await page.locator('#settings-tab-ai').click()
+    const token = page.locator('input[placeholder="opencode token"]')
+    await expect(token).toBeVisible()
+    await token.fill('draft-token')
+
+    await page.locator('#settings-tab-terminal').click()
+    await page.locator('#settings-tab-ai').click()
+    await expect(page.locator('input[placeholder="opencode token"]')).toHaveValue('draft-token')
+
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.tools-modal')).toHaveCount(0)
+})
