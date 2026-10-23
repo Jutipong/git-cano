@@ -1,3 +1,4 @@
+import { errorMessage } from '@shared/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -23,7 +24,7 @@ export const useSyncStore = defineStore('sync', () => {
             }, `${label}ing…`)
             uiTransient.notify(ok, 'success')
         } catch (error) {
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            uiTransient.notify(errorMessage(error), 'error')
         } finally {
             busy.value = null
         }

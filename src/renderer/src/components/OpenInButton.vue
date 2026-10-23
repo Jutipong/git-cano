@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { ref, watch } from 'vue'
 
     import { useUiTransientStore } from '../stores/uiTransient'
@@ -28,7 +29,7 @@
 
     function buildItems(): MenuItem[] {
         const run = (fn: () => Promise<unknown>) => {
-            fn().catch((error: unknown) => useUiTransientStore().notify(String(error).replace(/^Error:\s*/, ''), 'error'))
+            fn().catch((error: unknown) => useUiTransientStore().notify(errorMessage(error), 'error'))
         }
         const items: MenuItem[] = [
             {

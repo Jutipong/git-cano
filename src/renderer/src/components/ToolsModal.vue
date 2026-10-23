@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, onBeforeUnmount, onUnmounted, reactive, watch, inject, onMounted, nextTick, ref, useTemplateRef } from 'vue'
     import ILucideBell from '~icons/lucide/bell'
     import ILucideCheck from '~icons/lucide/check'
@@ -98,7 +99,7 @@
             await window.api.setStatusAccelerators(next)
         } catch (error) {
             statusAccelerators.value = !next
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -354,7 +355,7 @@
                 connectResult.value = { ok: true, message: `Loaded — ${uniqueModels.length} models available` }
             }
         } catch (error) {
-            connectResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
+            connectResult.value = { ok: false, message: errorMessage(error) }
         } finally {
             connecting.value = false
         }
@@ -373,7 +374,7 @@
                 notify(result.message, 'error')
             }
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             aiTesting.value = false
         }
@@ -385,7 +386,7 @@
             notify('AI settings saved', 'success')
             emit('close')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -536,7 +537,7 @@
             await auth.save({ ...auth.config, sshKeyPath: keyPath })
             await auth.refreshKeys()
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -545,7 +546,7 @@
             await navigator.clipboard.writeText(key.publicKey)
             notify('Public key copied to clipboard', 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -556,7 +557,7 @@
         try {
             sshTestResult.value = await window.api.auth.sshTest(key.privateKeyPath)
         } catch (error) {
-            sshTestResult.value = { ok: false, message: String(error).replace(/^Error:\s*/, '') }
+            sshTestResult.value = { ok: false, message: errorMessage(error) }
         } finally {
             sshTesting.value = false
         }
@@ -573,7 +574,7 @@
             auth.keys = await window.api.auth.sshDelete(key.privateKeyPath)
             notify(`SSH key "${key.name}" deleted`, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -604,7 +605,7 @@
             genComment.value = ''
             genPassphrase.value = ''
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             generating.value = false
         }
@@ -614,7 +615,7 @@
         try {
             await window.api.auth.openSshDir()
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -628,7 +629,7 @@
             githubTokenDraft.value = ''
             notify(`Signed in as ${user.login}`, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             githubBusy.value = false
         }
@@ -639,7 +640,7 @@
             await auth.save({ ...auth.config, githubToken: '' })
             notify('GitHub token removed', 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -647,7 +648,7 @@
         try {
             await window.api.auth.openGithubTokenPage()
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 

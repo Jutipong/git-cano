@@ -1,3 +1,4 @@
+import { errorMessage } from '@shared/errors'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -84,7 +85,7 @@ export const useUpdaterStore = defineStore('updater', () => {
                 status.value = 'up-to-date'
             }
         } catch (err) {
-            const message = String(err).replace(/^Error:\s*/, '')
+            const message = errorMessage(err)
             status.value = 'error'
             error.value = message
             if (announce) notify?.(`Update check failed: ${message}`, 'error')
@@ -158,7 +159,7 @@ export const useUpdaterStore = defineStore('updater', () => {
         try {
             await window.api.openReleasePage(releaseUrl.value)
         } catch (err) {
-            notify?.(String(err).replace(/^Error:\s*/, ''), 'error')
+            notify?.(errorMessage(err), 'error')
         }
     }
 
@@ -181,7 +182,7 @@ export const useUpdaterStore = defineStore('updater', () => {
             notify?.(`Update downloaded — restart to install ${downloadedVersion.value}`, 'success')
         } catch (err) {
             status.value = 'available'
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
             notify?.(`Download failed: ${error.value}`, 'error')
         }
     }
@@ -190,7 +191,7 @@ export const useUpdaterStore = defineStore('updater', () => {
         try {
             await window.api.updateInstall()
         } catch (err) {
-            notify?.(String(err).replace(/^Error:\s*/, ''), 'error')
+            notify?.(errorMessage(err), 'error')
         }
     }
 

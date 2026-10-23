@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideHistory from '~icons/lucide/history'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
@@ -64,7 +65,7 @@
         try {
             entries.value = await window.api.reflog(200)
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             loading.value = false
         }
@@ -106,7 +107,7 @@
             entries.value = await window.api.reflog(200)
             await notifyUndoable(repoStore.repo?.path, `Restored to ${entry.shortHash}`)
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             busyIndex.value = null
         }

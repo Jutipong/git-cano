@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ChevronRight from '~icons/lucide/chevron-right'
     import Eye from '~icons/lucide/eye'
@@ -135,7 +136,7 @@
             await props.refresh()
             notify(`Added ${rule} to .gitignore. Tracked files remain tracked.`, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 </script>

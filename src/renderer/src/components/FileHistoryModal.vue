@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { inject, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
@@ -48,7 +49,7 @@
             history.value = await window.api.fileHistory(props.file)
             if (history.value[0]) select(history.value[0].hash)
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
         }
     })
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { storeToRefs } from 'pinia'
     import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
     import ILucideArchive from '~icons/lucide/archive'
@@ -132,10 +133,13 @@
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
-    const terminalMaxHeight = ref(Math.max(160, Math.round(window.innerHeight * 0.7)))
+    function terminalMaxHeightPx(): number {
+        return Math.max(160, Math.round(window.innerHeight * 0.7))
+    }
+    const terminalMaxHeight = ref(terminalMaxHeightPx())
 
     function updateTerminalMaxHeight() {
-        terminalMaxHeight.value = Math.max(160, Math.round(window.innerHeight * 0.7))
+        terminalMaxHeight.value = terminalMaxHeightPx()
     }
     onMounted(() => window.addEventListener('resize', updateTerminalMaxHeight))
     onUnmounted(() => window.removeEventListener('resize', updateTerminalMaxHeight))
@@ -559,7 +563,7 @@
         event.preventDefault()
         const startY = event.clientY
         const startHeight = terminalStore.terminalHeight
-        const maxHeight = Math.max(160, Math.round(window.innerHeight * 0.7))
+        const maxHeight = terminalMaxHeightPx()
         const onMove = (moveEvent: MouseEvent) => {
             const delta = startY - moveEvent.clientY
             terminalStore.terminalHeight = Math.min(maxHeight, Math.max(120, startHeight + delta))
@@ -737,7 +741,7 @@
             }, busyLabel)
             uiTransient.notify(label, 'success')
         } catch (error) {
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            uiTransient.notify(errorMessage(error), 'error')
         }
     }
 
@@ -776,20 +780,40 @@
         if (manage) stashCreateOpen.value = true
     }
 
-    async function cherryPickOnto(hash: string, targetBranch: string) {
-        if (uiTransient.busy) return
-        const short = hash.slice(0, 7)
+    async function ensureCleanWorktree(): Promise<RepoStatus | null> {
         let current: RepoStatus
         try {
             current = await window.api.status()
         } catch (error) {
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
-            return
+            uiTransient.notify(errorMessage(error), 'error')
+            return null
         }
         if (current.files.length > 0) {
             await showUncommittedChanges(current.files.length)
-            return
+            return null
         }
+        return current
+    }
+
+    async function runGitFlow(repoPath: string, busyLabel: string, action: () => Promise<void>, doneMessage: string) {
+        try {
+            await uiTransient.withBusy(async () => {
+                await action()
+                await repoStore.refresh()
+            }, busyLabel)
+            await notifyUndoable(repoPath, doneMessage)
+        } catch (error) {
+            // A conflict leaves unmerged files behind — refresh anyway so they paint instead of going stale.
+            await repoStore.refresh().catch(() => {})
+            uiTransient.notify(errorMessage(error), 'error')
+        }
+    }
+
+    async function cherryPickOnto(hash: string, targetBranch: string) {
+        if (uiTransient.busy) return
+        const short = hash.slice(0, 7)
+        const current = await ensureCleanWorktree()
+        if (!current) return
 
         const currentTarget = current.branch === 'HEAD (detached)' ? 'HEAD' : current.branch
         const switching = targetBranch !== currentTarget
@@ -823,18 +847,15 @@
             confirmLabel: 'Cherry-pick',
         })
         if (!ok) return
-        try {
-            await uiTransient.withBusy(async () => {
+        await runGitFlow(
+            current.path,
+            `Cherry-picking onto ${targetBranch}…`,
+            async () => {
                 if (switching) await window.api.checkout(targetBranch, 'keep')
                 await window.api.cherryPick(hash)
-                await repoStore.refresh()
-            }, `Cherry-picking onto ${targetBranch}…`)
-            await notifyUndoable(current.path, `Cherry-picked ${short} onto ${targetBranch}`)
-        } catch (error) {
-            // A conflict leaves unmerged files behind — refresh anyway so they paint instead of going stale.
-            await repoStore.refresh().catch(() => {})
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        }
+            },
+            `Cherry-picked ${short} onto ${targetBranch}`
+        )
     }
 
     function cherryPickCommit(commit: CommitNode) {
@@ -845,17 +866,8 @@
 
     async function mergeBranchOnto(source: string, targetBranch: string) {
         if (uiTransient.busy) return
-        let current: RepoStatus
-        try {
-            current = await window.api.status()
-        } catch (error) {
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
-            return
-        }
-        if (current.files.length > 0) {
-            await showUncommittedChanges(current.files.length)
-            return
-        }
+        const current = await ensureCleanWorktree()
+        if (!current) return
 
         let status: { kind: 'ok' | 'warn' | 'unknown'; text: string }
         let willConflict = false
@@ -885,16 +897,14 @@
             confirmLabel: 'Merge',
         })
         if (!ok) return
-        try {
-            await uiTransient.withBusy(async () => {
+        await runGitFlow(
+            current.path,
+            `Merging ${source} into ${targetBranch}…`,
+            async () => {
                 await window.api.mergeInto(source, targetBranch)
-                await repoStore.refresh()
-            }, `Merging ${source} into ${targetBranch}…`)
-            await notifyUndoable(current.path, `Merged ${source} into ${targetBranch}`)
-        } catch (error) {
-            await repoStore.refresh().catch(() => {})
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
-        }
+            },
+            `Merged ${source} into ${targetBranch}`
+        )
     }
 
     async function revertCommit(commit: CommitNode) {
@@ -910,7 +920,7 @@
             }, 'Reverting commit…')
             await notifyUndoable(repoStore.repo?.path, `Reverted ${commit.shortHash}`)
         } catch (error) {
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            uiTransient.notify(errorMessage(error), 'error')
         }
     }
 
@@ -931,7 +941,7 @@
             }, `Resetting to ${commit.shortHash}…`)
             void notifyUndoable(repoStore.repo?.path, `Reset to ${commit.shortHash} (${mode})`)
         } catch (error) {
-            uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            uiTransient.notify(errorMessage(error), 'error')
         }
     }
 

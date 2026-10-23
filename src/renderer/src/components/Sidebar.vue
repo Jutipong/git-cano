@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
@@ -186,7 +187,7 @@
             }, busyLabel)
             notify(ok, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -198,7 +199,7 @@
             }, busyLabel)
             notify(ok, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 

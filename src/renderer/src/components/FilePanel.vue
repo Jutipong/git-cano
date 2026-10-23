@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
     import IFluentEmojiFlatRobot from '~icons/fluent-emoji-flat/robot'
     import IIconParkOutlineChange from '~icons/icon-park-outline/change'
@@ -199,7 +200,7 @@
                 else notify('Rebase complete', 'success')
             } else notify('Conflicts remain — resolve them and continue', 'warning')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             pending.value = false
         }
@@ -213,7 +214,7 @@
             await loadAllFiles()
             notify('Rebase aborted', 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             pending.value = false
         }
@@ -262,7 +263,7 @@
         try {
             await window.api.ai.cancelGenerate(generatingRepo.value ?? undefined)
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -332,7 +333,7 @@
         } catch (error) {
             if (request !== allFilesRequest) return
             allPaths.value = []
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -347,7 +348,7 @@
             await props.refresh()
             await loadAllFiles()
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             pending.value = false
         }
@@ -389,7 +390,7 @@
             if (ok) notify(ok, 'success')
             return true
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
             return false
         } finally {
             pending.value = false
@@ -472,7 +473,7 @@
                 else void notifyUndoable(repoPath, 'Committed successfully')
             }
         } catch (error) {
-            const msg = String(error).replace(/^Error:\s*/, '')
+            const msg = errorMessage(error)
             // Cancellation is intentional — a warning toast, never the error dialog.
             if (/cancel/i.test(msg)) notify('Generation cancelled', 'warning')
             else notify(msg, 'error')

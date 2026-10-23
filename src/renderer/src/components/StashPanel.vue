@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onMounted, ref, watch } from 'vue'
     import ILucideArchive from '~icons/lucide/archive'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
@@ -79,7 +80,7 @@
             if (ok) notify(ok, 'success')
             return true
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
             return false
         }
     }

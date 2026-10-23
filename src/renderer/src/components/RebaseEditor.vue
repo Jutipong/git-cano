@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, ref, useTemplateRef, watch } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
@@ -58,7 +59,7 @@
                 message: commit.subject,
             }))
         } catch (error_) {
-            error.value = String(error_).replace(/^Error:\s*/, '')
+            error.value = errorMessage(error_)
         }
     }
 
@@ -82,7 +83,7 @@
             if (outcome.completed) emit('done', outcome.message)
             else emit('paused', outcome.message)
         } catch (error_) {
-            error.value = String(error_).replace(/^Error:\s*/, '')
+            error.value = errorMessage(error_)
         } finally {
             running.value = false
         }

@@ -1,3 +1,5 @@
+import { errorMessage } from '@shared/errors'
+
 import { useRepoStore } from '../stores/repo'
 import { useUiTransientStore } from '../stores/uiTransient'
 
@@ -31,6 +33,6 @@ export async function performUndo(repoPath: string, id: number): Promise<void> {
         uiTransient.bumpStashList()
         uiTransient.notify(done, 'success')
     } catch (error) {
-        uiTransient.notify(String(error).replace(/^Error:\s*/, ''), 'error')
+        uiTransient.notify(errorMessage(error), 'error')
     }
 }

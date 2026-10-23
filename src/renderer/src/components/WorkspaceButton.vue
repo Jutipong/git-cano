@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { nextTick, onMounted, onUnmounted, computed, inject, ref } from 'vue'
     import ILucideAlertTriangle from '~icons/lucide/alert-triangle'
     import ILucideCheck from '~icons/lucide/check'
@@ -116,7 +117,7 @@
                     // so it must NOT be wrapped in withBusy (which would no-op the switch).
                     await repoStore.switchWorkspace(fallback)
                 } catch (error) {
-                    notify(String(error).replace(/^Error:\s*/, ''), 'error')
+                    notify(errorMessage(error), 'error')
                     return
                 }
             }
@@ -136,7 +137,7 @@
             // so it must NOT be wrapped in withBusy (which would no-op the switch).
             await repoStore.switchWorkspace(name)
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             switching.value = false
         }

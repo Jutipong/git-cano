@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onMounted, ref, useTemplateRef, watch, type Component } from 'vue'
     import Bash from '~icons/catppuccin/bash'
     import Folder from '~icons/catppuccin/folder'
@@ -168,7 +169,7 @@
                 }, `Checking out ${name}…`)
                 notify(`Checked out ${name}`, 'success')
             } catch (error) {
-                notify(String(error).replace(/^Error:\s*/, ''), 'error')
+                notify(errorMessage(error), 'error')
             }
         })()
     }
@@ -195,7 +196,7 @@
             try {
                 await repoStore.switchWorkspace(name)
             } catch (error) {
-                notify(String(error).replace(/^Error:\s*/, ''), 'error')
+                notify(errorMessage(error), 'error')
             }
         })()
     }
@@ -214,7 +215,7 @@
                     notify(`${repoNameFromPath(repoPath)} could not be opened`, 'error')
                 }
             } catch (error) {
-                notify(String(error).replace(/^Error:\s*/, ''), 'error')
+                notify(errorMessage(error), 'error')
             }
         })()
     }
@@ -224,7 +225,7 @@
         const repoPath = repoStore.repo?.path
         if (!repoPath) return
         close()
-        action(repoPath).catch((error: unknown) => notify(String(error).replace(/^Error:\s*/, ''), 'error'))
+        action(repoPath).catch((error: unknown) => notify(errorMessage(error), 'error'))
     }
 
     /** Core actions — Open-in targets and AI runs live in their own drill-in modes below. */

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { inject, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
     import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
     import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
@@ -47,7 +48,7 @@
             const status = await uiTransient.withBusy(() => window.api.pickAndOpen(), 'Opening repository…')
             if (status) repoStore.addTab(status)
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 

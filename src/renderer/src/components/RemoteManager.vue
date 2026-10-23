@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { inject, onMounted, ref } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideGlobe2 from '~icons/lucide/globe2'
@@ -37,7 +38,7 @@
             await props.refresh()
             notify(successMessage, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
         }
     }
 
@@ -49,7 +50,7 @@
             await window.api.setRemoteUrl('origin', url)
             notify('Remote URL saved', 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
         } finally {
             saving.value = false
         }
@@ -70,7 +71,7 @@
             const result = await window.api.testRemoteUrl(url)
             notify(result.message, result.ok ? 'success' : 'error')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
         } finally {
             testing.value = false
         }

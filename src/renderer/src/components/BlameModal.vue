@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
@@ -44,7 +45,7 @@
         try {
             lines.value = await window.api.blame(props.file)
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
         } finally {
             loading.value = false
         }

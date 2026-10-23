@@ -5,6 +5,7 @@
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
 
     import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, joinClonePath } from '@shared/clone'
+    import { errorMessage } from '@shared/errors'
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { useModalA11y } from '../utils/modalA11y'
@@ -105,7 +106,7 @@
                 emit('close')
             }
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             busy.value = false
         }

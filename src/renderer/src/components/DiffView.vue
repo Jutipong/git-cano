@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { nextTick, computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
@@ -531,7 +532,7 @@
             await props.refresh()
             notify(props.file.staged ? 'Hunk unstaged' : 'Hunk staged', 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''))
+            notify(errorMessage(error))
         }
     }
 

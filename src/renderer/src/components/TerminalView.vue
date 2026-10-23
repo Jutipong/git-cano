@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
     import ILucideTriangleAlert from '~icons/lucide/triangle-alert'
 
@@ -284,7 +285,7 @@
         })
         // 80x24 is only the opening size — the real one arrives with the first fit once xterm exists.
         const spawn = window.api.terminalCreate(props.terminalId, props.repoPath, 80, 24, ui.terminalShell).catch(error => {
-            failed.value = String(error).replace(/^Error:\s*/, '')
+            failed.value = errorMessage(error)
         })
 
         await waitForFonts(primaryFontFamily(family), fontSizePx())

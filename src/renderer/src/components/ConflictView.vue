@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { nextTick, computed, ref, watch, inject } from 'vue'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
@@ -185,7 +186,7 @@
             blocks.value = parsed
             currentBlock.value = parsed.length ? 0 : -1
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         } finally {
             loading.value = false
         }
@@ -366,7 +367,7 @@
             // the overlay closes itself — the store watch clears selectedConflict once
             // the file no longer reports unmerged
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -380,7 +381,7 @@
             }, 'Marking resolved…')
             notify(`${path}: marked resolved`, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 
@@ -394,7 +395,7 @@
             }, 'Resolving…')
             notify(`${path}: kept ${side === 'ours' ? repoStore.oursLabel : repoStore.theirsLabel}`, 'success')
         } catch (error) {
-            notify(String(error).replace(/^Error:\s*/, ''), 'error')
+            notify(errorMessage(error), 'error')
         }
     }
 

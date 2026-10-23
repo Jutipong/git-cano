@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onMounted, ref, useTemplateRef } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideTag from '~icons/lucide/tag'
@@ -83,7 +84,7 @@
                         try {
                             await window.api.pushTag(trimmed)
                         } catch (pushErr) {
-                            pushError = String(pushErr).replace(/^Error:\s*/, '')
+                            pushError = errorMessage(pushErr)
                         }
                     }
                     await repoStore.refreshWithTags()
@@ -99,7 +100,7 @@
             }
             emit('close')
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             busy.value = false
         }

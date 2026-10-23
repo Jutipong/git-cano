@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { useTemplateRef, computed, inject, onMounted, ref } from 'vue'
     import ILucideArchive from '~icons/lucide/archive'
     import ILucideCheck from '~icons/lucide/check'
@@ -59,7 +60,7 @@
             notify('Changes stashed', 'success')
             emit('close')
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             busy.value = false
         }

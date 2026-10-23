@@ -1,4 +1,5 @@
 <script setup lang="ts">
+    import { errorMessage } from '@shared/errors'
     import { computed, onMounted, ref, useTemplateRef } from 'vue'
 
     import { useRepoStore } from '../stores/repo'
@@ -40,7 +41,7 @@
             plan.value = await window.api.squashPlan(props.commit.hash)
             message.value = plan.value.defaultMessage
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             loading.value = false
         }
@@ -55,7 +56,7 @@
             await notifyUndoable(repoStore.repo?.path, `Squashed ${plan.value.commits.length} commits`)
             emit('complete', `Squashed ${plan.value.commits.length} commits`)
         } catch (err) {
-            error.value = String(err).replace(/^Error:\s*/, '')
+            error.value = errorMessage(err)
         } finally {
             busy.value = false
         }
