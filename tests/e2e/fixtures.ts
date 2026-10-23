@@ -20,6 +20,13 @@ export interface Fixtures {
     bulkRepo: string
     /** 1-commit repo with a 100k-line file modified in the worktree, for entire-file benchmarks. */
     hugeRepo: string
+    /** Cherry-pick targets: `topic` (clean pick), `clash` (conflicts with main), `release` (switch target). */
+    pickRepo: string
+    /**
+     * Merge targets: `ff-branch` (fast-forward), `side-branch` (clean diverge), `conflict-branch` (conflicts), `release` /
+     * `conflict-release` (non-current targets).
+     */
+    mergeRepo: string
 }
 
 const META_FILE = path.join(os.tmpdir(), 'git-cano-e2e-fixtures.json')
@@ -299,6 +306,65 @@ function createHugeRepo(root: string): string {
     return dir
 }
 
+function createPickRepo(root: string): string {
+    const dir = path.join(root, 'pick-repo')
+    initRepo(dir)
+    write(dir, 'shared.txt', 'line one\nline two\n')
+    run(dir, ['add', 'shared.txt'])
+    commit(dir, 'chore: base')
+    run(dir, ['branch', 'release'])
+
+    run(dir, ['checkout', '-b', 'topic'])
+    write(dir, 'topic.txt', 'topic\n')
+    run(dir, ['add', 'topic.txt'])
+    commit(dir, 'feat: topic change')
+
+    run(dir, ['checkout', 'main'])
+    run(dir, ['checkout', '-b', 'clash'])
+    write(dir, 'shared.txt', 'line one\nclash side\n')
+    run(dir, ['add', 'shared.txt'])
+    commit(dir, 'feat: clash side')
+
+    run(dir, ['checkout', 'main'])
+    write(dir, 'shared.txt', 'line one\nmain side\n')
+    run(dir, ['add', 'shared.txt'])
+    commit(dir, 'chore: main side')
+    return dir
+}
+
+function createMergeRepo(root: string): string {
+    const dir = path.join(root, 'merge-repo')
+    initRepo(dir)
+    write(dir, 'readme.md', '# Merge repo\n')
+    write(dir, 'shared.txt', 'line one\nline two\nline three\n')
+    run(dir, ['add', 'readme.md', 'shared.txt'])
+    commit(dir, 'chore: base')
+
+    const branchFromBase = (name: string, file: string, content: string, message: string) => {
+        run(dir, ['checkout', '-b', name])
+        write(dir, file, content)
+        run(dir, ['add', file])
+        commit(dir, message)
+        run(dir, ['checkout', 'main'])
+    }
+    branchFromBase('side-branch', 'side.txt', 'side\n', 'feat: side branch')
+    branchFromBase('conflict-branch', 'shared.txt', 'line one\nconflict side\nline three\n', 'feat: conflict side')
+    branchFromBase('release', 'release.txt', 'release\n', 'feat: release branch')
+    branchFromBase('conflict-release', 'shared.txt', 'line one\nrelease side\nline three\n', 'feat: conflict release')
+
+    write(dir, 'main.txt', 'main\n')
+    write(dir, 'shared.txt', 'line one\nmain side\nline three\n')
+    run(dir, ['add', 'main.txt', 'shared.txt'])
+    commit(dir, 'chore: main advance')
+
+    run(dir, ['checkout', '-b', 'ff-branch'])
+    write(dir, 'ff.txt', 'ff\n')
+    run(dir, ['add', 'ff.txt'])
+    commit(dir, 'feat: ff branch')
+    run(dir, ['checkout', 'main'])
+    return dir
+}
+
 export function createFixtures(): Fixtures {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'git-cano-e2e-fixtures-'))
     const fixtures: Fixtures = {
@@ -311,6 +377,8 @@ export function createFixtures(): Fixtures {
         stashRepo: createStashRepo(root),
         bulkRepo: createBulkRepo(root),
         hugeRepo: createHugeRepo(root),
+        pickRepo: createPickRepo(root),
+        mergeRepo: createMergeRepo(root),
     }
     return fixtures
 }
