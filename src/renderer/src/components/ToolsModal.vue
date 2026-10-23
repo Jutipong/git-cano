@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
     import { computed, onUnmounted, reactive, watch, inject, onMounted, nextTick, ref, useTemplateRef } from 'vue'
-    import ILucideBell from '~icons/lucide/bell'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideCopy from '~icons/lucide/copy'
@@ -13,40 +12,30 @@
     import ILucideGlobe2 from '~icons/lucide/globe2'
     import ILucideKeyRound from '~icons/lucide/key-round'
     import ILucideKeyboard from '~icons/lucide/keyboard'
-    import Moon from '~icons/lucide/moon'
     import ILucidePalette from '~icons/lucide/palette'
     import ILucidePlus from '~icons/lucide/plus'
-    import ILucideRefreshCw from '~icons/lucide/refresh-cw'
-    import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
     import ILucideSave from '~icons/lucide/save'
     import ILucideSettings2 from '~icons/lucide/settings2'
     import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import ILucideSparkles from '~icons/lucide/sparkles'
-    import Sun from '~icons/lucide/sun'
     import ILucideTerminal from '~icons/lucide/terminal'
     import ILucideTrash2 from '~icons/lucide/trash-2'
     import ILucideUserRound from '~icons/lucide/user-round'
     import ILucideUsers from '~icons/lucide/users'
-    import ILucideZap from '~icons/lucide/zap'
 
     import { useAiStore } from '../stores/ai'
     import { useAuthStore } from '../stores/auth'
     import {
         useUiStore,
-        FONT_SIZE_OPTIONS,
-        REFRESH_INTERVAL_OPTIONS,
-        TOAST_DURATION_OPTIONS,
-        UPDATE_CHECK_HOURS_OPTIONS,
-        type ThemeOption,
     } from '../stores/ui'
     import { useUpdaterStore } from '../stores/updater'
     import { confirmDialog } from '../utils/confirm'
     import { useModalA11y } from '../utils/modalA11y'
     import { SETTINGS_TABS, type SettingsTabKey } from '../utils/settingsTabs'
-    import { isWindows } from '../utils/shortcuts'
-    import AppCheckbox from './AppCheckbox.vue'
     import CloseXIcon from './CloseXIcon.vue'
     import RemoteManager from './RemoteManager.vue'
+    import AppearanceSettings from './settings/AppearanceSettings.vue'
+    import GeneralSettings from './settings/GeneralSettings.vue'
     import ShortcutsSettings from './settings/ShortcutsSettings.vue'
     import TerminalSettings from './settings/TerminalSettings.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
@@ -70,56 +59,11 @@
 
     const ui = useUiStore()
 
-    // Opt-in Windows status accelerators (persisted main-side in settings.json)
-    const statusAccelerators = ref(false)
-    onMounted(async () => {
-        statusAccelerators.value = await window.api.getStatusAccelerators().catch(() => false)
-    })
-    async function toggleStatusAccelerators() {
-        const next = !statusAccelerators.value
-        statusAccelerators.value = next
-        try {
-            await window.api.setStatusAccelerators(next)
-        } catch (error) {
-            statusAccelerators.value = !next
-            notify(errorMessage(error), 'error')
-        }
-    }
-
     // Update check against GitHub Releases; the installed Windows build (Setup .exe)
     // additionally downloads/installs in-app via electron-updater (see stores/updater).
     // State lives in the shared updater store so the sidebar button reacts to the same result.
     const updater = useUpdaterStore()
     void updater.ensureAutoSupport().catch(() => {})
-    const updateChecking = computed(() => updater.status === 'checking')
-    const updateStatus = computed<string | null>(() => {
-        if (updater.status === 'checking') return 'Checking…'
-        if (updater.status === 'downloading') return `Downloading… ${updater.progress}%`
-        if (updater.status === 'downloaded')
-            return `Ready to install ${updater.downloadedVersion || updater.latestVersion} — restart to apply`
-        if (updater.status === 'available' && updater.currentVersion) {
-            const base = `Update available: v${updater.currentVersion} → ${updater.latestVersion}`
-            return updater.error ? `${base} · last download failed: ${updater.error}` : base
-        }
-        if (updater.status === 'up-to-date' && updater.currentVersion)
-            return updater.latestVersion
-                ? `You're up to date (v${updater.currentVersion})`
-                : `Current v${updater.currentVersion} · no releases published yet`
-        if (updater.status === 'error' && updater.error) return `Check failed: ${updater.error}`
-        return null
-    })
-    function checkForUpdateManual() {
-        void updater.checkForUpdate(true, notify)
-    }
-    function downloadUpdateManual() {
-        void updater.downloadUpdate(notify)
-    }
-    function installUpdateManual() {
-        void updater.installUpdate(notify)
-    }
-    function openReleaseManual() {
-        void updater.openRelease(notify)
-    }
 
     /** Tab strip content comes from the shared list so the command palette's Settings rows stay in step. */
     const TABS = SETTINGS_TABS
@@ -139,11 +83,6 @@
         void nextTick(() => document.getElementById(`settings-tab-${TABS[next].key}`)?.focus())
     }
 
-    const REFRESH_OPTIONS = REFRESH_INTERVAL_OPTIONS.map(value => ({ value, label: `${value} min` }))
-    const UPDATE_OPTIONS = UPDATE_CHECK_HOURS_OPTIONS.map(value => ({ value, label: value === 0 ? 'Off' : `${value}h` }))
-    const TOAST_OPTIONS = TOAST_DURATION_OPTIONS.map(value => ({ value, label: `${value}s` }))
-    /** Appearance → Font size chips (px labels). */
-    const FONT_OPTIONS = FONT_SIZE_OPTIONS.map(value => ({ value, label: `${value}px` }))
     // The palette's Settings rows land while this modal may already be open (the palette opens over it), so a late
     // `initialTab` has to switch the visible tab too — a prop read only at setup would leave the modal on the old tab.
     watch(
@@ -153,10 +92,6 @@
         }
     )
 
-    const themeIcon = (option: ThemeOption) => (option.icon === 'sun' ? Sun : Moon)
-    const darkThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'dark' && !option.value.startsWith('win9x')))
-    const lightThemeOptions = computed(() => ui.themeOptions.filter(option => option.kind === 'light' && !option.value.startsWith('win9x')))
-    const win9xThemeOptions = computed(() => ui.themeOptions.filter(option => option.value.startsWith('win9x')))
 
     const ai = useAiStore()
     const PROVIDER_OPTIONS: { value: AiProvider; label: string }[] = [
@@ -336,30 +271,6 @@
         } catch (error) {
             notify(errorMessage(error), 'error')
         }
-    }
-
-    async function resetGeneral() {
-        const ok = await confirmDialog({
-            message: 'Reset general settings to defaults?',
-            confirmLabel: 'Reset',
-            danger: true,
-            confirmIcon: 'reset',
-        })
-        if (!ok) return
-        ui.resetGeneral()
-        notify('Settings reset to defaults', 'success')
-    }
-
-    async function resetAppearance() {
-        const ok = await confirmDialog({
-            message: 'Reset appearance settings to defaults?',
-            confirmLabel: 'Reset',
-            danger: true,
-            confirmIcon: 'reset',
-        })
-        if (!ok) return
-        ui.resetAppearance()
-        notify('Appearance reset to defaults', 'success')
     }
 
     const auth = useAuthStore()
@@ -614,304 +525,9 @@
                 class="tools-body general-body"
                 role="tabpanel"
                 :aria-labelledby="`settings-tab-${tab}`">
-                <template v-if="tab === 'appearance'">
-                    <div class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-palette
-                                width="13"
-                                height="13" />
-                            Appearance
-                        </strong>
-                        <span
-                            id="theme-label"
-                            class="setting-label"
-                            >Theme</span
-                        >
-                        <div
-                            class="theme-rows"
-                            role="group"
-                            aria-labelledby="theme-label">
-                            <div class="setting-choice-row">
-                                <button
-                                    v-for="option in darkThemeOptions"
-                                    :key="option.value"
-                                    type="button"
-                                    class="setting-chip"
-                                    :class="{ active: ui.theme === option.value }"
-                                    :aria-pressed="ui.theme === option.value"
-                                    @click="ui.setTheme(option.value)">
-                                    <component
-                                        :is="themeIcon(option)"
-                                        width="13"
-                                        height="13" />
-                                    {{ option.label }}
-                                </button>
-                            </div>
-                            <div class="setting-choice-row">
-                                <button
-                                    v-for="option in lightThemeOptions"
-                                    :key="option.value"
-                                    type="button"
-                                    class="setting-chip"
-                                    :class="{ active: ui.theme === option.value }"
-                                    :aria-pressed="ui.theme === option.value"
-                                    @click="ui.setTheme(option.value)">
-                                    <component
-                                        :is="themeIcon(option)"
-                                        width="13"
-                                        height="13" />
-                                    {{ option.label }}
-                                </button>
-                            </div>
-                            <div class="setting-choice-row">
-                                <button
-                                    v-for="option in win9xThemeOptions"
-                                    :key="option.value"
-                                    type="button"
-                                    class="setting-chip"
-                                    :class="{ active: ui.theme === option.value }"
-                                    :aria-pressed="ui.theme === option.value"
-                                    @click="ui.setTheme(option.value)">
-                                    <component
-                                        :is="themeIcon(option)"
-                                        width="13"
-                                        height="13" />
-                                    {{ option.label }}
-                                </button>
-                            </div>
-                        </div>
-                        <span
-                            id="appearance-font-size-label"
-                            class="setting-label"
-                            >Font size</span
-                        >
-                        <div
-                            class="setting-choice-row"
-                            role="group"
-                            aria-labelledby="appearance-font-size-label">
-                            <button
-                                v-for="option in FONT_OPTIONS"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.fontSize === option.value }"
-                                :aria-pressed="ui.fontSize === option.value"
-                                @click="ui.fontSize = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                    </div>
+                <AppearanceSettings v-if="tab === 'appearance'" />
 
-                    <div class="tools-actions tools-reset-row">
-                        <span class="spacer" />
-                        <button
-                            class="btn danger small"
-                            title="Restore appearance settings to defaults"
-                            @click="resetAppearance()">
-                            <i-lucide-rotate-ccw
-                                width="13"
-                                height="13" />
-                            Reset to defaults
-                        </button>
-                    </div>
-                </template>
-
-                <template v-else-if="tab === 'general'">
-                    <div class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-refresh-cw
-                                width="13"
-                                height="13" />
-                            Refresh
-                        </strong>
-                        <span
-                            id="refresh-interval-label"
-                            class="setting-label"
-                            >Auto-refresh interval</span
-                        >
-                        <div
-                            class="setting-choice-row"
-                            role="group"
-                            aria-labelledby="refresh-interval-label">
-                            <button
-                                v-for="option in REFRESH_OPTIONS"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.refreshInterval === option.value }"
-                                :aria-pressed="ui.refreshInterval === option.value"
-                                @click="ui.refreshInterval = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-download
-                                width="13"
-                                height="13" />
-                            Updates
-                        </strong>
-                        <span
-                            id="update-check-label"
-                            class="setting-label"
-                            >Check for updates every</span
-                        >
-                        <div
-                            class="setting-choice-row"
-                            role="group"
-                            aria-labelledby="update-check-label">
-                            <button
-                                v-for="option in UPDATE_OPTIONS"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.updateCheckHours === option.value }"
-                                :aria-pressed="ui.updateCheckHours === option.value"
-                                @click="ui.updateCheckHours = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                        <div class="tools-actions">
-                            <button
-                                class="btn small"
-                                title="Show the release notes of the installed version"
-                                @click="updater.changelogOpen = true">
-                                <i-lucide-sparkles
-                                    width="13"
-                                    height="13" />
-                                What's new
-                            </button>
-                            <button
-                                class="btn small"
-                                :disabled="updateChecking"
-                                title="Check GitHub Releases for a newer version now"
-                                @click="checkForUpdateManual()">
-                                <i-lucide-refresh-cw
-                                    v-if="!updateChecking"
-                                    width="13"
-                                    height="13" />
-                                <ThinkSpinner
-                                    v-else
-                                    compact />
-                                {{ updateChecking ? 'Checking…' : 'Check now' }}
-                            </button>
-                            <button
-                                v-if="updater.status === 'available' && updater.canAuto !== false"
-                                class="btn small"
-                                title="Download the update in the background"
-                                @click="downloadUpdateManual()">
-                                <i-lucide-download
-                                    width="13"
-                                    height="13" />
-                                Download
-                            </button>
-                            <button
-                                v-if="updater.status === 'available' && updater.canAuto === false"
-                                class="btn small"
-                                title="Open the release page to download manually"
-                                @click="openReleaseManual()">
-                                <i-lucide-external-link
-                                    width="13"
-                                    height="13" />
-                                Download
-                            </button>
-                            <button
-                                v-if="updater.status === 'downloaded'"
-                                class="btn small"
-                                title="Restart the app to install the downloaded update"
-                                @click="installUpdateManual()">
-                                <i-lucide-refresh-cw
-                                    width="13"
-                                    height="13" />
-                                Restart to install
-                            </button>
-                            <span
-                                v-if="updateStatus"
-                                class="setting-hint"
-                                >{{ updateStatus }}</span
-                            >
-                        </div>
-                        <div
-                            v-if="updater.status === 'downloading'"
-                            class="update-progress"
-                            role="progressbar"
-                            :aria-valuenow="updater.progress"
-                            aria-valuemin="0"
-                            aria-valuemax="100">
-                            <div
-                                class="update-progress-bar"
-                                :style="{ width: `${updater.progress}%` }" />
-                        </div>
-                        <span class="setting-hint">
-                            Off = manual check only. The installed Windows app downloads and installs here; macOS downloads manually.
-                        </span>
-                    </div>
-
-                    <div class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-bell
-                                width="13"
-                                height="13" />
-                            Notifications
-                        </strong>
-                        <span
-                            id="toast-duration-label"
-                            class="setting-label"
-                            >Toast auto-dismiss after</span
-                        >
-                        <div
-                            class="setting-choice-row"
-                            role="group"
-                            aria-labelledby="toast-duration-label">
-                            <button
-                                v-for="option in TOAST_OPTIONS"
-                                :key="option.value"
-                                type="button"
-                                class="setting-chip"
-                                :class="{ active: ui.toastDurationSec === option.value }"
-                                :aria-pressed="ui.toastDurationSec === option.value"
-                                @click="ui.toastDurationSec = option.value">
-                                {{ option.label }}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div
-                        v-if="isWindows"
-                        class="tools-section">
-                        <strong class="tools-section-title">
-                            <i-lucide-zap
-                                width="13"
-                                height="13" />
-                            Performance
-                        </strong>
-                        <AppCheckbox
-                            class="setting-toggle"
-                            :model-value="statusAccelerators"
-                            @update:model-value="toggleStatusAccelerators">
-                            Speed up git status (large repos / Windows)
-                        </AppCheckbox>
-                        <span class="setting-hint">
-                            Lets git cache worktree state (fsmonitor + untracked cache) so refreshes are much faster. Writes to each opened
-                            repository's local git config; takes effect the next time the repo is opened.
-                        </span>
-                    </div>
-
-                    <div class="tools-actions tools-reset-row">
-                        <span class="spacer" />
-                        <button
-                            class="btn danger small"
-                            title="Restore general settings to defaults"
-                            @click="resetGeneral()">
-                            <i-lucide-rotate-ccw
-                                width="13"
-                                height="13" />
-                            Reset to defaults
-                        </button>
-                    </div>
-                </template>
+                <GeneralSettings v-else-if="tab === 'general'" />
 
                 <TerminalSettings v-else-if="tab === 'terminal'" />
 
