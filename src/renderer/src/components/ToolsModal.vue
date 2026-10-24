@@ -162,14 +162,20 @@
 
                 <ShortcutsSettings v-else-if="tab === 'shortcuts'" />
 
-                <RemotesSettings
+                <!-- v-show needs a real element: both settings components have fragment roots, so the
+                     directive would be dropped and a visited tab would stay visible on every other tab. -->
+                <div
                     v-if="visitedTabs.has('auth')"
                     v-show="tab === 'auth'"
-                    :refresh="props.refresh" />
-                <AiSettings
+                    class="settings-tab-pane">
+                    <RemotesSettings :refresh="props.refresh" />
+                </div>
+                <div
                     v-if="visitedTabs.has('ai')"
                     v-show="tab === 'ai'"
-                    @close="emit('close')" />
+                    class="settings-tab-pane">
+                    <AiSettings @close="emit('close')" />
+                </div>
 
             </div>
         </div>

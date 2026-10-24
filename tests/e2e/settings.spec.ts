@@ -57,3 +57,29 @@ test('an unsaved AI token survives a trip to another tab', async () => {
     await page.keyboard.press('Escape')
     await expect(page.locator('.tools-modal')).toHaveCount(0)
 })
+
+// Tabs that stay mounted (v-show) must not leak their content into the other tabs.
+test('a visited Remotes or AI tab stays hidden on every other tab', async () => {
+    await page.keyboard.press('Control+,')
+    await page.locator('#settings-tab-auth').click()
+    const sshTitle = page.locator('#settings-panel .tools-section-title', { hasText: 'Active SSH key' })
+    await expect(sshTitle).toBeVisible()
+
+    await page.locator('#settings-tab-shortcuts').click()
+    await expect(page.locator('#settings-panel .tools-section-title', { hasText: 'Keyboard shortcuts' })).toBeVisible()
+    await expect(sshTitle).toBeHidden()
+
+    await page.locator('#settings-tab-ai').click()
+    const aiTitle = page.locator('#settings-panel .tools-section-title', { hasText: 'AI Provider' })
+    await expect(aiTitle).toBeVisible()
+    await expect(sshTitle).toBeHidden()
+
+    await page.locator('#settings-tab-shortcuts').click()
+    await expect(aiTitle).toBeHidden()
+
+    await page.locator('#settings-tab-auth').click()
+    await expect(sshTitle).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.tools-modal')).toHaveCount(0)
+})

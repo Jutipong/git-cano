@@ -2344,6 +2344,10 @@ mark {
     gap: 9px;
     min-height: 170px;
 }
+/* Invisible wrapper for tabs that stay mounted (v-show); its sections remain direct flex items. */
+.settings-tab-pane {
+    display: contents;
+}
 .tools-hint {
     color: var(--text-muted);
     font-size: 12px;
