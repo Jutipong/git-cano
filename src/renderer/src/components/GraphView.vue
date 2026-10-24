@@ -50,12 +50,13 @@
         (e: 'toggle-terminal'): void
     }>()
 
-    const FIRST_LANE_COLOR = '#F05272'
-    /* Shared hue families: lanes/chips are calmer, avatars are the vivid accent. */
-    const COLORS = ['#5CDA72', '#E276E6', '#F08A46', '#45B0E6', '#EE6871', '#9B82E0', '#31D0B3', '#D36DDD']
-    /** Deep dusty palette for the light-retro theme — dim paper needs darker tones to tell lanes apart. 8 entries, mutually distinct. */
-    const LIGHT_RETRO_FIRST_LANE_COLOR = '#1A1A1A'
-    const LIGHT_RETRO_COLORS = ['#2E5B33', '#8E2F22', '#2F5875', '#6E4A15', '#54455F', '#4A4A4A', '#1F6B5E', '#713C4D']
+    const FIRST_LANE_COLOR = '#FF6B8B'
+    /* Shared hue families: lanes/chips are calmer, avatars are the vivid accent.
+       Dark lanes walk the hue wheel at one lightness so no two lanes read alike (every pair >= 0.08 OKLab apart). */
+    const COLORS = ['#FF9A45', '#E5C542', '#89DE5F', '#3ED9A0', '#2FC9E6', '#5BA9FF', '#9890FF', '#DE7BEE']
+    /** Light themes paint on dim paper, so lanes are ink-dark tones (same spacing rule) instead of the bright dark-theme palette. */
+    const LIGHT_FIRST_LANE_COLOR = '#1A1A1A'
+    const LIGHT_COLORS = ['#99335A', '#6A2203', '#7A560A', '#424E06', '#0C6F49', '#094649', '#0B6493', '#3C3990']
     /* Vivid avatar colors: deliberately spaced apart and without yellow. */
     const AVATAR_COLORS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
     const laneW = 32
@@ -469,18 +470,16 @@
         }
     }
 
+    function isLightTheme(): boolean {
+        return ui.theme === 'light' || ui.theme === 'light-retro' || ui.theme === 'win9x-opencode'
+    }
+
     function lanePalette(): string[] {
-        if (ui.theme === 'light-retro') return LIGHT_RETRO_COLORS
-        if (ui.theme === 'win9x-opencode') return LIGHT_RETRO_COLORS
-        return COLORS
+        return isLightTheme() ? LIGHT_COLORS : COLORS
     }
 
     function nodeColor(commit: CommitNode) {
-        if (commit.lane === 0) {
-            if (ui.theme === 'light-retro') return LIGHT_RETRO_FIRST_LANE_COLOR
-            if (ui.theme === 'win9x-opencode') return LIGHT_RETRO_FIRST_LANE_COLOR
-            return FIRST_LANE_COLOR
-        }
+        if (commit.lane === 0) return isLightTheme() ? LIGHT_FIRST_LANE_COLOR : FIRST_LANE_COLOR
         const palette = lanePalette()
         return palette[(commit.lane - 1) % palette.length]
     }

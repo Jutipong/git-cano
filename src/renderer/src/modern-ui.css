@@ -2945,23 +2945,23 @@ body {
 }
 
 .edge-glow {
-    stroke-width: 7;
-    stroke-opacity: 0.14;
+    stroke-width: 6;
+    stroke-opacity: 0.11;
     stroke-linecap: round;
 }
 
 .edge-core {
     stroke-width: 2.5;
-    stroke-opacity: 0.85;
+    stroke-opacity: 0.92;
     stroke-linecap: round;
 }
 
 .edge-glow.merge {
-    stroke-opacity: 0.1;
+    stroke-opacity: 0.13;
 }
 
 .edge-core.merge {
-    stroke-opacity: 0.9;
+    stroke-opacity: 0.94;
 }
 
 .node-ring {
