@@ -50,10 +50,10 @@
         (e: 'toggle-terminal'): void
     }>()
 
-    const FIRST_LANE_COLOR = '#FF6B8B'
-    /* Shared hue families: lanes/chips are calmer, avatars are the vivid accent.
-       Dark lanes walk the hue wheel at one lightness so no two lanes read alike (every pair >= 0.08 OKLab apart). */
-    const COLORS = ['#FF9A45', '#E5C542', '#89DE5F', '#3ED9A0', '#2FC9E6', '#5BA9FF', '#9890FF', '#DE7BEE']
+    const FIRST_LANE_COLOR = '#FF4D7F'
+    /* Shared hue families: dark lanes are vivid, avatars are the accent.
+       Dark lanes walk the hue wheel at high chroma so no two lanes read alike (every pair >= 0.09 OKLab apart). */
+    const COLORS = ['#FF8A2A', '#FFCB00', '#4FE05E', '#16D6A4', '#19C3F0', '#4D9CFF', '#8B7BFF', '#F05CFF']
     /** Light themes paint on dim paper, so lanes are ink-dark tones (same spacing rule) instead of the bright dark-theme palette. */
     const LIGHT_FIRST_LANE_COLOR = '#1A1A1A'
     const LIGHT_COLORS = ['#99335A', '#6A2203', '#7A560A', '#424E06', '#0C6F49', '#094649', '#0B6493', '#3C3990']
