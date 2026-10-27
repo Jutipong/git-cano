@@ -688,10 +688,18 @@ test('Ctrl+Tab cycles the focused terminal tabs and wraps around', async () => {
     await page.keyboard.press('Control+Tab')
     await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
 
-    // With the keyboard outside the panel the combo is not the app's — the active tab must not move.
+    // Ctrl+Shift+Tab walks the other way, wrapping from the first back to the last.
+    await page.keyboard.press('Control+Shift+Tab')
+    await expect(panel.locator('.terminal-tab').nth(0)).toHaveClass(/active/)
+    await page.keyboard.press('Control+Shift+Tab')
+    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
+    await expect(shell).toBeFocused()
+
+    // With the keyboard outside the panel neither combo is the app's — the active tab must not move.
     await page.locator('.commit-search input').click()
     await page.keyboard.press('Control+Tab')
-    await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+    await page.keyboard.press('Control+Shift+Tab')
+    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
 
     await panel.locator('.diff-close-btn').click()

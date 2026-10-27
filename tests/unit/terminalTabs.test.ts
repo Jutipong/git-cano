@@ -5,6 +5,7 @@ import {
     moveTerminalTab,
     nextTerminalNumber,
     nextTerminalTabId,
+    prevTerminalTabId,
     terminalTabLabel,
     type TerminalTab,
 } from '../../src/renderer/src/utils/terminalTabs'
@@ -65,6 +66,23 @@ describe('nextTerminalTabId', () => {
         expect(nextTerminalTabId([{ id: 't1' }], 't1')).toBeNull()
         expect(nextTerminalTabId(tabs, 'gone')).toBeNull()
         expect(nextTerminalTabId(tabs, null)).toBeNull()
+    })
+})
+
+describe('prevTerminalTabId', () => {
+    const tabs = [{ id: 't1' }, { id: 't2' }, { id: 't3' }]
+
+    it('steps back and wraps from the first to the last', () => {
+        expect(prevTerminalTabId(tabs, 't3')).toBe('t2')
+        expect(prevTerminalTabId(tabs, 't2')).toBe('t1')
+        expect(prevTerminalTabId(tabs, 't1')).toBe('t3')
+    })
+
+    it('is a no-op with fewer than two tabs, an unknown id or no active tab', () => {
+        expect(prevTerminalTabId([], null)).toBeNull()
+        expect(prevTerminalTabId([{ id: 't1' }], 't1')).toBeNull()
+        expect(prevTerminalTabId(tabs, 'gone')).toBeNull()
+        expect(prevTerminalTabId(tabs, null)).toBeNull()
     })
 })
 

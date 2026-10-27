@@ -274,8 +274,8 @@ Panel/modal component patterns. Loaded automatically when working under
   that takes the interrupt away from the shell.
 - **Terminal tab shortcuts are fixed and capture-phase**: `Ctrl+T` opens a shell and `Ctrl+1…9`
   activates the Nth tab of the active repo (`newTerminalTab` / `jumpToTerminalTab` in `App.vue`,
-  reached through `handleAppShortcut`), like Windows Terminal. `Ctrl+Tab` cycles to the next tab,
-  wrapping from the last back to the first — scoped to a focused panel (the same
+  reached through `handleAppShortcut`), like Windows Terminal. `Ctrl+Tab` cycles to the next tab and
+  `Ctrl+Shift+Tab` to the previous one, wrapping at either end — scoped to a focused panel (the same
   `isTerminalPanelFocused()` guard as Ctrl+W / Alt+Enter) so it never hijacks the gesture outside the
   terminal; the panel's activeId watcher hands the keyboard to the new shell. They must stay in the
   capture handler — xterm swallows the keys — which is also why a shell/TUI never sees them

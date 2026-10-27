@@ -49,6 +49,17 @@ export function nextTerminalTabId(tabs: Pick<TerminalTab, 'id'>[], activeId: str
 }
 
 /**
+ * The tab before `activeId`, wrapping from the first back to the last (Ctrl+Shift+Tab while the panel has focus). Same guards as the
+ * forward walk, so a press that could not change anything stays a silent no-op.
+ */
+export function prevTerminalTabId(tabs: Pick<TerminalTab, 'id'>[], activeId: string | null): string | null {
+    if (tabs.length < 2) return null
+    const index = tabs.findIndex(tab => tab.id === activeId)
+    if (index < 0) return null
+    return tabs[(index - 1 + tabs.length) % tabs.length]!.id
+}
+
+/**
  * Moves one tab inside its list (drag-to-reorder). Bounds-guarded like the workspace reorder, so a stale drag target is ignored instead of
  * corrupting the list.
  */
