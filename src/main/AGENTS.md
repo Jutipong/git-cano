@@ -244,12 +244,13 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   status, which is non-zero while the IDE is starting, updating or closing (observed codes
   1/2/6/16 against a running Rider) even though nothing is wrong here. Non-zero exits are logged
   (warn) for diagnosis only; what happens after the process exists is the OS/app's job to surface.
-- `openFileInEditor()` (`app:openFileInEditor`) opens one workdir file, not the repo: it resolves
+- `openFileInEditor()` (`app:openFileInEditor`) opens one working-tree file, not the repo: it resolves
   `repoPath + file`, checks the file exists, and passes that absolute file path to the editor.
-  `repoPath` is only the launcher cwd. Rider's C# solution picker (`csharpOpenTarget`) must never
+  Commit/stash views use the same current worktree copy. `repoPath` is only the launcher cwd.
+  Rider's C# solution picker (`csharpOpenTarget`) must never
   run for this path; `editorOpenTarget()` keeps the file as-is. The `default` target is Notepad on
-  Windows, TextEdit on macOS and the OS file association on Linux; `notepadpp` is Notepad++ on
-  Windows and Nextpad++ (the macOS port) when installed.
+  Windows, the system default text editor on macOS (`open -t`) and the OS file association on Linux;
+  `notepadpp` is Notepad++ on Windows and Nextpad++ (the macOS port) when installed.
 
 ## Terminal panel (PTY)
 

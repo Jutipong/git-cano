@@ -2153,7 +2153,7 @@ body {
     flex: 0 0 auto;
 }
 
-/* One-click external editor buttons for workdir diffs. */
+/* One-click external editor buttons for workdir, commit and stash diffs. */
 .diff-header .diff-editor-actions {
     flex: 0 0 auto;
 }

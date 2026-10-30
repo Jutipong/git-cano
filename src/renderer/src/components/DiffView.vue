@@ -1,22 +1,22 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
     import { nextTick, computed, inject, onBeforeUnmount, onMounted, ref, watch, type FunctionalComponent } from 'vue'
-    import VisualStudioCode from '~icons/catppuccin/vscode'
-    import Rider from '~icons/logos/rider'
+    import Rider from '~icons/devicon/rider'
+    import VisualStudioCode from '~icons/devicon/vscode'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucideColumns2 from '~icons/lucide/columns2'
     import ILucideCopy from '~icons/lucide/copy'
     import ILucideEye from '~icons/lucide/eye'
-    import ILucideFileText from '~icons/lucide/file-text'
     import ILucideHistory from '~icons/lucide/history'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
     import ILucideRows3 from '~icons/lucide/rows3'
     import ILucideSearch from '~icons/lucide/search'
     import ILucideUnfoldVertical from '~icons/lucide/unfold-vertical'
-    import NotepadPlusPlus from '~icons/simple-icons/notepadplusplus'
+    import NotepadPlusPlus from '~icons/selfhst/notepad-plus-plus'
     import Kiro from '~icons/thesvg-color/kiro'
+    import WithiconsFileText from '~icons/withicons-suite/file-text'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
@@ -54,7 +54,7 @@
     const repoStore = useRepoStore()
 
     const EDITOR_ICONS: Record<EditorTarget, FunctionalComponent> = {
-        default: ILucideFileText,
+        default: WithiconsFileText,
         vscode: VisualStudioCode,
         rider: Rider,
         kiro: Kiro,
@@ -63,10 +63,12 @@
     const editorTargets = ref<OpenInTargets | null>(null)
     const editorOptions = computed(() => editorTargetOptions(editorTargets.value))
     const canOpenInEditor = computed(() => {
-        if (!props.file || props.commitHash || props.stashHash || !repoStore.repo) return false
+        if (!props.file || !repoStore.repo) return false
         const entry = repoStore.repo.files.find(file => file.path === props.file?.path)
         return !entry || (entry.staged !== 'D' && entry.unstaged !== 'D')
     })
+    /** Commit/stash diffs still open the current working-tree copy — say so in the tooltip. */
+    const openEditorHint = computed(() => (props.commitHash || props.stashHash ? ' (current working tree)' : ''))
 
     watch(
         () => repoStore.repo?.path,
@@ -1148,7 +1150,7 @@
                         :key="option.target"
                         class="segmented-btn"
                         :data-editor="option.target"
-                        :title="`Open in ${option.label}`"
+                        :title="`Open in ${option.label}${openEditorHint}`"
                         :aria-label="`Open in ${option.label}`"
                         @click="openEditor(option.target)">
                         <component

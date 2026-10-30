@@ -9,13 +9,14 @@ export interface EditorTargetOption {
 
 function defaultEditorLabel(): string {
     if (isWindows) return 'Notepad'
-    if (isMac) return 'TextEdit'
+    if (isMac) return 'Text Editor'
     return 'Default editor'
 }
 
 /**
- * Editors offered for opening a single workdir file, in the same availability conditions as the repo-level Open in menu. The OS default
- * (Notepad / TextEdit / system default) and VS Code are always offered; Rider, Kiro and Notepad++/Nextpad++ only when detected.
+ * Editors offered for opening a single working-tree file, in the same availability conditions as the repo-level Open in menu. The OS
+ * default (Notepad / default text editor / system default) and VS Code are always offered; Rider, Kiro and Notepad++/Nextpad++ only when
+ * detected.
  */
 export function editorTargetOptions(targets: OpenInTargets | null): EditorTargetOption[] {
     const options: EditorTargetOption[] = [

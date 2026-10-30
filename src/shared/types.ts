@@ -162,7 +162,7 @@ export interface OpenInTargets {
     visualStudio: string | null
 }
 
-/** External editors that can open a single workdir file. */
+/** External editors that can open a single working-tree file (also from commit/stash views). */
 export type EditorTarget = 'default' | 'vscode' | 'rider' | 'kiro' | 'notepadpp'
 
 export type RebaseCommand = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop' | 'edit'

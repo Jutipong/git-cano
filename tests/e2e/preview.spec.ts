@@ -54,7 +54,7 @@ test('file history modal opens from the file context menu', async () => {
     await expect(page.locator('.history-view')).toHaveCount(0)
 })
 
-test('ignore submenu is only offered for worktree files', async () => {
+test('editor actions are offered for worktree and committed files', async () => {
     await page.locator('.file-row', { hasText: 'notes.md' }).first().click({ button: 'right' })
     await expect(page.locator('.file-context-menu-wrap')).toBeVisible()
     await page.keyboard.press('Escape')
@@ -68,9 +68,16 @@ test('ignore submenu is only offered for worktree files', async () => {
     await expect(commitFile).toBeVisible()
     await commitFile.click({ button: 'right' })
     await expect(page.locator('.file-context-menu')).toBeVisible()
-    await expect(page.locator('.file-context-menu-item', { hasText: 'Open in' })).toHaveCount(0)
-    await expect(page.locator('.file-context-menu-wrap')).toHaveCount(0)
+    await expect(page.locator('.file-context-menu-item[data-editor="default"]')).toBeVisible()
+    await expect(page.locator('.file-context-menu-item[data-editor="vscode"]')).toBeVisible()
     await page.keyboard.press('Escape')
+    await expect(page.locator('.file-context-menu')).toHaveCount(0)
+
+    await commitFile.click()
+    await expect(page.locator('.diff-editor-actions button[data-editor="default"]')).toBeVisible()
+    await expect(page.locator('.diff-editor-actions button[data-editor="vscode"]')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.diff-view')).toHaveCount(0)
 })
 
 test('reflog modal opens from the command palette', async () => {

@@ -300,15 +300,15 @@ function openDefaultEditor(target: string, cwd = target): Promise<void> {
         const notepad = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'notepad.exe')
         return runCmd(fs.existsSync(notepad) ? notepad : 'notepad.exe', [target], cwd)
     }
-    if (process.platform === 'darwin') return runCmd('open', ['-a', 'TextEdit', target], cwd)
+    if (process.platform === 'darwin') return runCmd('open', ['-t', target], cwd)
     return shell.openPath(target).then(errorMessage => {
         if (errorMessage) throw new Error(errorMessage)
     })
 }
 
 /**
- * Opens one workdir file in an external editor. The repo path is only used to resolve the relative path and as the launcher's cwd — the
- * argument is always the file itself, never the repo folder or a C# solution.
+ * Opens one file in an external editor. Commit/stash views also resolve to the file's current working-tree copy. The repo path is only used
+ * to resolve the relative path and as the launcher's cwd — the argument is always the file itself, never the repo folder or a C# solution.
  */
 export function openFileInEditor(target: EditorTarget, repoPath: string, file: string): Promise<void> {
     const filePath = path.resolve(repoPath, file)

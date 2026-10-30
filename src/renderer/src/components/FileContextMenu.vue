@@ -1,18 +1,18 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
     import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch, type FunctionalComponent } from 'vue'
-    import VisualStudioCode from '~icons/catppuccin/vscode'
-    import Rider from '~icons/logos/rider'
+    import Rider from '~icons/devicon/rider'
+    import VisualStudioCode from '~icons/devicon/vscode'
     import ChevronRight from '~icons/lucide/chevron-right'
     import Eye from '~icons/lucide/eye'
     import File from '~icons/lucide/file'
-    import FileText from '~icons/lucide/file-text'
     import Files from '~icons/lucide/files'
     import Folder from '~icons/lucide/folder'
     import History from '~icons/lucide/history'
     import ScanSearch from '~icons/lucide/scan-search'
-    import NotepadPlusPlus from '~icons/simple-icons/notepadplusplus'
+    import NotepadPlusPlus from '~icons/selfhst/notepad-plus-plus'
     import Kiro from '~icons/thesvg-color/kiro'
+    import FileText from '~icons/withicons-suite/file-text'
 
     import { useMenuKeyboard } from '../utils/menuKeyboard'
     import { editorTargetOptions, fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
@@ -119,19 +119,12 @@
     }
     const editorTargets = ref<OpenInTargets | null>(null)
     const editorOptions = computed(() => editorTargetOptions(editorTargets.value))
-    const canOpenInEditor = computed(
-        () =>
-            !!props.menu?.repoPath &&
-            !!props.menu.workdir &&
-            !props.menu.directory &&
-            !props.menu.deleted &&
-            !props.menu.missingFromWorktree
-    )
+    const canOpenInEditor = computed(() => !!props.menu?.repoPath && !props.menu.directory && !props.menu.missingFromWorktree)
 
     watch(
         () => props.menu,
         menu => {
-            if (!menu?.repoPath || !menu.workdir) {
+            if (!menu?.repoPath) {
                 editorTargets.value = null
                 return
             }
@@ -254,6 +247,7 @@
                 :key="option.target"
                 class="file-context-menu-item"
                 :data-editor="option.target"
+                :title="menu.workdir ? '' : `Open current working-tree file in ${option.label}`"
                 @click="openInEditor(option.target)">
                 <component
                     :is="EDITOR_ICONS[option.target]"
