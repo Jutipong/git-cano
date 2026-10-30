@@ -56,6 +56,8 @@ function rotateIfNeeded(file: string): void {
 }
 
 function emit(level: Level, scope: string, message: string): void {
+    // Packaged (production) builds stay completely silent — no log file, no console output.
+    if (app.isPackaged) return
     if (LEVELS[level] < threshold()) return
     const line = `${new Date().toISOString()} ${level.toUpperCase().padEnd(5)} [${scope}] ${message}`
     try {
