@@ -1197,6 +1197,10 @@ body {
 }
 
 .tab-bar {
+    /* Above the expanded terminal overlay (z 9): its dropdowns are children of this stacking
+       context, so a lower value buries them under the panel. The full-window overlay raises
+       itself above the bar again (z 11). */
+    z-index: 10;
     display: grid;
     grid-template-columns: var(--sidebar-width) 6px minmax(0, 1fr) 6px var(--right-panel-width);
     height: 48px;
@@ -5911,6 +5915,8 @@ body {
 .terminal-panel.terminal-overlay.terminal-overlay-window {
     top: 6px;
     right: 6px;
+    /* Above the tab bar (z 10) so whole-window mode still covers it. */
+    z-index: 11;
 }
 
 /* Docked strip: it never nests inside a column any more — both states are the same floating card

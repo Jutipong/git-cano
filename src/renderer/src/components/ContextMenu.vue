@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { onBeforeUnmount, onMounted, ref, type FunctionalComponent } from 'vue'
-    import Bash from '~icons/catppuccin/bash'
+    import TerminalSquare from '~icons/andrsrxn/terminal-square'
     import Folder from '~icons/catppuccin/folder'
     import Rider from '~icons/devicon/rider'
     import VisualStudio from '~icons/devicon/visualstudio'
@@ -42,7 +42,7 @@
         pencil: Pencil,
         copy: Copy,
         folder: Folder,
-        terminal: Bash,
+        terminal: TerminalSquare,
         vscode: VisualStudioCode,
         kiro: Kiro,
         rider: Rider,

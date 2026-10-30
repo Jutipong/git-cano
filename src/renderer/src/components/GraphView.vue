@@ -1,5 +1,6 @@
 <script setup lang="ts">
     import { nextTick, watch, computed, onBeforeUnmount, onMounted, ref } from 'vue'
+    import IAndrsrxnTerminalSquare from '~icons/andrsrxn/terminal-square'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
@@ -10,7 +11,6 @@
     import ILucideSearch from '~icons/lucide/search'
     import ILucideSettings from '~icons/lucide/settings'
     import ILucideTag from '~icons/lucide/tag'
-    import ILucideTerminal from '~icons/lucide/terminal'
 
     import { useAuthStore } from '../stores/auth'
     import { useRepoStore } from '../stores/repo'
@@ -911,7 +911,7 @@
                     :class="{ active: terminalVisible, 'terminal-running': terminalRunning }"
                     :title="terminalToggleTitle"
                     @click="emit('toggle-terminal')">
-                    <i-lucide-terminal
+                    <i-andrsrxn-terminal-square
                         width="14"
                         height="14" />
                 </button>

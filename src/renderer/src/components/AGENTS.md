@@ -25,7 +25,7 @@ Panel/modal component patterns. Loaded automatically when working under
   `utils/openIn.ts` (`peekOpenInTargets` / `fetchOpenInTargets`) and shared with
   `OpenInButton.vue`, so the main-process scan runs once per repo.
   Open-in Folder /
-  Terminal use catppuccin `folder` / `bash` icons in both places.
+  Terminal use the catppuccin `folder` icon and andrsrxn `terminal-square` in both places.
   Palette command items must `close()` before acting/emitting (mode switches like
   Repo…/Branch…/AI…/Open in… excepted) — otherwise the palette stays open over the next dialog.
   AI actions live behind an `AI…` drill-in mode (`Sparkles` chip), gated by `aiCanRun`.

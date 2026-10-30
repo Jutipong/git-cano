@@ -45,6 +45,9 @@ importers:
         specifier: ^3.5.44
         version: 3.5.44(typescript@6.0.3)
     devDependencies:
+      '@iconify-json/andrsrxn':
+        specifier: ^1.2.3
+        version: 1.2.3
       '@iconify-json/catppuccin':
         specifier: ^1.2.17
         version: 1.2.17
@@ -258,6 +261,9 @@ packages:
     resolution: {integrity: sha512-dfZeox66AvdPtb2lD8OsIIQh12Tp0GNCRUDfBHIKGpbmopZto2/A8nSpYYLoedPIHpqkeblZ/k8OV0Gy7PYuyQ==}
     engines: {node: '>=14.14'}
     hasBin: true
+
+  '@iconify-json/andrsrxn@1.2.3':
+    resolution: {integrity: sha512-ntDZxeVd095++DQkypSyEVpsiU3018oWxzcW1Rk6+ImsUR6XM+TIlWY1i9L5ZBaz+eELWsCKFeip2tAxmdTQAw==}
 
   '@iconify-json/catppuccin@1.2.17':
     resolution: {integrity: sha512-l1pFOADEUlw+j7V+yfFzBowdE4deeMuI4amqfKaN+7uTI9B0Ho24C86DitQk5zb62NkEM9poOyfuG7WS2bw6jg==}
@@ -2525,6 +2531,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
     optional: true
+
+  '@iconify-json/andrsrxn@1.2.3':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify-json/catppuccin@1.2.17':
     dependencies:

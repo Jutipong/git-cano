@@ -1,10 +1,10 @@
 <script setup lang="ts">
     import { computed, inject, onMounted, ref } from 'vue'
+    import IAndrsrxnTerminalSquare from '~icons/andrsrxn/terminal-square'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucidePanelTop from '~icons/lucide/panel-top'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
     import ILucideSettings2 from '~icons/lucide/settings2'
-    import ILucideTerminal from '~icons/lucide/terminal'
 
     import {
         useUiStore,
@@ -76,7 +76,7 @@
         v-if="isWindows"
         class="tools-section">
         <strong class="tools-section-title">
-            <i-lucide-terminal
+            <i-andrsrxn-terminal-square
                 width="13"
                 height="13" />
             Shell

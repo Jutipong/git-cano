@@ -1,12 +1,12 @@
 <script setup lang="ts">
     import { reactive, watch, inject, nextTick, ref, useTemplateRef } from 'vue'
+    import IAndrsrxnTerminalSquare from '~icons/andrsrxn/terminal-square'
     import ILucideGlobe2 from '~icons/lucide/globe2'
     import ILucideKeyboard from '~icons/lucide/keyboard'
     import ILucidePalette from '~icons/lucide/palette'
     import ILucideSettings2 from '~icons/lucide/settings2'
     import ILucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import ILucideSparkles from '~icons/lucide/sparkles'
-    import ILucideTerminal from '~icons/lucide/terminal'
 
     import { useUpdaterStore } from '../stores/updater'
     import { useModalA11y } from '../utils/modalA11y'
@@ -138,7 +138,7 @@
                         v-else-if="tabItem.key === 'auth'"
                         width="13"
                         height="13" />
-                    <i-lucide-terminal
+                    <i-andrsrxn-terminal-square
                         v-else-if="tabItem.key === 'terminal'"
                         width="13"
                         height="13" />

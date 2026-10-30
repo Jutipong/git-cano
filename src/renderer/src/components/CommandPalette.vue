@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
     import { computed, inject, onMounted, ref, useTemplateRef, watch, type Component } from 'vue'
-    import Bash from '~icons/catppuccin/bash'
+    import TerminalSquare from '~icons/andrsrxn/terminal-square'
     import Folder from '~icons/catppuccin/folder'
     import Rider from '~icons/devicon/rider'
     import VisualStudio from '~icons/devicon/visualstudio'
@@ -22,7 +22,6 @@
     import Settings from '~icons/lucide/settings'
     import SlidersHorizontal from '~icons/lucide/sliders-horizontal'
     import Sparkles from '~icons/lucide/sparkles'
-    import Terminal from '~icons/lucide/terminal'
     import Trash2 from '~icons/lucide/trash-2'
     import X from '~icons/lucide/x'
     import Kiro from '~icons/thesvg-color/kiro'
@@ -318,7 +317,7 @@
                           id: 'terminal',
                           label: 'Terminal',
                           hint: 'Open, or show/hide this repo’s shells',
-                          icon: Terminal,
+                          icon: TerminalSquare,
                           run: () => {
                               close()
                               emit('toggle-terminal')
@@ -427,7 +426,7 @@
         general: SlidersHorizontal,
         auth: Globe2,
         ai: Sparkles,
-        terminal: Terminal,
+        terminal: TerminalSquare,
         shortcuts: Keyboard,
     }
 
@@ -462,7 +461,7 @@
             {
                 id: 'openin-terminal',
                 label: 'Open in: Terminal',
-                icon: Bash,
+                icon: TerminalSquare,
                 run: () => openExternal(path => window.api.openTerminal(path)),
             },
             {
