@@ -1,6 +1,6 @@
 {
     "name": "git-cano",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "description": "git-cano - a lightweight Git GUI with basic features",
     "license": "MIT",
     "author": "git-cano contributors",
