@@ -225,8 +225,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - Current set: Fetch `Ctrl+Shift+↓`, Pull `Ctrl+↓`, Push `Ctrl+↑`,
   Command palette `Ctrl+P`/double-Shift, Open repo `Ctrl+O`, Clone repo `Ctrl+N`, Close tab
   `Ctrl+W` (fixed, works while typing — closes the active terminal tab, behind the same confirm as
-  its ✕, while the keyboard is inside a terminal panel, otherwise the active repo tab; the panel's
-  teal top edge via `:focus-within` marks that first case),
+  its ✕, while the keyboard is inside a terminal panel, otherwise the active repo tab behind the
+  repo-close confirm; the panel's teal top edge via `:focus-within` marks that first case),
   Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
   killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` and terminal tab jump `Ctrl+1…9` (fixed, capture-phase; a missing

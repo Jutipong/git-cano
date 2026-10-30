@@ -24,7 +24,9 @@ app-level UI rules live in `src/renderer/AGENTS.md`.
   `hideTerminals(path)` keeps `expanded` and only flips `hidden`, so every hide gesture (the header
   chevron, Ctrl+` / the palette) brings the overlay back as it was — the minimize button is the only
   way out of full mode. Panel lifetime rules are load
-bearing: closing the REPO TAB kills that repo's shells (`repo.ts closeTab`calls`closeRepoTerminals`), while a workspace switch must not — it only recycles git instances.
+bearing: closing the REPO TAB always asks through `ConfirmDialog` first (the ✕ and Ctrl+W share
+`repo.ts closeTab`), then kills that repo's shells (`closeRepoTerminals`); a workspace switch must
+not confirm or kill — it only recycles git instances.
 Terminal preferences (`ui.terminalShell`, `ui.terminalFontSize`, `ui.terminalFontFamily`, `ui.terminalMaxTabs`,
   `ui.terminalFullWidth`) are persisted in `ui.ts`, but
   live terminal sessions are not.

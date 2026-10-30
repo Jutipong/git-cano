@@ -370,9 +370,20 @@ test('the whole tab pill is clickable, so switching needs no aim at the label', 
     await expect(panel.locator('.terminal-tab-rename')).toHaveCount(0)
 })
 
-test('closing the repo tab kills its shells, and the other repo keeps working', async () => {
+test('closing the repo tab asks first, then kills its shells, and the other repo keeps working', async () => {
     // main repo (first tab) currently owns a shell; ops repo owns one too.
-    await page.locator('.repo-tab').first().locator('.tab-close').click()
+    const firstTab = page.locator('.repo-tab').first()
+    const name = await firstTab.locator('.repo-tab-name').innerText()
+
+    // Cancelling leaves the repo, and its shell, open.
+    await firstTab.locator('.tab-close').click()
+    await expect(page.locator('.confirm-dialog-header')).toContainText(`Close ${name}`)
+    await page.locator('.confirm-dialog button', { hasText: 'Cancel' }).click()
+    await expect(page.locator('.repo-tab')).toHaveCount(2)
+    await expect(page.locator('.terminal-panel')).toHaveCount(2)
+
+    await firstTab.locator('.tab-close').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close repo' }).click()
     await expect(page.locator('.repo-tab')).toHaveCount(1)
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
@@ -809,9 +820,10 @@ test('Ctrl+W closes the focused terminal tab behind a confirm, and the repo tab 
     await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 
-    // Focus outside the terminal: Ctrl+W is the fixed repo-tab close again.
+    // Focus outside the terminal: Ctrl+W is the fixed repo-tab close again, behind the repo confirm.
     await page.locator('.commit-search input').click()
     await page.keyboard.press('Control+w')
+    await page.locator('.confirm-dialog button', { hasText: 'Close repo' }).click()
     await expect(page.locator('.repo-tab')).toHaveCount(0)
 })
 

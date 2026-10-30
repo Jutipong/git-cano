@@ -2,6 +2,7 @@ import { assignLanes } from '@shared/lanes'
 import { defineStore } from 'pinia'
 import { computed, markRaw, ref, watch } from 'vue'
 
+import { confirmDialog } from '../utils/confirm'
 import { useTerminalStore } from './terminal'
 import { useUiTransientStore } from './uiTransient'
 import { useWorkspaceStore } from './workspace'
@@ -365,6 +366,16 @@ export const useRepoStore = defineStore('repo', () => {
         if (useUiTransientStore().busy) return
         const tab = tabs.value[index]
         if (!tab) return
+        const shells = useTerminalStore().terminalCount(tab.path)
+        const sessionNote =
+            shells === 0 ? '' : shells === 1 ? ' Its terminal session also ends.' : ` Its ${shells} terminal sessions also end.`
+        const ok = await confirmDialog({
+            title: `Close ${tab.name}`,
+            message: `Closing this repository tab removes it from the workspace.${sessionNote} Nothing on disk is changed.`,
+            confirmLabel: 'Close repo',
+            danger: true,
+        })
+        if (!ok) return
         const wasActive = index === activeTab.value
         // Closing the repo tab takes its shells with it (the renderer's state is memory-only, so a
         // killed pty would otherwise have no tab left to close it). Workspace switches do NOT call

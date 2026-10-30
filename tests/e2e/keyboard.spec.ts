@@ -240,3 +240,24 @@ test('settings tabs move with arrows, Home and End', async () => {
     await page.keyboard.press('Escape')
     await expect(page.locator('.tools-modal')).toHaveCount(0)
 })
+
+test('closing a repo tab asks for confirmation', async () => {
+    const tabs = page.locator('.repo-tab')
+    await expect(tabs).toHaveCount(2)
+    const first = tabs.first()
+    const name = await first.locator('.repo-tab-name').innerText()
+
+    // Cancel leaves the repo open.
+    await first.locator('.tab-close').click()
+    await expect(page.locator('.confirm-dialog-header')).toContainText(`Close ${name}`)
+    await expect(page.locator('.confirm-dialog-body')).toContainText('Nothing on disk is changed')
+    await page.locator('.confirm-dialog button', { hasText: 'Cancel' }).click()
+    await expect(tabs).toHaveCount(2)
+
+    // Ctrl+W takes the same confirm before removing the active repo tab.
+    await first.locator('.repo-tab-name').click()
+    await page.keyboard.press('Control+w')
+    await expect(page.locator('.confirm-dialog-header')).toContainText(`Close ${name}`)
+    await page.locator('.confirm-dialog button', { hasText: 'Close repo' }).click()
+    await expect(tabs).toHaveCount(1)
+})

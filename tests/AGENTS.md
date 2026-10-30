@@ -14,8 +14,8 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
     - `app.spec.ts` covers the memory/payload work (lazy commit bodies, diff caps, blob-URL images, split plan,
       tokenizer state, graph interactions, AI context cap).
     - `keyboard.spec.ts` covers the graph listbox keys, commit/file/branch menus + submenus, repo/Settings
-      tab roving focus, list rows (sidebar/files/history/reflog) and splitter resizing. Terminal tab keys
-      live in `terminal.spec.ts` (Windows).
+      tab roving focus, the repo-tab close confirm (cancel + Ctrl+W), list rows (sidebar/files/history/reflog)
+      and splitter resizing. Terminal tab keys live in `terminal.spec.ts` (Windows).
     - `conflict.spec.ts` covers the conflict flow.
     - `cherry-pick.spec.ts` covers the cherry-pick flow from the commit menu and by dragging a commit onto a
       branch: dirty-tree block, clean pick + Undo, conflict error dialog (abort), and the switch-then-pick path.
@@ -33,7 +33,7 @@ the whole pill being the tab's click target (label, blank pill area and a ✕ th
 interactive while the pill is hovered),
 the four-shell default cap (raisable in Settings → Terminal → Tabs, and lowering it never kills an
 open shell), `Ctrl+Tab` cycling while the panel is focused (wrap + outside-panel no-op),
-splitter drag-resize, repo-close and kill-all lifecycles, `Ctrl+`` toggle,
+splitter drag-resize, repo-close (confirm + cancel) and kill-all lifecycles, `Ctrl+`` toggle,
       `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
       tab), `Alt+Enter` full-height toggle while focused vs outside, double-Shift opening the palette
       from the focused shell (and the tap reset when another key intervenes), the `:focus-within` focus
