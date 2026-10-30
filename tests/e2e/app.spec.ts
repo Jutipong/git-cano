@@ -222,6 +222,18 @@ test('split view renders from the segment plan with working navigation', async (
     // Uneven del/add block must produce a blank pad row on one side.
     await expect(page.locator('.split-pane.left .diff-line.blank, .split-pane.right .diff-line.blank').first()).toBeVisible()
 
+    // Per-pane full-width toggle: the other pane is hidden until the button is pressed again.
+    const leftFull = page.locator('.split-pane-btn[data-side="left"][data-action="full"]')
+    await leftFull.click()
+    await expect(page.locator('.split-pane.right')).toBeHidden()
+    await expect(page.locator('.split-pane.left')).toBeVisible()
+    await leftFull.click()
+    await expect(page.locator('.split-pane.right')).toBeVisible()
+
+    // Copy all hands the new side to the clipboard and confirms with a toast.
+    await page.locator('.split-pane-btn[data-side="right"][data-action="copy"]').click()
+    await expect(page.locator('.toast').filter({ hasText: 'Copied new code' })).toBeVisible()
+
     const changeCounter = page.locator('.diff-nav[title="Navigate between changes"] .diff-nav-counter')
     await expect(changeCounter).toHaveText(/^1\/\d+$/)
     await page.locator('.diff-nav[title="Navigate between changes"] button[title="Next change"]').click()

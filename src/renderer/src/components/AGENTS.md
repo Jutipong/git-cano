@@ -94,6 +94,13 @@ Panel/modal component patterns. Loaded automatically when working under
   whole overlay. `getBlame()` parses `summary` plus the final line number from the porcelain
   sha header (`<orig> <final>` — there is no bare line-number line); do not regress this or
   `BlameModal.vue` shows 0 on every row again.
+- **Per-pane controls (split mode)**: each pane carries a top-right overlay with Copy all and Full
+  width. Copy all fetches the full blob for that side's revision (workdir: index/worktree/HEAD;
+  commit: `hash` / `hash^`; stash: stash / `hash^`) and copies it as-is — never the rendered diff
+  rows, which may be capped or context-limited (reuses the 1 MB `FileContent` APIs, so binary,
+  oversized and missing sides report an error). Full width hides the other pane and lets the chosen
+  pane span 100%; pressing it again restores 50/50, switching sides swaps the expansion. Both reset
+  on file switch, inline mode and `fullFileView`; the minimap draws the expanded side alone.
 - **Large-view memory**: split mode resolves rows through a segment plan
   (`splitPlan` / `splitRowAt`, virtualized per visible row) instead of a `sideBySide`
   array over every line — do not reintroduce a full row array. Meta rows (diff header,

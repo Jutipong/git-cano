@@ -2328,6 +2328,53 @@ body {
     border-left: 1px solid var(--line-soft);
 }
 
+/* Per-pane controls (copy whole side / take the full width) — overlaid on the pane's
+   top-right corner so they never consume a code row. The overlay itself is click-through;
+   only the buttons opt back in. */
+.split-pane-actions {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    pointer-events: none;
+}
+
+.split-pane-action {
+    display: flex;
+    flex: 1;
+    gap: 4px;
+    justify-content: flex-end;
+    padding: 6px 8px 0 0;
+}
+
+.split-pane-action.hidden {
+    display: none;
+}
+
+.split-pane-btn {
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--surface-0) 82%, transparent);
+    border: 1px solid var(--line-soft);
+    pointer-events: auto;
+}
+
+.split-pane-btn:hover {
+    color: var(--text);
+    background: var(--surface-1);
+}
+
+.diff-body.split.expand-left .split-pane.left,
+.diff-body.split.expand-right .split-pane.right {
+    flex-basis: 100%;
+    max-width: 100%;
+}
+
+.diff-body.split.expand-left .split-pane.right,
+.diff-body.split.expand-right .split-pane.left {
+    display: none;
+}
+
 .diff-line.ctx:hover {
     background: color-mix(in srgb, var(--text-muted) 7%, transparent);
 }

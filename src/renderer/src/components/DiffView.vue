@@ -6,6 +6,7 @@
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucideColumns2 from '~icons/lucide/columns2'
+    import ILucideCopy from '~icons/lucide/copy'
     import ILucideEye from '~icons/lucide/eye'
     import ILucideFileText from '~icons/lucide/file-text'
     import ILucideHistory from '~icons/lucide/history'
@@ -96,6 +97,11 @@
 
     const FULL_FILE_CONTEXT = 999_999
 
+    /** Split view: one pane temporarily takes the full width (the other is hidden). */
+    const expandedPane = ref<'left' | 'right' | null>(null)
+    /** Side whose full file content is being copied (spinner + double-click guard). */
+    const copySide = ref<'left' | 'right' | null>(null)
+
     const lines = ref<DiffLine[]>([])
     const loading = ref(false)
     const isFullscreen = ref(false)
@@ -170,6 +176,8 @@
         hideLens()
         blameKey = ''
         blameFlight = null
+        expandedPane.value = null
+        copySide.value = null
         const f = props.file
         if (!f) return
         loading.value = true
@@ -232,8 +240,58 @@
         () => ui.diffViewMode,
         () => {
             currentChange.value = 0
+            if (ui.diffViewMode !== 'split') expandedPane.value = null
         }
     )
+
+    /** Blob content for one side at the viewed revision — the full file, never the rendered diff rows. */
+    function sideContent(side: 'left' | 'right') {
+        const f = props.file
+        if (!f) return null
+        if (props.stashHash) {
+            return side === 'left'
+                ? window.api.commitFileContent(`${props.stashHash}^`, f.path)
+                : window.api.stashFileContent(props.stashHash, f.path)
+        }
+        if (props.commitHash) {
+            return window.api.commitFileContent(side === 'left' ? `${props.commitHash}^` : props.commitHash, f.path)
+        }
+        if (side === 'left') {
+            // Staged diff is HEAD→index, unstaged is index→worktree.
+            return f.staged ? window.api.commitFileContent('HEAD', f.path) : window.api.fileContent(f.path, true)
+        }
+        return window.api.fileContent(f.path, f.staged)
+    }
+
+    async function copyAll(side: 'left' | 'right') {
+        if (copySide.value) return
+        const f = props.file
+        if (!f) return
+        copySide.value = side
+        try {
+            const content = await sideContent(side)
+            const text = content?.content
+            if (text === null || text === undefined) {
+                const reason = content?.binary
+                    ? 'Binary file — nothing to copy'
+                    : content?.tooLarge
+                      ? 'File is too large to copy (1 MB limit)'
+                      : 'Nothing to copy on this side'
+                notify(reason, 'error')
+                return
+            }
+            await navigator.clipboard.writeText(text)
+            notify(side === 'left' ? 'Copied old code' : 'Copied new code', 'success')
+        } catch (error) {
+            notify(errorMessage(error), 'error')
+        } finally {
+            copySide.value = null
+        }
+    }
+
+    function togglePaneFull(side: 'left' | 'right') {
+        expandedPane.value = expandedPane.value === side ? null : side
+    }
 
     /* ---- Blame lens: hover a line number for per-line authorship (no BlameModal needed) ---- */
     interface LensTarget {
@@ -402,6 +460,10 @@
         if (loading.value || meta.value?.binary || meta.value?.image) return false
         const first = lines.value[0]
         return !!first && first.type === 'meta' && first.text.startsWith('snapshot ')
+    })
+
+    watch(fullFileView, value => {
+        if (value) expandedPane.value = null
     })
 
     const splitPlan = computed<SplitPlan | null>(() => (ui.diffViewMode !== 'split' ? null : buildSplitPlan(lines.value)))
@@ -739,7 +801,10 @@
         ctx.clearRect(0, 0, cssW, stripH)
         const colors = minimapColors()
         const pad = 4
-        const halfW = split ? (cssW - pad * 2 - 2) / 2 : cssW - pad * 2
+        const fullW = cssW - pad * 2
+        const halfW = split ? (fullW - 2) / 2 : fullW
+        const focused = split ? expandedPane.value : null
+        const sideW = focused ? fullW : halfW
         const kindOf = (type?: DiffLine['type']): MinimapKind | undefined => (type === 'add' || type === 'del' ? type : undefined)
         if (split && plan) {
             // Iterate the plan directly — materializing a row wrapper per line just to draw bars would defeat it.
@@ -752,21 +817,25 @@
                     const leftOffset = p - segment.leftPad
                     const rightOffset = p - segment.rightPad
                     const y = (start + p) * barH
-                    drawMinimapBar(ctx, pad, y, halfW, barH, colors, leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined)
-                    drawMinimapBar(
-                        ctx,
-                        pad + halfW + 2,
-                        y,
-                        halfW,
-                        barH,
-                        colors,
-                        rightOffset >= 0 ? kindOf(segment.adds[rightOffset]?.type) : undefined
-                    )
+                    if (focused !== 'right') {
+                        drawMinimapBar(ctx, pad, y, sideW, barH, colors, leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined)
+                    }
+                    if (focused !== 'left') {
+                        drawMinimapBar(
+                            ctx,
+                            focused ? pad : pad + halfW + 2,
+                            y,
+                            sideW,
+                            barH,
+                            colors,
+                            rightOffset >= 0 ? kindOf(segment.adds[rightOffset]?.type) : undefined
+                        )
+                    }
                 }
             }
             return
         }
-        lines.value.forEach((line, i) => drawMinimapBar(ctx, pad, i * barH, cssW - pad * 2, barH, colors, kindOf(line.type)))
+        lines.value.forEach((line, i) => drawMinimapBar(ctx, pad, i * barH, fullW, barH, colors, kindOf(line.type)))
     }
 
     function updateViewport() {
@@ -916,12 +985,14 @@
         if (body && resizeObserver) resizeObserver.observe(body)
     })
 
-    watch([lines, splitPlan, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme], () =>
-        nextTick(() => {
-            measureRowHeight()
-            resetPaneScroll()
-            updateMinimap()
-        })
+    watch(
+        [lines, splitPlan, expandedPane, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme],
+        () =>
+            nextTick(() => {
+                measureRowHeight()
+                resetPaneScroll()
+                updateMinimap()
+            })
     )
 </script>
 
@@ -1124,7 +1195,11 @@
             <div
                 ref="diffBody"
                 class="diff-body"
-                :class="{ split: ui.diffViewMode === 'split' }"
+                :class="{
+                    split: ui.diffViewMode === 'split',
+                    'expand-left': expandedPane === 'left',
+                    'expand-right': expandedPane === 'right',
+                }"
                 @scroll.passive="onBodyScroll">
                 <div
                     v-if="loading"
@@ -1296,6 +1371,86 @@
                         No textual changes
                     </div>
                 </template>
+            </div>
+
+            <div
+                v-if="ui.diffViewMode === 'split' && !fullFileView && !loading && !meta?.binary && !meta?.image"
+                class="split-pane-actions"
+                :style="{ right: minimapVisible ? '20px' : '0px' }">
+                <div
+                    class="split-pane-action"
+                    :class="{ hidden: expandedPane === 'right' }">
+                    <button
+                        type="button"
+                        class="icon-btn split-pane-btn"
+                        data-side="left"
+                        data-action="copy"
+                        :disabled="copySide !== null"
+                        :title="copySide === 'left' ? 'Copying…' : 'Copy all old code'"
+                        @click="copyAll('left')">
+                        <ThinkSpinner
+                            v-if="copySide === 'left'"
+                            compact />
+                        <i-lucide-copy
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-btn split-pane-btn"
+                        data-side="left"
+                        data-action="full"
+                        :class="{ active: expandedPane === 'left' }"
+                        :title="expandedPane === 'left' ? 'Restore side-by-side view' : 'Full width — old code'"
+                        @click="togglePaneFull('left')">
+                        <i-lucide-minimize
+                            v-if="expandedPane === 'left'"
+                            width="15"
+                            height="15" />
+                        <i-lucide-maximize
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
+                <div
+                    class="split-pane-action"
+                    :class="{ hidden: expandedPane === 'left' }">
+                    <button
+                        type="button"
+                        class="icon-btn split-pane-btn"
+                        data-side="right"
+                        data-action="copy"
+                        :disabled="copySide !== null"
+                        :title="copySide === 'right' ? 'Copying…' : 'Copy all new code'"
+                        @click="copyAll('right')">
+                        <ThinkSpinner
+                            v-if="copySide === 'right'"
+                            compact />
+                        <i-lucide-copy
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                    <button
+                        type="button"
+                        class="icon-btn split-pane-btn"
+                        data-side="right"
+                        data-action="full"
+                        :class="{ active: expandedPane === 'right' }"
+                        :title="expandedPane === 'right' ? 'Restore side-by-side view' : 'Full width — new code'"
+                        @click="togglePaneFull('right')">
+                        <i-lucide-minimize
+                            v-if="expandedPane === 'right'"
+                            width="15"
+                            height="15" />
+                        <i-lucide-maximize
+                            v-else
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
             </div>
 
             <div
