@@ -270,9 +270,10 @@ function startDir(): string | undefined {
 }
 
 /**
- * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't zoom the web frame behind the
- * app's own ui.zoom setting — zoom is owned by the renderer's ui store instead. Ctrl/Cmd+W is also freed from the native Close-window role
- * so it closes the active repo tab instead (window close stays available via Ctrl/Cmd+Shift+W).
+ * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't
+ * fight the app's own ui.zoom setting — zoom is owned by the renderer's ui store (which drives Electron page
+ * zoom through webFrame) instead. Ctrl/Cmd+W is also freed from the native Close-window role so it closes the
+ * active repo tab instead (window close stays available via Ctrl/Cmd+Shift+W).
  *
  * The Window menu is hand-written on both platforms (the stock `windowMenu` role can't be extended) and carries only the app's own items:
  * What's new, and About Git Cano → the repository.

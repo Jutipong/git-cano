@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webFrame } from 'electron'
 
 import type {
     AiConfig,
@@ -221,6 +221,14 @@ const api = {
     clientLog: (level: 'info' | 'warn' | 'error', message: string): void => {
         ipcRenderer.send('app:log', level, message)
     },
+
+    /**
+     * App zoom/font scale is Electron page zoom, never CSS `zoom`: xterm computes mouse positions from
+     * `getBoundingClientRect()` while its cell metrics come from canvas measurements, so a CSS zoom on
+     * `<html>` would scale one but not the other and every mouse report would drift. Page zoom keeps
+     * both in the same CSS-pixel space.
+     */
+    setZoomFactor: (factor: number): void => webFrame.setZoomFactor(factor),
 
     onRepoChanged: (callback: (repoPath: string) => void): (() => void) => {
         const listener = (_event: Electron.IpcRendererEvent, repoPath: string) => callback(repoPath)

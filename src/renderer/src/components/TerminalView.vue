@@ -67,8 +67,9 @@
     const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
 
     /**
-     * xterm's cell metrics live in unzoomed CSS px, while the app's `<html> { zoom }` carries the UI font scale. Dividing it out
-     * keeps Settings → Terminal's size absolute at any UI font size; the app zoom still magnifies the window.
+     * The app's page zoom scales the whole renderer, while `terminalFontPx` divides out only the UI font scale so
+     * Settings → Terminal's size stays absolute. Keeping the font in CSS px is what keeps xterm's cell metrics and
+     * its mouse coordinates (`getBoundingClientRect`) in one space — never re-introduce a CSS `zoom` on `<html>`.
      */
     function fontSizePx(): number {
         return terminalFontPx(ui.terminalFontSize, ui.fontScale)
@@ -384,6 +385,12 @@
                 if (term) term.options.theme = { ...term.options.theme, ...themeColors() }
                 resizePty()
             }
+        )
+        // Page zoom changes the terminal's CSS-pixel box (the ResizeObserver usually catches it, but a
+        // same-size box can slip through), so re-solve the grid on the next layout frame.
+        watch(
+            () => ui.zoom,
+            () => nextTick(() => resizePty())
         )
         // The terminal's font is its own setting, decoupled from the UI font size — apply it live to
         // every open view and re-solve the grid. xterm re-measures the cell box on a later task,

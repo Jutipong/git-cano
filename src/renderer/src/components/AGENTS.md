@@ -194,14 +194,15 @@ Panel/modal component patterns. Loaded automatically when working under
   (replacing the addon's private `_renderService.clear()`). Do not call `fit.fit()` as well: it
   proposes the 14px-narrower grid again on every refit, so the two would flip-flop — resizing and
   repainting the screen twice per fit.
-- **Terminal text size is absolute against the UI font size, but still follows the app zoom.** xterm's
-  cell metrics live in unzoomed CSS px, while `<html> { zoom }` carries both the UI font scale and the
-  explicit zoom. `TerminalView` therefore passes `terminalFontPx(ui.terminalFontSize, ui.fontScale)` to
-  xterm: Settings → Terminal's px value is what the terminal actually paints at UI font sizes 12–16,
-  and the user's app zoom still magnifies the whole window. Do not counter-zoom `.terminal-host` or
-  pre-multiply the box size — the fit already solves in unzoomed space (`offsetWidth`/`canvas.measureText`
-  ignore zoom; `getBoundingClientRect` does not), and the grid stays aligned when only the xterm
-  `fontSize` is scaled. If the app zoom itself is ever meant to leave terminal text unscaled, that is a
+- **Terminal text size is absolute against the UI font size, but still follows the app zoom.** Electron page
+  zoom carries both the UI font scale and the explicit zoom, and xterm's cell metrics and mouse coordinates stay
+  in the same CSS-pixel space. `TerminalView` therefore passes `terminalFontPx(ui.terminalFontSize, ui.fontScale)`
+  to xterm: Settings → Terminal's px value is what the terminal actually paints at UI font sizes 12–16, and the
+  user's app zoom still magnifies the whole window. **Never scale the app with CSS `zoom` on `<html>` again** —
+  xterm's mouse service divides `getBoundingClientRect()` (scaled by CSS zoom) by canvas cell metrics (not
+  scaled), so every click/drag in a mouse-tracking TUI (opencode, pi) drifts by the zoom factor. App zoom goes
+  through `window.api.setZoomFactor` (`webFrame.setZoomFactor` in preload); `TerminalView` re-fits the terminal
+  grid when `ui.zoom` changes. If the app zoom itself is ever meant to leave terminal text unscaled, that is a
   separate product decision.
 - **A blinking caret is the TUI's repaint cadence, not a font property.** xterm draws the caret as a
   cell of the grid (block/bar/underline/outline, `cursorBlink: true` here) and blinks it with a 1s

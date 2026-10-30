@@ -58,9 +58,10 @@ export function resolveTerminalFontFamily(input: string, defaultStack: string): 
 }
 
 /**
- * xterm measures its cell in unzoomed CSS px, while the app's `<html> { zoom }` includes the UI font scale. Divide the configured
- * terminal size by that scale so Settings → Terminal's px value stays the terminal's real size when the UI font size changes. The
- * explicit app zoom is deliberately left alone — it still magnifies the whole window.
+ * xterm measures its cell in CSS px, while Electron page zoom carries the UI font scale without changing
+ * those metrics. Divide the configured terminal size by that scale so Settings → Terminal's px value stays
+ * the terminal's real size when the UI font size changes. The explicit app zoom is deliberately left alone —
+ * page zoom still magnifies the whole window.
  */
 export function terminalFontPx(size: number, fontScale: number): number {
     return fontScale > 0 ? size / fontScale : size

@@ -225,7 +225,7 @@ export const useUiStore = defineStore(
             terminalFontSize.value =
                 TERMINAL_FONT_SIZE_OPTIONS[Math.min(TERMINAL_FONT_SIZE_OPTIONS.length - 1, Math.max(0, (idx < 0 ? 0 : idx) + direction))]
         }
-        /** App zoom and UI font size both ride on `<html> { zoom }`; keep the two factors separate. */
+        /** App zoom and UI font size both ride on Electron page zoom; keep the two factors separate. */
         const fontScale = computed(() => fontSize.value / DEFAULT_FONT_SIZE)
         const zoomScale = computed(() => zoom.value / DEFAULT_ZOOM)
         const codeFontSize = ref(DEFAULT_CODE_FONT_SIZE)
@@ -392,8 +392,10 @@ export const useUiStore = defineStore(
         watchEffect(() => {
             document.documentElement.dataset.theme = theme.value
         })
+        // Page zoom, not CSS `zoom` on <html>: xterm mixes getBoundingClientRect coordinates with
+        // unzoomed canvas cell metrics, so a CSS zoom makes every mouse selection drift by the factor.
         watchEffect(() => {
-            document.documentElement.style.zoom = String(zoomScale.value * fontScale.value)
+            window.api.setZoomFactor(zoomScale.value * fontScale.value)
         })
 
         return {
