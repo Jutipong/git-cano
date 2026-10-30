@@ -48,6 +48,12 @@ Panel/modal component patterns. Loaded automatically when working under
   `overflow: hidden` and would clip anything extending above it. Has fullscreen toggle and
   close (✕). In split mode each pane keeps its own horizontal scrollbar, synced both ways
   via `onPaneScrollX` — do not hide one side again.
+- **Open in editor**: the DiffView header shows one-click editor buttons (the OS default —
+  Notepad / TextEdit — plus VS Code; Rider, Kiro and Notepad++/Nextpad++ when detected) for
+  workdir diffs only; `FileContextMenu` mirrors them as flat items. Both call
+  `openFileInEditor`, which opens the single file (the repo path is only the launcher cwd),
+  never the repo folder or a C# solution. Hidden for commit/stash diffs and deleted worktree
+  files.
 - **File preview** (`FilePreviewModal.vue`): read-only rendered view for `.md/.markdown/.mdown`
   (via `marked` + `DOMPurify`-sanitized `v-html`) and pretty-printed `.json` (regex token colors,
   raw fallback on parse failure). Opened from the file context menu (`Preview` item in

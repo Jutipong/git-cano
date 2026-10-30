@@ -26,6 +26,13 @@ remaining `git*` key: the guard blocks any unknown variable with a `git` prefix 
 collects them case-insensitively), so a stray `GITLAB_TOKEN` or `GIT_CANO_LOG_LEVEL` would break
 every spawn. Keep that sweep too — the git envs we inject ourselves are added _after_ `baseEnv()`.
 
+## Logging
+
+- `logger.ts` is a no-op in packaged builds: `emit()` returns immediately when `app.isPackaged`, so
+  production writes no `logs/git-cano.log` and prints nothing to the console. `GIT_CANO_LOG_LEVEL` only
+  affects unpackaged runs (dev / e2e) — do not add a production opt-in.
+- Unpackaged runs keep the original behavior: debug in dev, info otherwise, 5 MB rotation to one `.old` file.
+
 ## Ref names (ambiguous short names)
 
 When a branch and a tag share a name (e.g. `backup`), Git's short ref names get ambiguous, and that leaks
@@ -237,6 +244,12 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
   status, which is non-zero while the IDE is starting, updating or closing (observed codes
   1/2/6/16 against a running Rider) even though nothing is wrong here. Non-zero exits are logged
   (warn) for diagnosis only; what happens after the process exists is the OS/app's job to surface.
+- `openFileInEditor()` (`app:openFileInEditor`) opens one workdir file, not the repo: it resolves
+  `repoPath + file`, checks the file exists, and passes that absolute file path to the editor.
+  `repoPath` is only the launcher cwd. Rider's C# solution picker (`csharpOpenTarget`) must never
+  run for this path; `editorOpenTarget()` keeps the file as-is. The `default` target is Notepad on
+  Windows, TextEdit on macOS and the OS file association on Linux; `notepadpp` is Notepad++ on
+  Windows and Nextpad++ (the macOS port) when installed.
 
 ## Terminal panel (PTY)
 

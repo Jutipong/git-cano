@@ -22,6 +22,8 @@ test.afterAll(async () => {
 
 test('markdown preview renders sanitized content', async () => {
     await page.locator('.file-row', { hasText: 'notes.md' }).first().click()
+    await expect(page.locator('.diff-editor-actions button[data-editor="default"]')).toBeVisible()
+    await expect(page.locator('.diff-editor-actions button[data-editor="vscode"]')).toBeVisible()
     await expect(page.locator('.diff-preview-btn')).toBeVisible()
     await page.locator('.diff-preview-btn').click()
     await expect(page.locator('.preview-view')).toBeVisible()
@@ -43,6 +45,8 @@ test('json preview pretty-prints with token colors', async () => {
 test('file history modal opens from the file context menu', async () => {
     await page.locator('.file-row', { hasText: 'notes.md' }).first().click({ button: 'right' })
     await expect(page.locator('.file-context-menu')).toBeVisible()
+    await expect(page.locator('.file-context-menu-item[data-editor="default"]')).toBeVisible()
+    await expect(page.locator('.file-context-menu-item[data-editor="vscode"]')).toBeVisible()
     await page.locator('.file-context-menu-item', { hasText: 'View history' }).click()
     await expect(page.locator('.history-view')).toBeVisible()
     await expect(page.locator('.history-row').first()).toBeVisible()
@@ -64,6 +68,7 @@ test('ignore submenu is only offered for worktree files', async () => {
     await expect(commitFile).toBeVisible()
     await commitFile.click({ button: 'right' })
     await expect(page.locator('.file-context-menu')).toBeVisible()
+    await expect(page.locator('.file-context-menu-item', { hasText: 'Open in' })).toHaveCount(0)
     await expect(page.locator('.file-context-menu-wrap')).toHaveCount(0)
     await page.keyboard.press('Escape')
 })

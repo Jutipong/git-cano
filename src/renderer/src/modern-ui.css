@@ -2153,6 +2153,11 @@ body {
     flex: 0 0 auto;
 }
 
+/* One-click external editor buttons for workdir diffs. */
+.diff-header .diff-editor-actions {
+    flex: 0 0 auto;
+}
+
 .diff-search {
     display: flex;
     flex: 0 0 auto;

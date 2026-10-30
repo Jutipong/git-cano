@@ -14,6 +14,7 @@ import type {
     ConflictVersions,
     DiffLine,
     DiffMeta,
+    EditorTarget,
     FileContent,
     GithubUser,
     GitImage,
@@ -77,6 +78,8 @@ const api = {
     openInFolder: (dir: string): Promise<void> => call('app:openInFolder', dir),
     openInVSCode: (dir: string): Promise<void> => call('app:openInVSCode', dir),
     openInKiro: (dir: string): Promise<void> => call('app:openInKiro', dir),
+    openFileInEditor: (target: EditorTarget, repoPath: string, file: string): Promise<void> =>
+        call('app:openFileInEditor', target, repoPath, file),
     getOpenInTargets: (dir: string): Promise<OpenInTargets> => call('app:getOpenInTargets', dir),
     openInRider: (dir: string): Promise<void> => call('app:openInRider', dir),
     openInVisualStudio: (dir: string): Promise<void> => call('app:openInVisualStudio', dir),

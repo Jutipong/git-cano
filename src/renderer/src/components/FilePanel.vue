@@ -527,12 +527,14 @@
 
     function openFileMenu(event: MouseEvent, path: string, file?: FileEntry | CommitFile) {
         if (isWorkdir.value && file && !hasWorkdirStatus(file as FileEntry)) return
+        const workdirFile = isWorkdir.value ? (file as FileEntry | undefined) : undefined
         menu.value = {
             x: event.clientX,
             y: event.clientY,
             path,
-            untracked: isWorkdir.value && file ? isUntracked(file as FileEntry) : false,
+            untracked: !!workdirFile && isUntracked(workdirFile),
             deleted: !isWorkdir.value && !!file && unifiedCommitFile(file).status === 'D',
+            missingFromWorktree: !!workdirFile && (workdirFile.staged === 'D' || workdirFile.unstaged === 'D'),
             workdir: isWorkdir.value,
             repoPath: repoStore.repo?.path,
         }

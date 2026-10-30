@@ -1,4 +1,34 @@
-import type { OpenInTargets } from '@shared/types'
+import { isMac, isWindows } from './shortcuts'
+
+import type { EditorTarget, OpenInTargets } from '@shared/types'
+
+export interface EditorTargetOption {
+    target: EditorTarget
+    label: string
+}
+
+function defaultEditorLabel(): string {
+    if (isWindows) return 'Notepad'
+    if (isMac) return 'TextEdit'
+    return 'Default editor'
+}
+
+/**
+ * Editors offered for opening a single workdir file, in the same availability conditions as the repo-level Open in menu. The OS default
+ * (Notepad / TextEdit / system default) and VS Code are always offered; Rider, Kiro and Notepad++/Nextpad++ only when detected.
+ */
+export function editorTargetOptions(targets: OpenInTargets | null): EditorTargetOption[] {
+    const options: EditorTargetOption[] = [
+        { target: 'default', label: defaultEditorLabel() },
+        { target: 'vscode', label: 'VS Code' },
+    ]
+    if (targets?.rider) options.push({ target: 'rider', label: 'Rider' })
+    if (targets?.kiro) options.push({ target: 'kiro', label: 'Kiro' })
+    if (targets?.notepadpp) {
+        options.push({ target: 'notepadpp', label: isMac ? 'Nextpad++' : 'Notepad++' })
+    }
+    return options
+}
 
 /**
  * Session cache of Open-in availability per repo path. The main process walks the repo for .sln/.csproj files and (on Windows) probes for

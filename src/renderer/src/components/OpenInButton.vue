@@ -56,7 +56,7 @@
                 action: () => run(() => window.api.openInKiro(props.path)),
             })
         }
-        // C#-only entries: shown when the repo has .NET solution/project files and the IDE is installed
+        // C#-only entry: shown when the repo has .NET solution/project files and the IDE is installed
         if (targets.value?.visualStudio) {
             items.push({
                 label: 'Visual Studio',
@@ -64,6 +64,7 @@
                 action: () => run(() => window.api.openInVisualStudio(props.path)),
             })
         }
+        // Shown whenever Rider is installed on the machine
         if (targets.value?.rider) {
             items.push({
                 label: 'Rider',

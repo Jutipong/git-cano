@@ -1,18 +1,26 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
-    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref, watch, type FunctionalComponent } from 'vue'
+    import VisualStudioCode from '~icons/catppuccin/vscode'
+    import Rider from '~icons/logos/rider'
     import ChevronRight from '~icons/lucide/chevron-right'
     import Eye from '~icons/lucide/eye'
     import File from '~icons/lucide/file'
+    import FileText from '~icons/lucide/file-text'
     import Files from '~icons/lucide/files'
     import Folder from '~icons/lucide/folder'
     import History from '~icons/lucide/history'
     import ScanSearch from '~icons/lucide/scan-search'
+    import NotepadPlusPlus from '~icons/simple-icons/notepadplusplus'
+    import Kiro from '~icons/thesvg-color/kiro'
 
     import { useMenuKeyboard } from '../utils/menuKeyboard'
+    import { editorTargetOptions, fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
     import { isPreviewablePath } from '../utils/preview'
 
     import type { ToastKind } from '../stores/uiTransient'
+
+    import type { EditorTarget, OpenInTargets } from '@shared/types'
 
     export interface FileMenuState {
         x: number
@@ -23,6 +31,8 @@
         deleted?: boolean
         /** False while viewing a commit's files — ignore rules only make sense for the worktree. */
         workdir?: boolean
+        /** The worktree file is gone (staged or unstaged deletion), so there is nothing to open. */
+        missingFromWorktree?: boolean
         /** Repo whose .gitignore receives the rule, pinned when the menu opened. */
         repoPath?: string
     }
@@ -100,6 +110,42 @@
         return isPreviewablePath(props.menu.path)
     })
 
+    const EDITOR_ICONS: Record<EditorTarget, FunctionalComponent> = {
+        default: FileText,
+        vscode: VisualStudioCode,
+        rider: Rider,
+        kiro: Kiro,
+        notepadpp: NotepadPlusPlus,
+    }
+    const editorTargets = ref<OpenInTargets | null>(null)
+    const editorOptions = computed(() => editorTargetOptions(editorTargets.value))
+    const canOpenInEditor = computed(
+        () =>
+            !!props.menu?.repoPath &&
+            !!props.menu.workdir &&
+            !props.menu.directory &&
+            !props.menu.deleted &&
+            !props.menu.missingFromWorktree
+    )
+
+    watch(
+        () => props.menu,
+        menu => {
+            if (!menu?.repoPath || !menu.workdir) {
+                editorTargets.value = null
+                return
+            }
+            const repoPath = menu.repoPath
+            editorTargets.value = peekOpenInTargets(repoPath)
+            void fetchOpenInTargets(repoPath)
+                .then(result => {
+                    if (props.menu?.repoPath === repoPath) editorTargets.value = result
+                })
+                .catch(() => {})
+        },
+        { immediate: true }
+    )
+
     function onDocMouseDown(event: MouseEvent) {
         if (props.menu && root.value && !root.value.contains(event.target as Node)) close()
     }
@@ -108,10 +154,14 @@
     onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
     function menuStyle() {
-        if (!props.menu) return {}
+        const menu = props.menu
+        if (!menu) return {}
+        const itemCount =
+            3 + (canOpenInEditor.value ? editorOptions.value.length : 0) + (menu.workdir && !menu.deleted ? 2 : 0)
+        const estimatedHeight = 16 + itemCount * 29
         return {
-            left: `${Math.max(8, Math.min(props.menu.x, window.innerWidth - 250))}px`,
-            top: `${Math.max(8, Math.min(props.menu.y, window.innerHeight - 190))}px`,
+            left: `${Math.max(8, Math.min(menu.x, window.innerWidth - 250))}px`,
+            top: `${Math.max(8, Math.min(menu.y, window.innerHeight - estimatedHeight))}px`,
         }
     }
 
@@ -125,6 +175,13 @@
         if (kind === 'history') emit('show-history', menu.path)
         else if (kind === 'blame') emit('show-blame', menu.path)
         else emit('show-preview', menu.path)
+    }
+
+    function openInEditor(target: EditorTarget) {
+        const menu = props.menu
+        if (!menu?.repoPath) return
+        emit('close')
+        window.api.openFileInEditor(target, menu.repoPath, menu.path).catch(error => notify(errorMessage(error), 'error'))
     }
 
     async function addIgnoreRule(rule: string) {
@@ -191,6 +248,21 @@
                 height="13" />
             Preview
         </button>
+        <template v-if="canOpenInEditor">
+            <button
+                v-for="option in editorOptions"
+                :key="option.target"
+                class="file-context-menu-item"
+                :data-editor="option.target"
+                @click="openInEditor(option.target)">
+                <component
+                    :is="EDITOR_ICONS[option.target]"
+                    class="file-context-menu-icon"
+                    width="13"
+                    height="13" />
+                Open in {{ option.label }}
+            </button>
+        </template>
         <div
             v-if="menu.workdir && !menu.deleted"
             class="file-context-menu-separator" />

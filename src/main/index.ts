@@ -122,7 +122,7 @@ import {
 } from './git'
 import { log, summarize, summarizeArgs } from './logger'
 import { cancelModelCall, generateCommitMessage, getConfig, listModels, saveConfig, testConnection } from './opencode'
-import { getOpenInTargets, openFolder, openKiro, openRider, openTerminal, openVisualStudio, openVSCode } from './openIn'
+import { getOpenInTargets, openFileInEditor, openFolder, openKiro, openRider, openTerminal, openVisualStudio, openVSCode } from './openIn'
 import {
     createTerminal,
     disposeAllTerminals,
@@ -138,7 +138,7 @@ import {
 import { downloadUpdate, initAutoUpdater, installUpdate, isAutoUpdateSupported, openReleasePage } from './updater'
 
 import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, sanitizeCloneFolderName } from '@shared/clone'
-import type { LocalChangesMode, MergeMode, TerminalShell } from '@shared/types'
+import type { EditorTarget, LocalChangesMode, MergeMode, TerminalShell } from '@shared/types'
 
 let win: BrowserWindow | null = null
 
@@ -432,6 +432,9 @@ app.whenReady().then(() => {
     })
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
+    handle('app:openFileInEditor', (target: EditorTarget, repoPath: string, file: string) =>
+        openFileInEditor(target, repoPath, file)
+    )
     handle('app:getOpenInTargets', (dir: string) => getOpenInTargets(dir as string))
     handle('app:openInKiro', (dir: string) => openKiro(dir as string))
     handle('app:openInRider', (dir: string) => openRider(dir as string))

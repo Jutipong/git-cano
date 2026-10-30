@@ -1,17 +1,23 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
-    import { nextTick, computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+    import { nextTick, computed, inject, onBeforeUnmount, onMounted, ref, watch, type FunctionalComponent } from 'vue'
+    import VisualStudioCode from '~icons/catppuccin/vscode'
+    import Rider from '~icons/logos/rider'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucideColumns2 from '~icons/lucide/columns2'
     import ILucideEye from '~icons/lucide/eye'
+    import ILucideFileText from '~icons/lucide/file-text'
     import ILucideHistory from '~icons/lucide/history'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
     import ILucideRows3 from '~icons/lucide/rows3'
     import ILucideSearch from '~icons/lucide/search'
     import ILucideUnfoldVertical from '~icons/lucide/unfold-vertical'
+    import NotepadPlusPlus from '~icons/simple-icons/notepadplusplus'
+    import Kiro from '~icons/thesvg-color/kiro'
 
+    import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { buildSplitPlan, splitRowAt, type SideBySideRow, type SplitPlan } from '../utils/diffPlan'
@@ -26,11 +32,12 @@
         type TextRange,
         type LineRenderContext,
     } from '../utils/highlight'
+    import { editorTargetOptions, fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
     import { isPreviewablePath } from '../utils/preview'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
-    import type { BlameLine, DiffLine, GitImage } from '@shared/types'
+    import type { BlameLine, DiffLine, EditorTarget, GitImage, OpenInTargets } from '@shared/types'
 
     interface Props {
         file: { path: string; staged: boolean } | null
@@ -43,6 +50,45 @@
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
 
     const ui = useUiStore()
+    const repoStore = useRepoStore()
+
+    const EDITOR_ICONS: Record<EditorTarget, FunctionalComponent> = {
+        default: ILucideFileText,
+        vscode: VisualStudioCode,
+        rider: Rider,
+        kiro: Kiro,
+        notepadpp: NotepadPlusPlus,
+    }
+    const editorTargets = ref<OpenInTargets | null>(null)
+    const editorOptions = computed(() => editorTargetOptions(editorTargets.value))
+    const canOpenInEditor = computed(() => {
+        if (!props.file || props.commitHash || props.stashHash || !repoStore.repo) return false
+        const entry = repoStore.repo.files.find(file => file.path === props.file?.path)
+        return !entry || (entry.staged !== 'D' && entry.unstaged !== 'D')
+    })
+
+    watch(
+        () => repoStore.repo?.path,
+        repoPath => {
+            if (!repoPath) {
+                editorTargets.value = null
+                return
+            }
+            editorTargets.value = peekOpenInTargets(repoPath)
+            void fetchOpenInTargets(repoPath)
+                .then(result => {
+                    if (repoStore.repo?.path === repoPath) editorTargets.value = result
+                })
+                .catch(() => {})
+        },
+        { immediate: true }
+    )
+
+    function openEditor(target: EditorTarget) {
+        const repoPath = repoStore.repo?.path
+        if (!repoPath || !props.file) return
+        window.api.openFileInEditor(target, repoPath, props.file.path).catch(error => notify(errorMessage(error), 'error'))
+    }
 
     localStorage.removeItem('ogit-diff-mode')
 
@@ -1017,6 +1063,25 @@
                         :title="ui.showEntireFile ? 'Show diff only' : 'Show entire file'"
                         @click="ui.showEntireFile = !ui.showEntireFile">
                         <i-lucide-unfold-vertical
+                            width="15"
+                            height="15" />
+                    </button>
+                </div>
+                <div
+                    v-if="canOpenInEditor"
+                    class="segmented diff-editor-actions"
+                    role="group"
+                    aria-label="Open in editor">
+                    <button
+                        v-for="option in editorOptions"
+                        :key="option.target"
+                        class="segmented-btn"
+                        :data-editor="option.target"
+                        :title="`Open in ${option.label}`"
+                        :aria-label="`Open in ${option.label}`"
+                        @click="openEditor(option.target)">
+                        <component
+                            :is="EDITOR_ICONS[option.target]"
                             width="15"
                             height="15" />
                     </button>

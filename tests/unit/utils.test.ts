@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { stripMarkdown } from '../../src/renderer/src/utils/changelog'
+import { editorTargetOptions } from '../../src/renderer/src/utils/openIn'
 import { isPreviewablePath } from '../../src/renderer/src/utils/preview'
 import { isFreeZenId, toGoModel } from '../../src/shared/models'
 
@@ -15,6 +16,21 @@ describe('isPreviewablePath', () => {
     it('rejects other files', () => {
         expect(isPreviewablePath('app.ts')).toBe(false)
         expect(isPreviewablePath('notes.txt')).toBe(false)
+    })
+})
+
+describe('editorTargetOptions', () => {
+    it('always offers the OS default and VS Code, then detected editors', () => {
+        expect(editorTargetOptions(null).map(option => option.target)).toEqual(['default', 'vscode'])
+        expect(
+            editorTargetOptions({
+                csharp: true,
+                kiro: 'kiro',
+                notepadpp: 'notepad++.exe',
+                rider: 'rider',
+                visualStudio: 'devenv',
+            }).map(option => option.target)
+        ).toEqual(['default', 'vscode', 'rider', 'kiro', 'notepadpp'])
     })
 })
 

@@ -6,6 +6,8 @@ import { shell } from 'electron'
 
 import { log } from './logger'
 
+import type { EditorTarget, OpenInTargets } from '@shared/types'
+
 /**
  * Launches an external app (VS Code, Windows Terminal, Kiro, Rider, Visual Studio). Resolves as soon as the OS created the process; only a
  * spawn failure (exe missing, no permission) rejects. The launcher's exit code is NOT a result — JetBrains launchers forward the path to an
@@ -57,39 +59,28 @@ export function openFolder(dir: string): Promise<void> {
     })
 }
 
-export function openVSCode(dir: string): Promise<void> {
+export function openVSCode(target: string, cwd = target): Promise<void> {
     for (const candidate of CODE_CLI_PATHS) {
         if (fs.existsSync(candidate)) {
-            return runCmd(candidate, [dir], dir)
+            return runCmd(candidate, [target], cwd)
         }
     }
     if (process.platform === 'win32') {
         for (const candidate of CODE_EXE_PATHS) {
             if (fs.existsSync(candidate)) {
-                return runCmd(candidate, [dir], dir)
+                return runCmd(candidate, [target], cwd)
             }
         }
         return Promise.reject(new Error('VS Code not found — install it or add the "code" command to PATH'))
     }
     if (process.platform === 'darwin') {
-        return runCmd('open', ['-a', 'Visual Studio Code', dir], dir)
+        return runCmd('open', ['-a', 'Visual Studio Code', target], cwd)
     }
     return Promise.reject(
         new Error(
             'VS Code CLI not found — install the "code" command from VS Code (Cmd/Ctrl+Shift+P → "Shell Command: Install code in PATH")'
         )
     )
-}
-
-export interface OpenInTargets {
-    /** Repo contains .NET solution/project files */
-    csharp: boolean
-    /** Path to Kiro.exe when Kiro IDE is installed */
-    kiro: string | null
-    /** Path to rider64.exe when Rider is installed */
-    rider: string | null
-    /** Path to devenv.exe when Visual Studio with the managed-desktop workload is installed */
-    visualStudio: string | null
 }
 
 function runCapture(cmd: string, args: string[]): Promise<string> {
@@ -137,24 +128,55 @@ function csharpOpenTarget(dir: string): string {
     return out.slns.length === 1 ? out.slns[0] : dir
 }
 
+/** A directory keeps the C# convention (single solution); a file opens itself. */
+function editorOpenTarget(target: string): string {
+    try {
+        return fs.statSync(target).isDirectory() ? csharpOpenTarget(target) : target
+    } catch {
+        return target
+    }
+}
+
 function findRider(): string | null {
-    if (process.platform !== 'win32') return null
-    const binNames = ['rider64.exe', 'rider.exe']
     const candidates: string[] = []
-    if (process.env.LOCALAPPDATA) {
-        // JetBrains Toolbox layout: apps\Rider\ch-0\<version>\bin\rider64.exe
-        const ch0 = path.join(process.env.LOCALAPPDATA, 'JetBrains', 'Toolbox', 'apps', 'Rider', 'ch-0')
-        if (fs.existsSync(ch0)) {
-            for (const version of fs.readdirSync(ch0)) {
-                for (const bin of binNames) candidates.push(path.join(ch0, version, 'bin', bin))
+    if (process.platform === 'win32') {
+        const binNames = ['rider64.exe', 'rider.exe']
+        if (process.env.LOCALAPPDATA) {
+            // JetBrains Toolbox layout: apps\Rider\ch-0\<version>\bin\rider64.exe
+            const ch0 = path.join(process.env.LOCALAPPDATA, 'JetBrains', 'Toolbox', 'apps', 'Rider', 'ch-0')
+            if (fs.existsSync(ch0)) {
+                for (const version of fs.readdirSync(ch0)) {
+                    for (const bin of binNames) candidates.push(path.join(ch0, version, 'bin', bin))
+                }
             }
         }
-    }
-    const jbBase = path.join(process.env['ProgramFiles'] ?? 'C:\\Program Files', 'JetBrains')
-    if (fs.existsSync(jbBase)) {
-        for (const entry of fs.readdirSync(jbBase)) {
-            if (/^JetBrains Rider/i.test(entry)) {
-                for (const bin of binNames) candidates.push(path.join(jbBase, entry, 'bin', bin))
+        const jbBase = path.join(process.env['ProgramFiles'] ?? 'C:\\Program Files', 'JetBrains')
+        if (fs.existsSync(jbBase)) {
+            for (const entry of fs.readdirSync(jbBase)) {
+                if (/^JetBrains Rider/i.test(entry)) {
+                    for (const bin of binNames) candidates.push(path.join(jbBase, entry, 'bin', bin))
+                }
+            }
+        }
+    } else if (process.platform === 'darwin') {
+        candidates.push(
+            '/Applications/Rider.app/Contents/MacOS/rider',
+            path.join(process.env.HOME ?? '', 'Applications', 'Rider.app', 'Contents', 'MacOS', 'rider')
+        )
+        // JetBrains Toolbox layout: apps/Rider/ch-0/<version>/Rider.app/Contents/MacOS/rider
+        const ch0 = path.join(
+            process.env.HOME ?? '',
+            'Library',
+            'Application Support',
+            'JetBrains',
+            'Toolbox',
+            'apps',
+            'Rider',
+            'ch-0'
+        )
+        if (fs.existsSync(ch0)) {
+            for (const version of fs.readdirSync(ch0)) {
+                candidates.push(path.join(ch0, version, 'Rider.app', 'Contents', 'MacOS', 'rider'))
             }
         }
     }
@@ -200,15 +222,16 @@ export async function getOpenInTargets(dir: string): Promise<OpenInTargets> {
     return {
         csharp,
         kiro: findKiro(),
-        rider: csharp ? findRider() : null,
+        notepadpp: findNotepadPlusPlus(),
+        rider: findRider(),
         visualStudio: csharp ? await findVisualStudio() : null,
     }
 }
 
-export function openRider(dir: string): Promise<void> {
+export function openRider(target: string, cwd = target): Promise<void> {
     const exe = findRider()
     if (!exe) return Promise.reject(new Error('Rider not found — install it via JetBrains Toolbox or the standalone installer'))
-    return runCmd(exe, [csharpOpenTarget(dir)], dir)
+    return runCmd(exe, [editorOpenTarget(target)], cwd)
 }
 
 export async function openVisualStudio(dir: string): Promise<void> {
@@ -234,11 +257,80 @@ function findKiro(): string | null {
     return candidates.find(candidate => fs.existsSync(candidate)) ?? null
 }
 
-export function openKiro(dir: string): Promise<void> {
+export function openKiro(target: string, cwd = target): Promise<void> {
     const exe = findKiro()
-    if (exe) return runCmd(exe, [dir], dir)
+    if (exe) return runCmd(exe, [target], cwd)
     if (process.platform === 'darwin') {
-        return runCmd('open', ['-a', 'Kiro', dir], dir)
+        return runCmd('open', ['-a', 'Kiro', target], cwd)
     }
     return Promise.reject(new Error('Kiro not found — install it from kiro.dev'))
+}
+
+function findNotepadPlusPlus(): string | null {
+    if (process.platform === 'win32') {
+        const candidates = [
+            process.env.ProgramFiles ? path.join(process.env.ProgramFiles, 'Notepad++', 'notepad++.exe') : '',
+            process.env['ProgramFiles(x86)']
+                ? path.join(process.env['ProgramFiles(x86)'], 'Notepad++', 'notepad++.exe')
+                : '',
+            process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Notepad++', 'notepad++.exe') : '',
+            'C:\\Program Files\\Notepad++\\notepad++.exe',
+            'C:\\Program Files (x86)\\Notepad++\\notepad++.exe',
+        ].filter(Boolean)
+        return candidates.find(candidate => fs.existsSync(candidate)) ?? null
+    }
+    if (process.platform !== 'darwin') return null
+    // Nextpad++ is the native Notepad++ port for macOS (Homebrew cask: nextpad++)
+    const candidates = [
+        '/Applications/Nextpad++.app',
+        path.join(process.env.HOME ?? '', 'Applications', 'Nextpad++.app'),
+    ]
+    return candidates.find(candidate => fs.existsSync(candidate)) ?? null
+}
+
+function openNotepadPlusPlus(target: string, cwd = target): Promise<void> {
+    const app = findNotepadPlusPlus()
+    if (!app) return Promise.reject(new Error('Notepad++ not found — install it, or Nextpad++ on macOS'))
+    if (process.platform === 'darwin') return runCmd('open', ['-a', app, target], cwd)
+    return runCmd(app, [target], cwd)
+}
+
+function openDefaultEditor(target: string, cwd = target): Promise<void> {
+    if (process.platform === 'win32') {
+        const notepad = path.join(process.env.SystemRoot ?? 'C:\\Windows', 'System32', 'notepad.exe')
+        return runCmd(fs.existsSync(notepad) ? notepad : 'notepad.exe', [target], cwd)
+    }
+    if (process.platform === 'darwin') return runCmd('open', ['-a', 'TextEdit', target], cwd)
+    return shell.openPath(target).then(errorMessage => {
+        if (errorMessage) throw new Error(errorMessage)
+    })
+}
+
+/**
+ * Opens one workdir file in an external editor. The repo path is only used to resolve the relative path and as the launcher's cwd — the
+ * argument is always the file itself, never the repo folder or a C# solution.
+ */
+export function openFileInEditor(target: EditorTarget, repoPath: string, file: string): Promise<void> {
+    const filePath = path.resolve(repoPath, file)
+    let stat: fs.Stats
+    try {
+        stat = fs.statSync(filePath)
+    } catch {
+        return Promise.reject(new Error(`File not found: ${file}`))
+    }
+    if (!stat.isFile()) return Promise.reject(new Error(`Not a file: ${file}`))
+    switch (target) {
+        case 'default':
+            return openDefaultEditor(filePath, repoPath)
+        case 'vscode':
+            return openVSCode(filePath, repoPath)
+        case 'rider':
+            return openRider(filePath, repoPath)
+        case 'kiro':
+            return openKiro(filePath, repoPath)
+        case 'notepadpp':
+            return openNotepadPlusPlus(filePath, repoPath)
+        default:
+            return Promise.reject(new Error(`Unsupported editor: ${String(target)}`))
+    }
 }

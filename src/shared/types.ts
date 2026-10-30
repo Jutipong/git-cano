@@ -154,11 +154,16 @@ export interface OpenInTargets {
     csharp: boolean
     /** Path to Kiro.exe when Kiro IDE is installed */
     kiro: string | null
-    /** Path to rider64.exe when Rider is installed */
+    /** Path to notepad++.exe (Windows) or Nextpad++.app (macOS) when installed */
+    notepadpp: string | null
+    /** Path to the Rider executable when Rider is installed */
     rider: string | null
     /** Path to devenv.exe when Visual Studio with the managed-desktop workload is installed */
     visualStudio: string | null
 }
+
+/** External editors that can open a single workdir file. */
+export type EditorTarget = 'default' | 'vscode' | 'rider' | 'kiro' | 'notepadpp'
 
 export type RebaseCommand = 'pick' | 'reword' | 'squash' | 'fixup' | 'drop' | 'edit'
 
