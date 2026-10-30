@@ -2144,7 +2144,7 @@ body {
 }
 
 .diff-header-actions {
-    gap: 6px;
+    gap: 8px;
 }
 
 /* DiffView header: text button that opens the read-only preview (markdown / JSON) — the file's own
@@ -5988,6 +5988,23 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+/* Both header pills share the diff header's 8px button gap — a plain `.segmented` keeps the
+   tighter 3px used by the wider diff toolbars, which reads cramped on a two-button stepper. */
+.terminal-actions .segmented {
+    gap: 8px;
+}
+
+/* Hide button — permanently green like its neighbour ✕ is permanently red, so the three panel
+   controls read as hide / full height / close instead of three identical grey circles. */
+.terminal-hide-btn {
+    color: var(--green);
+    background: color-mix(in srgb, var(--green) 8%, transparent);
+}
+
+.terminal-hide-btn:hover {
+    background: color-mix(in srgb, var(--green) 18%, transparent);
 }
 
 /* Terminal tabs live in the header row: one pill per shell ("1 zsh"), a ✕ that kills just that

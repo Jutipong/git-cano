@@ -253,8 +253,10 @@ Panel/modal component patterns. Loaded automatically when working under
   reveals it and re-enables it in one rule. Do not move the handlers back onto the label — that left
   the pill's own width and height as dead zones.
 - Header buttons sit in two `.segmented` pills (the diff header's group style): `[A− A+]` for the
-  font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`, same `gap: 6px`
-  and divider-free grouping as diff-view). Maximize teleports the panel into `.app`
+  font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`; both terminal
+  pills take an 8px button gap — `.terminal-actions .segmented` — instead of the wider diff
+  toolbars' 3px, with no divider between groups; the hide button carries `.terminal-hide-btn`, a
+  permanent green tint like the ✕'s permanent red). Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: calc(var(--right-panel-width) + 12px)` clears the Changes pane — Settings → Terminal →
   Full window sets `ui.terminalFullWidth`, which adds `.terminal-overlay-window` (`top: 6px`,

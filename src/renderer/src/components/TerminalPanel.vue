@@ -261,7 +261,7 @@
                 </span>
                 <span class="segmented diff-header-actions">
                     <button
-                        class="icon-btn"
+                        class="icon-btn terminal-hide-btn"
                         title="Hide panel (shells keep running)"
                         @click="emit('hide')">
                         <i-lucide-chevron-down
