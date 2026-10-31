@@ -165,11 +165,13 @@ Panel/modal component patterns. Loaded automatically when working under
   running with no buffer behind it.
 - **Showing the panel returns the keyboard to the shell**: a hidden panel is `display: none`, which
   blurs the focused xterm textarea, so `App.vue` keeps keyed panel refs (`terminalPanels`) and calls
-  the exposed `focusActive()` after `showTerminals` in the `Ctrl+` / palette / toolbar toggle (and
-  after a `Ctrl+1…9` jump) — the shell is ready to type without a click. The maximize/restore toggle
+  the exposed `focusActive()` after `showTerminals` in the `Ctrl+` / palette / toolbar toggle — the
+  shell is ready to type without a click. The maximize/restore toggle
   (`toggleTerminalExpand`) does the same, because its teleport move detaches the panel and would
-  otherwise drop focus to `<body>` in both directions. Repo/workspace switches only make a panel
-  visible; they must not steal focus from the graph or the tab bar.
+  otherwise drop focus to `<body>` in both directions. Repo/workspace switches carry the keyboard
+  too whenever the target repo's panel is already visible — even when the repo being left had no
+  terminal open. A hidden panel is never shown for this, and the tab strip's own Arrow/Home/End
+  navigation keeps focus on the pills instead of handing it to a shell.
 - **Thai rendering is the whole point of this panel** — do not “optimise” it away:
   xterm 6's DOM renderer (never `addon-canvas`/`addon-webgl`, which do no Thai shaping),
   `Unicode11Addon` with `unicode.activeVersion = '11'` (needs `allowProposedApi: true` in xterm 6),
@@ -288,17 +290,18 @@ Panel/modal component patterns. Loaded automatically when working under
   `preventDefault()` and returns `false` so xterm writes no `0x03`, then clears the selection so the
   next Ctrl+C interrupts a running command again. Never bind a plain Ctrl+C to copy unconditionally —
   that takes the interrupt away from the shell.
-- **Terminal tab shortcuts are fixed and capture-phase**: `Ctrl+T` opens a shell and `Ctrl+1…9`
-  activates the Nth tab of the active repo (`newTerminalTab` / `jumpToTerminalTab` in `App.vue`,
-  reached through `handleAppShortcut`), like Windows Terminal. `Ctrl+Tab` cycles to the next tab and
-  `Ctrl+Shift+Tab` to the previous one, wrapping at either end — scoped to a focused panel (the same
-  `isTerminalPanelFocused()` guard as Ctrl+W / Alt+Enter) so it never hijacks the gesture outside the
-  terminal; the panel's activeId watcher hands the keyboard to the new shell. They must stay in the
-  capture handler — xterm swallows the keys — which is also why a shell/TUI never sees them
-  (deliberate exception to the "keep shell combos in the bubble handler" rule). A missing tab, a
-  single tab and the per-repo cap (Settings → Terminal → Tabs, default 4) are silent no-ops (no
-  toast); a hidden panel is shown first. The combos are reserved in `isReservedCombo` and documented
-  in `SHORTCUTS`.
+- **Terminal tab shortcuts are fixed and capture-phase**: `Ctrl+T` opens a shell (`newTerminalTab` in
+  `App.vue`, reached through `handleAppShortcut`), like Windows Terminal. `Ctrl+Tab` cycles to the
+  next tab and `Ctrl+Shift+Tab` to the previous one, with `Alt+→` / `Alt+←` as the Windows-Terminal-style twin;
+  all wrap at either end — scoped to a focused panel (the same `isTerminalPanelFocused()` guard as
+  Ctrl+W / Alt+Enter) so they never hijack the gesture outside the terminal; the panel's activeId
+  watcher hands the keyboard to the new shell. They must stay in the capture handler — xterm
+  swallows the keys — which is also why a shell/TUI never sees them (deliberate exception to the
+  "keep shell combos in the bubble handler" rule). The Alt combos are handled **only** inside the
+  panel: everywhere else the app leaves them untouched so text fields keep Option+Arrow word motion.
+  A missing tab, a single tab and the per-repo cap (Settings → Terminal → Tabs, default 4) are
+  silent no-ops (no toast); a hidden panel is shown first. The combos are reserved in
+  `isReservedCombo` and documented in `SHORTCUTS`.
 - **Ctrl+W follows the keyboard**: while focus is inside a terminal panel (`isTerminalPanelFocused()`
   in `App.vue`, consulted by the capture-phase twin), Ctrl+W closes the repo's active terminal tab
   through the same confirm as its ✕ — a cancelled confirm hands focus back to the shell, so the next

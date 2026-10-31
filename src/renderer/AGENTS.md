@@ -48,8 +48,11 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   overlay hides the graph) shows it back exactly as it was; only the header's minimize button leaves
   full mode. Showing the panel (`Ctrl+` / palette / toolbar) and the maximize/restore toggle
   always hand the keyboard back to the active shell (`TerminalPanel.focusActive()` — the teleport
-  move would otherwise drop focus to `<body>`) — a repo/workspace switch only makes a panel
-  visible and must not steal focus. Drag the
+  move would otherwise drop focus to `<body>`). A repo/workspace switch does too whenever the
+  target repo's panel is already visible — regardless of whether the repo being left had one — so
+  switching from a repo with no shell into one with a shell is ready to type immediately. A hidden
+  target panel stays hidden, and the tab strip's Arrow/Home/End navigation keeps focus on the pills
+  (the `activeRepoPath` watcher + `keepKeyboardOnRepoSwitch` in `App.vue`). Drag the
   `.terminal-splitter` for height (persisted per session, resets to 300px on launch).
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
@@ -191,16 +194,21 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 ## Keyboard shortcuts
 
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
-  `ShortcutsModal.vue`, grouped by `SHORTCUT_GROUPS` in this order: Sync (Fetch,
-  Pull, Push), Repository (Open repo, Clone repo, Close tab / terminal), Terminal
-  (Toggle terminal, New terminal tab, Terminal tab 1…9, Terminal full height),
-  General (Search commits, Open settings, Command palette, Show shortcuts) — with
-  a divider under the header and a titled section per group. Every
-  entry there must have a real handler. The global `keydown` handler in
-  `App.vue` owns the app-level combos; `DiffView.vue` owns find-in-diff
-  (`Ctrl/⌘+F` while a diff is open, `Enter` in its search box for next
-  match). When adding a shortcut, add the entry to `SHORTCUTS` (with
-  `group` + `mac`/`win` keys) and wire the handler.
+  `ShortcutsModal.vue`, grouped by `SHORTCUT_GROUPS`: Sync (Fetch, Pull, Push),
+  Repository (Open repo, Clone repo, Close tab / terminal), Terminal (Toggle
+  terminal, New terminal tab, Next/Previous terminal tab, Terminal full height),
+  General (Search commits, Open settings, Command palette, Show shortcuts).
+  `ShortcutsModal.vue` shows **only the current platform's** combos (a macOS /
+  Windows pill sits next to the title and `formatComboMac()` turns `Ctrl` into
+  `⌘`), splits every combo into one `<kbd>` per key (`Ctrl+Shift+Tab` → three
+  caps, alternatives separated by "or"), and lays the groups out as two card
+  columns — Sync + Terminal left, Repository + General right (single column
+  under 720px). A footer note explains that tab cycling / full height only work
+  while the terminal panel has focus. Every entry there must have a real
+  handler. The global `keydown` handler in `App.vue` owns the app-level combos;
+  `DiffView.vue` owns find-in-diff (`Ctrl/⌘+F` while a diff is open, `Enter` in
+  its search box for next match). When adding a shortcut, add the entry to
+  `SHORTCUTS` (with `group` + `mac`/`win` keys) and wire the handler.
 - Sync defaults (`SYNC_SHORTCUT_DEFAULTS`): Push `Ctrl+ArrowUp`, Pull
   `Ctrl+ArrowDown`, Fetch `Ctrl+Shift+ArrowDown`. `eventToCombo()` normalizes
   events to canonical combos (`Cmd` counts as `Ctrl`); `formatCombo()` renders
@@ -211,12 +219,12 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   palette, Toggle terminal. Click Change… under macOS or Windows then press keys
   (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab / terminal tab,
-  terminal tabs `Ctrl+T` / `Ctrl+1…9` / `Ctrl+Tab` / `Ctrl+Shift+Tab`, `Alt+Enter` terminal full height) or other customized ids
+  terminal tabs `Ctrl+T` / `Ctrl+Tab` / `Ctrl+Shift+Tab` / `Alt+←→`, `Alt+Enter` terminal full height) or other customized ids
   on the same platform are rejected (`isReservedCombo`). `?` and zoom stay fixed.
   Overrides live in `ui.shortcutOverrides` as `{ [id]: { mac?, win? } }` (persisted, invalid or
   default-equal values are pruned, legacy single-string values migrate to both platforms) with `getShortcut(id, platform?)` /
   `setShortcut(id, combo, platform?)` / `resetShortcuts` plus a Default button (confirmed). `ShortcutsModal.vue`
-  shows effective values per platform for customized ids. Settings lists each shortcut in
+  shows the effective value on the platform it runs on (customized or default). Settings lists each shortcut in
   macOS (`⌘`) / Windows columns with a separate Change… button each; Command palette keeps double-Shift fixed.
 - App.vue sync handling skips while typing in inputs (where `Ctrl+Arrows`
   are word jumps), while the command palette is open (owns Arrows), with no
@@ -229,11 +237,12 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   repo-close confirm; the panel's teal top edge via `:focus-within` marks that first case),
   Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
   killing every shell is palette-only `Terminal: kill all`, behind a confirm),
-  New terminal tab `Ctrl+T` and terminal tab jump `Ctrl+1…9` (fixed, capture-phase; a missing
-  tab/jump past the end and the per-repo cap — Settings → Terminal → Tabs, default 4 — are silent no-ops),
-  Next terminal tab `Ctrl+Tab` / Previous `Ctrl+Shift+Tab` (fixed, capture-phase; cycle with wrap
-  only while the keyboard is inside a terminal panel, like Ctrl+W / Alt+Enter — a single tab is a
-  silent no-op),
+  New terminal tab `Ctrl+T` (fixed, capture-phase; the per-repo cap — Settings → Terminal → Tabs,
+  default 4 — is a silent no-op),
+  Next terminal tab `Ctrl+Tab` / Previous `Ctrl+Shift+Tab`, plus `Alt+→` / `Alt+←` (fixed,
+  capture-phase; cycle with wrap only while the keyboard is inside a terminal panel, like Ctrl+W /
+  Alt+Enter — a single tab is a silent no-op; outside the panel the Alt combos are not handled at
+  all, so text fields keep Option+Arrow word motion),
   Terminal full height `Alt+Enter` (fixed, capture-phase; toggles the overlay only while the
   keyboard is inside a terminal panel — with focus anywhere else the key falls through untouched;
   the header buttons' tooltips carry the combo),
@@ -244,17 +253,18 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Esc` to close diff/deselect.
 - **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
   a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
-  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+Tab / Ctrl+Shift+Tab / Ctrl+W / Alt+Enter into a
-  focused terminal, commit search). The capture gate routes Ctrl/Cmd **and** Alt — only the exact app
+  (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+Tab / Ctrl+Shift+Tab /
+  Alt+←→ / Ctrl+W / Alt+Enter into a focused terminal, commit search). The capture gate routes Ctrl/Cmd **and** Alt — only the exact app
   combos act, every other Alt key still reaches the shell. xterm stops
   propagation of character keys, so without the capture listener every one of those combos dies while
   a shell has the keyboard. The capture handler calls `stopPropagation()` after acting, so the bubble
   copy never double-fires. Keep combos the shell owns (Ctrl+Arrows sync, `Esc`, plain typing) out of
   `handleAppShortcut` — they stay in the bubble handler so readline and TUIs still receive them. The
-  deliberate exceptions are Ctrl+T / Ctrl+1…9, Ctrl+W (closes the shell's tab behind a confirm) and
-  Alt+Enter (toggles full height) while the terminal panel is focused: they belong to the app like in
-  Windows Terminal, so a focused TUI never sees them there (it loses readline's delete-word for Ctrl+W
-  and the `ESC+CR` Alt+Enter may carry for TUIs).
+  deliberate exceptions are Ctrl+T, Ctrl+W (closes the shell's tab behind a confirm),
+  Alt+←→ (cycle terminal tabs) and Alt+Enter (toggles full height) while the terminal panel is
+  focused: they belong to the app like in Windows Terminal, so a focused TUI never sees them there
+  (it loses readline's delete-word for Ctrl+W, its Alt+Arrow word motion and the `ESC+CR` Alt+Enter
+  may carry for TUIs).
 - **Double-Shift stays in the bubble handler**: it must not fire while typing in text fields
   (`input` / `textarea` / `contenteditable`), or capital letters would open the palette. The xterm
   helper textarea is the one exemption (`.terminal-panel .xterm`), so the palette opens from a

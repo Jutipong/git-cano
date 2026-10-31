@@ -27,12 +27,14 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
     - `terminal.spec.ts` covers the terminal panel end to end (spawn/toggle from the graph button, one
       panel per repo, full overlay geometry, the docked full-width strip, full-mode persistence across every hide gesture (`Ctrl+`` /
       palette / the header chevron) — hiding never resizes; the minimize button is the only way out of
-      full mode — the keyboard returning to the active shell on show and around the full-height toggle,
+      full mode — the keyboard returning to the active shell on show, around the full-height toggle,
+      and across repo/workspace switches when the target repo's panel is on screen (also when the
+      repo being left had no shell),
       terminal-only font size, rename + drag reorder,
 the whole pill being the tab's click target (label, blank pill area and a ✕ that is only
 interactive while the pill is hovered),
 the four-shell default cap (raisable in Settings → Terminal → Tabs, and lowering it never kills an
-open shell), `Ctrl+Tab` cycling while the panel is focused (wrap + outside-panel no-op),
+open shell), `Ctrl+Tab` / `Alt+←→` cycling while the panel is focused (wrap + outside-panel no-op),
 splitter drag-resize, repo-close (confirm + cancel) and kill-all lifecycles, `Ctrl+`` toggle,
       `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
       tab), `Alt+Enter` full-height toggle while focused vs outside, double-Shift opening the palette

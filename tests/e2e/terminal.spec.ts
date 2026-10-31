@@ -96,6 +96,9 @@ test('the second repo owns its own panel and keeps its shell while the first is 
 
     await page.locator('.repo-tab').nth(0).click()
     await expect(page.locator('.terminal-panel:visible .terminal-tab-label')).toHaveText('cmd 1')
+    // The panel was on screen when the tab was clicked and the target panel is visible too, so the
+    // returning repo's shell takes the keyboard without another click.
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 })
 
 test('full mode overlays the graph without moving the repo tab bar', async () => {
@@ -648,7 +651,7 @@ test('the tab limit setting raises the cap, and lowering it keeps open shells', 
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
-test('Ctrl+T opens a shell and Ctrl+1…9 switch between terminal tabs', async () => {
+test('Ctrl+T opens a shell and adds terminal tabs', async () => {
     await page.locator('.graph-terminal-btn').click()
     const panel = page.locator('.terminal-panel:visible')
     await expect(panel.locator('.terminal-tab')).toHaveCount(1)
@@ -660,27 +663,20 @@ test('Ctrl+T opens a shell and Ctrl+1…9 switch between terminal tabs', async (
     await page.keyboard.press('Control+t')
     await expect(panel.locator('.terminal-tab')).toHaveCount(3)
 
-    // Number keys address tabs by their on-screen position; a missing tab is a silent no-op.
-    await page.keyboard.press('Control+1')
-    await expect(panel.locator('.terminal-tab').nth(0)).toHaveClass(/active/)
-    await page.keyboard.press('Control+3')
-    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
-    await page.keyboard.press('Control+9')
-    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
-
-    // With the panel hidden, the shortcut brings it back on the requested tab.
+    // With the panel hidden, the shortcut brings it back with the new shell on screen.
     await panel.locator('.icon-btn[title*="Hide panel"]').click()
     await expect(page.locator('.terminal-panel')).toBeHidden()
-    await page.keyboard.press('Control+2')
+    await page.keyboard.press('Control+t')
     await expect(page.locator('.terminal-panel')).toBeVisible()
-    await expect(panel.locator('.terminal-tab').nth(1)).toHaveClass(/active/)
+    await expect(panel.locator('.terminal-tab')).toHaveCount(4)
+    await expect(panel.locator('.terminal-tab').nth(3)).toHaveClass(/active/)
 
     await panel.locator('.diff-close-btn').click()
-    await page.locator('.confirm-dialog button', { hasText: 'Close 3 terminals' }).click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close 4 terminals' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
-test('Ctrl+Tab cycles the focused terminal tabs and wraps around', async () => {
+test('Ctrl+Tab and Alt+←/→ cycle the focused terminal tabs and wrap around', async () => {
     await page.locator('.graph-terminal-btn').click()
     const panel = page.locator('.terminal-panel:visible')
     await page.keyboard.press('Control+t')
@@ -706,10 +702,19 @@ test('Ctrl+Tab cycles the focused terminal tabs and wraps around', async () => {
     await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
     await expect(shell).toBeFocused()
 
-    // With the keyboard outside the panel neither combo is the app's — the active tab must not move.
+    // Alt+←/→ are the Windows-Terminal-style twin, scoped to the focused panel the same way.
+    await page.keyboard.press('Alt+ArrowRight')
+    await expect(panel.locator('.terminal-tab').nth(0)).toHaveClass(/active/)
+    await page.keyboard.press('Alt+ArrowLeft')
+    await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
+    await expect(shell).toBeFocused()
+
+    // With the keyboard outside the panel none of the combos is the app's — the active tab must not move.
     await page.locator('.commit-search input').click()
     await page.keyboard.press('Control+Tab')
     await page.keyboard.press('Control+Shift+Tab')
+    await page.keyboard.press('Alt+ArrowRight')
+    await page.keyboard.press('Alt+ArrowLeft')
     await expect(panel.locator('.terminal-tab').nth(2)).toHaveClass(/active/)
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
 
@@ -870,5 +875,42 @@ test.describe('workspace switches', () => {
         await expect(wsPage.locator('.terminal-view:visible .xterm-screen')).toContainText('alive-after-workspace-switch', {
             timeout: 30_000,
         })
+    })
+
+    test('a workspace switch hands the keyboard to a panel that was on screen', async () => {
+        // Main still shows the previous test's panel; Alt owns no shell yet.
+        if ((await wsPage.locator('.terminal-panel:visible').count()) === 0) {
+            await wsPage.locator('.graph-terminal-btn').click()
+            await wsPage.waitForSelector('.terminal-view:visible .xterm', { timeout: 30_000 })
+        }
+
+        await wsPage.locator('.workspace-btn').click()
+        await wsPage.locator('.workspace-pop .workspace-item', { hasText: 'Alt' }).click()
+        await expect(wsPage.locator('.repo-tab')).toHaveCount(1)
+        await expect(wsPage.locator('.terminal-panel:visible')).toHaveCount(0)
+
+        // Give Alt a panel of its own, then both workspaces have one on screen.
+        await wsPage.locator('.graph-terminal-btn').click()
+        await wsPage.waitForSelector('.terminal-view:visible .xterm', { timeout: 30_000 })
+        await expect(wsPage.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+
+        await wsPage.locator('.workspace-btn').click()
+        await wsPage.locator('.workspace-pop .workspace-item', { hasText: 'Main' }).click()
+        await expect(wsPage.locator('.repo-tab')).toHaveCount(1)
+        await expect(wsPage.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+
+        await wsPage.locator('.workspace-btn').click()
+        await wsPage.locator('.workspace-pop .workspace-item', { hasText: 'Alt' }).click()
+        await expect(wsPage.locator('.repo-tab')).toHaveCount(1)
+        await expect(wsPage.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+
+        // The target panel alone decides: leaving a repo/workspace with no visible panel still lands
+        // the keyboard in the destination's shell (git-cano → repo-with-a-shell).
+        await wsPage.locator('.terminal-panel:visible .terminal-hide-btn').click()
+        await expect(wsPage.locator('.terminal-panel:visible')).toHaveCount(0)
+        await wsPage.locator('.workspace-btn').click()
+        await wsPage.locator('.workspace-pop .workspace-item', { hasText: 'Main' }).click()
+        await expect(wsPage.locator('.repo-tab')).toHaveCount(1)
+        await expect(wsPage.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
     })
 })

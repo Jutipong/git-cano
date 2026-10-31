@@ -103,6 +103,23 @@
         return terminalStore.isExpanded(path) && path === activeRepoPath.value
     }
 
+    /**
+     * The repo tab strip's Arrow/Home/End navigation keeps the keyboard on the pills — the carry below is for pointer switches.
+     * Set by the capture-phase keydown handler and cleared on the next task, well after the repo-switch watcher has read it.
+     */
+    let keepKeyboardOnRepoSwitch = false
+
+    /**
+     * A repo switch lands the keyboard in the target repo's terminal whenever its panel is already on screen — also when the repo
+     * being left had no terminal open (the common git-cano → <repo with a shell> switch). A hidden panel stays hidden, and the tab
+     * strip's own arrow navigation leaves focus on the pills instead of pulling it into a shell.
+     */
+    watch(activeRepoPath, async path => {
+        if (!path || keepKeyboardOnRepoSwitch || !terminalStore.panelVisible(path)) return
+        await nextTick()
+        terminalPanels.value[path]?.focusActive()
+    })
+
     /** Whole seconds left on a toast, shown as the countdown badge on its close button. */
     function countdownSeconds(t: { progress: number; durationMs: number }) {
         return Math.ceil((t.progress * t.durationMs) / 1000)
@@ -274,10 +291,10 @@
         let lastShiftTap = 0
 
         /**
-         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, terminal tabs (Ctrl+T / Ctrl+1…9), Ctrl+Tab /
-         * Ctrl+Shift+Tab while the terminal panel is focused (next / previous tab, wrapping), Ctrl+W while it is focused (closes the
-         * shell's tab), Alt+Enter while it is focused (toggles full height) and commit-search focus. Returns true when it handled the combo
-         * (and preventDefault()s it).
+         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, new terminal tab (Ctrl+T), Ctrl+Tab /
+         * Ctrl+Shift+Tab / Alt+←→ while the terminal panel is focused (next / previous tab, wrapping), Ctrl+W while it is focused (closes
+         * the shell's tab), Alt+Enter while it is focused (toggles full height) and commit-search focus. Returns true when it handled the
+         * combo (and preventDefault()s it).
          *
          * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell would otherwise swallow Ctrl+P / Ctrl+,
          * / Ctrl+O entirely — the capture-phase listener below grabs them first and stops the event there, which also keeps the
@@ -314,18 +331,11 @@
                 void toggleTerminal()
                 return true
             }
-            // Terminal tabs of the active repo (fixed Windows-Terminal-style combos, captured before
-            // xterm so no shell/TUI ever sees them): Ctrl+T opens a shell, Ctrl+1…9 jumps to that tab.
-            // A missing tab and the per-repo cap are silent no-ops.
+            // Ctrl+T opens a shell for the active repo (fixed, captured before xterm so no shell/TUI ever
+            // sees it). A missing slot and the per-repo cap are silent no-ops.
             if (combo === 'Ctrl+T' && repoStore.repo) {
                 event.preventDefault()
                 void newTerminalTab()
-                return true
-            }
-            const terminalTab = combo?.match(/^Ctrl\+([1-9])$/)
-            if (terminalTab && repoStore.repo && terminalStore.terminalExists(activeRepoPath.value ?? '')) {
-                event.preventDefault()
-                jumpToTerminalTab(Number(terminalTab[1]))
                 return true
             }
             // Ctrl+Tab / Ctrl+Shift+Tab cycle the tabs of the repo on screen, but only while the keyboard
@@ -335,6 +345,14 @@
             if ((combo === 'Ctrl+Tab' || combo === 'Ctrl+Shift+Tab') && isTerminalPanelFocused()) {
                 event.preventDefault()
                 cycleTerminalTab(combo === 'Ctrl+Shift+Tab' ? -1 : 1)
+                return true
+            }
+            // Alt+← / Alt+→ are the Windows-Terminal-style tab switch, scoped to the focused panel like Ctrl+Tab. Everywhere
+            // else the combo is left completely untouched (no preventDefault), so text fields keep Option+Arrow word motion
+            // and a shell's readline keeps its own Alt+Arrow gestures.
+            if ((combo === 'Alt+ArrowLeft' || combo === 'Alt+ArrowRight') && isTerminalPanelFocused()) {
+                event.preventDefault()
+                cycleTerminalTab(combo === 'Alt+ArrowLeft' ? -1 : 1)
                 return true
             }
             // Ctrl+W with the keyboard in the terminal panel targets the shell's tab, not the repo
@@ -377,6 +395,16 @@
             // (preventDefault + stopPropagation) character keys, so the bubble handler never sees the
             // letters typed in the shell, and fast capitals would leave the tap armed for the palette.
             if (event.key !== 'Shift') lastShiftTap = 0
+            // The repo tab strip's own arrow navigation keeps focus on the pills — do not let the terminal-focus carry
+            // pull it into a shell on the way. Cleared on the next task; the switch's watcher flushes before that.
+            if (
+                (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'Home' || event.key === 'End') &&
+                event.target instanceof Element &&
+                event.target.closest('.repo-tab')
+            ) {
+                keepKeyboardOnRepoSwitch = true
+                setTimeout(() => (keepKeyboardOnRepoSwitch = false), 0)
+            }
             if (uiTransient.busy) return
             if (event.metaKey || event.ctrlKey || event.altKey) {
                 if (handleAppShortcut(eventToCombo(event), event)) event.stopPropagation()
@@ -625,22 +653,9 @@
         else await toggleTerminal()
     }
 
-    /** Ctrl+1…9 — show the panel and activate the Nth tab of the active repo (missing tab = no-op). */
-    function jumpToTerminalTab(index: number) {
-        const path = activeRepoPath.value
-        const tab = path ? terminalStore.repoTerminals(path)?.tabs[index - 1] : undefined
-        if (!path || !tab) return
-        terminalStore.showTerminals(path)
-        terminalStore.setActiveTerminal(path, tab.id)
-        // Same promise as Ctrl+` on show: the shell on screen takes the keyboard. A tab change
-        // focuses through the panel's activeId watcher already; this also covers jumping to the
-        // tab that stayed active while the panel sat hidden.
-        void nextTick(() => terminalPanels.value[path]?.focusActive())
-    }
-
     /**
-     * Ctrl+Tab / Ctrl+Shift+Tab — activate the next (or previous) tab of the active repo, wrapping around. Called only while the keyboard
-     * is inside the terminal panel, so the panel's activeId watcher hands the keyboard (and the scroll position) to the new tab.
+     * Ctrl+Tab / Ctrl+Shift+Tab / Alt+←→ — activate the next (or previous) tab of the active repo, wrapping around. Called only while the
+     * keyboard is inside the terminal panel, so the panel's activeId watcher hands the keyboard (and the scroll position) to the new tab.
      */
     function cycleTerminalTab(direction: 1 | -1) {
         const path = activeRepoPath.value
@@ -678,8 +693,8 @@
      * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has none, otherwise show or hide the
      * panel. It never kills anything — the ✕ buttons own that. Hiding never resizes either: the full-height state survives, so any gesture
      * that shows the panel again brings the overlay straight back (the header's minimize button is the only way down to the strip).
-     * Showing always hands the keyboard back to the active shell — a repo/workspace switch does not (the panel only becomes visible there,
-     * the user never asked to switch into the terminal).
+     * Showing always hands the keyboard back to the active shell; a repo/workspace switch does too whenever the target repo's panel is
+     * already on screen (see the activeRepoPath watcher) — a hidden target stays hidden.
      */
     async function toggleTerminal() {
         const path = repoStore.tabs[repoStore.activeTab]?.path

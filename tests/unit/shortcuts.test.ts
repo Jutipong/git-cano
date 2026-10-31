@@ -66,9 +66,8 @@ describe('isReservedCombo', () => {
     it('reserves the fixed terminal tab combos', () => {
         expect(isReservedCombo('Ctrl+T', {})).toBe(true)
         expect(isReservedCombo('Ctrl+Tab', {})).toBe(true)
-        for (let index = 1; index <= 9; index++) {
-            expect(isReservedCombo(`Ctrl+${index}`, {})).toBe(true)
-        }
+        expect(isReservedCombo('Alt+ArrowLeft', {})).toBe(true)
+        expect(isReservedCombo('Alt+ArrowRight', {})).toBe(true)
     })
 })
 

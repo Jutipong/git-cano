@@ -7653,76 +7653,121 @@ body {
     border-color: var(--orange);
 }
 
-/* Keyboard shortcuts help modal — two-column (macOS / Windows) key reference */
+/* Keyboard shortcuts help modal — current-platform cheat sheet in grouped cards */
 
 .shortcuts-modal {
-    width: min(560px, 94vw);
+    width: min(840px, 94vw);
     border-radius: var(--radius-card);
 }
 
 .shortcuts-modal-body {
-    padding: 16px 20px 18px;
+    padding: var(--space-6) var(--space-6) var(--space-5);
     overflow: auto;
 }
 
-.shortcuts-table {
+.shortcuts-columns {
     display: grid;
-    grid-template-columns: 1fr auto auto;
-    gap: 10px 22px;
-    align-items: center;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.shortcuts-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+    min-width: 0;
+}
+
+.shortcuts-group {
+    padding: var(--space-4) var(--space-5) var(--space-3);
+    background: color-mix(in srgb, var(--surface-0) 55%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md);
 }
 
 .shortcuts-group-title {
+    margin: 0 0 var(--space-2);
+    padding-bottom: var(--space-2);
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--line-soft);
+    font-size: var(--font-sm);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.9;
+}
+
+.shortcuts-row {
     display: flex;
-    grid-column: 1 / -1;
+    flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    margin: 16px 0 2px;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.9;
-}
-
-.shortcuts-group-title.is-first {
-    margin-top: 8px;
-}
-
-.shortcuts-group-title::after {
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(90deg, var(--line-soft) 12%, transparent);
-    content: '';
-    opacity: 0.9;
-}
-
-.shortcuts-head {
-    padding-bottom: 2px;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0.85;
+    justify-content: space-between;
+    gap: var(--space-1) var(--space-4);
+    min-height: 27px;
+    padding: 3px 0;
 }
 
 .shortcuts-label {
+    min-width: 0;
     color: var(--text-secondary);
-    font-size: 13px;
+    font-size: var(--font-md);
     font-weight: 500;
     letter-spacing: 0.01em;
 }
 
 .shortcuts-keys {
     display: flex;
-    gap: 6px;
-    justify-content: flex-start;
-    min-width: 148px;
+    flex-wrap: wrap;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-1);
+    margin-left: auto;
 }
 
-.shortcuts-keys kbd,
+.shortcut-combo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.shortcut-plus,
+.shortcut-or {
+    color: var(--text-muted);
+    font-size: var(--font-xs);
+    line-height: 1;
+}
+
+.shortcut-or {
+    margin: 0 2px;
+}
+
+.shortcuts-keys kbd {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 23px;
+    padding: 0 var(--space-2);
+    color: var(--text);
+    background: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--surface-1) 85%, transparent),
+        color-mix(in srgb, var(--text-muted) 14%, transparent)
+    );
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 1px 2px color-mix(in srgb, var(--canvas) 35%, transparent);
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+}
+
+/* Settings → Shortcuts keycaps (unchanged from the help modal's old shared rule). */
 .tools-body kbd {
     display: inline-flex;
     align-items: center;
@@ -7746,18 +7791,38 @@ body {
     white-space: nowrap;
 }
 
-.shortcuts-divider {
-    grid-column: 1 / -1;
-    height: 1px;
-    margin: 3px 0;
-    background: linear-gradient(90deg, transparent, var(--line-soft) 12%, var(--line-soft) 88%, transparent);
-    opacity: 0.9;
+.shortcuts-notes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--line-soft);
 }
 
-.shortcuts-note {
-    margin: 14px 0 0;
+.shortcuts-notes p {
+    margin: 0;
     color: var(--text-muted);
-    font-size: 12px;
+    font-size: var(--font-base);
+    line-height: 1.4;
+}
+
+.shortcuts-platform {
+    padding: 2px var(--space-3);
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--teal) 35%, transparent);
+    border-radius: var(--radius-pill);
+    font-size: var(--font-xs);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+    .shortcuts-columns {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }
 
 /* What's new modal — release notes shown after an update (plain text, never v-html) */

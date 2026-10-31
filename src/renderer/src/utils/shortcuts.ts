@@ -35,9 +35,20 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'closeTab', label: 'Close tab / terminal', group: 'repo', mac: ['Ctrl+W'], win: ['Ctrl+W'] },
     { id: 'terminal', label: 'Toggle terminal', group: 'terminal', mac: ['Ctrl+`'], win: ['Ctrl+`'] },
     { id: 'terminalNewTab', label: 'New terminal tab', group: 'terminal', mac: ['Ctrl+T'], win: ['Ctrl+T'] },
-    { id: 'terminalTabJump', label: 'Terminal tab 1…9', group: 'terminal', mac: ['Ctrl+1…9'], win: ['Ctrl+1…9'] },
-    { id: 'terminalTabNext', label: 'Next terminal tab (panel focused)', group: 'terminal', mac: ['Ctrl+Tab'], win: ['Ctrl+Tab'] },
-    { id: 'terminalTabPrev', label: 'Previous terminal tab (panel focused)', group: 'terminal', mac: ['Ctrl+Shift+Tab'], win: ['Ctrl+Shift+Tab'] },
+    {
+        id: 'terminalTabNext',
+        label: 'Next terminal tab',
+        group: 'terminal',
+        mac: ['Ctrl+Tab', 'Alt+→'],
+        win: ['Ctrl+Tab', 'Alt+→'],
+    },
+    {
+        id: 'terminalTabPrev',
+        label: 'Previous terminal tab',
+        group: 'terminal',
+        mac: ['Ctrl+Shift+Tab', 'Alt+←'],
+        win: ['Ctrl+Shift+Tab', 'Alt+←'],
+    },
     { id: 'terminalFullHeight', label: 'Terminal full height', group: 'terminal', mac: ['Alt+Enter'], win: ['Alt+Enter'] },
     { id: 'searchCommits', label: 'Search commits', group: 'general', mac: ['⌘F'], win: ['Ctrl+F'] },
     { id: 'settings', label: 'Open settings', group: 'general', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
@@ -108,12 +119,13 @@ const RESERVED_COMBOS = new Set([
     'Ctrl+-',
     'Ctrl+0',
     'Ctrl+W',
-    // Terminal tabs: Ctrl+T opens a shell, Ctrl+1…9 jumps to one, Ctrl+Tab / Ctrl+Shift+Tab cycle while the panel has focus (captured
-    // before xterm).
+    // Terminal tabs: Ctrl+T opens a shell, Ctrl+Tab / Ctrl+Shift+Tab / Alt+←→ cycle while the panel has focus (captured before xterm;
+    // Alt+←→ act only there and stay untouched everywhere else).
     'Ctrl+T',
-    ...Array.from({ length: 9 }, (_, index) => `Ctrl+${index + 1}`),
     'Ctrl+Tab',
     'Ctrl+Shift+Tab',
+    'Alt+ArrowLeft',
+    'Alt+ArrowRight',
     // Terminal full height while the panel has focus (captured before xterm).
     'Alt+Enter',
 ])
