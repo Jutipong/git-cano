@@ -551,7 +551,7 @@ test('Settings → Terminal picks a font family with fallback to default', async
     const readUi = () => page.evaluate(() => JSON.parse(localStorage.getItem('ui') ?? '{}'))
 
     // A preset chip persists the full stack (primary + Thai fallback). Exact labels: "Maple Mono" is a substring of
-    // "Maple Mono NF", so a hasText match would hit two chips.
+    // "Maple Mono NFM", so a hasText match would hit two chips.
     const pickPreset = async (label: string) => {
         await page.getByRole('button', { name: label, exact: true }).click()
         expect((await readUi()).terminalFontFamily).toContain(label)
@@ -559,9 +559,16 @@ test('Settings → Terminal picks a font family with fallback to default', async
     }
     await pickPreset('JetBrains Mono')
     await pickPreset('Cascadia Code NF')
+    await pickPreset('JetBrainsMono NF')
     await pickPreset('JetBrainsMono NFM')
     await pickPreset('Maple Mono')
     await pickPreset('Maple Mono NF')
+    await pickPreset('Maple Mono NFM')
+
+    // Every chip carries an installed/missing dot; Consolas ships with every Windows, so it must read installed.
+    const consolasChip = page.getByRole('button', { name: 'Consolas', exact: true })
+    await expect(consolasChip.locator('.font-state-dot.installed')).toHaveCount(1)
+    await expect(consolasChip).toHaveAttribute('title', 'Installed')
 
     // Custom input commits on Enter; an uninstalled face reports the fallback hint.
     const input = page.locator('.tools-modal input[placeholder="e.g. Fira Code"]')
@@ -569,6 +576,7 @@ test('Settings → Terminal picks a font family with fallback to default', async
     await input.press('Enter')
     expect((await readUi()).terminalFontFamily).toContain('No Such Font On Earth')
     await expect(page.getByText('Font not installed — using default.')).toBeVisible()
+    await expect(page.locator('.tools-section-hint.font-state-line.missing .font-state-dot.missing')).toHaveCount(1)
 
     // Reset restores the Consolas default behind a confirm.
     await page.locator('.tools-modal .tools-reset-row button', { hasText: 'Reset to defaults' }).click()

@@ -5,11 +5,13 @@ import {
     SHORTCUT_DEFAULTS,
     SHORTCUT_PLATFORMS,
     currentPlatform,
+    isMac,
     isValidSyncCombo,
     type CustomShortcutId,
     type ShortcutOverrideMap,
     type ShortcutPlatform,
 } from '../utils/shortcuts'
+import { defaultTerminalFontFamily } from '../utils/terminalFont'
 
 import type { LocalChangesMode, TerminalShell } from '@shared/types'
 
@@ -78,24 +80,26 @@ export const TERMINAL_MAX_TABS_OPTIONS = [4, 6, 8, 10]
 export const DEFAULT_TERMINAL_MAX_TABS = 4
 
 /**
- * Terminal font family — Consolas leads (inbox on every Windows), Leelawadee UI covers the Thai glyphs Consolas lacks, monospace catches
- * macOS/Linux. Persisted; blank resets to default.
+ * Terminal font family, per platform. Windows: Consolas leads (inbox on every Windows) with Leelawadee UI for the Thai glyphs it lacks.
+ * macOS: SF Mono (ships with the OS dev tools) then Menlo (always present) with Thonburi for Thai. Persisted; blank resets to default.
  */
-export const DEFAULT_TERMINAL_FONT_FAMILY = "'Consolas', 'Leelawadee UI', monospace"
+export const DEFAULT_TERMINAL_FONT_FAMILY = defaultTerminalFontFamily(isMac)
+/** First shipped default — one Windows stack on every platform; macOS migrates to the SF Mono stack on load. */
+const LEGACY_TERMINAL_FONT_FAMILY = "'Consolas', 'Leelawadee UI', monospace"
 /**
- * Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied). The Nerd Font entries use the family name
- * the font file itself declares (`nameID 1`), which CoreText and DirectWrite both resolve — `JetBrainsMono NFM` (not `NF`) because
- * the `NF` cut paints its icons up to ~1.9 cells wide, so they bleed over the neighbouring cell in a 1-cell terminal grid.
+ * Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied), grouped by family so the variants sit next
+ * to each other. The Nerd Font entries use the family name the font file itself declares (`nameID 1`), which CoreText and DirectWrite
+ * both resolve: `NFM` is the mono-spaced cut sized to a 1-cell grid, while `NF` paints its icons up to ~1.9 cells wide and can bleed
+ * into the neighbouring cell — both are offered so the user can compare them.
  */
-export const TERMINAL_FONT_FAMILY_PRESETS = [
-    'Consolas',
-    'Cascadia Mono',
-    'Cascadia Code NF',
-    'JetBrains Mono',
-    'JetBrainsMono NFM',
-    'Maple Mono',
-    'Maple Mono NF',
-]
+export const TERMINAL_FONT_PRESET_GROUPS = [
+    { label: 'System', presets: ['Consolas', 'Cascadia Mono', 'Cascadia Code NF'] },
+    { label: 'JetBrains Mono', presets: ['JetBrains Mono', 'JetBrainsMono NF', 'JetBrainsMono NFM'] },
+    { label: 'Maple Mono', presets: ['Maple Mono', 'Maple Mono NF', 'Maple Mono NFM'] },
+] as const
+
+/** Flat list of every preset, in display order. */
+export const TERMINAL_FONT_FAMILY_PRESETS = TERMINAL_FONT_PRESET_GROUPS.flatMap(group => group.presets)
 
 /** Overall UI zoom options, in percent. Composes with font size around the base scale. */
 export const ZOOM_OPTIONS = [70, 80, 90, 100, 110, 125, 140, 150]
@@ -487,11 +491,16 @@ export const useUiStore = defineStore(
                 // Persist hydration ($patch) lands after the setup body, so the legacy-size migration
                 // cannot live next to the ref — the store would still hold defaults there.
                 const store = context.store as unknown as {
-                    $state: { terminalFontSize?: unknown }
-                    $patch: (partial: { terminalFontSize: number }) => void
+                    $state: { terminalFontSize?: unknown; terminalFontFamily?: unknown }
+                    $patch: (partial: { terminalFontSize?: number; terminalFontFamily?: string }) => void
                 }
                 if (store.$state.terminalFontSize === LEGACY_TERMINAL_FONT_SIZE) {
                     store.$patch({ terminalFontSize: DEFAULT_TERMINAL_FONT_SIZE })
+                }
+                // An untouched Windows default on macOS would fall straight through to bare `monospace`.
+                const legacyFamily = store.$state.terminalFontFamily === LEGACY_TERMINAL_FONT_FAMILY
+                if (legacyFamily && DEFAULT_TERMINAL_FONT_FAMILY !== LEGACY_TERMINAL_FONT_FAMILY) {
+                    store.$patch({ terminalFontFamily: DEFAULT_TERMINAL_FONT_FAMILY })
                 }
             },
         },

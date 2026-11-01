@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
     buildTerminalFontFamily,
+    defaultTerminalFontFamily,
+    familyDiffersFromFallback,
     isFontInstalled,
     primaryFontFamily,
     resolveTerminalFontFamily,
@@ -10,6 +12,39 @@ import {
 } from '../../src/renderer/src/utils/terminalFont'
 
 const DEFAULT = `'Consolas', ${TERMINAL_THAI_FALLBACK}`
+
+describe('defaultTerminalFontFamily', () => {
+    it('leads with the platform faces and keeps a Thai fallback', () => {
+        expect(defaultTerminalFontFamily(false)).toBe("'Consolas', 'Leelawadee UI', monospace")
+        expect(defaultTerminalFontFamily(true)).toBe("'SF Mono', Menlo, 'Thonburi', monospace")
+    })
+
+    it('keeps Thonburi in the preset fallback so macOS picks still shape Thai', () => {
+        expect(TERMINAL_THAI_FALLBACK).toContain('Thonburi')
+    })
+})
+
+describe('familyDiffersFromFallback', () => {
+    /** Fake canvas: a family reports the base width unless it is in `installed` and the chain is serif. */
+    const measureWith = (installed: Record<string, number>) => (font: string) => {
+        const chain = (font.split(',').pop() ?? font).replace('12px', '').trim()
+        const family = font.match(/"([^"]+)"/)?.[1]
+        const base = chain.length * 7
+        return family && installed[family] !== undefined && chain === 'serif' ? base + installed[family] : base
+    }
+
+    it('reports a missing family as identical to every fallback', () => {
+        const measure = measureWith({})
+        expect(familyDiffersFromFallback('No Such Font', 'monospace', measure)).toBe(false)
+        expect(familyDiffersFromFallback('No Such Font', 'serif', measure)).toBe(false)
+    })
+
+    it('detects a family that only differs from the serif fallback (the Consolas vs default-monospace case)', () => {
+        const measure = measureWith({ Consolas: 0.5 })
+        expect(familyDiffersFromFallback('Consolas', 'monospace', measure)).toBe(false)
+        expect(familyDiffersFromFallback('Consolas', 'serif', measure)).toBe(true)
+    })
+})
 
 describe('primaryFontFamily', () => {
     it('returns the first family unquoted', () => {

@@ -66,10 +66,10 @@
     let disposed = false
 
     /**
-     * The primary family comes from Settings → Terminal (default Consolas, inbox on every Windows); the stack always keeps Leelawadee UI
-     * behind it — Thai has no monospace face on Windows, so the browser falls back per codepoint and lets GPOS stack the vowels/tone marks.
-     * xterm's DOM renderer writes whole grapheme clusters into one <span>, which is what makes that shaping work — the canvas renderer
-     * (removed in xterm 6) never shaped Thai at all. A pick whose font is not installed resolves back to the default stack.
+     * The primary family comes from Settings → Terminal (platform default: Consolas on Windows, SF Mono/Menlo on macOS); the stack always
+     * keeps the Thai faces behind it — Thai has no monospace face on Windows, so the browser falls back per codepoint and lets GPOS stack
+     * the vowels/tone marks. xterm's DOM renderer writes whole grapheme clusters into one <span>, which is what makes that shaping work —
+     * the canvas renderer (removed in xterm 6) never shaped Thai at all. A pick whose font is not installed resolves back to the default.
      */
     const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
 

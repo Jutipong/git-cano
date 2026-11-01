@@ -6774,6 +6774,52 @@ body {
     line-height: 1.5;
 }
 
+/* Terminal font availability — dot on every preset chip plus the applied-font status line. */
+.font-state-dot {
+    flex: none;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--text-muted);
+}
+
+.preset-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preset-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.preset-group-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.font-state-dot.installed {
+    background: var(--green);
+}
+
+.font-state-dot.missing {
+    background: var(--red);
+}
+
+.tools-section-hint.font-state-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tools-section-hint.font-state-line.missing {
+    color: var(--red);
+}
+
 .setting-label {
     margin-top: 14px;
     color: var(--text-secondary);

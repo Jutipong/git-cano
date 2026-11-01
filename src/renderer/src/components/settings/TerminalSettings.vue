@@ -10,6 +10,7 @@
         useUiStore,
         DEFAULT_TERMINAL_FONT_FAMILY,
         TERMINAL_FONT_FAMILY_PRESETS,
+        TERMINAL_FONT_PRESET_GROUPS,
         TERMINAL_FONT_SIZE_OPTIONS,
         TERMINAL_MAX_TABS_OPTIONS,
     } from '../../stores/ui'
@@ -44,6 +45,8 @@
     const terminalFontInput = ref(primaryFontFamily(ui.terminalFontFamily))
     const terminalFontPrimary = computed(() => primaryFontFamily(ui.terminalFontFamily))
     const terminalFontMissing = computed(() => !isFontInstalled(terminalFontPrimary.value))
+    /** Per-preset installation state, so every chip can show an installed/missing dot (checked once per settings visit). */
+    const presetInstalled = computed(() => new Map(TERMINAL_FONT_FAMILY_PRESETS.map(name => [name, isFontInstalled(name)])))
     function syncTerminalFontInput() {
         terminalFontInput.value = terminalFontPrimary.value
     }
@@ -144,20 +147,33 @@
             class="setting-label"
             >Font family</span
         >
-        <div
-            class="setting-choice-row"
-            role="group"
-            aria-labelledby="terminal-font-family-label">
-            <button
-                v-for="name in TERMINAL_FONT_FAMILY_PRESETS"
-                :key="name"
-                type="button"
-                class="setting-chip"
-                :class="{ active: terminalFontPrimary === name }"
-                :aria-pressed="terminalFontPrimary === name"
-                @click="setTerminalFontPreset(name)">
-                {{ name }}
-            </button>
+        <div class="preset-groups">
+            <div
+                v-for="group in TERMINAL_FONT_PRESET_GROUPS"
+                :key="group.label"
+                class="preset-group">
+                <span class="preset-group-label">{{ group.label }}</span>
+                <div
+                    class="setting-choice-row"
+                    role="group"
+                    :aria-label="`${group.label} fonts`">
+                    <button
+                        v-for="name in group.presets"
+                        :key="name"
+                        type="button"
+                        class="setting-chip"
+                        :class="{ active: terminalFontPrimary === name }"
+                        :aria-pressed="terminalFontPrimary === name"
+                        :title="presetInstalled.get(name) ? 'Installed' : 'Not installed'"
+                        @click="setTerminalFontPreset(name)">
+                        <span
+                            class="font-state-dot"
+                            :class="presetInstalled.get(name) ? 'installed' : 'missing'"
+                            aria-hidden="true" />
+                        {{ name }}
+                    </button>
+                </div>
+            </div>
         </div>
         <label class="ai-field">
             <span>Custom font (must be installed on this machine)</span>
@@ -172,9 +188,13 @@
                 @blur="commitTerminalFontInput" />
         </label>
         <p
-            v-if="terminalFontMissing"
-            class="tools-section-hint">
-            Font not installed — using default.
+            class="tools-section-hint font-state-line"
+            :class="terminalFontMissing ? 'missing' : 'installed'">
+            <span
+                class="font-state-dot"
+                :class="terminalFontMissing ? 'missing' : 'installed'"
+                aria-hidden="true" />
+            {{ terminalFontMissing ? 'Font not installed — using default.' : 'Installed' }}
         </p>
     </div>
 

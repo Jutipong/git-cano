@@ -175,9 +175,10 @@ Panel/modal component patterns. Loaded automatically when working under
 - **Thai rendering is the whole point of this panel** — do not “optimise” it away:
   xterm 6's DOM renderer (never `addon-canvas`/`addon-webgl`, which do no Thai shaping),
   `Unicode11Addon` with `unicode.activeVersion = '11'` (needs `allowProposedApi: true` in xterm 6),
-  `lineHeight: 1.0`, the font stack `'Consolas', 'Leelawadee UI', monospace` (default from
-  `ui.terminalFontFamily` — Settings → Terminal → Text offers NF presets plus a custom face, and an
-  uninstalled pick resolves back to this stack), and a
+  `lineHeight: 1.0`, the platform font stack (`'Consolas', 'Leelawadee UI', monospace` on
+  Windows, `'SF Mono', Menlo, 'Thonburi', monospace` on macOS — default from
+  `ui.terminalFontFamily`; Settings → Terminal → Text offers NF presets plus a custom face, shows an
+  installed/missing dot per preset, and an uninstalled pick resolves back to this stack), and a
   `waitForFonts()` step before constructing the `Terminal` (xterm caches the cell size measured
   during construction, and a wrong cell size pushes every combining mark off its column). The
   `.xterm` padding lives on `.xterm`, never on `.terminal-host` — FitAddon subtracts `.xterm`'s own
