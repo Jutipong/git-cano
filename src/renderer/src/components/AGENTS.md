@@ -250,23 +250,23 @@ Panel/modal component patterns. Loaded automatically when working under
   cell). Dashed (`┆ ┇ ┊ ┋`) and double (`║`) rules are deliberately not tagged (a solid stripe would erase
   their shape), and a rule that follows other text in the same SGR run is not detected — that is the
   known limit.
-- **Inline images (spike)**: `@xterm/addon-image` decodes Sixel and iTerm IIP, but its
-  `.xterm-image-layer` canvas paints ABOVE the DOM rows — a TUI that draws its UI over an image
-  (opencode's preview) became a black screen with every text row hidden. The spike hides that canvas
-  (`display: none` in modern-ui.css) and `TerminalView.paintImages()` composites the image into the
-  covered cells' `background-image` instead: a background paints above the cell colour and below the
-  glyph, so the text stays on top like a real terminal. DA1 is left enabled so TUIs send images.
-  Limits: images clipped by the viewport are skipped (the addon exposes no cell size), the image-cell
-  scan is throttled to `IMAGE_SCAN_MS` (100 ms) and the canvas is cached as a data URL. Cached boxes
-  are probed every render (`imageBoxesAlive`) and invalidated as soon as the cells are gone, or a
-  removed attachment leaves its preview painted in the prompt. Degenerate or ragged boxes (fewer than
-  `MIN_IMAGE_COLS`/`MIN_IMAGE_ROWS`, or a cell count that does not fill the rectangle) are dropped:
-  a prompt redraw can leave one row of tiles behind, and painting it squashes the image into a strip.
-  A TUI that rewrites a cell holding image data erases that tile (xterm.js#5860). The addon is
-  loaded in a `try/catch` because its decoder is WASM — `index.html` keeps `script-src 'self'
-  'wasm-unsafe-eval'`, and a decoder failure must never take the shell down. `enableSizeReports`
-  stays `false` because the `Terminal` constructor already sets `windowOptions.getWinSizePixels/
-  getCellSizePixels/getWinSizeChars` (xterm then answers `CSI 14t/16t/18t`).
+- **Inline images (Sixel / iTerm IIP)**: `@xterm/addon-image` decodes both protocols, and DA1 stays
+  enabled so TUIs send them. Its canvas `.xterm-image-layer` is appended to `.xterm-screen` *after*
+  `.xterm-rows`, i.e. it paints over the text by default — a TUI that draws its UI over an image
+  (opencode's preview) then looks like a black screen with just the picture. The fix is CSS only
+  (in `modern-ui.css`): `isolation: isolate` on `.xterm-screen`, `z-index: 0` on the layer and
+  `position: relative; z-index: 1` on `.xterm-rows`, so bg → image → text composes like a real
+  terminal (glyphs, caret and selection stay on top). **Never hide that canvas.** A compositing pass
+  that hid it and copied the picture into covered cells' `background-image` was tried and removed: the
+  addon's `getImageAtBufferCell()` returns a fresh canvas on every call (the stored `orig` is an
+  `ImageBitmap`), and, decisively, image rows carry **no `<span>` at all**, so there is no element to
+  paint into — the image never appeared. Z-index also survives the addon re-creating its canvas on a
+  renderer change, where moving the node by hand would not. A TUI that rewrites a cell holding image
+  data erases that tile (xterm.js#5860). The addon is loaded in a `try/catch` because its decoder is
+  WASM — `index.html` keeps `script-src 'self' 'wasm-unsafe-eval'`, and a decoder failure must never
+  take the shell down. `enableSizeReports` stays `false` because the `Terminal` constructor already
+  sets `windowOptions.getWinSizePixels/getCellSizePixels/getWinSizeChars` (xterm then answers
+  `CSI 14t/16t/18t`).
 - **Do not add `convertEol`.** ConPTY already emits CRLF, and the reference POC leaves it off: with
   the extra CR, TUI output (opencode/pi redraws) gets different cursor semantics. Measured without
   it: LF-only output still lands in one column (no staircase) and opencode's box/logo stay intact.

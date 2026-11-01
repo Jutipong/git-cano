@@ -760,6 +760,67 @@ test('the splitter resizes the panel height, and the shell follows', async () =>
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
+/** 8×8 gradient PNG — an inline-image payload small enough to hand to the addon in one chunk. */
+const TINY_PNG_BASE64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAbUlEQVR4nA3NgQAAMAwDwaAEpShFKUohHiAoRdlO4CRhUaLFiBURJyRjU6bNmDUxZ6TCRRVdTLFFiiukxk013UyzTZprpMFDDT3MsEOGm38sXmrpZZZdstz+IzhU6DBhQ8LlH4ePOvqYY48cdzzNxmUBnNw6XgAAAABJRU5ErkJggg=='
+
+test('inline images land below the text rows', async () => {
+    // Start from a closed panel like the neighbouring tests: the button spawns the shell.
+    await page.locator('.graph-terminal-btn').click()
+    await page.waitForSelector('.terminal-view:visible .xterm-screen', { timeout: 30_000 })
+
+    // The terminal ids are per-session and this file has spawned plenty of shells, so read the live
+    // one off the pty traffic instead of guessing: every chunk the main process forwards is tagged
+    // with the id of the shell that produced it.
+    await handle.app.evaluate(({ BrowserWindow }) => {
+        const contents = BrowserWindow.getAllWindows()[0].webContents
+        const spy = globalThis as unknown as { __terminalId: string | null }
+        spy.__terminalId = null
+        const original = contents.send.bind(contents)
+        contents.send = ((channel: string, payload?: { terminalId?: string }) => {
+            if (channel === 'terminal:data' && payload?.terminalId) spy.__terminalId = payload.terminalId
+            return original(channel, payload)
+        }) as typeof contents.send
+    })
+    await runInTerminal('echo image-id-probe', 'image-id-probe')
+    const terminalId = await handle.app.evaluate(
+        () => (globalThis as unknown as { __terminalId: string | null }).__terminalId
+    )
+    expect(terminalId).toBeTruthy()
+
+    // Hand the addon an iTerm-IIP payload through that id.
+    const png = Buffer.from(TINY_PNG_BASE64, 'base64')
+    const osc = `\u001b]1337;File=inline=1;width=10;preserveAspectRatio=1;size=${png.length}:${TINY_PNG_BASE64}\u0007`
+    await handle.app.evaluate(
+        ({ BrowserWindow }, payload) => {
+            BrowserWindow.getAllWindows()[0].webContents.send('terminal:data', payload)
+        },
+        { terminalId, repoPath: fx.mainRepo, data: osc }
+    )
+
+    // The addon draws into its own canvas; modern-ui.css must keep it visible and under the rows —
+    // a hidden layer (or one above the text) is exactly the regression this pins.
+    const layer = page.locator('.terminal-view:visible .xterm-image-layer').first()
+    await expect(layer).toBeVisible({ timeout: 15_000 })
+    const geometry = await layer.evaluate(el => {
+        const rows = el.parentElement?.querySelector('.xterm-rows')
+        return {
+            layerZ: Number(getComputedStyle(el).zIndex),
+            rowsZ: rows ? Number(getComputedStyle(rows).zIndex) : Number.NaN,
+            width: (el as HTMLCanvasElement).width,
+            height: (el as HTMLCanvasElement).height,
+        }
+    })
+    expect(geometry.width).toBeGreaterThan(0)
+    expect(geometry.height).toBeGreaterThan(0)
+    expect(geometry.layerZ).toBeLessThan(geometry.rowsZ)
+
+    // Leave the next test the closed panel it expects.
+    await page.locator('.terminal-panel:visible .diff-close-btn').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
 test('Ctrl+click opens a printed URL through the OS browser bridge, a plain click does not', async () => {
     // Swap the main-process opener for a recorder: the real one launches the machine's default
     // browser, and this test only needs to see the URL arrive at `app:openExternal`.

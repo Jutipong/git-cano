@@ -6265,10 +6265,25 @@ body {
     --rule-width: var(--rule-heavy-width, 0.17em);
 }
 
-/* Spike: `TerminalView.paintImages()` composites Sixel/IIP into the cell backgrounds (below the
-   text) so a TUI can draw its UI over an image; the addon's own canvas would paint over the rows. */
+/* xterm's image addon paints inline images (Sixel / iTerm IIP) into a canvas inside `.xterm-screen`,
+   appended after `.xterm-rows` — so by default the canvas covers the text and a TUI that draws its UI
+   over an image (opencode's preview) becomes a black screen with only the image visible. Real terminals
+   compose bg → image → text: keep the canvas but order it below the rows, so glyphs, the caret and the
+   selection stay on top. `isolation` keeps both layers inside the screen's own stacking context, and a
+   plain z-index survives the addon re-creating its canvas on a renderer change. Never hide the canvas
+   (`display: none` was tried): the image rows carry no `<span>` at all, so there is nothing else to
+   paint the picture into and the image simply disappears. */
+.terminal-host .xterm-screen {
+    isolation: isolate;
+}
+
 .terminal-host .xterm-image-layer {
-    display: none;
+    z-index: 0;
+}
+
+.terminal-host .xterm-rows {
+    position: relative;
+    z-index: 1;
 }
 
 /* xterm draws its own scroll affordance, so hide Chromium's scrollbar that TUIs otherwise trigger. */
