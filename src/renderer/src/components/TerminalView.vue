@@ -311,9 +311,9 @@
             scrollback: 1000,
             // xterm 6 moved Unicode11Addon behind the proposed API.
             allowProposedApi: true,
-            // Answer XTWINOPS size queries (CSI 14t/16t/18t). xterm swallows 14t/16t without
-            // these flags, and TUIs (opencode/OpenTUI) then guess the cell box and stretch
-            // every image preview vertically.
+            // Answer XTWINOPS size queries (CSI 14t/16t/18t). xterm swallows 14t/16t without these
+            // flags, so a TUI that asks for the terminal/cell pixel box (opencode/OpenTUI does)
+            // would get no reply at all.
             windowOptions: { getWinSizePixels: true, getCellSizePixels: true, getWinSizeChars: true },
             // OSC 8 hyperlinks (xterm's built-in provider) would otherwise `confirm()` and then
             // `window.open`; route them through the same OS-browser handler as plain-text URLs.
