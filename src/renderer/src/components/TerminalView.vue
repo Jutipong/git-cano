@@ -5,7 +5,7 @@
 
     import { useUiStore, DEFAULT_TERMINAL_FONT_FAMILY } from '../stores/ui'
     import { isMac } from '../utils/shortcuts'
-    import { fullBlockCells } from '../utils/terminalBars'
+    import { fullBlockCells, verticalRuleRun } from '../utils/terminalBars'
     import { terminalCopyDecision } from '../utils/terminalCopy'
     import { primaryFontFamily, resolveTerminalFontFamily, terminalFontPx } from '../utils/terminalFont'
     import { shouldActivateTerminalLink } from '../utils/terminalLinks'
@@ -177,6 +177,9 @@
         if (disposed || seq !== fontRefitSeq) return
         await nextFrame()
         if (disposed || seq !== fontRefitSeq || !term || !fit) return
+        // Measure the rule stripes from the loaded face — a probe before `document.fonts.load`
+        // resolves would read the fallback's stroke widths.
+        measureRuleWidths(familyStack, size)
         // Fit until the grid stops moving: fractional cell sizes round differently per size, so a
         // single fit can leave the pty one row/column off and clip x/y.
         resizePty()
@@ -212,6 +215,12 @@
      * vertical seam at every boundary. Tag those spans so a solid background in the glyph's own colour can sit behind them
      * (`.terminal-bar` / `.terminal-block` in modern-ui.css) — the antialiasing then blends into the identical colour.
      *
+     * Vertical rules (`│` / `┃`) get the same treatment for a different reason: a rail is one glyph per row, and a font whose
+     * box-drawing ink stops at ascent..descent (Consolas) leaves a 1px background gap at every row boundary because xterm's cell is
+     * as tall as the font's line box, typographic line gap included — the rail then reads as a dashed line. JetBrains Mono, its NFM
+     * cut and Cascadia Mono never show it: their box glyphs overshoot the line box. `.terminal-rule-light` / `.terminal-rule-heavy`
+     * paint a stripe across the cell so consecutive rows overlap in any font (half-cell caps included).
+     *
      * Must run in the same frame as the row rewrite (`term.onRender`, synchronously): deferring it to a
      * later `requestAnimationFrame` leaves one painted frame of raw glyphs. TUIs that repaint the bar
      * every frame (opencode while streaming) then show it as a dashed line for as long as they run.
@@ -219,6 +228,26 @@
     const BAR_RUN = /^\u2580+$/
     /** A single `█` is a scrollbar cell or block-art dot, not a meter — only paint runs. */
     const MIN_BLOCK_CELLS = 2
+    const RULE_PROPS = ['--rule-cells', '--rule-fill', '--rule-anchor'] as const
+
+    /**
+     * Hand the stripe's box to the CSS: how many leading cells the rule covers (a gutter padded with
+     * same-colour blanks must not be striped), and — for the half-cell caps a rail ends on — which
+     * half of the cell it fills, so a `╹` does not grow a tail the TUI never drew. Runs on every row of
+     * every render, so a span that is not (and was not) a rule leaves without touching its style.
+     */
+    function applyRuleBox(span: HTMLElement, rule: ReturnType<typeof verticalRuleRun>) {
+        if (!rule) {
+            if (!span.style.getPropertyValue('--rule-cells')) return
+            for (const prop of RULE_PROPS) span.style.removeProperty(prop)
+            return
+        }
+        span.style.setProperty('--rule-cells', String(rule.cells))
+        span.style.setProperty('--rule-fill', rule.part === 'full' ? '100%' : '50%')
+        // A percentage background position anchors the stripe's bottom to the cell's (100% = bottom).
+        span.style.setProperty('--rule-anchor', rule.part === 'bottom' ? '100%' : '0')
+    }
+
     function markBars() {
         const root = host.value?.querySelector('.xterm-rows')
         if (!root) return
@@ -232,6 +261,10 @@
             span.classList.toggle('terminal-block', block)
             if (block) span.style.setProperty('--block-count', String(cells))
             else if (span.style.getPropertyValue('--block-count')) span.style.removeProperty('--block-count')
+            const rule = cursor ? null : verticalRuleRun(text)
+            span.classList.toggle('terminal-rule-light', rule?.kind === 'light')
+            span.classList.toggle('terminal-rule-heavy', rule?.kind === 'heavy')
+            applyRuleBox(span, rule)
         }
     }
 
@@ -390,6 +423,33 @@
     }
 
     /**
+     * `markBars()` paints a stripe behind solid vertical rules, and that stripe has to be exactly as wide
+     * as the glyph's stroke: a run's end cap or a cursor cell carries no stripe, so a guess that is too
+     * wide leaves a visible step in the rail. Every family draws `│`/`┃` at its own width (Consolas
+     * 0.073/0.147 em, JetBrains Mono 0.1/0.2 em), so read the ink width from the font itself. Probe at a
+     * large em and divide — Chromium snaps `actualBoundingBox*` to whole pixels, which at 14px would be a
+     * ±1px error. Fail-open: the CSS keeps an `em` fallback when this cannot measure.
+     */
+    const RULE_PROBE_EM = 100
+    function measureRuleWidths(family: string, size: number) {
+        const el = host.value
+        const ctx = document.createElement('canvas').getContext('2d')
+        if (!el || !ctx) return
+        ctx.font = `${RULE_PROBE_EM}px ${family}`
+        const inkWidth = (char: string) => {
+            const metrics = ctx.measureText(char)
+            // `actualBoundingBoxLeft` grows leftwards, so the edges are the sum, not the difference.
+            const width = Math.max(0, metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight)
+            return (width / RULE_PROBE_EM) * size
+        }
+        // A face that lacks the glyph measures 0 — keep the CSS `em` fallback rather than a 0px stripe.
+        const light = inkWidth('\u2502')
+        const heavy = inkWidth('\u2503')
+        if (light > 0) el.style.setProperty('--rule-light-width', `${light.toFixed(2)}px`)
+        if (heavy > 0) el.style.setProperty('--rule-heavy-width', `${heavy.toFixed(2)}px`)
+    }
+
+    /**
      * Xterm measures the character cell once at construction and caches it. Creating the Terminal before the stylesheets and fallback fonts
      * are ready yields a wrong cell size, and every Thai combining mark then lands off its column.
      */
@@ -450,6 +510,7 @@
 
         await waitForFonts(primaryFontFamily(family), fontSizePx())
         if (disposed || !host.value) return
+        measureRuleWidths(family, fontSizePx())
         // Loaded lazily so the terminal chunk (xterm) only ships when a panel actually opens.
         const [{ Terminal }, { FitAddon }, { Unicode11Addon }, { WebLinksAddon }, { ImageAddon }] = await Promise.all([
             import('@xterm/xterm'),

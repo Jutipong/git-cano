@@ -226,6 +226,29 @@ Panel/modal component patterns. Loaded automatically when working under
   Do not raise the rows' `line-height` to fix the top seam: the opencode block-art wordmark only tiles
   at xterm's cell-height line-height (a taller line box shifts the `█` strokes off the row boundaries
   and breaks the art).
+- **Vertical rails are tagged too** (`.terminal-rule-light` / `.terminal-rule-heavy`, chosen by
+  `verticalRuleRun()` in `utils/terminalBars.ts`): a TUI stacks one `│` / `┃` per row, and xterm's cell
+  is as tall as the font's **line box** — typographic line gap included — while those glyphs are inked
+  only across ascent..descent. Consolas therefore leaves a 1px background gap at every row boundary and
+  the rail reads as a dashed line (measured: 14px, dpr 1.25 → cell 17.58px vs 16.39px of ink);
+  JetBrains Mono / JetBrainsMono NFM / Cascadia Mono survive because their box glyphs overshoot the line
+  box by ~0.2 em — when a new preset looks broken, compare those two numbers before touching anything.
+  The CSS paints a full-cell stripe in `currentColor` once per cell (`repeating-linear-gradient` with a
+  `1ch` period) so rows overlap in any font — **not** by touching `lineHeight`, which would retune the
+  whole grid. Three details are load-bearing: the run may be padded with same-colour blanks (`┃   ` on a
+  blank line inside a block is one SGR run, and without this the rail drops out for that row), so the
+  helper also returns the rule's cell count and `--rule-cells` limits the stripe to it — never let the
+  stripe tile the padding too; a rail **ends on a half-cell cap** (`╹` U+2579 on opencode's blocks, plus
+  `╵ ╷ ╻`), which is why the helper returns a `part` and `--rule-fill` / `--rule-anchor` clip the stripe
+  to the top or bottom half (a full-cell stripe there grows a tail the TUI never drew, and skipping the
+  cap entirely made its row 1px narrower than the rest of the rail — the "notch" that was reported); and
+  the stripe width comes from `measureRuleWidths()` (canvas ink width of `│`/`┃` at a 100px em, scaled to
+  the current size, set as `--rule-light-width` / `--rule-heavy-width` on the host and re-measured on
+  every font/size change) because every family strokes those glyphs at its own width and a stripe wider
+  than the glyph shows as a thickness step on the cells that carry no stripe (a run's end cap, the cursor
+  cell). Dashed (`┆ ┇ ┊ ┋`) and double (`║`) rules are deliberately not tagged (a solid stripe would erase
+  their shape), and a rule that follows other text in the same SGR run is not detected — that is the
+  known limit.
 - **Inline images (spike)**: `@xterm/addon-image` decodes Sixel and iTerm IIP, but its
   `.xterm-image-layer` canvas paints ABOVE the DOM rows — a TUI that draws its UI over an image
   (opencode's preview) became a black screen with every text row hidden. The spike hides that canvas

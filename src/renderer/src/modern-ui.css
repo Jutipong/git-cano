@@ -6228,6 +6228,43 @@ body {
     background-repeat: no-repeat;
 }
 
+/* `markBars()` also flags solid vertical rules (`│` / `┃`) that a TUI stacks one glyph per row into a
+   rail. The cell is as tall as the font's line box (typographic line gap included) while those glyphs
+   are inked only across ascent..descent, so Consolas leaves a 1px background gap at every row boundary
+   and the rail reads as a dashed line (measured at 14px, dpr 1.25: cell 17.58px vs 16.39px of ink).
+   Fonts whose box glyphs overshoot the line box — JetBrains Mono, JetBrainsMono NFM, Cascadia Mono —
+   never show it. Paint a solid stripe in the glyph's own colour once per cell (`1ch` period) across
+   the cell: consecutive rows then overlap and the rail stays continuous in any font. Dashed
+   (`┆ ┇ ┊ ┋`) and double (`║`) rules are deliberately not flagged — filling their cells would erase
+   the shape they draw. */
+.terminal-host .xterm-rows :is(.terminal-rule-light, .terminal-rule-heavy) {
+    background-image: repeating-linear-gradient(
+        90deg,
+        transparent 0 calc(0.5ch - var(--rule-width) / 2),
+        currentColor calc(0.5ch - var(--rule-width) / 2) calc(0.5ch + var(--rule-width) / 2),
+        transparent calc(0.5ch + var(--rule-width) / 2) 1ch
+    );
+    /* `--rule-cells` is the length of the rule run: a gutter padded with same-colour blanks (`┃   `)
+       keeps its stripe on the rule cell instead of striping the padding too. `--rule-fill` /
+       `--rule-anchor` clip the stripe to the half a cap glyph (`╹` / `╻`) actually draws, anchored top
+       or bottom — a full-cell stripe there would grow a tail the TUI never painted. */
+    background-size: calc(var(--rule-cells, 1) * 1ch) var(--rule-fill, 100%);
+    background-position: 0 var(--rule-anchor, 0);
+    background-repeat: no-repeat;
+}
+
+/* Stroke widths come from `TerminalView.measureRuleWidths()` (real ink width of `│`/`┃` for the active
+   font, in px) — matching the glyph is what keeps the rail from changing thickness on the cells that
+   carry no stripe (a run's end cap, the cursor cell). The `em` values are the fail-open fallback for
+   when the canvas probe is unavailable. */
+.terminal-host .xterm-rows .terminal-rule-light {
+    --rule-width: var(--rule-light-width, 0.08em);
+}
+
+.terminal-host .xterm-rows .terminal-rule-heavy {
+    --rule-width: var(--rule-heavy-width, 0.17em);
+}
+
 /* Spike: `TerminalView.paintImages()` composites Sixel/IIP into the cell backgrounds (below the
    text) so a TUI can draw its UI over an image; the addon's own canvas would paint over the rows. */
 .terminal-host .xterm-image-layer {
