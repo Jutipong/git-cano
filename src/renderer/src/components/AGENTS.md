@@ -226,19 +226,23 @@ Panel/modal component patterns. Loaded automatically when working under
   Do not raise the rows' `line-height` to fix the top seam: the opencode block-art wordmark only tiles
   at xterm's cell-height line-height (a taller line box shifts the `█` strokes off the row boundaries
   and breaks the art).
-- **Inline images**: `@xterm/addon-image` renders Sixel and iTerm IIP frames into its own
-  `.xterm-image-layer` canvas (Kitty is not supported by 0.9.0; keep `iipSupport` on and the storage
-  cap at 64 MB). The addon is loaded in a `try/catch` because its decoder is WASM — a CSP that
-  forbids `wasm-unsafe-eval` makes `loadAddon` throw, and the shell must stay usable. `index.html`'s
-  CSP therefore keeps `script-src 'self' 'wasm-unsafe-eval'`. **Never let it answer DA1**: the canvas
-  sits ABOVE the DOM rows, so a TUI that paints an image and then draws its UI on top (opencode's
-  preview: black screen + pasted image, every text row gone) loses the text. `TerminalView` registers
-  a `CSI c` handler after `loadAddon` that returns `true` without replying; the newest handler wins,
-  so the addon never sends `?62;4;9;22c` and TUIs stay on text/block rendering. The addon still
-  renders Sixel/IIP that an app emits without probing (e.g. `cat image.sixel`). `enableSizeReports`
+- **Inline images (spike)**: `@xterm/addon-image` decodes Sixel and iTerm IIP, but its
+  `.xterm-image-layer` canvas paints ABOVE the DOM rows — a TUI that draws its UI over an image
+  (opencode's preview) became a black screen with every text row hidden. The spike hides that canvas
+  (`display: none` in modern-ui.css) and `TerminalView.paintImages()` composites the image into the
+  covered cells' `background-image` instead: a background paints above the cell colour and below the
+  glyph, so the text stays on top like a real terminal. DA1 is left enabled so TUIs send images.
+  Limits: images clipped by the viewport are skipped (the addon exposes no cell size), the image-cell
+  scan is throttled to `IMAGE_SCAN_MS` (100 ms) and the canvas is cached as a data URL. Cached boxes
+  are probed every render (`imageBoxesAlive`) and invalidated as soon as the cells are gone, or a
+  removed attachment leaves its preview painted in the prompt. Degenerate or ragged boxes (fewer than
+  `MIN_IMAGE_COLS`/`MIN_IMAGE_ROWS`, or a cell count that does not fill the rectangle) are dropped:
+  a prompt redraw can leave one row of tiles behind, and painting it squashes the image into a strip.
+  A TUI that rewrites a cell holding image data erases that tile (xterm.js#5860). The addon is
+  loaded in a `try/catch` because its decoder is WASM — `index.html` keeps `script-src 'self'
+  'wasm-unsafe-eval'`, and a decoder failure must never take the shell down. `enableSizeReports`
   stays `false` because the `Terminal` constructor already sets `windowOptions.getWinSizePixels/
-  getCellSizePixels/getWinSizeChars` — xterm itself then answers `CSI 14t/16t/18t`; keep the flags
-  together with the addon.
+  getCellSizePixels/getWinSizeChars` (xterm then answers `CSI 14t/16t/18t`).
 - **Do not add `convertEol`.** ConPTY already emits CRLF, and the reference POC leaves it off: with
   the extra CR, TUI output (opencode/pi redraws) gets different cursor semantics. Measured without
   it: LF-only output still lands in one column (no staircase) and opencode's box/logo stay intact.

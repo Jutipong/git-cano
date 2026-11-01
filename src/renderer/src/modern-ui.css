@@ -6228,6 +6228,12 @@ body {
     background-repeat: no-repeat;
 }
 
+/* Spike: `TerminalView.paintImages()` composites Sixel/IIP into the cell backgrounds (below the
+   text) so a TUI can draw its UI over an image; the addon's own canvas would paint over the rows. */
+.terminal-host .xterm-image-layer {
+    display: none;
+}
+
 /* xterm draws its own scroll affordance, so hide Chromium's scrollbar that TUIs otherwise trigger. */
 .terminal-host .xterm-viewport {
     background: transparent !important;

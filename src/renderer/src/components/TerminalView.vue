@@ -16,6 +16,12 @@
 
     import '@xterm/xterm/css/xterm.css'
 
+    /** The slice of `@xterm/addon-image` the image-underlay pass needs. */
+    type TerminalImageAddon = {
+        storageUsage: number
+        getImageAtBufferCell(col: number, row: number): HTMLCanvasElement | undefined
+    }
+
     const props = defineProps<{
         /** Repo path whose shell this view shows — pinned so a mid-flight tab switch can't retarget it. */
         repoPath: string
@@ -56,7 +62,7 @@
     let dataDisposer: (() => void) | null = null
     let exitDisposer: (() => void) | null = null
     let renderDisposer: IDisposable | null = null
-    let da1Disposer: IDisposable | null = null
+    let imageAddon: TerminalImageAddon | null = null
     let disposed = false
 
     /**
@@ -230,6 +236,160 @@
     }
 
     /**
+     * Spike: xterm's image addon paints a canvas ABOVE the DOM rows, so a TUI that draws text over
+     * or around an image loses that text (opencode's preview became a black screen with the image on
+     * top). Real terminals compose bg → image → text. Reproduce that composition here by hiding the
+     * canvas and painting the image slice into each covered cell's `background-image` — a background
+     * paints above the cell colour and below the glyph, so text stays visible.
+     */
+    const IMAGE_SPAN_CLASS = 'terminal-image'
+    const IMAGE_SCAN_MS = 100
+    /** A leftover tile after the TUI clears an attachment can be one row; never paint degenerate boxes. */
+    const MIN_IMAGE_COLS = 2
+    const MIN_IMAGE_ROWS = 2
+    type ImageBox = { minX: number; maxX: number; minY: number; maxY: number; count: number }
+    const imageUrls = new WeakMap<HTMLCanvasElement, string>()
+    let imageBoxesCache: { key: string; at: number; boxes: Map<HTMLCanvasElement, ImageBox> } | null = null
+    function imageUrl(canvas: HTMLCanvasElement): string {
+        const cached = imageUrls.get(canvas)
+        if (cached) return cached
+        const url = canvas.toDataURL('image/png')
+        imageUrls.set(canvas, url)
+        return url
+    }
+
+    function clearImageSpans(root: Element) {
+        for (const span of root.querySelectorAll<HTMLElement>(`.${IMAGE_SPAN_CLASS}`)) {
+            span.classList.remove(IMAGE_SPAN_CLASS)
+            span.style.removeProperty('background-image')
+            span.style.removeProperty('background-size')
+            span.style.removeProperty('background-position')
+            span.style.removeProperty('background-repeat')
+        }
+    }
+
+    function imageBoxesAlive(boxes: Map<HTMLCanvasElement, ImageBox>, viewportY: number): boolean {
+        if (!imageAddon) return false
+        for (const box of boxes.values()) {
+            const midX = Math.floor((box.minX + box.maxX) / 2)
+            const midY = viewportY + Math.floor((box.minY + box.maxY) / 2)
+            if (imageAddon.getImageAtBufferCell(midX, midY)) continue
+            if (imageAddon.getImageAtBufferCell(box.minX, viewportY + box.minY)) continue
+            if (imageAddon.getImageAtBufferCell(box.maxX, viewportY + box.maxY)) continue
+            return false
+        }
+        return true
+    }
+
+    function paintImages() {
+        const root = host.value?.querySelector('.xterm-rows')
+        if (!root) return
+        const screen = term?.element?.querySelector<HTMLElement>('.xterm-screen')
+        if (!term || !imageAddon || !screen || imageAddon.storageUsage <= 0) {
+            imageBoxesCache = null
+            clearImageSpans(root)
+            return
+        }
+        if (!term.cols || !term.rows) {
+            clearImageSpans(root)
+            return
+        }
+        const cellWidth = screen.offsetWidth / term.cols
+        const cellHeight = screen.offsetHeight / term.rows
+        if (!cellWidth || !cellHeight) {
+            clearImageSpans(root)
+            return
+        }
+
+        // Visible cells covered by each image — the addon only exposes per-cell lookup, which costs
+        // ~5 ms for a full grid. Images move only on scroll/resize/new image, so rescan at most
+        // every `IMAGE_SCAN_MS` and reuse the boxes for the frames in between.
+        const buffer = term.buffer.active
+        const scanKey = `${term.cols}x${term.rows}:${buffer.viewportY}:${imageAddon.storageUsage.toFixed(4)}:${screen.offsetWidth}x${screen.offsetHeight}`
+        const now = performance.now()
+        // A cached box can outlive its image: the TUI removes the attachment between two throttled
+        // scans, and that render may be the last one for a while. Probe a few cells of every cached
+        // image and rescan immediately when they are gone — otherwise the preview stays painted.
+        if (
+            imageBoxesCache &&
+            imageBoxesCache.key === scanKey &&
+            now - imageBoxesCache.at < IMAGE_SCAN_MS &&
+            !imageBoxesAlive(imageBoxesCache.boxes, buffer.viewportY)
+        ) {
+            imageBoxesCache = null
+        }
+        let boxes: Map<HTMLCanvasElement, ImageBox>
+        if (imageBoxesCache && imageBoxesCache.key === scanKey && now - imageBoxesCache.at < IMAGE_SCAN_MS) {
+            boxes = imageBoxesCache.boxes
+        } else {
+            boxes = new Map()
+            for (let row = 0; row < term.rows; row++) {
+                const line = buffer.viewportY + row
+                for (let col = 0; col < term.cols; col++) {
+                    const canvas = imageAddon.getImageAtBufferCell(col, line)
+                    if (!canvas) continue
+                    const box = boxes.get(canvas)
+                    if (!box) {
+                        boxes.set(canvas, { minX: col, maxX: col, minY: row, maxY: row, count: 1 })
+                        continue
+                    }
+                    if (col < box.minX) box.minX = col
+                    if (col > box.maxX) box.maxX = col
+                    if (row < box.minY) box.minY = row
+                    if (row > box.maxY) box.maxY = row
+                    box.count += 1
+                }
+            }
+            // A prompt redraw can leave a single row (or a ragged fragment) of tiles behind; painting
+            // those would squash the whole image into the leftover strip. Only keep full rectangles.
+            for (const [canvas, box] of [...boxes]) {
+                const width = box.maxX - box.minX + 1
+                const height = box.maxY - box.minY + 1
+                if (width < MIN_IMAGE_COLS || height < MIN_IMAGE_ROWS || box.count !== width * height) {
+                    boxes.delete(canvas)
+                }
+            }
+            imageBoxesCache = { key: scanKey, at: now, boxes }
+        }
+        if (!boxes.size) {
+            clearImageSpans(root)
+            return
+        }
+
+        // Read every span's cell range BEFORE writing any style: interleaving `getBoundingClientRect`
+        // with inline style writes forces a layout per span.
+        const screenRect = screen.getBoundingClientRect()
+        const targets: Array<{ span: HTMLElement; url: string; size: string; x: number; y: number }> = []
+        for (const [canvas, box] of boxes) {
+            // A clipped image cannot be mapped to its pixels without the addon's cell size; skip it.
+            if (box.minX === 0 || box.maxX === term.cols - 1 || box.minY === 0 || box.maxY === term.rows - 1) continue
+            const url = imageUrl(canvas)
+            const size = `${(box.maxX - box.minX + 1) * cellWidth}px ${(box.maxY - box.minY + 1) * cellHeight}px`
+            for (let row = box.minY; row <= box.maxY; row++) {
+                const rowEl = root.children[row] as HTMLElement | undefined
+                if (!rowEl) continue
+                for (const span of rowEl.querySelectorAll<HTMLElement>('span')) {
+                    // The caret paints its own block; an image background would cover it.
+                    if (span.classList.contains('xterm-cursor')) continue
+                    const rect = span.getBoundingClientRect()
+                    const start = Math.round((rect.left - screenRect.left) / cellWidth)
+                    const end = Math.round((rect.right - screenRect.left) / cellWidth) - 1
+                    if (end < box.minX || start > box.maxX) continue
+                    targets.push({ span, url, size, x: -(start - box.minX) * cellWidth, y: -(row - box.minY) * cellHeight })
+                }
+            }
+        }
+        clearImageSpans(root)
+        for (const target of targets) {
+            target.span.classList.add(IMAGE_SPAN_CLASS)
+            target.span.style.backgroundImage = `url("${target.url}")`
+            target.span.style.backgroundSize = target.size
+            target.span.style.backgroundPosition = `${target.x}px ${target.y}px`
+            target.span.style.backgroundRepeat = 'no-repeat'
+        }
+    }
+
+    /**
      * Xterm measures the character cell once at construction and caches it. Creating the Terminal before the stylesheets and fallback fonts
      * are ready yields a wrong cell size, and every Thai combining mark then lands off its column.
      */
@@ -333,33 +493,28 @@
         term.unicode.activeVersion = '11'
         // Plain-text URLs become links; `openLink` replaces the addon's `window.open` default.
         term.loadAddon(new WebLinksAddon(openLink))
-        // Inline images (Sixel / iTerm IIP): renders an app's image frames even though we never
-        // advertise the capability (see the DA1 gate below). `enableSizeReports: false` keeps the
-        // size reports owned by xterm's windowOptions (set at construction). A decoder failure
-        // (CSP/WASM) must never take the shell down with it.
+        // Inline images (Sixel / iTerm IIP): the addon's own canvas is hidden in modern-ui.css and
+        // `paintImages()` composites the image into cell backgrounds instead (below the text).
+        // A decoder failure (CSP/WASM) must never take the shell down with it.
         try {
-            term.loadAddon(
-                new ImageAddon({
-                    sixelSupport: true,
-                    iipSupport: true,
-                    enableSizeReports: false,
-                    storageLimit: 64,
-                })
-            )
+            const addon = new ImageAddon({
+                sixelSupport: true,
+                iipSupport: true,
+                enableSizeReports: false,
+                storageLimit: 64,
+            })
+            term.loadAddon(addon)
+            imageAddon = addon
         } catch {
             // The shell stays usable without image support.
         }
-        // Never advertise Sixel: the addon paints into a canvas ABOVE the DOM text, so a TUI that
-        // draws UI over an image (opencode's preview clears the screen and paints the pasted image)
-        // loses every text row behind it — a black screen with the image floating on top. The addon
-        // is still loaded so an app that emits Sixel/iTerm IIP anyway still renders it; it just never
-        // probes us into that path. Registered after the addon, and returning true swallows the DA1
-        // request before the addon's own handler can reply (xterm runs the newest handler first).
-        da1Disposer = term.parser.registerCsiHandler({ final: 'c' }, () => true)
         term.open(host.value)
         // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs in the same
         // frame — deferring it to rAF paints one frame of seamed glyphs on every TUI repaint.
-        renderDisposer = term.onRender(markBars)
+        renderDisposer = term.onRender(() => {
+            markBars()
+            paintImages()
+        })
         term.onData(data => void window.api.terminalWrite(props.terminalId, data).catch(() => {}))
         // Ctrl+C is the shell's interrupt (xterm writes ETX for it) — copy piggybacks Windows-Terminal
         // style: Ctrl+Shift+C always copies, a plain Ctrl+C copies only while text is selected, and
@@ -446,11 +601,10 @@
         dataDisposer?.()
         exitDisposer?.()
         renderDisposer?.dispose()
-        da1Disposer?.dispose()
         dataDisposer = null
         exitDisposer = null
         renderDisposer = null
-        da1Disposer = null
+        imageAddon = null
         // The pty is NOT killed here: it is owned by the store's close actions (panel ✕, repo tab
         // close, kill all) and by the app-quit cleanup — a panel unmounting means "hidden", not "dead".
         term?.dispose()
