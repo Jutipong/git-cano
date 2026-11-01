@@ -219,11 +219,26 @@ Panel/modal component patterns. Loaded automatically when working under
   both the 1px seam against the filled row above and the per-cell antialiased vertical seams
   (opencode's `╹▀▀▀…` footer otherwise reads as stripes). The same pass tags meter spans
   (`████░░░`, sys-status's sidebar bars) with `.terminal-block` + `--block-count`, whose full-height
-  background covers only the filled `█` cells so the `░` track keeps its dither. Retag after
-  `term.onRender` — xterm recycles and rewrites those spans on every refresh. Do not raise the
-  rows' `line-height` to fix the top seam: the opencode block-art wordmark only tiles at xterm's
-  cell-height line-height (a taller line box shifts the `█` strokes off the row boundaries and
-  breaks the art).
+  background covers only the filled `█` cells so the `░` track keeps its dither. **Call it
+  synchronously from `term.onRender`** — xterm recycles and rewrites those spans on every refresh,
+  and a deferred `requestAnimationFrame` paints one frame of raw glyphs first. A TUI that repaints the
+  bar every frame (opencode while streaming) then shows the footer as a dashed line the whole time.
+  Do not raise the rows' `line-height` to fix the top seam: the opencode block-art wordmark only tiles
+  at xterm's cell-height line-height (a taller line box shifts the `█` strokes off the row boundaries
+  and breaks the art).
+- **Inline images**: `@xterm/addon-image` renders Sixel and iTerm IIP frames into its own
+  `.xterm-image-layer` canvas (Kitty is not supported by 0.9.0; keep `iipSupport` on and the storage
+  cap at 64 MB). The addon is loaded in a `try/catch` because its decoder is WASM — a CSP that
+  forbids `wasm-unsafe-eval` makes `loadAddon` throw, and the shell must stay usable. `index.html`'s
+  CSP therefore keeps `script-src 'self' 'wasm-unsafe-eval'`. **Never let it answer DA1**: the canvas
+  sits ABOVE the DOM rows, so a TUI that paints an image and then draws its UI on top (opencode's
+  preview: black screen + pasted image, every text row gone) loses the text. `TerminalView` registers
+  a `CSI c` handler after `loadAddon` that returns `true` without replying; the newest handler wins,
+  so the addon never sends `?62;4;9;22c` and TUIs stay on text/block rendering. The addon still
+  renders Sixel/IIP that an app emits without probing (e.g. `cat image.sixel`). `enableSizeReports`
+  stays `false` because the `Terminal` constructor already sets `windowOptions.getWinSizePixels/
+  getCellSizePixels/getWinSizeChars` — xterm itself then answers `CSI 14t/16t/18t`; keep the flags
+  together with the addon.
 - **Do not add `convertEol`.** ConPTY already emits CRLF, and the reference POC leaves it off: with
   the extra CR, TUI output (opencode/pi redraws) gets different cursor semantics. Measured without
   it: LF-only output still lands in one column (no staircase) and opencode's box/logo stay intact.

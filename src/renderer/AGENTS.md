@@ -315,7 +315,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 ## Updates UI (renderer)
 
 - Update checks hit `GET repos/Jutipong/git-cano/releases/latest` from the renderer
-  (CSP `connect-src` in `src/renderer/index.html` must keep allowing `api.github.com`).
+  (CSP `connect-src` in `src/renderer/index.html` must keep allowing `api.github.com`;
+  `script-src` keeps `'wasm-unsafe-eval'` for the terminal's Sixel decoder).
   `updater.checkForUpdate()` compares `tag_name` against `window.api.getVersion()`
   (leading `v` stripped, numeric segments, release beats prerelease).
 - Sidebar update button (`Sidebar.vue`, green `.update-version-btn`) renders on

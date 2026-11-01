@@ -56,6 +56,7 @@
     let dataDisposer: (() => void) | null = null
     let exitDisposer: (() => void) | null = null
     let renderDisposer: IDisposable | null = null
+    let da1Disposer: IDisposable | null = null
     let disposed = false
 
     /**
@@ -204,13 +205,15 @@
      * `█` + `░`. At fractional display scales each glyph's antialiased edge falls a hair short of the cell, so a run shows a faint
      * vertical seam at every boundary. Tag those spans so a solid background in the glyph's own colour can sit behind them
      * (`.terminal-bar` / `.terminal-block` in modern-ui.css) — the antialiasing then blends into the identical colour.
+     *
+     * Must run in the same frame as the row rewrite (`term.onRender`, synchronously): deferring it to a
+     * later `requestAnimationFrame` leaves one painted frame of raw glyphs. TUIs that repaint the bar
+     * every frame (opencode while streaming) then show it as a dashed line for as long as they run.
      */
     const BAR_RUN = /^\u2580+$/
     /** A single `█` is a scrollbar cell or block-art dot, not a meter — only paint runs. */
     const MIN_BLOCK_CELLS = 2
-    let barFrame = 0
     function markBars() {
-        barFrame = 0
         const root = host.value?.querySelector('.xterm-rows')
         if (!root) return
         for (const span of root.querySelectorAll<HTMLElement>('span')) {
@@ -224,10 +227,6 @@
             if (block) span.style.setProperty('--block-count', String(cells))
             else if (span.style.getPropertyValue('--block-count')) span.style.removeProperty('--block-count')
         }
-    }
-    function scheduleBars() {
-        if (barFrame) return
-        barFrame = requestAnimationFrame(markBars)
     }
 
     /**
@@ -292,11 +291,12 @@
         await waitForFonts(primaryFontFamily(family), fontSizePx())
         if (disposed || !host.value) return
         // Loaded lazily so the terminal chunk (xterm) only ships when a panel actually opens.
-        const [{ Terminal }, { FitAddon }, { Unicode11Addon }, { WebLinksAddon }] = await Promise.all([
+        const [{ Terminal }, { FitAddon }, { Unicode11Addon }, { WebLinksAddon }, { ImageAddon }] = await Promise.all([
             import('@xterm/xterm'),
             import('@xterm/addon-fit'),
             import('@xterm/addon-unicode11'),
             import('@xterm/addon-web-links'),
+            import('@xterm/addon-image'),
         ])
         if (disposed) return
 
@@ -311,6 +311,10 @@
             scrollback: 1000,
             // xterm 6 moved Unicode11Addon behind the proposed API.
             allowProposedApi: true,
+            // Answer XTWINOPS size queries (CSI 14t/16t/18t). xterm swallows 14t/16t without
+            // these flags, and TUIs (opencode/OpenTUI) then guess the cell box and stretch
+            // every image preview vertically.
+            windowOptions: { getWinSizePixels: true, getCellSizePixels: true, getWinSizeChars: true },
             // OSC 8 hyperlinks (xterm's built-in provider) would otherwise `confirm()` and then
             // `window.open`; route them through the same OS-browser handler as plain-text URLs.
             linkHandler: { activate: openLink },
@@ -329,9 +333,33 @@
         term.unicode.activeVersion = '11'
         // Plain-text URLs become links; `openLink` replaces the addon's `window.open` default.
         term.loadAddon(new WebLinksAddon(openLink))
+        // Inline images (Sixel / iTerm IIP): renders an app's image frames even though we never
+        // advertise the capability (see the DA1 gate below). `enableSizeReports: false` keeps the
+        // size reports owned by xterm's windowOptions (set at construction). A decoder failure
+        // (CSP/WASM) must never take the shell down with it.
+        try {
+            term.loadAddon(
+                new ImageAddon({
+                    sixelSupport: true,
+                    iipSupport: true,
+                    enableSizeReports: false,
+                    storageLimit: 64,
+                })
+            )
+        } catch {
+            // The shell stays usable without image support.
+        }
+        // Never advertise Sixel: the addon paints into a canvas ABOVE the DOM text, so a TUI that
+        // draws UI over an image (opencode's preview clears the screen and paints the pasted image)
+        // loses every text row behind it — a black screen with the image floating on top. The addon
+        // is still loaded so an app that emits Sixel/iTerm IIP anyway still renders it; it just never
+        // probes us into that path. Registered after the addon, and returning true swallows the DA1
+        // request before the addon's own handler can reply (xterm runs the newest handler first).
+        da1Disposer = term.parser.registerCsiHandler({ final: 'c' }, () => true)
         term.open(host.value)
-        // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs after each render.
-        renderDisposer = term.onRender(scheduleBars)
+        // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs in the same
+        // frame — deferring it to rAF paints one frame of seamed glyphs on every TUI repaint.
+        renderDisposer = term.onRender(markBars)
         term.onData(data => void window.api.terminalWrite(props.terminalId, data).catch(() => {}))
         // Ctrl+C is the shell's interrupt (xterm writes ETX for it) — copy piggybacks Windows-Terminal
         // style: Ctrl+Shift+C always copies, a plain Ctrl+C copies only while text is selected, and
@@ -418,9 +446,11 @@
         dataDisposer?.()
         exitDisposer?.()
         renderDisposer?.dispose()
+        da1Disposer?.dispose()
         dataDisposer = null
         exitDisposer = null
         renderDisposer = null
+        da1Disposer = null
         // The pty is NOT killed here: it is owned by the store's close actions (panel ✕, repo tab
         // close, kill all) and by the app-quit cleanup — a panel unmounting means "hidden", not "dead".
         term?.dispose()
