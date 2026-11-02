@@ -126,7 +126,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   token declaration (a line starting with `--`). Shared, theme-independent tokens sit in the
   `:root` block at the end of those theme blocks: spacing (`--space-1…7` = 4/6/8/10/12/16/24px), type
   (`--font-xs…2xl` = 10/11/12/13/14/16/18px), radius (`--radius-xs/sm/md` = 4/6/8px
-  plus the existing `--radius-card`/`--radius-pill`), motion
+  plus the existing `--radius-card`/`--radius-pill`), control heights (`--control-h-sm/md/lg` =
+  24/28/32px — buttons, inputs, selects and segmented pills use these instead of raw px; list rows,
+  menus and the graph row keep their own heights), motion
   (`--duration-fast`/`--duration`/`--duration-slow`), focus
   (`--focus-ring`/`--focus-offset`, overridden by the retro/win9x themes) and
   z-index layers below.
@@ -344,4 +346,4 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `pre-wrap` block via `utils/changelog.ts` `stripMarkdown()` — never `v-html`, never add
   a markdown library. Its footer follows the app-standard action row (`.changelog-actions`:
   `border-top` separator, `align-items: center`, plain `btn` + `btn primary`) — do not go
-  back to `btn small`, the 27px pill squeezes the 13px icon out of alignment with the label.
+  back to `btn small`, the 24px (`--control-h-sm`) pill squeezes the 13px icon out of alignment with the label.

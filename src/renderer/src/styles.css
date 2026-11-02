@@ -3,39 +3,40 @@
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
 
-    --canvas: #101014;
-    --surface-0: #14141a;
-    --surface-1: #1b1b24;
-    --surface-2: #21212e;
-    --surface-3: #272734;
-    --surface-hover: #2d2d40;
-    --surface-selected: #30304a;
-    --line: #2b2b3a;
-    --line-soft: rgba(41, 168, 255, 0.15);
+    /* Surfaces climb in even OKLCH lightness steps (+0.025, hue 285); accents keep their hue at ~87% chroma. */
+    --canvas: #0f0f14;
+    --surface-0: #14141b;
+    --surface-1: #1a1a22;
+    --surface-2: #1f1f29;
+    --surface-3: #252531;
+    --surface-hover: #2b2b3a;
+    --surface-selected: #313047;
+    --line: #2c2c3a;
+    --line-soft: rgba(69, 168, 243, 0.15);
     --text: #e8e8f0;
-    --text-secondary: #b6b6c9;
-    --text-muted: #88889d;
-    --teal: #29a8ff;
-    --teal-dark: #0087e0;
-    --blue: #66d9ff;
-    --green: #4ed665;
-    --orange: #ffa028;
-    --red: #f45868;
-    --purple: #9d7bff;
-    --yellow: #ffd60a;
-    --pink: #ff6fae;
-    --diff-bg: #1b1b24;
-    --diff-inline-bg: #30304a;
+    --text-secondary: #b7b7c8;
+    --text-muted: #9090a3;
+    --teal: #45a8f3;
+    --teal-dark: #1277c2;
+    --blue: #78d7f8;
+    --green: #63d272;
+    --orange: #f7a449;
+    --red: #ea646e;
+    --purple: #9c80f2;
+    --yellow: #fad74b;
+    --pink: #f579ad;
+    --diff-bg: #1a1a22;
+    --diff-inline-bg: #313047;
     --diff-row-tint: 15%;
     --diff-mark-strength: 45%;
-    --toast-bg: #1b1b24;
-    --toast-border: #2b2b3a;
-    --conflict-bg: #30304a;
-    --conflict-border: #29a8ff;
-    --conflict-text: #ffd60a;
+    --toast-bg: #1a1a22;
+    --toast-border: #2c2c3a;
+    --conflict-bg: #313047;
+    --conflict-border: #45a8f3;
+    --conflict-text: #fad74b;
     --conflict-ours-bg: #1d2b1d;
     --conflict-theirs-bg: #2b2014;
-    --conflict-base-bg: #1c1c24;
+    --conflict-base-bg: #1a1a22;
     --shadow: rgba(0, 0, 0, 0.5);
     --radius-card: 12px;
     --radius-pill: 999px;
@@ -258,6 +259,11 @@
     --radius-sm: 6px;
     --radius-md: 8px;
 
+    /* Control heights for buttons, inputs, selects and segmented pills (not list rows or menus). */
+    --control-h-sm: 24px;
+    --control-h-md: 28px;
+    --control-h-lg: 32px;
+
     --duration-fast: 120ms;
     --duration: 150ms;
     --duration-slow: 200ms;
@@ -311,7 +317,7 @@ button {
     align-items: center;
     justify-content: center;
     gap: 7px;
-    min-height: 30px;
+    min-height: var(--control-h-md);
     padding: 0 12px;
     color: var(--text-secondary);
     background: var(--surface-2);
@@ -378,15 +384,15 @@ button {
     opacity: 0.55;
 }
 .btn.small {
-    min-height: 27px;
+    min-height: var(--control-h-sm);
     padding: 0 9px;
     font-size: var(--font-base);
 }
 .icon-btn {
     display: inline-grid;
     place-items: center;
-    width: 25px;
-    height: 25px;
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -453,7 +459,7 @@ kbd {
     align-items: center;
     gap: 6px;
     width: 200px;
-    height: 27px;
+    height: var(--control-h-md);
     padding: 0 12px;
     color: var(--text-muted);
     background: var(--surface-1);
@@ -500,11 +506,11 @@ kbd {
     cursor: pointer;
 }
 .toolbar-icon-button {
-    width: 30px;
-    height: 30px;
+    width: var(--control-h-md);
+    height: var(--control-h-md);
 }
 .toolbar-action {
-    min-height: 30px;
+    min-height: var(--control-h-md);
     padding: 0 9px;
     font-size: 12px;
 }
@@ -687,7 +693,7 @@ kbd {
     gap: 4px;
 }
 .sidebar-bottom-actions .toolbar-action {
-    min-height: 30px;
+    min-height: var(--control-h-md);
     flex: 0 0 auto;
 }
 .sidebar-bottom-button {
@@ -1287,8 +1293,8 @@ kbd {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -1888,7 +1894,7 @@ kbd {
     opacity: 0.45;
 }
 .rebase-command {
-    height: 27px;
+    height: var(--control-h-md);
     padding: 0 6px;
     color: var(--text);
     background: var(--surface-3);
@@ -2033,8 +2039,8 @@ kbd {
 }
 .tab-new {
     align-self: center;
-    width: 28px;
-    height: 28px;
+    width: var(--control-h-md);
+    height: var(--control-h-md);
     color: var(--text-muted);
     background: color-mix(in srgb, var(--surface-2) 45%, transparent);
     border: 1px solid var(--line-soft);
@@ -2360,7 +2366,8 @@ mark {
 }
 .tools-body input {
     width: 100%;
-    padding: 7px 9px;
+    height: var(--control-h-lg);
+    padding: 0 9px;
     color: var(--text);
     background: var(--surface-0);
     border: 1px solid var(--line);
@@ -2374,7 +2381,7 @@ mark {
 
 .tools-body select {
     width: 100%;
-    height: 32px;
+    height: var(--control-h-lg);
     padding: 0 30px 0 9px;
     color: var(--text);
     background: var(--surface-0);
@@ -2437,7 +2444,7 @@ mark {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    min-height: 28px;
+    min-height: var(--control-h-md);
     padding: 0 12px;
     color: var(--text-secondary);
     font-size: 12px;

@@ -316,8 +316,8 @@ Panel/modal component patterns. Loaded automatically when working under
   palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is
   the only way back to the strip. The ✕ kills every shell of THIS
   repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
-  strip shares the diff-view scale: 31px pills (tab, `+`, the two `.segmented` groups), 25px
-  buttons with 15px icons inside them, a 12px mono tab label and a 120px tab minimum; the
+  strip shares the diff-view scale: 30px pills (`--control-h-sm` + 6px: tab, `+`, the two `.segmented`
+  groups), 24px (`--control-h-sm`) buttons with 15px icons inside them, a 12px mono tab label and a 120px tab minimum; the
   header's 10px side padding matches the xterm inset — keep those in step with the diff header
   instead of inventing a second compact scale.
 - **Links open in the OS browser**: `@xterm/addon-web-links` handles plain-text URLs and the

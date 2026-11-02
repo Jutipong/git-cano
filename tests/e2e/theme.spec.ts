@@ -52,7 +52,7 @@ test('theme tokens resolve from the single styles.css source', async () => {
     }
 
     await select('Dark')
-    expect(await read('--pink')).toBe('#ff6fae')
+    expect(await read('--pink')).toBe('#f579ad')
     expect(await read('--diff-row-tint')).toBe('15%')
     expect(await read('--diff-mark-strength')).toBe('45%')
 

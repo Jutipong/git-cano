@@ -1183,7 +1183,7 @@ body {
 }
 
 .commit-search {
-    height: 27px;
+    height: var(--control-h-md);
 }
 
 .toolbar-icon-button,
@@ -1258,13 +1258,13 @@ body {
 
 .tab-actions .tab-new {
     align-self: center;
-    width: 32px;
-    height: 32px;
+    width: var(--control-h-lg);
+    height: var(--control-h-lg);
 }
 
 .tab-actions .open-in-btn {
     margin-left: 0;
-    height: 32px;
+    height: var(--control-h-lg);
 }
 
 .tab-actions .tab-new:hover {
@@ -1330,8 +1330,8 @@ body {
     /* equal quarters — badges on Push/Pull grow inside their own cell without shifting the rest */
     flex: 1 1 0;
     min-width: 0;
-    height: 32px;
-    min-height: 32px;
+    height: var(--control-h-lg);
+    min-height: var(--control-h-lg);
     background: transparent;
     border-color: transparent;
     font-weight: 600;
@@ -1405,7 +1405,7 @@ body {
     max-width: 240px;
     margin: 0;
     padding: 0 12px;
-    min-height: 32px;
+    min-height: var(--control-h-lg);
     color: var(--text-muted);
     background: transparent;
     border: 1px solid transparent;
@@ -1592,7 +1592,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 2px;
-    height: 28px;
+    height: var(--control-h-md);
     margin-left: auto;
     padding: 0 6px;
     color: var(--text);
@@ -1626,7 +1626,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    height: 32px;
+    height: var(--control-h-lg);
     margin-left: 0;
     padding: 0 10px;
     color: var(--text);
@@ -1738,7 +1738,7 @@ body {
 
 .workspace-add-input {
     width: 100%;
-    min-height: 28px;
+    min-height: var(--control-h-md);
     padding: 0 10px;
     color: var(--text);
     font-size: 12px;
@@ -1971,7 +1971,7 @@ body {
     align-items: center;
     gap: 7px;
     width: 100%;
-    min-height: 32px;
+    min-height: var(--control-h-lg);
     padding: 0 12px;
     overflow: hidden;
     color: var(--text-muted);
@@ -2124,8 +2124,8 @@ body {
 .segmented-btn {
     display: grid;
     place-items: center;
-    width: 25px;
-    height: 25px;
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -2196,7 +2196,7 @@ body {
 
 .diff-search-field .diff-search-input {
     width: 120px;
-    height: 25px;
+    height: var(--control-h-sm);
     min-width: 0;
     padding: 0;
     color: var(--text);
@@ -2511,8 +2511,8 @@ body {
 }
 /* size the collapse button to the search pill so the row ends evenly */
 .sidebar > .sidebar-toolbar > .collapse-all-btn {
-    width: 28px;
-    height: 28px;
+    width: var(--control-h-md);
+    height: var(--control-h-md);
     margin-right: 0;
 }
 .sidebar > .sidebar-toolbar > .sidebar-brand-icon {
@@ -2527,7 +2527,7 @@ body {
     flex: 1;
     align-items: center;
     min-width: 0;
-    height: 28px;
+    height: var(--control-h-md);
     padding: 0 12px;
     gap: 6px;
     color: var(--text-muted);
@@ -3329,7 +3329,7 @@ body {
 
 .stash-create-actions .btn {
     min-width: 78px;
-    min-height: 27px;
+    min-height: var(--control-h-md);
     padding: 0 12px;
     font-weight: 600;
 }
@@ -3939,7 +3939,6 @@ body {
 }
 
 .btn {
-    min-height: 29px;
     border-color: var(--line-soft);
     border-radius: var(--radius-pill);
 }
@@ -3963,7 +3962,8 @@ body {
 .confirm-dialog-body input.prompt-input {
     width: 100%;
     margin-top: 8px;
-    padding: 7px 12px;
+    height: var(--control-h-md);
+    padding: 0 12px;
     border-radius: var(--radius-pill);
     border: 1px solid var(--line-soft);
     background: var(--surface-1);
@@ -4440,7 +4440,7 @@ body {
     min-width: 0;
     align-items: center;
     gap: 2px;
-    min-height: 36px;
+    min-height: calc(var(--control-h-md) + 6px);
     padding: 2px 3px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
@@ -4454,7 +4454,7 @@ body {
 .commit-group .commit-btn {
     flex: 1;
     min-width: 0;
-    min-height: 30px;
+    min-height: var(--control-h-md);
     padding: 0 12px;
     border: 0;
     border-radius: var(--radius-pill);
@@ -4494,7 +4494,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 30px;
+    min-height: var(--control-h-md);
     padding: 0 12px;
     color: var(--red);
     background: transparent;
@@ -4524,7 +4524,8 @@ body {
 
 /* same pill input language as the branch prompt */
 .tag-modal-body > input:not([type='checkbox']) {
-    padding: 7px 12px;
+    height: var(--control-h-lg);
+    padding: 0 12px;
     border-color: var(--line-soft);
     border-radius: var(--radius-pill);
     font-size: 12px;
@@ -5235,7 +5236,7 @@ body {
 .merge-actions .btn {
     flex: 1 1 0;
     min-width: 0;
-    height: 32px;
+    height: var(--control-h-lg);
     padding: 0 12px;
     font-size: 12px;
     font-weight: 600;
@@ -5254,7 +5255,7 @@ body {
 }
 
 .merge-actions-buttons .btn {
-    height: 32px;
+    height: var(--control-h-lg);
     padding: 0 16px;
     font-size: 12px;
     white-space: nowrap;
@@ -5346,7 +5347,7 @@ body {
 
 .zoom-btn {
     width: auto;
-    height: 27px;
+    height: var(--control-h-md);
     padding: 0 11px;
     display: inline-flex;
     align-items: center;
@@ -5979,11 +5980,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 39px;
-    flex: 0 0 39px;
+    height: calc(8px + var(--control-h-sm) + 6px);
+    flex: 0 0 calc(8px + var(--control-h-sm) + 6px);
     /* 10px matches the xterm's own inset, so the first tab lines up with the terminal text. The 8px
        top is matched by the terminal's own 8px inset underneath, so the pills sit centred in the
-       panel's opening band instead of hugging its top border. 39px = 8px top + the 31px strip. */
+       panel's opening band instead of hugging its top border. Height = 8px top + the sm + 6px strip. */
     padding: 8px 10px 0;
     color: var(--text-muted);
 }
@@ -6042,9 +6043,9 @@ body {
        the tab's click target (its label is a plain span), so nothing inside this width is a dead zone. */
     min-width: 120px;
     align-items: center;
-    /* 31px = the auto height of the right-hand `.segmented` groups (25px buttons + 2px padding +
+    /* sm + 6px = the auto height of the right-hand `.segmented` groups (sm buttons + 2px padding +
        1px border per side), so every pill in the strip lines up — same scale as diff-view. */
-    height: 31px;
+    height: calc(var(--control-h-sm) + 6px);
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-pill);
@@ -6131,9 +6132,9 @@ body {
     display: grid;
     flex: 0 0 auto;
     place-items: center;
-    width: 31px;
-    height: 31px;
-    min-height: 31px;
+    width: calc(var(--control-h-sm) + 6px);
+    height: calc(var(--control-h-sm) + 6px);
+    min-height: calc(var(--control-h-sm) + 6px);
     padding: 0;
     color: var(--text-muted);
     background: transparent;
@@ -6171,9 +6172,9 @@ body {
    glyph instead of an SVG (the disabled end, already at the smallest/largest step, dims via
    .icon-btn:disabled) */
 .terminal-actions .terminal-font-btn {
-    width: 25px;
-    height: 25px;
-    min-height: 25px;
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
+    min-height: var(--control-h-sm);
     border-radius: var(--radius-pill);
     font-family: var(--font-mono);
     font-size: 12px;
@@ -6481,7 +6482,8 @@ body {
 }
 
 .graph-settings-format-input {
-    padding: 7px 12px;
+    height: var(--control-h-lg);
+    padding: 0 12px;
     background: var(--surface-1);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-pill);
@@ -6858,7 +6860,7 @@ body {
 }
 
 .setting-chip {
-    min-height: 30px;
+    min-height: var(--control-h-md);
     padding: 0 14px;
     background: var(--surface-1);
 }
@@ -6874,7 +6876,7 @@ body {
 /* settings fields speak the same pill language as the create-form inputs */
 .tools-body input,
 .tools-body select {
-    padding: 7px 12px;
+    padding: 0 12px;
     border-radius: var(--radius-pill);
 }
 
@@ -6978,7 +6980,7 @@ body {
     align-items: center;
     gap: 5px;
     width: 100%;
-    height: 30px;
+    height: var(--control-h-md);
     padding: 0 12px;
     color: var(--text);
     font-weight: 600;
@@ -7552,7 +7554,7 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    height: 28px;
+    height: var(--control-h-md);
     padding: 0 13px;
     border: 1px solid var(--line);
     border-radius: var(--radius-pill);
@@ -7707,7 +7709,7 @@ body {
 }
 
 .out-gap-btn {
-    height: 24px;
+    height: var(--control-h-sm);
     padding: 0 12px;
     color: var(--text);
     background: var(--surface-2);
