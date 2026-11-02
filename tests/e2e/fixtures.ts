@@ -8,7 +8,7 @@ export interface Fixtures {
     mainRepo: string
     /** Extra-1 … extra-7 — one-commit repos used for the cache/LRU checks. */
     extraRepos: string[]
-    /** Repo left mid-merge with an unmerged `shared.txt`. */
+    /** Repo left mid-merge with an unmerged `shared.txt` (UU) and `both-added.txt` (AA). */
     conflictRepo: string
     /** Clean 5-commit repo for history operations (undo/squash/rebase/reflog). */
     opsRepo: string
@@ -224,11 +224,13 @@ function createConflictRepo(root: string): string {
     commit(dir, 'chore: base')
     run(dir, ['checkout', '-b', 'feature'])
     write(dir, 'shared.txt', 'line one\nfeature side\nline three\n')
-    run(dir, ['add', 'shared.txt'])
+    write(dir, 'both-added.txt', 'feature version\n')
+    run(dir, ['add', 'shared.txt', 'both-added.txt'])
     commit(dir, 'feat: feature side')
     run(dir, ['checkout', 'main'])
     write(dir, 'shared.txt', 'line one\nmain side\nline three\n')
-    run(dir, ['add', 'shared.txt'])
+    write(dir, 'both-added.txt', 'main version\n')
+    run(dir, ['add', 'shared.txt', 'both-added.txt'])
     commit(dir, 'feat: main side')
     try {
         run(dir, ['merge', 'feature'])

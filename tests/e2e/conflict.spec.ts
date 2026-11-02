@@ -49,3 +49,35 @@ test('conflict view picks a side, saves and stages the result', async () => {
         )
         .toBe('M')
 })
+
+test('both-added file is reported as unmerged, not staged', async () => {
+    const status = await page.evaluate(() => (window as unknown as { api: any }).api.status())
+    const both = status.files.find((f: any) => f.path === 'both-added.txt')
+    expect(both).toBeTruthy()
+    expect(`${both.staged}${both.unstaged}`).toBe('AA')
+})
+
+test('both-added conflict is listed, resolvable, and gates Continue', async () => {
+    // shared.txt was resolved above, so the AA file is the last remaining conflict.
+    await expect(page.locator('.conflict-continue')).toBeDisabled()
+    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toContainText('1')
+
+    const row = page.locator('.file-row', { hasText: 'both-added.txt' })
+    await expect(row.locator('.badge.b-u')).toBeVisible()
+    await row.locator('button[title^="Mark this file as resolved"]').click()
+
+    await expect(page.locator('.toast').filter({ hasText: 'both-added.txt: resolved' })).toBeVisible()
+    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toHaveCount(0)
+    await expect(page.locator('.group-header', { hasText: 'Resolved files' })).toContainText('2')
+    await expect(page.locator('.conflict-continue')).toBeEnabled()
+
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const api = (window as unknown as { api: any }).api
+                const file = (await api.status()).files.find((f: any) => f.path === 'both-added.txt')
+                return file ? `${file.staged}${file.unstaged}` : 'gone'
+            })
+        )
+        .toBe('M ')
+})

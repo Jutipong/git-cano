@@ -3,6 +3,7 @@ import { defineStore } from 'pinia'
 import { computed, markRaw, ref, watch } from 'vue'
 
 import { confirmDialog } from '../utils/confirm'
+import { isConflicted } from '../utils/status'
 import { useTerminalStore } from './terminal'
 import { useUiTransientStore } from './uiTransient'
 import { useWorkspaceStore } from './workspace'
@@ -169,7 +170,7 @@ export const useRepoStore = defineStore('repo', () => {
         const tab = tabs.value[activeTab.value]
         return !!tab && loadedPath.value !== tab.path
     })
-    const conflicts = computed(() => repo.value?.files.filter(f => f.staged === 'U' || f.unstaged === 'U').map(f => f.path) ?? [])
+    const conflicts = computed(() => repo.value?.files.filter(isConflicted).map(f => f.path) ?? [])
 
     /** Labels for the two sides of a conflict (shared by FilePanel and ConflictView). */
     const oursLabel = computed(() =>

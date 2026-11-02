@@ -29,6 +29,7 @@
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
     import { handleListKeydown } from '../utils/listKeyboard'
+    import { isConflicted } from '../utils/status'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
     import CollapseAllButton from './CollapseAllButton.vue'
@@ -82,7 +83,6 @@
     const isWorkdir = computed(() => props.mode === 'workdir')
     const isDetails = computed(() => props.mode !== 'workdir')
     const isUntracked = (file: FileEntry) => file.unstaged === '?'
-    const isConflicted = (file: FileEntry) => file.staged === 'U' || file.unstaged === 'U'
     const staged = computed(() =>
         isWorkdir.value
             ? (props.files as FileEntry[]).filter(
