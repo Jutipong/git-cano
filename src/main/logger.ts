@@ -9,6 +9,8 @@ const LEVELS: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40
 
 const MAX_STRING = 200
 const MAX_FILE_BYTES = 5 * 1024 * 1024
+const RETENTION_MS = 7 * 24 * 60 * 60 * 1000
+const RETENTION_CHECK_MS = 60 * 60 * 1000
 
 function threshold(): number {
     const fromEnv = LEVELS[process.env.GIT_CANO_LOG_LEVEL as Level]
@@ -47,6 +49,29 @@ export function maskUrl(value: string): string {
     return value.replace(/(https?):\/\/([^@/\s]+)@/g, '$1://***@')
 }
 
+let lastRetentionCheck = 0
+
+function resetIfExpired(file: string): void {
+    const now = Date.now()
+    if (now - lastRetentionCheck < RETENTION_CHECK_MS) return
+    lastRetentionCheck = now
+    try {
+        const fd = fs.openSync(file, 'r')
+        let startedAt = NaN
+        try {
+            const buf = Buffer.alloc(64)
+            const read = fs.readSync(fd, buf, 0, buf.length, 0)
+            startedAt = Date.parse(buf.toString('utf8', 0, read).split('\n')[0].slice(0, 24))
+        } finally {
+            fs.closeSync(fd)
+        }
+        if (!Number.isNaN(startedAt) && now - startedAt > RETENTION_MS) {
+            fs.truncateSync(file, 0)
+            fs.rmSync(`${file}.old`, { force: true })
+        }
+    } catch {}
+}
+
 function rotateIfNeeded(file: string): void {
     try {
         if (fs.existsSync(file) && fs.statSync(file).size > MAX_FILE_BYTES) {
@@ -56,13 +81,12 @@ function rotateIfNeeded(file: string): void {
 }
 
 function emit(level: Level, scope: string, message: string): void {
-    // Packaged (production) builds stay completely silent — no log file, no console output.
-    if (app.isPackaged) return
     if (LEVELS[level] < threshold()) return
     const line = `${new Date().toISOString()} ${level.toUpperCase().padEnd(5)} [${scope}] ${message}`
     try {
         const file = logfile()
         fs.mkdirSync(path.dirname(file), { recursive: true })
+        resetIfExpired(file)
         rotateIfNeeded(file)
         fs.appendFileSync(file, `${line}\n`)
     } catch {}

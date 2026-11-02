@@ -28,10 +28,16 @@ every spawn. Keep that sweep too — the git envs we inject ourselves are added 
 
 ## Logging
 
-- `logger.ts` is a no-op in packaged builds: `emit()` returns immediately when `app.isPackaged`, so
-  production writes no `logs/git-cano.log` and prints nothing to the console. `GIT_CANO_LOG_LEVEL` only
-  affects unpackaged runs (dev / e2e) — do not add a production opt-in.
-- Unpackaged runs keep the original behavior: debug in dev, info otherwise, 5 MB rotation to one `.old` file.
+- Every build (dev, e2e and packaged) appends to `<userData>/logs/git-cano.log`
+  (`%APPDATA%\git-cano\logs\git-cano.log` on Windows). Level: debug in dev, info otherwise, overridable
+  with `GIT_CANO_LOG_LEVEL`.
+- Retention is a 7-day window measured from the **first line's ISO timestamp** (`resetIfExpired()`): once
+  that line is older than 7 days the file is truncated (overwritten) and the `.old` file removed. Never use
+  file mtime for this — it is refreshed on every write and never ages.
+- The retention check runs on the first write after launch and then at most once per hour, so a session
+  left running for weeks still resets. Size is still capped at 5 MB, rotating to a single
+  `git-cano.log.old` (overwritten each rotation). `emit()` swallows filesystem errors on purpose: logging
+  must never take the app down.
 
 ## Ref names (ambiguous short names)
 
