@@ -32,7 +32,7 @@ export const REPO_TAB_COLOR_OPTIONS = [
 export type CommitColumn = 'author' | 'hash' | 'date'
 
 export const COMMIT_COLUMN_DEFAULTS: Record<CommitColumn, boolean> = {
-    author: false,
+    author: true,
     hash: false,
     date: true,
 }
