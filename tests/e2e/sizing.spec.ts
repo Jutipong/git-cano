@@ -78,3 +78,31 @@ test('settings fields are lg, chips md and dense buttons sm', async () => {
     await page.keyboard.press('Escape')
     await expect(page.locator('.tools-modal')).toHaveCount(0)
 })
+
+test('sidebar section cards resize with the keyboard and reset on double-click', async () => {
+    const resizer = page.locator('.sidebar-section-resizer[aria-label="Resize local branches section"]')
+    await expect(resizer).toBeVisible()
+    const local = page.locator('[data-sidebar-section="local"]')
+    const before = Math.round(await height(local))
+
+    await resizer.focus()
+    await page.keyboard.press('ArrowDown')
+    await expect.poll(async () => Math.round(await height(local))).toBe(before + 10)
+    await expect(resizer).toHaveAttribute('aria-valuenow', String(before + 10))
+    // Shift steps faster, like the panel splitters.
+    await page.keyboard.press('Shift+ArrowUp')
+    await expect.poll(async () => Math.round(await height(local))).toBe(before - 30)
+
+    // Pointer drag moves the card by the same delta.
+    const box = await resizer.boundingBox()
+    if (!box) throw new Error('Sidebar resizer has no box')
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + 20, { steps: 5 })
+    await page.mouse.up()
+    await expect.poll(async () => Math.round(await height(local))).toBe(before - 10)
+
+    // Double-click drops the pinned height and hands the card back to the automatic flex layout.
+    await resizer.dblclick()
+    await expect(local).not.toHaveAttribute('style', /height/)
+})

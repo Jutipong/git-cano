@@ -17,7 +17,7 @@
 
     import type { StashEntry } from '@shared/types'
 
-    const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown>; filter?: string }>()
+    const props = defineProps<{ repoPath: string; refresh: () => Promise<unknown>; filter?: string; height?: number | null }>()
     const notify = inject<(m: string, t?: ToastKind) => void>('notify', () => {})
     const uiTransient = useUiTransientStore()
 
@@ -31,6 +31,10 @@
         },
     })
     const menu = ref<StashMenuState | null>(null)
+    /** Pinned height handed down by Sidebar.vue (its drag handle owns the value) — null keeps the automatic flex layout. */
+    const sectionStyle = computed(() =>
+        props.height === null || props.height === undefined ? undefined : { height: `${props.height}px`, flex: '0 1 auto' }
+    )
 
     const normalizeMessage = (value: string) => value.replace(/^On [^:]+: /, '').trim()
 
@@ -113,6 +117,8 @@
 <template>
     <div
         class="sidebar-section stash-section"
+        data-sidebar-section="stashes"
+        :style="sectionStyle"
         :class="{ grow: expanded, collapsed: !expanded }">
         <div class="section-header">
             <button

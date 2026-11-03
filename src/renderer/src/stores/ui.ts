@@ -47,6 +47,11 @@ export const DEFAULT_SHOW_ENTIRE_FILE = false
 export type FileViewMode = 'tree' | 'flat'
 export const DEFAULT_FILE_VIEW_MODE: FileViewMode = 'tree'
 
+/** The four sidebar list cards, in render order. */
+export type SidebarSectionKey = 'local' | 'remote' | 'tags' | 'stashes'
+/** CSS floor of an expanded sidebar card (`.sidebar > .sidebar-section.grow` min-height). */
+export const SIDEBAR_SECTION_MIN_HEIGHT = 72
+
 /** Auto-refresh interval options, in minutes. */
 export const REFRESH_INTERVAL_OPTIONS = [3, 5, 10, 15, 20, 24, 30]
 export const DEFAULT_REFRESH_INTERVAL = 5
@@ -258,6 +263,31 @@ export const useUiStore = defineStore(
             remote: true,
             stashes: true,
         })
+        /**
+         * Hand-set height of a sidebar card, keyed by repo path so every repo tab keeps its own layout. A missing entry leaves that card
+         * on the automatic flex layout (expanded lists share the leftover space).
+         */
+        const sidebarSectionHeights = ref<Record<string, Partial<Record<SidebarSectionKey, number>>>>({})
+        function setSidebarSectionHeight(repoPath: string, key: SidebarSectionKey, height: number | null) {
+            const current = sidebarSectionHeights.value
+            if (height === null) {
+                const entry = current[repoPath]
+                if (!entry || !(key in entry)) return
+                const nextEntry = { ...entry }
+                delete nextEntry[key]
+                const next = { ...current }
+                if (Object.keys(nextEntry).length) next[repoPath] = nextEntry
+                else delete next[repoPath]
+                sidebarSectionHeights.value = next
+                return
+            }
+            if (!Number.isFinite(height)) return
+            const value = Math.max(SIDEBAR_SECTION_MIN_HEIGHT, Math.round(height))
+            sidebarSectionHeights.value = {
+                ...current,
+                [repoPath]: { ...current[repoPath], [key]: value },
+            }
+        }
         const commitColumns = ref<Record<CommitColumn, boolean>>({ ...COMMIT_COLUMN_DEFAULTS })
         watchEffect(() => {
             for (const stale of ['graph', 'message'] as const) delete (commitColumns.value as Record<string, boolean>)[stale]
@@ -437,6 +467,8 @@ export const useUiStore = defineStore(
             zoomCodeFontSize,
             repoTabColors,
             sidebarSections,
+            sidebarSectionHeights,
+            setSidebarSectionHeight,
             commitColumns,
             commitDateFormat,
             shortcutOverrides,
@@ -483,6 +515,7 @@ export const useUiStore = defineStore(
                 'codeFontSize',
                 'repoTabColors',
                 'sidebarSections',
+                'sidebarSectionHeights',
                 'commitColumns',
                 'commitDateFormat',
                 'shortcutOverrides',

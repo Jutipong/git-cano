@@ -20,7 +20,7 @@
 
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
-    import { useUiStore } from '../stores/ui'
+    import { SIDEBAR_SECTION_MIN_HEIGHT, useUiStore, type SidebarSectionKey } from '../stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { useUpdaterStore } from '../stores/updater'
     import { resolveCheckoutMode } from '../utils/checkout'
@@ -136,6 +136,123 @@
         ui.sidebarSections.tags = target
         ui.sidebarSections.stashes = target
     }
+
+    // --- Per-card heights ---------------------------------------------------------------------------------------------------------
+    // Dragging the gap under a card pins that card for this repo tab; cards without a pinned height keep the automatic flex layout, so
+    // a repo that was never resized looks exactly like before. Heights live in the ui store keyed by repo path (persisted).
+    /** Rendered heights of the four cards — the ARIA values track what is actually on screen, not just the pinned numbers. */
+    const sidebarEl = ref<HTMLElement | null>(null)
+    const liveHeights = ref<Partial<Record<SidebarSectionKey, number>>>({})
+    const liveMaxHeights = ref<Partial<Record<SidebarSectionKey, number>>>({})
+    let sectionObserver: ResizeObserver | null = null
+    function measureSections() {
+        if (!sidebarEl.value) return
+        const next: Partial<Record<SidebarSectionKey, number>> = {}
+        for (const el of sidebarEl.value.querySelectorAll<HTMLElement>('[data-sidebar-section]')) {
+            const key = el.dataset.sidebarSection as SidebarSectionKey | undefined
+            if (key) next[key] = Math.round(el.getBoundingClientRect().height)
+        }
+        liveHeights.value = next
+    }
+    const sectionHeights = computed(() => ui.sidebarSectionHeights[props.repo.path] ?? {})
+    /** Pinned height of a card, or null when it keeps the automatic layout (also null while collapsed). */
+    function sectionHeight(key: SidebarSectionKey): number | null {
+        if (!ui.sidebarSections[key]) return null
+        const value = sectionHeights.value[key]
+        return typeof value === 'number' && Number.isFinite(value) ? Math.max(SIDEBAR_SECTION_MIN_HEIGHT, value) : null
+    }
+    function sectionStyle(key: SidebarSectionKey) {
+        const height = sectionHeight(key)
+        return height === null ? undefined : { height: `${height}px`, flex: '0 1 auto' }
+    }
+    /** The card a handle resizes — the element right above it. */
+    function sectionAbove(separator: EventTarget | null): HTMLElement | null {
+        const el = separator instanceof HTMLElement ? separator.previousElementSibling : null
+        return el instanceof HTMLElement ? el : null
+    }
+    /** Tallest a card may get while every other open card keeps its 72px floor. */
+    function maxSectionHeight(section: HTMLElement): number {
+        const parent = section.parentElement
+        if (!parent) return SIDEBAR_SECTION_MIN_HEIGHT
+        const style = getComputedStyle(parent)
+        const available = parent.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0)
+        let reserved = 0
+        for (const child of Array.from(parent.children)) {
+            if (child === section) continue
+            const el = child as HTMLElement
+            const childStyle = getComputedStyle(el)
+            const margins = (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0)
+            const shrinkable = el.classList.contains('sidebar-section') && !el.classList.contains('collapsed')
+            reserved += (shrinkable ? SIDEBAR_SECTION_MIN_HEIGHT : el.getBoundingClientRect().height) + margins
+        }
+        return Math.max(SIDEBAR_SECTION_MIN_HEIGHT, Math.floor(available - reserved))
+    }
+    function trackSectionBounds(key: SidebarSectionKey, event: Event) {
+        const section = sectionAbove(event.currentTarget)
+        if (!section) return
+        liveHeights.value = { ...liveHeights.value, [key]: Math.round(section.getBoundingClientRect().height) }
+        liveMaxHeights.value = { ...liveMaxHeights.value, [key]: maxSectionHeight(section) }
+    }
+    function sectionAriaNow(key: SidebarSectionKey): number {
+        return liveHeights.value[key] ?? sectionHeight(key) ?? SIDEBAR_SECTION_MIN_HEIGHT
+    }
+    function sectionAriaMax(key: SidebarSectionKey): number {
+        return Math.max(liveMaxHeights.value[key] ?? 0, sectionAriaNow(key))
+    }
+    function applySectionHeight(key: SidebarSectionKey, height: number, max: number) {
+        const value = Math.min(max, Math.max(SIDEBAR_SECTION_MIN_HEIGHT, Math.round(height)))
+        liveHeights.value = { ...liveHeights.value, [key]: value }
+        ui.setSidebarSectionHeight(props.repo.path, key, value)
+    }
+    function beginSectionResize(key: SidebarSectionKey, event: MouseEvent) {
+        const section = sectionAbove(event.currentTarget)
+        if (!section) return
+        event.preventDefault()
+        const startY = event.clientY
+        const startHeight = section.getBoundingClientRect().height
+        const max = maxSectionHeight(section)
+        liveMaxHeights.value = { ...liveMaxHeights.value, [key]: max }
+        // The first move pins the card at its rendered height + the drag delta, so a plain click never freezes the automatic layout.
+        const onMove = (moveEvent: MouseEvent) => applySectionHeight(key, startHeight + (moveEvent.clientY - startY), max)
+        const onEnd = () => {
+            document.body.style.cursor = ''
+            document.body.style.userSelect = ''
+            window.removeEventListener('mousemove', onMove)
+            window.removeEventListener('mouseup', onEnd)
+        }
+        document.body.style.cursor = 'row-resize'
+        document.body.style.userSelect = 'none'
+        window.addEventListener('mousemove', onMove)
+        window.addEventListener('mouseup', onEnd)
+    }
+    /** Keyboard twin of the drag handle: arrows step, Shift+Arrow steps faster, Home/End jump to the bounds. */
+    function resizeSectionByKey(key: SidebarSectionKey, event: KeyboardEvent) {
+        const section = sectionAbove(event.currentTarget)
+        if (!section) return
+        const step = event.shiftKey ? 40 : 10
+        const max = maxSectionHeight(section)
+        const current = Math.round(section.getBoundingClientRect().height)
+        let next = current
+        if (event.key === 'ArrowDown') next = current + step
+        else if (event.key === 'ArrowUp') next = current - step
+        else if (event.key === 'Home') next = SIDEBAR_SECTION_MIN_HEIGHT
+        else if (event.key === 'End') next = max
+        else return
+        event.preventDefault()
+        liveMaxHeights.value = { ...liveMaxHeights.value, [key]: max }
+        applySectionHeight(key, next, max)
+    }
+    function resetSectionHeight(key: SidebarSectionKey) {
+        ui.setSidebarSectionHeight(props.repo.path, key, null)
+    }
+    onMounted(() => {
+        if (!sidebarEl.value) return
+        sectionObserver = new ResizeObserver(measureSections)
+        sectionObserver.observe(sidebarEl.value)
+        for (const el of sidebarEl.value.querySelectorAll<HTMLElement>('[data-sidebar-section]')) sectionObserver.observe(el)
+        measureSections()
+    })
+    onBeforeUnmount(() => sectionObserver?.disconnect())
 
     const search = ref('')
     const searchInput = ref<HTMLInputElement | null>(null)
@@ -463,6 +580,7 @@
 
 <template>
     <aside
+        ref="sidebarEl"
         class="sidebar"
         aria-label="Sidebar"
         :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
@@ -500,6 +618,8 @@
 
         <div
             class="sidebar-section"
+            data-sidebar-section="local"
+            :style="sectionStyle('local')"
             :class="{ grow: localExpanded, collapsed: !localExpanded }">
             <div class="section-header">
                 <button
@@ -611,7 +731,25 @@
         </div>
 
         <div
+            v-if="localExpanded"
+            class="sidebar-section-resizer"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize local branches section"
+            :aria-valuenow="sectionAriaNow('local')"
+            :aria-valuemin="SIDEBAR_SECTION_MIN_HEIGHT"
+            :aria-valuemax="sectionAriaMax('local')"
+            tabindex="0"
+            title="Drag to resize · double-click to reset"
+            @focus="trackSectionBounds('local', $event)"
+            @mousedown="beginSectionResize('local', $event)"
+            @dblclick="resetSectionHeight('local')"
+            @keydown="resizeSectionByKey('local', $event)" />
+
+        <div
             class="sidebar-section remote-section"
+            data-sidebar-section="remote"
+            :style="sectionStyle('remote')"
             :class="{ grow: remoteExpanded, collapsed: !remoteExpanded }">
             <div class="section-header">
                 <button
@@ -691,7 +829,25 @@
         </div>
 
         <div
+            v-if="remoteExpanded"
+            class="sidebar-section-resizer"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize remote branches section"
+            :aria-valuenow="sectionAriaNow('remote')"
+            :aria-valuemin="SIDEBAR_SECTION_MIN_HEIGHT"
+            :aria-valuemax="sectionAriaMax('remote')"
+            tabindex="0"
+            title="Drag to resize · double-click to reset"
+            @focus="trackSectionBounds('remote', $event)"
+            @mousedown="beginSectionResize('remote', $event)"
+            @dblclick="resetSectionHeight('remote')"
+            @keydown="resizeSectionByKey('remote', $event)" />
+
+        <div
             class="sidebar-section remote-section"
+            data-sidebar-section="tags"
+            :style="sectionStyle('tags')"
             :class="{ grow: tagsExpanded, collapsed: !tagsExpanded }">
             <div class="section-header">
                 <button
@@ -784,10 +940,43 @@
             </div>
         </div>
 
+        <div
+            v-if="tagsExpanded"
+            class="sidebar-section-resizer"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize tags section"
+            :aria-valuenow="sectionAriaNow('tags')"
+            :aria-valuemin="SIDEBAR_SECTION_MIN_HEIGHT"
+            :aria-valuemax="sectionAriaMax('tags')"
+            tabindex="0"
+            title="Drag to resize · double-click to reset"
+            @focus="trackSectionBounds('tags', $event)"
+            @mousedown="beginSectionResize('tags', $event)"
+            @dblclick="resetSectionHeight('tags')"
+            @keydown="resizeSectionByKey('tags', $event)" />
+
         <StashPanel
             :repo-path="repo.path"
             :filter="search"
+            :height="sectionHeight('stashes')"
             :refresh="props.refresh" />
+
+        <div
+            v-if="ui.sidebarSections.stashes"
+            class="sidebar-section-resizer"
+            role="separator"
+            aria-orientation="horizontal"
+            aria-label="Resize stashes section"
+            :aria-valuenow="sectionAriaNow('stashes')"
+            :aria-valuemin="SIDEBAR_SECTION_MIN_HEIGHT"
+            :aria-valuemax="sectionAriaMax('stashes')"
+            tabindex="0"
+            title="Drag to resize · double-click to reset"
+            @focus="trackSectionBounds('stashes', $event)"
+            @mousedown="beginSectionResize('stashes', $event)"
+            @dblclick="resetSectionHeight('stashes')"
+            @keydown="resizeSectionByKey('stashes', $event)" />
 
         <div class="sidebar-bottom">
             <div class="sidebar-bottom-actions">

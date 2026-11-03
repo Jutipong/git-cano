@@ -2499,6 +2499,21 @@ body {
     border-top: 0;
 }
 
+/* draggable divider between sidebar cards — it rides the 8px gap the cards already leave, so the layout does not shift.
+   The card above the handle takes the new height; cards without one keep sharing the leftover space (Sidebar.vue). */
+.sidebar-section-resizer {
+    z-index: 2;
+    flex: 0 0 8px;
+    margin: -8px 8px 0;
+    background: transparent;
+    cursor: row-resize;
+}
+.sidebar-section-resizer:hover,
+.sidebar-section-resizer:active {
+    border-radius: var(--radius-xs);
+    background: color-mix(in srgb, var(--teal) 35%, transparent);
+}
+
 /* sidebar toolbar — floats above the LOCAL BRANCHES card, outside it;
    the search filters local/remote/tags/stashes, the button collapse/expands all.
    Side margins match the section cards; bottom gap matches the card spacing */

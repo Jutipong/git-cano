@@ -24,6 +24,10 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   Brand icon `assets/cano.svg` sits at the top of the toolbar (`.sidebar-brand-icon`);
   the same asset drives the splash (`.splash-logo-image`) and no-repo empty state
   (`.app-empty-logo`) in `App.vue`. `Welcome.vue` was deleted — do not reintroduce it.
+  Each expanded section card can be resized by dragging the gap below it
+  (`.sidebar-section-resizer`, double-click resets to auto); the height is pinned per repo
+  path in `ui.sidebarSectionHeights` (persisted), cards without a pinned height keep the
+  automatic flex layout, and a collapsed card ignores its pinned height until reopened.
 - **Workspaces reorder**: `workspace.ts` owns `reorder(from, to)` (bounds-guarded splice).
   `WorkspaceButton.vue` rows are `draggable`; reorder happens live on `dragover`
   (insertion = before/after by pointer Y within the row), `dragstart` is blocked while
@@ -181,8 +185,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   tab stop (`role="listbox"`); rows are `tabindex="-1"`. Arrow Up/Down/Home/End focus rows,
   Enter/Space replay the row click, Shift+F10 / ContextMenu replays its contextmenu handler.
   The file tree's Left/Right collapse/expand a focused folder. Do not make every row a tab stop.
-- **Splitters**: sidebar/changes `.panel-splitter` and `.terminal-splitter` are
-  `role="separator"` with `aria-orientation` and `aria-value*`. Arrows resize by 10px,
+- **Splitters**: sidebar/changes `.panel-splitter`, `.terminal-splitter` and the sidebar
+  card handles (`.sidebar-section-resizer`) are `role="separator"` with `aria-orientation`
+  and `aria-value*`. Arrows resize by 10px,
   Shift+Arrow by 40px, Home/End jump to the bounds; mouse dragging stays unchanged.
 - **Focus rings are limited to text inputs and links** (product decision): only `input`,
   `textarea`, `select` and `a[href]` get the global `:focus-visible` ring. Buttons, tabs,
