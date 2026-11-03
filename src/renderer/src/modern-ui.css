@@ -3582,6 +3582,21 @@ body {
     box-shadow: 0 18px 50px var(--shadow);
 }
 
+/* Invisible bridge over the menu's right padding (see .commit-menu-sub::before). */
+.file-context-menu-sub::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 100%;
+    bottom: 0;
+    width: 10px;
+}
+
+.file-context-menu.submenu-left .file-context-menu-sub::before {
+    right: auto;
+    left: 100%;
+}
+
 .file-context-menu-wrap:hover .file-context-menu-sub,
 .file-context-menu-wrap.keyboard-open .file-context-menu-sub {
     display: block;
@@ -4308,6 +4323,17 @@ body {
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-card);
     box-shadow: 0 18px 50px var(--shadow);
+}
+
+/* Invisible bridge over the menu's right padding: the pointer is outside the
+   wrap while crossing it, which would drop :hover and hide the submenu. */
+.commit-menu-sub::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 100%;
+    bottom: 0;
+    width: 8px;
 }
 
 .commit-menu-wrap:hover .commit-menu-sub,

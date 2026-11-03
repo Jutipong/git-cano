@@ -287,6 +287,31 @@ test('graph search, squash range and context menu still work', async () => {
     await expect(page.locator('.commit-menu')).toHaveCount(0)
 })
 
+test('commit submenu stays open while the pointer crosses the gap', async () => {
+    await clearSelection()
+    await page.locator('.graph-row').first().click({ button: 'right' })
+
+    const trigger = page.locator('.commit-menu-item.has-sub')
+    await trigger.hover()
+    const submenu = page.locator('.commit-menu-sub')
+    await expect(submenu).toBeVisible()
+
+    const box = await trigger.boundingBox()
+    if (!box) throw new Error('commit submenu trigger has no bounding box')
+    const y = box.y + box.height / 2
+    // The submenu starts 4px right of the item: this point is in the parent menu's
+    // right padding, where a plain :hover chain drops and hides the submenu.
+    await page.mouse.move(box.x + box.width - 1, y)
+    await page.mouse.move(box.x + box.width + 2, y)
+    await expect(submenu).toBeVisible()
+
+    await page.mouse.move(box.x + box.width + 40, y)
+    await expect(submenu).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.commit-menu')).toHaveCount(0)
+})
+
 test('clicking large commits stays within a bounded memory envelope', async () => {
     await clearSelection()
     await page.locator('.repo-tab').first().click()
