@@ -50,15 +50,11 @@
         (e: 'toggle-terminal'): void
     }>()
 
-    const FIRST_LANE_COLOR = '#FF4D7F'
-    /* Shared hue families: dark lanes are vivid, avatars are the accent.
-       Dark lanes walk the hue wheel at high chroma so no two lanes read alike (every pair >= 0.09 OKLab apart). */
+    /* One lane palette for every theme: lane 0 is the accent pink, the rest cycle through the four company hues. */
+    const LANE_COLORS = ['#F15BB5', '#00BBF9', '#9B5DE5', '#00F5D4', '#FEE440']
+    /* Branch/tag chip colours keep their own theme-aware sets (readable ink on light paper, vivid on dark surfaces). */
     const COLORS = ['#FF8A2A', '#FFCB00', '#4FE05E', '#16D6A4', '#19C3F0', '#4D9CFF', '#8B7BFF', '#F05CFF']
-    /** Light themes paint on dim paper, so lanes are ink-dark tones (same spacing rule) instead of the bright dark-theme palette. */
-    const LIGHT_FIRST_LANE_COLOR = '#1A1A1A'
     const LIGHT_COLORS = ['#99335A', '#6A2203', '#7A560A', '#424E06', '#0C6F49', '#094649', '#0B6493', '#3C3990']
-    /** Dark theme only: the same hue families at one even lightness (OKLCH L 0.72, C 0.14, hues 40° apart) — softer on its navy surfaces. */
-    const DARK_FIRST_LANE_COLOR = '#EC7C99'
     const DARK_COLORS = ['#EB8656', '#CD9C1F', '#91B349', '#2DC08E', '#00BDCE', '#4DACF6', '#9C96F8', '#D084D5']
     /* Vivid avatar colors: deliberately spaced apart and without yellow. */
     const AVATAR_COLORS = ['#FF4D6D', '#FF8A3D', '#58E06B', '#22D3A7', '#29A8FF', '#6B7CFF', '#A855F7', '#E879F9']
@@ -477,18 +473,13 @@
         return ui.theme === 'light' || ui.theme === 'light-retro' || ui.theme === 'win9x-opencode'
     }
 
-    function lanePalette(): string[] {
+    function chipPalette(): string[] {
         if (isLightTheme()) return LIGHT_COLORS
         return ui.theme === 'dark' ? DARK_COLORS : COLORS
     }
 
     function nodeColor(commit: CommitNode) {
-        if (commit.lane === 0) {
-            if (isLightTheme()) return LIGHT_FIRST_LANE_COLOR
-            return ui.theme === 'dark' ? DARK_FIRST_LANE_COLOR : FIRST_LANE_COLOR
-        }
-        const palette = lanePalette()
-        return palette[(commit.lane - 1) % palette.length]
+        return LANE_COLORS[commit.lane % LANE_COLORS.length]
     }
     function isMergeEdge(commit: CommitNode, parent: string) {
         return commit.parents.indexOf(parent) > 0
@@ -677,7 +668,7 @@
         return h
     }
     function nameColor(name: string): string {
-        const palette = lanePalette()
+        const palette = chipPalette()
         return palette[hashString(name) % palette.length]
     }
     const avatarAssignments = new Map<string, number>()
