@@ -203,7 +203,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - `SHORTCUTS` (`src/renderer/src/utils/shortcuts.ts`) is the help table in
   `ShortcutsModal.vue`, grouped by `SHORTCUT_GROUPS`: Sync (Fetch, Pull, Push),
   Repository (Open repo, Clone repo, Close tab / terminal), Terminal (Toggle
-  terminal, New terminal tab, Next/Previous terminal tab, Terminal full height),
+  terminal, New terminal tab, Next/Previous terminal tab, Terminal full height, Close
+  terminal panel),
   General (Search commits, Open settings, Command palette, Show shortcuts).
   `ShortcutsModal.vue` shows **only the current platform's** combos (a macOS /
   Windows pill sits next to the title and `formatComboMac()` turns `Ctrl` into
@@ -253,6 +254,10 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   Terminal full height `Alt+Enter` (fixed, capture-phase; toggles the overlay only while the
   keyboard is inside a terminal panel — with focus anywhere else the key falls through untouched;
   the header buttons' tooltips carry the combo),
+  Close terminal panel `Alt+F4` (Windows only, fixed, capture-phase; the header ✕'s twin — a
+  confirm ends every shell of the repo instead of closing the window, only while the keyboard is
+  inside a terminal panel; xterm would otherwise map F4+Alt to `ESC[1;3S` and swallow it; the ✕
+  tooltip carries the combo),
   Settings `Ctrl+,`, Search `Ctrl+F` on Windows / `⌘F` on macOS (commit
   history; diff search when a diff is open), Shortcuts modal `?` (outside
   text inputs), commit via `⌘↵`/`Ctrl+↵` on the summary textarea, confirm
@@ -261,14 +266,15 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - **App shortcuts run twice on purpose**: `App.vue` registers the bubble-phase `keydown` handler and
   a capture-phase twin (`onKeyDownCapture`) that runs `handleAppShortcut()` for the app-level combos
   (open repo, clone, settings, palette, terminal toggle, terminal tabs, Ctrl+Tab / Ctrl+Shift+Tab /
-  Alt+←→ / Ctrl+W / Alt+Enter into a focused terminal, commit search). The capture gate routes Ctrl/Cmd **and** Alt — only the exact app
+  Alt+←→ / Ctrl+W / Alt+Enter / Alt+F4 into a focused terminal, commit search). The capture gate routes Ctrl/Cmd **and** Alt — only the exact app
   combos act, every other Alt key still reaches the shell. xterm stops
   propagation of character keys, so without the capture listener every one of those combos dies while
   a shell has the keyboard. The capture handler calls `stopPropagation()` after acting, so the bubble
   copy never double-fires. Keep combos the shell owns (Ctrl+Arrows sync, `Esc`, plain typing) out of
   `handleAppShortcut` — they stay in the bubble handler so readline and TUIs still receive them. The
   deliberate exceptions are Ctrl+T, Ctrl+W (closes the shell's tab behind a confirm),
-  Alt+←→ (cycle terminal tabs) and Alt+Enter (toggles full height) while the terminal panel is
+  Alt+←→ (cycle terminal tabs), Alt+Enter (toggles full height) and Alt+F4 (closes the panel
+  through the header ✕'s confirm) while the terminal panel is
   focused: they belong to the app like in Windows Terminal, so a focused TUI never sees them there
   (it loses readline's delete-word for Ctrl+W, its Alt+Arrow word motion and the `ESC+CR` Alt+Enter
   may carry for TUIs).

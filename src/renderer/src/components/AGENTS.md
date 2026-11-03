@@ -358,6 +358,12 @@ Panel/modal component patterns. Loaded automatically when working under
   `toggleTerminalExpand`, which hands focus back to the shell like the header button. The header
   buttons carry the combo in their tooltips (`Full height (Alt+Enter)` / `Exit full height
 (Alt+Enter)`) — e2e locators match those titles, so update both together.
+- **Alt+F4 closes the panel only while it has focus** (Windows): the captured `handleAppShortcut`
+  path with the same `isTerminalPanelFocused()` guard as Ctrl+W routes the OS close-window gesture
+  to `confirmCloseTerminal()` — the header ✕'s exact confirm, which ends every shell of the repo.
+  xterm would otherwise map F4+Alt to `ESC[1;3S` and swallow the key, so this has to run before it.
+  With focus anywhere else the combo is left untouched and Windows closes the window. The ✕ tooltip
+  carries `(Alt+F4)` on Windows, and the Shortcuts modal lists it `win`-only.
 - **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
   are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
   a confirm. Do not add a header button or a shortcut back.

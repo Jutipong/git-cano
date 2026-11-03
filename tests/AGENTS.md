@@ -39,7 +39,8 @@ the four-shell default cap (raisable in Settings → Terminal → Tabs, and lowe
 open shell), `Ctrl+Tab` / `Alt+←→` cycling while the panel is focused (wrap + outside-panel no-op),
 splitter drag-resize, repo-close (confirm + cancel) and kill-all lifecycles, `Ctrl+`` toggle,
       `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
-      tab), `Alt+Enter` full-height toggle while focused vs outside, double-Shift opening the palette
+      tab), `Alt+Enter` full-height toggle while focused vs outside, `Alt+F4` panel close while focused
+      (confirm + cancel, and the outside-panel guard), double-Shift opening the palette
       from the focused shell (and the tap reset when another key intervenes), the `:focus-within` focus
       edge, the palette entries, Settings → Terminal). Scope panel
       actions with `.terminal-panel:visible` — every repo keeps its own panel mounted.

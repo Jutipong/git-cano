@@ -293,8 +293,8 @@
         /**
          * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, new terminal tab (Ctrl+T), Ctrl+Tab /
          * Ctrl+Shift+Tab / Alt+←→ while the terminal panel is focused (next / previous tab, wrapping), Ctrl+W while it is focused (closes
-         * the shell's tab), Alt+Enter while it is focused (toggles full height) and commit-search focus. Returns true when it handled the
-         * combo (and preventDefault()s it).
+         * the shell's tab), Alt+Enter while it is focused (toggles full height), Alt+F4 while it is focused (closes the panel through
+         * the header ✕'s confirm) and commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
          *
          * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell would otherwise swallow Ctrl+P / Ctrl+,
          * / Ctrl+O entirely — the capture-phase listener below grabs them first and stops the event there, which also keeps the
@@ -372,6 +372,16 @@
                 if (path) toggleTerminalExpand(path)
                 return true
             }
+            // Alt+F4 with the keyboard in the panel is the keyboard twin of the header's ✕: the confirm
+            // takes every shell of this repo down instead of the window. xterm would otherwise map F4 to
+            // ESC[1;3S and swallow it — the capture twin reaches it first. Outside the panel the combo is
+            // left untouched, so the OS keeps its close-window gesture.
+            if (combo === 'Alt+F4' && isTerminalPanelFocused()) {
+                event.preventDefault()
+                const path = activeRepoPath.value
+                if (path) void confirmCloseTerminal(path)
+                return true
+            }
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
             if (combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
                 event.preventDefault()
@@ -387,8 +397,8 @@
          * The same shortcuts one phase earlier, so they also reach the app while a shell has focus. Stopping propagation keeps the
          * bubble-phase handler from handling them a second time and stops the shell from seeing a key the user bound to the app.
          *
-         * Alt is routed too because Alt+Enter (terminal full height) is Alt-only — only exact app combos act inside, so every other Alt key
-         * still reaches the shell untouched.
+         * Alt is routed too because Alt+Enter (terminal full height) and Alt+F4 (close panel) are Alt-only — only exact app combos act
+         * inside, so every other Alt key still reaches the shell untouched.
          */
         const onKeyDownCapture = (event: KeyboardEvent) => {
             // A non-Shift key breaks a pending double-Shift tap. This has to run here: xterm cancels

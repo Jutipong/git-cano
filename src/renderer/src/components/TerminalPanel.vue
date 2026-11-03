@@ -7,6 +7,7 @@
 
     import { useTerminalStore } from '../stores/terminal'
     import { useUiStore, TERMINAL_FONT_SIZE_OPTIONS } from '../stores/ui'
+    import { isWindows } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import TerminalView from './TerminalView.vue'
 
@@ -43,6 +44,12 @@
             grow: idx < 0 || idx >= TERMINAL_FONT_SIZE_OPTIONS.length - 1,
             title: `Terminal text — ${ui.terminalFontSize}px`,
         }
+    })
+
+    /** The header ✕ mirrors Alt+F4 on Windows — the panel's own keyboard close gesture. */
+    const closePanelTitle = computed(() => {
+        const base = tabs.value.length > 1 ? `Close all ${tabs.value.length} terminals` : 'Close terminal'
+        return isWindows ? `${base} (Alt+F4)` : base
     })
 
     function tabLabel(id: string): string {
@@ -284,7 +291,7 @@
                     </button>
                     <button
                         class="icon-btn danger diff-close-btn"
-                        :title="tabs.length > 1 ? `Close all ${tabs.length} terminals` : 'Close terminal'"
+                        :title="closePanelTitle"
                         @click="emit('close')">
                         <CloseXIcon />
                     </button>

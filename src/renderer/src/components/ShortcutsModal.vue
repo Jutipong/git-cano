@@ -55,7 +55,7 @@
         COLUMN_GROUPS.map(groupIds =>
             groupIds.map(id => ({
                 ...SHORTCUT_GROUPS.find(group => group.id === id)!,
-                items: SHORTCUTS.filter(shortcut => shortcut.group === id).map(shortcut => ({
+                items: SHORTCUTS.filter(shortcut => shortcut.group === id && shortcut[platform].length > 0).map(shortcut => ({
                     id: shortcut.id,
                     label: shortcut.label,
                     combos: shortcutCombos(shortcut.id).map(keycaps),

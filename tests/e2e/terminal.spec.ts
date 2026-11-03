@@ -860,6 +860,34 @@ test('Ctrl+click opens a printed URL through the OS browser bridge, a plain clic
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
+test('Alt+F4 in the focused terminal closes the panel instead of the window', async () => {
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await expect(panel.locator('.terminal-tab')).toHaveCount(1)
+    const shell = page.locator('.terminal-view:visible .xterm-helper-textarea')
+    await shell.focus()
+    expect(await panel.evaluate(el => el.matches(':focus-within'))).toBe(true)
+
+    // The header ✕'s keyboard twin: the confirm appears and the window stays open. Cancelling hands
+    // the keyboard back to the shell, so a second press still targets the panel.
+    await page.keyboard.press('Alt+F4')
+    await expect(page.locator('.confirm-dialog-header')).toContainText('Close terminal')
+    await page.locator('.confirm-dialog button', { hasText: 'Cancel' }).click()
+    await expect(shell).toBeFocused()
+    await expect(panel.locator('.terminal-tab')).toHaveCount(1)
+
+    await page.keyboard.press('Alt+F4')
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+
+    // Outside the panel the combo stays the OS's window-close gesture — a synthetic keydown proves
+    // the guard without actually closing the test window.
+    await page.evaluate(() =>
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'F4', code: 'F4', altKey: true, bubbles: true, cancelable: true }))
+    )
+    await expect(page.locator('.confirm-dialog')).toHaveCount(0)
+})
+
 test('Ctrl+W closes the focused terminal tab behind a confirm, and the repo tab otherwise', async () => {
     await page.locator('.graph-terminal-btn').click()
     const panel = page.locator('.terminal-panel:visible')

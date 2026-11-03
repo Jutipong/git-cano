@@ -50,6 +50,7 @@ export const SHORTCUTS: ShortcutDef[] = [
         win: ['Ctrl+Shift+Tab', 'Alt+←'],
     },
     { id: 'terminalFullHeight', label: 'Terminal full height', group: 'terminal', mac: ['Alt+Enter'], win: ['Alt+Enter'] },
+    { id: 'terminalClosePanel', label: 'Close terminal panel', group: 'terminal', mac: [], win: ['Alt+F4'] },
     { id: 'searchCommits', label: 'Search commits', group: 'general', mac: ['⌘F'], win: ['Ctrl+F'] },
     { id: 'settings', label: 'Open settings', group: 'general', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
     { id: 'commandPalette', label: 'Command palette', group: 'general', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
