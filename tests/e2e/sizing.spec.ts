@@ -108,3 +108,46 @@ test('sidebar section cards resize with the keyboard and reset on double-click',
     await resizer.dblclick()
     await expect(local).not.toHaveAttribute('style', /height/)
 })
+
+test('a pinned sidebar card fills the leftover space in one drag', async () => {
+    // The footer's `margin-top: auto` used to count as reserved space, which capped the computed max at roughly
+    // the card's current height: a drag stalled after a few pixels and every re-grab creeped a little further.
+    const local = page.locator('[data-sidebar-section="local"]')
+    const localResizer = page.locator('.sidebar-section-resizer[aria-label="Resize local branches section"]')
+    const tags = page.locator('[data-sidebar-section="tags"]')
+    const tagsResizer = page.locator('.sidebar-section-resizer[aria-label="Resize tags section"]')
+
+    const drag = async (resizer: Locator, dy: number) => {
+        const box = await resizer.boundingBox()
+        if (!box) throw new Error('Sidebar resizer has no box')
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.mouse.down()
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 + dy, { steps: 10 })
+        await page.mouse.up()
+    }
+
+    // Pin both growing cards so the space freed below stays unused instead of being absorbed by flex.
+    await drag(localResizer, 40)
+    await drag(tagsResizer, 20)
+    await expect(local).toHaveAttribute('style', /height/)
+    await expect(tags).toHaveAttribute('style', /height/)
+
+    // Collapsing REMOTE and STASHES leaves a large empty area under TAGS.
+    await page.locator('[data-sidebar-section="remote"] .section-toggle').click()
+    await page.locator('[data-sidebar-section="stashes"] .section-toggle').click()
+    await expect(page.locator('[data-sidebar-section="remote"].collapsed')).toHaveCount(1)
+
+    // One drag must claim that whole area instead of creeping a few pixels per attempt.
+    const before = await height(tags)
+    await drag(tagsResizer, 400)
+    expect(await height(tags)).toBeGreaterThan(before + 150)
+
+    // The cards now sit on the footer: there is no dead gap left to creep into.
+    const gap = await page.evaluate(() => {
+        const cards = [...document.querySelectorAll('.sidebar > [data-sidebar-section]')]
+        const footer = document.querySelector('.sidebar-bottom')
+        const last = cards[cards.length - 1]
+        return footer.getBoundingClientRect().top - last.getBoundingClientRect().bottom
+    })
+    expect(gap).toBeLessThan(20)
+})

@@ -174,18 +174,25 @@
     function maxSectionHeight(section: HTMLElement): number {
         const parent = section.parentElement
         if (!parent) return SIDEBAR_SECTION_MIN_HEIGHT
-        const style = getComputedStyle(parent)
-        const available = parent.clientHeight - (parseFloat(style.paddingTop) || 0) - (parseFloat(style.paddingBottom) || 0)
-        let reserved = 0
+        // Leftover space collects above the footer (`margin-top: auto`), and getComputedStyle resolves that
+        // `auto` to the used px value — summing margins therefore reserved the free space and capped every
+        // drag at roughly the card's current height. Read the gap from the geometry instead.
+        const footer = parent.querySelector(':scope > .sidebar-bottom')
+        const above = footer?.previousElementSibling
+        let free = 0
+        if (footer && above) {
+            const marginBelowAbove = parseFloat(getComputedStyle(above).marginBottom) || 0
+            free = Math.max(0, footer.getBoundingClientRect().top - above.getBoundingClientRect().bottom - marginBelowAbove)
+        }
+        // Space the other open cards can give up before they hit their own 72px floor.
+        let shrinkable = 0
         for (const child of Array.from(parent.children)) {
             if (child === section) continue
-            const el = child as HTMLElement
-            const childStyle = getComputedStyle(el)
-            const margins = (parseFloat(childStyle.marginTop) || 0) + (parseFloat(childStyle.marginBottom) || 0)
-            const shrinkable = el.classList.contains('sidebar-section') && !el.classList.contains('collapsed')
-            reserved += (shrinkable ? SIDEBAR_SECTION_MIN_HEIGHT : el.getBoundingClientRect().height) + margins
+            if (!child.classList.contains('sidebar-section') || child.classList.contains('collapsed')) continue
+            shrinkable += Math.max(0, child.getBoundingClientRect().height - SIDEBAR_SECTION_MIN_HEIGHT)
         }
-        return Math.max(SIDEBAR_SECTION_MIN_HEIGHT, Math.floor(available - reserved))
+        const current = section.getBoundingClientRect().height
+        return Math.max(SIDEBAR_SECTION_MIN_HEIGHT, Math.floor(current + free + shrinkable))
     }
     function trackSectionBounds(key: SidebarSectionKey, event: Event) {
         const section = sectionAbove(event.currentTarget)
