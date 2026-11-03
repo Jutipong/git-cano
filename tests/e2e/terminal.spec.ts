@@ -718,7 +718,8 @@ test('Ctrl+Tab and Alt+←/→ cycle the focused terminal tabs and wrap around',
     await expect(shell).toBeFocused()
 
     // With the keyboard outside the panel none of the combos is the app's — the active tab must not move.
-    await page.locator('.commit-search input').click()
+    // A toast from the previous tests can still float over the toolbar, so focus the field directly.
+    await page.locator('.commit-search input').focus()
     await page.keyboard.press('Control+Tab')
     await page.keyboard.press('Control+Shift+Tab')
     await page.keyboard.press('Alt+ArrowRight')

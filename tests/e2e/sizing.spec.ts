@@ -24,7 +24,9 @@ test.afterAll(async () => {
 /** Rendered height in CSS px — read from the computed style so the window's zoom cannot skew the number. */
 async function height(locator: Locator): Promise<number> {
     await expect(locator).toBeVisible()
-    return locator.evaluate(el => parseFloat(getComputedStyle(el).height))
+    const px = await locator.evaluate(el => parseFloat(getComputedStyle(el).height))
+    // Flex layout can land a box a hair under its token (27.99 for 28px); compare whole pixels.
+    return Math.round(px)
 }
 
 function token(name: string): Promise<number> {

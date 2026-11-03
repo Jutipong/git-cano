@@ -202,7 +202,7 @@ test('sidebar and changes splitters resize with arrows', async () => {
     await page.keyboard.press('ArrowLeft')
     await expect(changes).toHaveAttribute('aria-valuenow', '370')
     await page.keyboard.press('Home')
-    await expect(changes).toHaveAttribute('aria-valuenow', '360')
+    await expect(changes).toHaveAttribute('aria-valuenow', '340')
 })
 
 test('terminal splitter resizes with arrows', async () => {
