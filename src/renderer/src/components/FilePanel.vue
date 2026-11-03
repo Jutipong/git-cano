@@ -526,7 +526,6 @@
     }
 
     function openFileMenu(event: MouseEvent, path: string, file?: FileEntry | CommitFile) {
-        if (isWorkdir.value && file && !hasWorkdirStatus(file as FileEntry)) return
         const workdirFile = isWorkdir.value ? (file as FileEntry | undefined) : undefined
         const worktreeEntry = repoStore.repo?.files.find(entry => entry.path === path)
         menu.value = {
@@ -635,9 +634,6 @@
 
     function hasStatus(status: string) {
         return status !== '' && status !== ' '
-    }
-    function hasWorkdirStatus(file: FileEntry) {
-        return hasStatus(file.staged) || hasStatus(file.unstaged)
     }
     function unifiedWorkdirFile(file: FileEntry | CommitFile) {
         return file as FileEntry

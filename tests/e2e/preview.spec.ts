@@ -80,6 +80,17 @@ test('editor actions are offered for worktree and committed files', async () => 
     await expect(page.locator('.diff-view')).toHaveCount(0)
 })
 
+test('copy file name is offered for already-committed files in the all-files view', async () => {
+    await page.locator('.file-scope-btn').click()
+    const committedFile = page.locator('.file-row', { hasText: 'readme.md' }).first()
+    await expect(committedFile).toBeVisible()
+    await committedFile.click({ button: 'right' })
+    await expect(page.locator('.file-context-menu')).toBeVisible()
+    await page.locator('.file-context-menu-item', { hasText: 'Copy file name' }).click()
+    await expect(page.locator('.toast').filter({ hasText: 'File name copied' })).toBeVisible()
+    await page.locator('.file-scope-btn').click()
+})
+
 test('reflog modal opens from the command palette', async () => {
     await page.keyboard.press('Control+p')
     await expect(page.locator('.palette')).toBeVisible()
