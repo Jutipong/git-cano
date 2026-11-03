@@ -13,6 +13,22 @@
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import {
+        allSidesPicked,
+        annotateConflictMatches,
+        blockPicked,
+        conflictDisplayRows,
+        conflictOutputLines,
+        linePicked,
+        parseConflictBlocks,
+        sidePicked,
+        takeBothSides,
+        takeSideOfBlock,
+        toggleAllSidePicks,
+        toggleLinePick,
+        toggleSidePick,
+        type ConflictBlock,
+    } from '../utils/conflict'
     import { confirmDialog } from '../utils/confirm'
     import { highlightLine, computeLineStates, highlightLineAt } from '../utils/highlight'
     import { buildPrefix, windowFor } from '../utils/virtual'
@@ -32,17 +48,6 @@
     const ui = useUiStore()
     const uiTransient = useUiTransientStore()
     const repoStore = useRepoStore()
-
-    interface ConflictBlock {
-        ours: string[]
-        theirs: string[]
-        /** Name of the incoming side parsed from the `>>>>>>>` marker. */
-        label: string
-        /** Per-line picks (GitKraken-style: a hunk can be taken whole or line by line). */
-        pickOursLines: boolean[]
-        pickTheirsLines: boolean[]
-        matchIdx: { ours: number; theirs: number }
-    }
 
     const loading = ref(false)
     const isFullscreen = ref(false)
@@ -80,82 +85,6 @@
     // Declared above loadConflict so the immediate watcher can clear it without a TDZ crash.
     const outputHtmlCache = new Map<string, string>()
 
-    const MARK_OURS = /^<{7}(?: (.*))?$/
-    const MARK_BASE = /^\|{7}(?: .*)?$/
-    const MARK_SEP = /^={7}$/
-    const MARK_THEIRS = /^>{7}(?: (.*))?$/
-
-    function parseBlocks(text: string, fallbackTheirs: string): ConflictBlock[] {
-        const lines = text.split('\n')
-        const blocks: ConflictBlock[] = []
-        let i = 0
-        while (i < lines.length) {
-            if (!MARK_OURS.test(lines[i])) {
-                i++
-                continue
-            }
-            const ours: string[] = []
-            const theirs: string[] = []
-            i++
-            while (i < lines.length && !MARK_BASE.test(lines[i]) && !MARK_SEP.test(lines[i]) && !MARK_THEIRS.test(lines[i])) {
-                ours.push(lines[i])
-                i++
-            }
-            // diff3 style (||||||| base =======) — the base section is skipped
-            if (MARK_BASE.test(lines[i] ?? '')) {
-                i++
-                while (i < lines.length && !MARK_SEP.test(lines[i])) i++
-            }
-            if (MARK_SEP.test(lines[i] ?? '')) {
-                i++
-                while (i < lines.length && !MARK_THEIRS.test(lines[i])) {
-                    theirs.push(lines[i])
-                    i++
-                }
-            }
-            const labelM = MARK_THEIRS.exec(lines[i] ?? '')
-            const label = labelM?.[1]?.trim() || fallbackTheirs
-            if (MARK_THEIRS.test(lines[i] ?? '')) i++
-            blocks.push({
-                ours,
-                theirs,
-                label,
-                pickOursLines: Array.from({ length: ours.length }, () => false),
-                pickTheirsLines: Array.from({ length: theirs.length }, () => false),
-                matchIdx: { ours: -1, theirs: -1 },
-            })
-        }
-        return blocks
-    }
-
-    function matchSequence(hay: string[], needle: string[], from: number): number {
-        if (!needle.length) return -1
-        for (let i = Math.max(0, from); i <= hay.length - needle.length; i++) {
-            let ok = true
-            for (let j = 0; j < needle.length; j++) {
-                if (hay[i + j] !== needle[j]) {
-                    ok = false
-                    break
-                }
-            }
-            if (ok) return i
-        }
-        return -1
-    }
-
-    function annotateMatches(blocks: ConflictBlock[]) {
-        const oursLines = (versions.value?.ours ?? '').split('\n')
-        const theirsLines = (versions.value?.theirs ?? '').split('\n')
-        let fromOurs = 0
-        let fromTheirs = 0
-        for (const block of blocks) {
-            block.matchIdx.ours = matchSequence(oursLines, block.ours, fromOurs)
-            if (block.matchIdx.ours >= 0) fromOurs = block.matchIdx.ours + block.ours.length
-            block.matchIdx.theirs = matchSequence(theirsLines, block.theirs, fromTheirs)
-            if (block.matchIdx.theirs >= 0) fromTheirs = block.matchIdx.theirs + block.theirs.length
-        }
-    }
-
     async function loadConflict() {
         const f = props.file
         if (!f) return
@@ -181,8 +110,8 @@
                 return
             }
             worktree.value = content.replace(/\r\n/g, '\n')
-            const parsed = parseBlocks(worktree.value, repoStore.theirsLabel)
-            annotateMatches(parsed)
+            const parsed = parseConflictBlocks(worktree.value, repoStore.theirsLabel)
+            annotateConflictMatches(parsed, versions.value?.ours ?? '', versions.value?.theirs ?? '')
             blocks.value = parsed
             currentBlock.value = parsed.length ? 0 : -1
         } catch (error) {
@@ -194,10 +123,8 @@
 
     watch(() => props.file, loadConflict, { immediate: true })
 
-    /** A block is unresolved until at least one line of either side is picked. */
-    const unresolvedCount = computed(
-        () => blocks.value.filter(block => !block.pickOursLines.some(Boolean) && !block.pickTheirsLines.some(Boolean)).length
-    )
+    /** A block is unresolved until either side is picked (an empty side counts once its whole-side pick is set). */
+    const unresolvedCount = computed(() => blocks.value.filter(block => !blockPicked(block)).length)
     /** Save allowed only when every block is picked (manual edit always allowed — output is typed directly). */
     const canSave = computed(() => manualOutput.value !== null || unresolvedCount.value === 0)
     const resolvedCount = computed(() => blocks.value.length - unresolvedCount.value)
@@ -220,47 +147,7 @@
         return `Use ${name} · ${n} line${n === 1 ? '' : 's'}`
     }
 
-    /**
-     * The output file assembled from the picked lines (per block: ours first, then theirs); fully unresolved blocks keep their raw markers
-     * so they are visible (and make the main-process marker validation fail).
-     */
-    interface OutLine {
-        text: string
-        /** Block index this line belongs to, or -1 for common context. */
-        block: number
-    }
-    const resultLines = computed<OutLine[]>(() => {
-        const lines = worktree.value.split('\n')
-        const out: OutLine[] = []
-        let blockIdx = 0
-        let i = 0
-        while (i < lines.length) {
-            if (!MARK_OURS.test(lines[i])) {
-                out.push({ text: lines[i], block: -1 })
-                i++
-                continue
-            }
-            const idx = blockIdx++
-            const block = blocks.value[idx]
-            const start = i
-            i++
-            while (i < lines.length && !MARK_THEIRS.test(lines[i])) i++
-            const end = i < lines.length ? i : lines.length - 1 // last marker line (or EOF)
-            if (block && (block.pickOursLines.some(Boolean) || block.pickTheirsLines.some(Boolean))) {
-                block.ours.forEach((text, li) => {
-                    if (block.pickOursLines[li]) out.push({ text, block: idx })
-                })
-                block.theirs.forEach((text, li) => {
-                    if (block.pickTheirsLines[li]) out.push({ text, block: idx })
-                })
-            } else {
-                lines.slice(start, end + 1).forEach(text => out.push({ text, block: idx }))
-            }
-            if (i < lines.length) i++ // skip >>>>>>> line
-        }
-        return out
-    })
-
+    const resultLines = computed(() => conflictOutputLines(worktree.value, blocks.value))
     const resultContent = computed(() => resultLines.value.map(line => line.text).join('\n'))
 
     function outputHtmlFor(idx: number): string {
@@ -295,63 +182,41 @@
 
     /** Block-level checkbox: take (or un-take) every line of this side. */
     function togglePick(side: Side, blockIndex: number) {
-        const block = blocks.value[blockIndex]
-        if (!block) return
-        const lines = side === 'ours' ? block.pickOursLines : block.pickTheirsLines
-        const take = !lines.some(Boolean)
-        lines.fill(take)
+        toggleSidePick(blocks.value[blockIndex], side)
     }
 
     function isPicked(side: Side, blockIndex: number): boolean {
-        const block = blocks.value[blockIndex]
-        if (!block) return false
-        return (side === 'ours' ? block.pickOursLines : block.pickTheirsLines).some(Boolean)
+        return sidePicked(blocks.value[blockIndex], side)
     }
 
     function toggleLine(side: Side, blockIndex: number, lineIndex: number) {
-        const block = blocks.value[blockIndex]
-        if (!block) return
-        const lines = side === 'ours' ? block.pickOursLines : block.pickTheirsLines
-        lines[lineIndex] = !lines[lineIndex]
+        toggleLinePick(blocks.value[blockIndex], side, lineIndex)
     }
 
     function isLinePicked(side: Side, blockIndex: number, lineIndex: number): boolean {
-        const block = blocks.value[blockIndex]
-        if (!block) return false
-        return (side === 'ours' ? block.pickOursLines : block.pickTheirsLines)[lineIndex] ?? false
+        return linePicked(blocks.value[blockIndex], side, lineIndex)
     }
 
     /** Force-take a whole side of one block (used by the output placeholder — never un-takes). */
     function takeBlockSide(side: Side, blockIndex: number) {
-        const block = blocks.value[blockIndex]
-        if (!block) return
-        ;(side === 'ours' ? block.pickOursLines : block.pickTheirsLines).fill(true)
+        takeSideOfBlock(blocks.value[blockIndex], side)
         setCurrent(blockIndex)
     }
 
     /** Take both sides of one block (ours lines first, then theirs — same order as the output). */
     function takeBoth(blockIndex: number) {
-        const block = blocks.value[blockIndex]
-        if (!block) return
-        block.pickOursLines.fill(true)
-        block.pickTheirsLines.fill(true)
+        takeBothSides(blocks.value[blockIndex])
         setCurrent(blockIndex)
     }
 
     /** True when this side is fully picked in every block (whole-file select-all state). */
     function allPickedFor(side: Side): boolean {
-        const withLines = blocks.value.filter(b => b[side].length > 0)
-        if (!withLines.length) return false
-        return withLines.every(b => (side === 'ours' ? b.pickOursLines : b.pickTheirsLines).every(Boolean))
+        return allSidesPicked(blocks.value, side)
     }
 
     /** Whole-file toggle: take every line of this side in every block (clear when already all taken). */
     function toggleAllPicks(side: Side) {
-        const take = !allPickedFor(side)
-        for (const block of blocks.value) {
-            const lines = side === 'ours' ? block.pickOursLines : block.pickTheirsLines
-            lines.fill(take)
-        }
+        toggleAllSidePicks(blocks.value, side)
     }
 
     async function saveResolved() {
@@ -491,47 +356,7 @@
      * `<<<<<<< / ======= / >>>>>>>` markers into a single placeholder card with quick-take actions (the underlying resultContent keeps the
      * raw markers so saving stays impossible until resolved).
      */
-    interface OutputDisplayLine {
-        kind: 'line'
-        text: string
-        block: number
-    }
-    interface OutputDisplayGap {
-        kind: 'gap'
-        block: number
-        oursN: number
-        theirsN: number
-    }
-    type OutputDisplayRow = OutputDisplayLine | OutputDisplayGap
-    const outputDisplay = computed<OutputDisplayRow[]>(() => {
-        const lines = worktree.value.split('\n')
-        const out: OutputDisplayRow[] = []
-        let blockIdx = 0
-        let i = 0
-        while (i < lines.length) {
-            if (!MARK_OURS.test(lines[i])) {
-                out.push({ kind: 'line', text: lines[i], block: -1 })
-                i++
-                continue
-            }
-            const idx = blockIdx++
-            const block = blocks.value[idx]
-            while (i < lines.length && !MARK_THEIRS.test(lines[i])) i++
-            if (i < lines.length) i++ // skip >>>>>>> line
-            const picked = !!block && (block.pickOursLines.some(Boolean) || block.pickTheirsLines.some(Boolean))
-            if (block && picked) {
-                block.ours.forEach((text, li) => {
-                    if (block.pickOursLines[li]) out.push({ kind: 'line', text, block: idx })
-                })
-                block.theirs.forEach((text, li) => {
-                    if (block.pickTheirsLines[li]) out.push({ kind: 'line', text, block: idx })
-                })
-            } else {
-                out.push({ kind: 'gap', block: idx, oursN: block?.ours.length ?? 0, theirsN: block?.theirs.length ?? 0 })
-            }
-        }
-        return out
-    })
+    const outputDisplay = computed(() => conflictDisplayRows(worktree.value, blocks.value))
     const outputPrefix = computed(() => {
         const heights = new Float64Array(outputDisplay.value.length)
         for (let r = 0; r < outputDisplay.value.length; r++)
