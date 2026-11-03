@@ -18,6 +18,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore } from '../stores/uiTransient'
     import { formatDatePattern, formatShortDate } from '../utils/format'
+    import { mainKeysOf } from '../utils/shortcuts'
     import { buildPrefix, indexAtOffset } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
@@ -313,6 +314,13 @@
         if (!list.length) return
         const current = selectedHash.value ? (rowIndex.value.get(selectedHash.value) ?? -1) : -1
         const page = Math.max(1, Math.floor((scrollEl.value?.clientHeight ?? 300) / 30))
+        // `t` follows the physical key too, so it also works on a Thai/Cyrillic layout (where event.key is a local character).
+        if (mainKeysOf(event).some(key => key.toLowerCase() === 't')) {
+            if (current < 0) return
+            event.preventDefault()
+            toggleMessageAt(list[current], document.getElementById(`graph-row-${list[current].hash}`))
+            return
+        }
         let next = current
         switch (event.key) {
             case 'ArrowDown':
@@ -338,12 +346,6 @@
                 if (current < 0) return
                 event.preventDefault()
                 select(list[current])
-                return
-            case 't':
-            case 'T':
-                if (current < 0) return
-                event.preventDefault()
-                toggleMessageAt(list[current], document.getElementById(`graph-row-${list[current].hash}`))
                 return
             case 'F10':
                 if (!event.shiftKey || current < 0) return

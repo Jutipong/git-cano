@@ -228,6 +228,16 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   events to canonical combos (`Cmd` counts as `Ctrl`); `formatCombo()` renders
   arrows (`ArrowUp` → `↑`) for `kbd` display and TabBar tooltips,
   `formatComboMac()` renders the macOS column (`Ctrl` → `⌘`).
+- **Shortcuts ignore the keyboard layout where it matters**: `mainKeysOf()` returns every
+  main key an event could stand for — the printable ASCII `event.key` first (the character
+  printed on the keycap, so AZERTY/Dvorak keep theirs), then the physical QWERTY
+  `event.code` (`KeyP`, `Digit0`, `Backquote`, `Comma`, …). `eventToCombos()` expands that
+  into every matching canonical combo and handlers use `combos.includes(…)`, so a Thai
+  key still fires `Ctrl+P` from the P position and `Ctrl+`` even when that key reports `_`.
+  Every layout-sensitive check must go through these helpers — never compare `event.key`
+  for a letter/symbol shortcut directly (`DiffView` find, terminal copy, graph `t`, zoom).
+  No-modifier character shortcuts (`?`) deliberately stay character-based; do not switch
+  them to `code`.
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
   Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
   palette, Toggle terminal. Click Change… under macOS or Windows then press keys

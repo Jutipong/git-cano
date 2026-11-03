@@ -131,19 +131,66 @@ const RESERVED_COMBOS = new Set([
     'Alt+Enter',
 ])
 
-/** Normalize a KeyboardEvent to a canonical combo ("Ctrl+Shift+ArrowDown"). Cmd counts as Ctrl. */
-export function eventToCombo(event: KeyboardEvent): string | null {
-    if (event.key === 'Control' || event.key === 'Shift' || event.key === 'Alt' || event.key === 'Meta') return null
+/** Punctuation keys whose `event.code` name differs from the character in a canonical combo. */
+const CODE_KEYS: Record<string, string> = {
+    Backquote: '`',
+    Minus: '-',
+    Equal: '=',
+    BracketLeft: '[',
+    BracketRight: ']',
+    Backslash: '\\',
+    Semicolon: ';',
+    Quote: "'",
+    Comma: ',',
+    Period: '.',
+    Slash: '/',
+    IntlBackslash: '\\',
+}
+
+/** Physical-key fallback: `KeyO` → "O", `Digit0` → "0", `Comma` → ",", … */
+function keyFromCode(code: string): string | null {
+    if (/^Key[A-Z]$/.test(code)) return code.slice(3)
+    if (/^Digit\d$/.test(code)) return code.slice(5)
+    return CODE_KEYS[code] ?? null
+}
+
+/**
+ * Every main key a KeyboardEvent could stand for, most specific first.
+ *
+ * `event.key` follows the active layout: Thai/Cyrillic/Arabic report a local character, and some
+ * layouts keep an ASCII label on a key that sits elsewhere on a US board (a Thai backquote key can
+ * report "_"). Neither source wins alone — printable ASCII comes first because that is the character
+ * printed on the key (AZERTY `a` on the physical Q key), then the physical QWERTY position
+ * (`event.code`) so Ctrl+P still fires from the P key of a Thai keyboard and Ctrl+` from the key
+ * beside "1". Callers match any candidate; named keys ignore the layout and yield exactly one.
+ */
+export function mainKeysOf(event: Pick<KeyboardEvent, 'key' | 'code'>): string[] {
+    const key = event.key
+    if (key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta' || key === 'Unidentified') return []
+    // Named keys (ArrowUp, Tab, Enter, F4, Escape, Space…) already ignore the layout.
+    if (key.length > 1) return [key]
+    if (key === ' ') return ['Space']
+    const keys: string[] = []
+    if (key.charCodeAt(0) < 0x80) keys.push(key.toUpperCase())
+    const fromCode = keyFromCode(event.code)
+    if (fromCode && !keys.includes(fromCode)) keys.push(fromCode)
+    return keys
+}
+
+/** Every canonical combo a KeyboardEvent could be ("Ctrl+`" and "Ctrl+_" for one backquote key). Cmd counts as Ctrl. */
+export function eventToCombos(event: KeyboardEvent): string[] {
     const parts: string[] = []
     if (event.ctrlKey || event.metaKey) parts.push('Ctrl')
     if (event.shiftKey) parts.push('Shift')
     if (event.altKey) parts.push('Alt')
-    let key = event.key
-    if (key === ' ') key = 'Space'
-    else if (key.length === 1) key = key.toUpperCase()
-    parts.push(key)
-    if (parts.length < 2) return null
-    return parts.join('+')
+    if (parts.length === 0) return []
+    const comboPrefix = `${parts.join('+')}+`
+    return mainKeysOf(event).map(key => `${comboPrefix}${key}`)
+}
+
+/** Normalize a KeyboardEvent to its preferred canonical combo ("Ctrl+Shift+ArrowDown"). Cmd counts as Ctrl. */
+export function eventToCombo(event: KeyboardEvent): string | null {
+    return eventToCombos(event)[0] ?? null
 }
 
 /** "Ctrl+ArrowUp" → "Ctrl+↑" for display. */

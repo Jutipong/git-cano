@@ -35,6 +35,7 @@
     } from '../utils/highlight'
     import { editorTargetOptions, fetchOpenInTargets, peekOpenInTargets } from '../utils/openIn'
     import { isPreviewablePath } from '../utils/preview'
+    import { eventToCombos } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
@@ -626,7 +627,7 @@
     }
 
     function onGlobalKeyDown(event: KeyboardEvent) {
-        if ((event.ctrlKey || event.metaKey) && !event.shiftKey && event.key.toLowerCase() === 'f' && props.file) {
+        if (eventToCombos(event).includes('Ctrl+F') && props.file) {
             event.preventDefault()
             focusSearch()
         }

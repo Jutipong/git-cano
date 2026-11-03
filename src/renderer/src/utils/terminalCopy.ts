@@ -5,15 +5,19 @@
  * shell.
  */
 
+import { mainKeysOf } from './shortcuts'
+
 export type TerminalCopyAction = 'pass' | 'copy' | 'consume'
 
 export function terminalCopyDecision(
-    event: Pick<KeyboardEvent, 'type' | 'key' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>,
+    event: Pick<KeyboardEvent, 'type' | 'key' | 'code' | 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey'>,
     hasSelection: boolean,
     mac: boolean
 ): TerminalCopyAction {
     // xterm fires the custom handler for keydown and keypress — act once, on keydown.
-    if (event.type !== 'keydown' || event.key.toLowerCase() !== 'c') return 'pass'
+    if (event.type !== 'keydown') return 'pass'
+    // The physical C key counts too, so a Thai/Cyrillic layout keeps Ctrl+Shift+C working.
+    if (!mainKeysOf(event).some(key => key.toLowerCase() === 'c')) return 'pass'
     // Ctrl+Shift+C is the terminal-wide copy combo (Windows Terminal, Linux terminals). Consume it
     // even with nothing selected so it can never reach the shell or open DevTools.
     if (event.ctrlKey && event.shiftKey && !event.altKey && !event.metaKey) return hasSelection ? 'copy' : 'consume'

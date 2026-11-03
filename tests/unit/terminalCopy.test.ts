@@ -5,7 +5,7 @@ import { terminalCopyDecision } from '../../src/renderer/src/utils/terminalCopy'
 type KeyEvent = Parameters<typeof terminalCopyDecision>[0]
 
 function key(overrides: Partial<KeyEvent> & Pick<KeyEvent, 'key'>): KeyEvent {
-    return { type: 'keydown', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...overrides }
+    return { type: 'keydown', code: '', ctrlKey: false, metaKey: false, shiftKey: false, altKey: false, ...overrides }
 }
 
 describe('terminalCopyDecision (Windows/Linux)', () => {
@@ -32,6 +32,15 @@ describe('terminalCopyDecision (Windows/Linux)', () => {
         expect(terminalCopyDecision(key({ key: 'c', ctrlKey: true, altKey: true }), true, false)).toBe('pass')
         expect(terminalCopyDecision(key({ key: 'c', ctrlKey: true, altKey: true, shiftKey: true }), true, false)).toBe('pass')
         expect(terminalCopyDecision(key({ key: 'c', ctrlKey: true, metaKey: true }), true, false)).toBe('pass')
+    })
+
+    it('finds the physical C key on non-Latin layouts', () => {
+        // Thai Kedmanee types "แ" on the C key; Ctrl+Shift+C must still copy.
+        expect(terminalCopyDecision(key({ key: 'แ', code: 'KeyC', ctrlKey: true, shiftKey: true }), true, false)).toBe('copy')
+        expect(terminalCopyDecision(key({ key: 'แ', code: 'KeyC', ctrlKey: true, shiftKey: true }), false, false)).toBe('consume')
+        expect(terminalCopyDecision(key({ key: 'แ', code: 'KeyC', ctrlKey: true }), true, false)).toBe('copy')
+        // A layout whose C key reports another ASCII label still copies from the physical key.
+        expect(terminalCopyDecision(key({ key: 'x', code: 'KeyC', ctrlKey: true }), true, false)).toBe('copy')
     })
 })
 

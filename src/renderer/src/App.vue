@@ -49,7 +49,7 @@
     import { confirmDialog } from './utils/confirm'
     import { useMinVisible } from './utils/minVisible'
     import { promptDialog } from './utils/prompt'
-    import { eventToCombo } from './utils/shortcuts'
+    import { eventToCombos, mainKeysOf } from './utils/shortcuts'
     import { SPLASH_MIN_MS } from './utils/splash'
     import { nextTerminalTabId, prevTerminalTabId } from './utils/terminalTabs'
     import { notifyUndoable } from './utils/undo'
@@ -298,39 +298,39 @@
          * bubble-phase copy from firing a second time. Combos the shell owns (Ctrl+Arrows, Escape, …) are deliberately NOT here: they stay
          * in the bubble handler so TUIs and readline keep receiving them.
          */
-        function handleAppShortcut(combo: string | null, event: KeyboardEvent): boolean {
-            if (!combo) return false
-            if (combo === ui.getShortcut('openRepo')) {
+        function handleAppShortcut(combos: string[], event: KeyboardEvent): boolean {
+            if (!combos.length) return false
+            if (combos.includes(ui.getShortcut('openRepo'))) {
                 event.preventDefault()
                 openNewRepo()
                 return true
             }
-            if (combo === ui.getShortcut('cloneRepo')) {
+            if (combos.includes(ui.getShortcut('cloneRepo'))) {
                 event.preventDefault()
                 cloneOpen.value = true
                 return true
             }
-            if (combo === ui.getShortcut('settings')) {
+            if (combos.includes(ui.getShortcut('settings'))) {
                 event.preventDefault()
                 repoStore.toolsOpen = true
                 return true
             }
             // Command palette (double-Shift is handled above, in the bubble handler)
-            if (combo === ui.getShortcut('commandPalette')) {
+            if (combos.includes(ui.getShortcut('commandPalette'))) {
                 event.preventDefault()
                 repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
                 return true
             }
             // Terminal panel: spawn the first shell of the active repo, then show/hide. Never kills.
             // Killing every shell is palette-only (confirm-guarded) — no shortcut, too easy to fat-finger.
-            if (combo === ui.getShortcut('terminal') && repoStore.repo) {
+            if (combos.includes(ui.getShortcut('terminal')) && repoStore.repo) {
                 event.preventDefault()
                 void toggleTerminal()
                 return true
             }
             // Ctrl+T opens a shell for the active repo (fixed, captured before xterm so no shell/TUI ever
             // sees it). A missing slot and the per-repo cap are silent no-ops.
-            if (combo === 'Ctrl+T' && repoStore.repo) {
+            if (combos.includes('Ctrl+T') && repoStore.repo) {
                 event.preventDefault()
                 void newTerminalTab()
                 return true
@@ -339,23 +339,27 @@
             // is inside the terminal panel (like Ctrl+W / Alt+Enter) — the capture twin reaches it before
             // xterm sees the key, and wrapping keeps every tab one press away. Fewer than two tabs is a
             // silent no-op.
-            if ((combo === 'Ctrl+Tab' || combo === 'Ctrl+Shift+Tab') && isTerminalPanelFocused()) {
+            const nextTab = combos.includes('Ctrl+Tab')
+            const prevTab = combos.includes('Ctrl+Shift+Tab')
+            if ((nextTab || prevTab) && isTerminalPanelFocused()) {
                 event.preventDefault()
-                cycleTerminalTab(combo === 'Ctrl+Shift+Tab' ? -1 : 1)
+                cycleTerminalTab(prevTab ? -1 : 1)
                 return true
             }
             // Alt+← / Alt+→ are the Windows-Terminal-style tab switch, scoped to the focused panel like Ctrl+Tab. Everywhere
             // else the combo is left completely untouched (no preventDefault), so text fields keep Option+Arrow word motion
             // and a shell's readline keeps its own Alt+Arrow gestures.
-            if ((combo === 'Alt+ArrowLeft' || combo === 'Alt+ArrowRight') && isTerminalPanelFocused()) {
+            const prevTerminal = combos.includes('Alt+ArrowLeft')
+            const nextTerminal = combos.includes('Alt+ArrowRight')
+            if ((prevTerminal || nextTerminal) && isTerminalPanelFocused()) {
                 event.preventDefault()
-                cycleTerminalTab(combo === 'Alt+ArrowLeft' ? -1 : 1)
+                cycleTerminalTab(prevTerminal ? -1 : 1)
                 return true
             }
             // Ctrl+W with the keyboard in the terminal panel targets the shell's tab, not the repo
             // tab: xterm stops character keys, so this has to run in the capture-phase twin. Every
             // other case stays with the fixed Ctrl+W block in the bubble handler (see onKeyDown).
-            if (combo === 'Ctrl+W' && isTerminalPanelFocused()) {
+            if (combos.includes('Ctrl+W') && isTerminalPanelFocused()) {
                 event.preventDefault()
                 void closeActiveTerminalTabByKeyboard()
                 return true
@@ -363,7 +367,7 @@
             // Alt+Enter is the keyboard twin of the header's maximize button — the terminal-native
             // fullscreen gesture. Scoped to the focused panel like Ctrl+W, so the graph, inputs and
             // every other Alt+Enter habit keep the key.
-            if (combo === 'Alt+Enter' && isTerminalPanelFocused()) {
+            if (combos.includes('Alt+Enter') && isTerminalPanelFocused()) {
                 event.preventDefault()
                 const path = activeRepoPath.value
                 if (path) toggleTerminalExpand(path)
@@ -373,14 +377,14 @@
             // takes every shell of this repo down instead of the window. xterm would otherwise map F4 to
             // ESC[1;3S and swallow it — the capture twin reaches it first. Outside the panel the combo is
             // left untouched, so the OS keeps its close-window gesture.
-            if (combo === 'Alt+F4' && isTerminalPanelFocused()) {
+            if (combos.includes('Alt+F4') && isTerminalPanelFocused()) {
                 event.preventDefault()
                 const path = activeRepoPath.value
                 if (path) void confirmCloseTerminal(path)
                 return true
             }
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
-            if (combo === ui.getShortcut('searchCommits') && !selectedFile.value && !selectedConflict.value) {
+            if (combos.includes(ui.getShortcut('searchCommits')) && !selectedFile.value && !selectedConflict.value) {
                 event.preventDefault()
                 const target = document.querySelector<HTMLInputElement>('.commit-search input')
                 target?.focus()
@@ -414,30 +418,31 @@
             }
             if (uiTransient.busy) return
             if (event.metaKey || event.ctrlKey || event.altKey) {
-                if (handleAppShortcut(eventToCombo(event), event)) event.stopPropagation()
+                if (handleAppShortcut(eventToCombos(event), event)) event.stopPropagation()
             }
         }
 
         const onKeyDown = (event: KeyboardEvent) => {
             // app zoom shortcuts — kept above the busy gate so zooming always works
             if (event.metaKey || event.ctrlKey) {
-                if (event.key === '=' || event.key === '+') {
+                const zoomKeys = mainKeysOf(event)
+                if (zoomKeys.includes('=') || zoomKeys.includes('+')) {
                     event.preventDefault()
                     ui.stepZoom(1)
                     return
                 }
-                if (event.key === '-') {
+                if (zoomKeys.includes('-')) {
                     event.preventDefault()
                     ui.stepZoom(-1)
                     return
                 }
-                if (event.key === '0') {
+                if (zoomKeys.includes('0')) {
                     event.preventDefault()
                     ui.zoom = DEFAULT_ZOOM
                     return
                 }
                 // Close active repo tab — fixed, works everywhere (even while typing).
-                if (eventToCombo(event) === 'Ctrl+W') {
+                if (eventToCombos(event).includes('Ctrl+W')) {
                     event.preventDefault()
                     if (tabs.value.length > 0) void repoStore.closeTab(activeTab.value)
                     return
@@ -484,31 +489,29 @@
             }
 
             // Customizable shortcuts (Settings → Shortcuts) — canonical combos, so Ctrl and Cmd both work.
-            const combo = eventToCombo(event)
+            const combos = eventToCombos(event)
 
             // App shortcuts (the capture-phase twin of this handler sees them first — see onKeyDownCapture).
-            if (handleAppShortcut(combo, event)) return
+            if (handleAppShortcut(combos, event)) return
             // Push/Pull/Fetch.
             // Skipped while typing (Ctrl+Arrows = word jump), palette open (owns Arrows), or no repo.
             if (!repoStore.commandPaletteOpen && repoStore.repo) {
                 const target = event.target as HTMLElement | null
                 if (!target?.closest('input, textarea, [contenteditable="true"]')) {
-                    if (combo) {
-                        if (combo === ui.getShortcut('fetch')) {
-                            event.preventDefault()
-                            void syncStore.fetch(repoStore.refreshWithTags)
-                            return
-                        }
-                        if (combo === ui.getShortcut('push')) {
-                            event.preventDefault()
-                            void syncStore.push(repoStore.refresh)
-                            return
-                        }
-                        if (combo === ui.getShortcut('pull')) {
-                            event.preventDefault()
-                            void syncStore.pull(repoStore.refreshWithTags)
-                            return
-                        }
+                    if (combos.includes(ui.getShortcut('fetch'))) {
+                        event.preventDefault()
+                        void syncStore.fetch(repoStore.refreshWithTags)
+                        return
+                    }
+                    if (combos.includes(ui.getShortcut('push'))) {
+                        event.preventDefault()
+                        void syncStore.push(repoStore.refresh)
+                        return
+                    }
+                    if (combos.includes(ui.getShortcut('pull'))) {
+                        event.preventDefault()
+                        void syncStore.pull(repoStore.refreshWithTags)
+                        return
                     }
                 }
             }
