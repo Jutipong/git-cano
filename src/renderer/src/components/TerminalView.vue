@@ -82,7 +82,7 @@
         return {
             background: read('--canvas', '#101014'),
             foreground: read('--text', '#e8e8f0'),
-            cursor: read('--teal', '#29a8ff'),
+            cursor: read('--green', '#63d272'),
             selectionBackground: read('--surface-hover', '#2d2d40'),
         }
     }
