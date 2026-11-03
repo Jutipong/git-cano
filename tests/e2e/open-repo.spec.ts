@@ -56,3 +56,25 @@ test('initialize creates the repository and opens it', async () => {
     await expect(page.locator('.graph-empty')).toContainText('No commits')
     await expect(page.locator('.file-row', { hasText: 'README.md' })).toBeVisible()
 })
+
+test('the remote branches section exposes a refresh button', async () => {
+    const remote = page.locator('[data-sidebar-section="remote"]')
+    const refresh = remote.locator('.section-refresh-btn')
+    await expect(refresh).toBeVisible()
+    await expect(page.locator('[data-sidebar-section="local"] .section-refresh-btn')).toHaveCount(0)
+
+    await refresh.click()
+    await expect(refresh).toBeEnabled()
+})
+
+test('a repo without a remote links to Settings → Remotes', async () => {
+    const section = page.locator('[data-sidebar-section="remote"]')
+    await expect(section.locator('.sidebar-empty')).toHaveText('No remote configured')
+
+    await section.locator('.section-settings-btn').click()
+
+    const settings = page.locator('.tools-modal')
+    await expect(settings).toBeVisible()
+    await expect(settings.getByRole('tab', { name: 'Remotes' })).toHaveAttribute('aria-selected', 'true')
+    await expect(settings.locator('.remote-list')).toContainText('origin is not configured yet')
+})

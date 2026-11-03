@@ -283,9 +283,25 @@
     const hasRemote = computed(() => repoStore.hasRemote)
     const pendingRemoteTag = ref<string | null>(null)
     const refreshingTags = computed(() => loadingTags.value || loadingRemoteTags.value)
+    const refreshingBranches = ref(false)
     function refreshTags() {
         if (refreshingTags.value || uiTransient.busy) return
         void repoStore.refreshWithTags()
+    }
+    /** Local data only: remote branches change after a fetch/pull, never from this button. */
+    async function refreshBranches() {
+        if (refreshingBranches.value || uiTransient.busy) return
+        refreshingBranches.value = true
+        try {
+            await repoStore.refresh()
+        } finally {
+            refreshingBranches.value = false
+        }
+    }
+    /** Deep-link into Settings → Remotes (the same one-shot `toolsTab` flow the command palette uses). */
+    function openRemotesSettings() {
+        repoStore.toolsTab = 'auth'
+        repoStore.toolsOpen = true
     }
 
     function focusBranch(branch: { name: string; commitHash?: string }) {
@@ -774,6 +790,30 @@
                         REMOTE BRANCHES <span class="section-count">{{ remote.length }}</span>
                     </h3>
                 </button>
+                <button
+                    class="icon-btn section-refresh-btn"
+                    title="Refresh branches"
+                    aria-label="Refresh branches"
+                    :disabled="refreshingBranches || !!uiTransient.busy"
+                    @click.stop="refreshBranches()">
+                    <ThinkSpinner
+                        v-if="refreshingBranches"
+                        compact />
+                    <i-lucide-rotate-cw
+                        v-else
+                        width="14"
+                        height="14" />
+                </button>
+                <button
+                    v-if="!hasRemote"
+                    class="icon-btn section-settings-btn"
+                    title="Add a remote in Settings → Remotes"
+                    aria-label="Open Remotes settings"
+                    @click="openRemotesSettings">
+                    <i-lucide-settings
+                        width="14"
+                        height="14" />
+                </button>
             </div>
             <div
                 class="section-body"
@@ -785,7 +825,7 @@
                     <div
                         v-if="remote.length === 0"
                         class="sidebar-empty">
-                        Fetch a remote to see branches
+                        {{ hasRemote ? 'Fetch a remote to see branches' : 'No remote configured' }}
                     </div>
                     <div
                         v-for="branch in remoteFiltered"

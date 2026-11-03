@@ -2476,6 +2476,16 @@ body {
     color: var(--orange);
     background: color-mix(in srgb, var(--orange) 15%, transparent);
 }
+/* Settings shortcut in the Remote Branches header — teal so it reads as an action, not section chrome. */
+.sidebar > .sidebar-section > .section-header > .section-settings-btn {
+    flex: none;
+    margin-right: 8px;
+    color: var(--teal);
+}
+.sidebar > .sidebar-section > .section-header > .section-settings-btn:hover {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 15%, transparent);
+}
 /* the scrollable list under a fixed header */
 .sidebar > .sidebar-section > .section-body {
     flex: 1 1 auto;
