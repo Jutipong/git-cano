@@ -4,6 +4,7 @@
     import Rider from '~icons/devicon/rider'
     import VisualStudioCode from '~icons/devicon/vscode'
     import ChevronRight from '~icons/lucide/chevron-right'
+    import Copy from '~icons/lucide/copy'
     import Eye from '~icons/lucide/eye'
     import File from '~icons/lucide/file'
     import Files from '~icons/lucide/files'
@@ -150,7 +151,7 @@
         const menu = props.menu
         if (!menu) return {}
         const itemCount =
-            3 + (canOpenInEditor.value ? editorOptions.value.length : 0) + (menu.workdir && !menu.deleted ? 2 : 0)
+            4 + (canOpenInEditor.value ? editorOptions.value.length : 0) + (menu.workdir && !menu.deleted ? 2 : 0)
         const estimatedHeight = 16 + itemCount * 29
         return {
             left: `${Math.max(8, Math.min(menu.x, window.innerWidth - 250))}px`,
@@ -188,6 +189,17 @@
         } catch (error) {
             notify(errorMessage(error), 'error')
         }
+    }
+
+    function copyName() {
+        const menu = props.menu
+        if (!menu) return
+        const name = menu.path.split('/').pop() || menu.path
+        emit('close')
+        navigator.clipboard
+            .writeText(name)
+            .then(() => notify(menu.directory ? 'Folder name copied' : 'File name copied', 'success'))
+            .catch(() => notify('Copy failed', 'error'))
     }
 </script>
 
@@ -320,5 +332,15 @@
                 </span>
             </div>
         </div>
+        <div class="file-context-menu-separator" />
+        <button
+            class="file-context-menu-item"
+            @click="copyName()">
+            <Copy
+                class="file-context-menu-icon"
+                width="13"
+                height="13" />
+            {{ menu.directory ? 'Copy folder name' : 'Copy file name' }}
+        </button>
     </div>
 </template>
