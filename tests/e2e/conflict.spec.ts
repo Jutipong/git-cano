@@ -57,25 +57,53 @@ test('both-added file is reported as unmerged, not staged', async () => {
     expect(`${both.staged}${both.unstaged}`).toBe('AA')
 })
 
-test('both-added conflict is listed, resolvable, and gates Continue', async () => {
-    // shared.txt was resolved above, so the AA file is the last remaining conflict.
+test('both-added conflict is listed and resolvable', async () => {
+    // shared.txt was resolved above, so two conflicts remain: both-added.txt and mixed-conflict.txt.
     await expect(page.locator('.conflict-continue')).toBeDisabled()
-    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toContainText('1')
+    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toContainText('2')
 
     const row = page.locator('.file-row', { hasText: 'both-added.txt' })
     await expect(row.locator('.badge.b-u')).toBeVisible()
     await row.locator('button[title^="Mark this file as resolved"]').click()
 
     await expect(page.locator('.toast').filter({ hasText: 'both-added.txt: resolved' })).toBeVisible()
-    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toHaveCount(0)
+    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toContainText('1')
     await expect(page.locator('.group-header', { hasText: 'Resolved files' })).toContainText('2')
-    await expect(page.locator('.conflict-continue')).toBeEnabled()
+    await expect(page.locator('.conflict-continue')).toBeDisabled()
 
     await expect
         .poll(() =>
             page.evaluate(async () => {
                 const api = (window as unknown as { api: any }).api
                 const file = (await api.status()).files.find((f: any) => f.path === 'both-added.txt')
+                return file ? `${file.staged}${file.unstaged}` : 'gone'
+            })
+        )
+        .toBe('M ')
+})
+
+test('whole-side pick resolves a conflict whose chosen side is empty', async () => {
+    // mixed-conflict.txt has two blocks; the incoming side deleted the first one, so it has no lines to tick.
+    await page.locator('.file-row', { hasText: 'mixed-conflict.txt' }).first().click()
+    await expect(page.locator('.conflict-view')).toBeVisible()
+
+    await page.locator('.conflict-pane.theirs .pane-head-all .conflict-check').click()
+    // Regression: the empty side used to stay unresolved, leaving the footer at 1/2 with Save disabled.
+    await expect(page.locator('.conflict-footer .footer-count')).toContainText('2/2 resolved')
+    await expect(page.locator('.conflict-footer .footer-save')).toBeEnabled()
+
+    await page.locator('.conflict-footer .footer-save').click()
+    await expect(page.locator('.toast').filter({ hasText: 'conflicts resolved' })).toBeVisible()
+    await expect(page.locator('.conflict-view')).toHaveCount(0)
+    await expect(page.locator('.group-header', { hasText: 'Conflicted files' })).toHaveCount(0)
+    await expect(page.locator('.group-header', { hasText: 'Resolved files' })).toContainText('3')
+    await expect(page.locator('.conflict-continue')).toBeEnabled()
+
+    await expect
+        .poll(() =>
+            page.evaluate(async () => {
+                const api = (window as unknown as { api: any }).api
+                const file = (await api.status()).files.find((f: any) => f.path === 'mixed-conflict.txt')
                 return file ? `${file.staged}${file.unstaged}` : 'gone'
             })
         )

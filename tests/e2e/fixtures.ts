@@ -8,7 +8,7 @@ export interface Fixtures {
     mainRepo: string
     /** Extra-1 … extra-7 — one-commit repos used for the cache/LRU checks. */
     extraRepos: string[]
-    /** Repo left mid-merge with an unmerged `shared.txt` (UU) and `both-added.txt` (AA). */
+    /** Repo left mid-merge with an unmerged `shared.txt` (UU), `both-added.txt` (AA) and `mixed-conflict.txt` (UU). */
     conflictRepo: string
     /** Clean 5-commit repo for history operations (undo/squash/rebase/reflog). */
     opsRepo: string
@@ -216,21 +216,34 @@ function createExtraRepos(root: string): string[] {
     return repos
 }
 
+/**
+ * Two conflicts in one file: `feature` deletes the first hunk (leaving conflict markers with an empty incoming side) and edits the second
+ * one, while `main` edits both. The empty side is the regression case — it has no line to tick, so picking it used to leave the block
+ * unresolved forever.
+ */
+const MIXED_BASE = 'top\n// block one\n// block one b\nl1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nl10\nmiddle\nside line\nother\nbottom\n'
+const MIXED_FEATURE = 'top\nl1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nl10\nmiddle\nfeature side line\nother\nbottom\n'
+const MIXED_MAIN =
+    'top\n// block one edited\n// block one b edited\nl1\nl2\nl3\nl4\nl5\nl6\nl7\nl8\nl9\nl10\nmiddle\nmain side line\nother\nbottom\n'
+
 function createConflictRepo(root: string): string {
     const dir = path.join(root, 'conflict-repo')
     initRepo(dir)
     write(dir, 'shared.txt', 'line one\nshared line\nline three\n')
-    run(dir, ['add', 'shared.txt'])
+    write(dir, 'mixed-conflict.txt', MIXED_BASE)
+    run(dir, ['add', 'shared.txt', 'mixed-conflict.txt'])
     commit(dir, 'chore: base')
     run(dir, ['checkout', '-b', 'feature'])
     write(dir, 'shared.txt', 'line one\nfeature side\nline three\n')
     write(dir, 'both-added.txt', 'feature version\n')
-    run(dir, ['add', 'shared.txt', 'both-added.txt'])
+    write(dir, 'mixed-conflict.txt', MIXED_FEATURE)
+    run(dir, ['add', 'shared.txt', 'both-added.txt', 'mixed-conflict.txt'])
     commit(dir, 'feat: feature side')
     run(dir, ['checkout', 'main'])
     write(dir, 'shared.txt', 'line one\nmain side\nline three\n')
     write(dir, 'both-added.txt', 'main version\n')
-    run(dir, ['add', 'shared.txt', 'both-added.txt'])
+    write(dir, 'mixed-conflict.txt', MIXED_MAIN)
+    run(dir, ['add', 'shared.txt', 'both-added.txt', 'mixed-conflict.txt'])
     commit(dir, 'feat: main side')
     try {
         run(dir, ['merge', 'feature'])
