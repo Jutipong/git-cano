@@ -55,6 +55,12 @@ test('initialize creates the repository and opens it', async () => {
     await expect.poll(() => fs.existsSync(path.join(folder, '.git'))).toBe(true)
     await expect(page.locator('.graph-empty')).toContainText('No commits')
     await expect(page.locator('.file-row', { hasText: 'README.md' })).toBeVisible()
+
+    const branch = await page.evaluate(() => {
+        const api = (window as unknown as { api: any }).api
+        return api.status().then((status: { branch: string }) => status.branch)
+    })
+    expect(branch).toBe('main')
 })
 
 test('the remote branches section exposes a refresh button', async () => {

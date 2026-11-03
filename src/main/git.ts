@@ -255,7 +255,7 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
 
 /**
  * Initializes a fresh repository in `dir` and opens it — the explicit "Initialize repository" step behind the open-folder flow, never an
- * automatic action. `git init` leaves the folder's files untouched and respects the user's `init.defaultBranch`.
+ * automatic action. `git init` leaves the folder's files untouched; the branch is pinned to `main` regardless of `init.defaultBranch`.
  */
 export async function initRepo(dir: string): Promise<RepoStatus> {
     const target = path.resolve(dir)
@@ -264,7 +264,7 @@ export async function initRepo(dir: string): Promise<RepoStatus> {
     const g = plainGit(target)
     // Defense-in-depth: never create a nested repo inside an existing worktree.
     if (await g.checkIsRepo().catch(() => false)) throw new Error(`"${target}" is already inside a Git repository`)
-    await g.init()
+    await g.raw(['init', '-b', 'main'])
     log('info', 'repo', `init ${target}`)
     return openRepo(target)
 }
