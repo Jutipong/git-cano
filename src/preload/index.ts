@@ -36,6 +36,7 @@ import type {
     UndoPreview,
     LocalChangesMode,
     OpenInTargets,
+    PickRepoResult,
     RepoState,
     UpdateProgress,
 } from '@shared/types'
@@ -47,11 +48,12 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 }
 
 const api = {
-    pickAndOpen: (): Promise<RepoStatus | null> => call('repo:pickAndOpen'),
+    pickAndOpen: (): Promise<PickRepoResult | null> => call('repo:pickAndOpen'),
     pickDirectory: (): Promise<string | null> => call('repo:pickDir'),
     clone: (url: string, parent?: string, folderName?: string): Promise<RepoStatus | null> =>
         call('repo:clone', url, parent, folderName),
     openPath: (dir: string): Promise<RepoStatus> => call('repo:openPath', dir),
+    initRepo: (dir: string): Promise<RepoStatus> => call('repo:init', dir),
     setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
     closeRepo: (dir?: string): Promise<boolean> => call('repo:close', dir),
     openTerminal: (dir: string): Promise<void> => call('app:openTerminal', dir),

@@ -29,6 +29,9 @@ export interface RepoStatus {
     files: FileEntry[]
 }
 
+/** Result of the open-folder picker — an existing repository, or a folder the user can initialize. */
+export type PickRepoResult = { kind: 'opened'; status: RepoStatus } | { kind: 'needsInit'; dir: string }
+
 export interface BranchInfo {
     name: string
     current: boolean

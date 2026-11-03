@@ -217,6 +217,14 @@ export function getRepoFor(dir: string): { path: string; git: SimpleGit } {
     return { path: dir, git: instance }
 }
 
+/** A folder with no Git worktree anywhere up the tree — the renderer offers to initialize one there. */
+export class NotARepoError extends Error {
+    constructor(readonly dir: string) {
+        super(`"${dir}" is not a git repository`)
+        this.name = 'NotARepoError'
+    }
+}
+
 /**
  * Opens a repo with a single git spawn (status doubles as the is-repo check; `checkIsRepo` only runs on the failure path to build the
  * proper error message). Safe to run for several dirs concurrently — status is computed per-instance, not through the global active repo.
@@ -241,8 +249,24 @@ export async function openRepo(dir: string): Promise<RepoStatus> {
         }
         activeRepoPath = prevActive
         if (await g.checkIsRepo().catch(() => false)) throw error
-        throw new Error(`"${dir}" is not a git repository`)
+        throw new NotARepoError(dir)
     }
+}
+
+/**
+ * Initializes a fresh repository in `dir` and opens it — the explicit "Initialize repository" step behind the open-folder flow, never an
+ * automatic action. `git init` leaves the folder's files untouched and respects the user's `init.defaultBranch`.
+ */
+export async function initRepo(dir: string): Promise<RepoStatus> {
+    const target = path.resolve(dir)
+    if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) throw new Error('Select an existing folder to initialize')
+    if (path.parse(target).root === target) throw new Error('Cannot initialize a repository at a drive root')
+    const g = plainGit(target)
+    // Defense-in-depth: never create a nested repo inside an existing worktree.
+    if (await g.checkIsRepo().catch(() => false)) throw new Error(`"${target}" is already inside a Git repository`)
+    await g.init()
+    log('info', 'repo', `init ${target}`)
+    return openRepo(target)
 }
 
 export function setActiveRepo(dir: string): void {

@@ -182,10 +182,7 @@
     provide('notify', (message: string, type?: ToastKind, opts?: NotifyOptions) => uiTransient.notify(message, type, opts))
 
     function openNewRepo() {
-        uiTransient
-            .withBusy(() => window.api.pickAndOpen(), 'Opening repository…')
-            .then((status: RepoStatus | null) => status && repoStore.addTab(status))
-            .catch((error: unknown) => uiTransient.notify(String(error), 'error'))
+        void repoStore.pickAndOpen()
     }
 
     /**

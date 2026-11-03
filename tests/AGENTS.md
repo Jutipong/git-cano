@@ -21,6 +21,8 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
     - `conflict.spec.ts` covers the conflict flow.
     - `cherry-pick.spec.ts` covers the cherry-pick flow from the commit menu and by dragging a commit onto a
       branch: dirty-tree block, clean pick + Undo, conflict error dialog (abort), and the switch-then-pick path.
+    - `open-repo.spec.ts` covers opening a folder that is not yet a Git repository: cancel leaves it untouched, and
+      confirming "Initialize" runs `git init` and opens the empty repository.
     - `settings.spec.ts` smoke-tests every Settings tab (panel wiring + first section title) and checks that an
       unsaved AI token survives a trip to another tab.
     - `merge-branch.spec.ts` covers branch merges from the branch menu and by dragging a branch: dirty-tree

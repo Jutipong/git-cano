@@ -88,6 +88,8 @@ import {
     checkMergeConflicts,
     onRepoChanged,
     openRepo,
+    initRepo,
+    NotARepoError,
     pull,
     push,
     pushBranch,
@@ -351,8 +353,16 @@ app.whenReady().then(() => {
     handle('repo:pickAndOpen', async () => {
         const res = await dialog.showOpenDialog({ properties: ['openDirectory'], defaultPath: startDir() })
         if (res.canceled || !res.filePaths[0]) return null
-        return openRepo(res.filePaths[0])
+        const dir = res.filePaths[0]
+        try {
+            return { kind: 'opened', status: await openRepo(dir) }
+        } catch (error) {
+            // Only a truly unversioned folder reaches the renderer as an init offer — permission/corruption errors still surface as errors.
+            if (error instanceof NotARepoError) return { kind: 'needsInit', dir }
+            throw error
+        }
     })
+    handle('repo:init', (_dir: string) => initRepo(String(_dir ?? '')))
     handle('repo:pickDir', async () => {
         const res = await dialog.showOpenDialog({
             title: 'Choose destination folder for clone',

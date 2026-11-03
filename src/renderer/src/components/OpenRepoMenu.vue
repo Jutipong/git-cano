@@ -1,13 +1,11 @@
 <script setup lang="ts">
-    import { errorMessage } from '@shared/errors'
-    import { inject, onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
+    import { onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
     import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
     import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
     import ILucideFolderPlus from '~icons/lucide/folder-plus'
 
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
-    import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
     import { useMenuKeyboard } from '../utils/menuKeyboard'
     import { formatCombo } from '../utils/shortcuts'
 
@@ -21,8 +19,6 @@
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
-    const uiTransient = useUiTransientStore()
-    const notify = inject<(m: string, t?: ToastKind, o?: NotifyOptions) => void>('notify', () => {})
 
     const open = ref(false)
     const pop = useTemplateRef<HTMLElement>('pop')
@@ -42,14 +38,9 @@
         if (event?.detail) (event.currentTarget as HTMLElement | null)?.blur()
     }
 
-    async function openLocal() {
+    function openLocal() {
         open.value = false
-        try {
-            const status = await uiTransient.withBusy(() => window.api.pickAndOpen(), 'Opening repository…')
-            if (status) repoStore.addTab(status)
-        } catch (error) {
-            notify(errorMessage(error), 'error')
-        }
+        void repoStore.pickAndOpen()
     }
 
     function openClone() {

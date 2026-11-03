@@ -1,3 +1,4 @@
+import { errorMessage } from '@shared/errors'
 import { assignLanes } from '@shared/lanes'
 import { defineStore } from 'pinia'
 import { computed, markRaw, ref, watch } from 'vue'
@@ -224,6 +225,32 @@ export const useRepoStore = defineStore('repo', () => {
                 .setActiveRepo(status.path)
                 .then(() => refresh(status, true))
                 .catch(() => {})
+        }
+    }
+
+    /**
+     * Open-folder flow shared by every entry point (Ctrl+O, the tab-bar menu, the command palette). A folder with no Git worktree gets an
+     * explicit confirmation before `git init` — the app never initializes a repository on its own.
+     */
+    async function pickAndOpen(): Promise<void> {
+        const uiTransient = useUiTransientStore()
+        try {
+            const result = await uiTransient.withBusy(() => window.api.pickAndOpen(), 'Opening repository…')
+            if (!result) return
+            if (result.kind === 'opened') {
+                addTab(result.status)
+                return
+            }
+            const ok = await confirmDialog({
+                title: 'Initialize repository?',
+                message: `"${result.dir}" is not a Git repository. Initialize one here? Existing files are left untouched.`,
+                confirmLabel: 'Initialize',
+            })
+            if (!ok) return
+            const status = await uiTransient.withBusy(() => window.api.initRepo(result.dir), 'Initializing repository…')
+            addTab(status)
+        } catch (error) {
+            uiTransient.notify(errorMessage(error), 'error')
         }
     }
 
@@ -653,6 +680,7 @@ export const useRepoStore = defineStore('repo', () => {
         switchingWorkspace,
         loadingRepo,
         addTab,
+        pickAndOpen,
         refresh,
         refreshWithTags,
         refreshStatusOnly,
