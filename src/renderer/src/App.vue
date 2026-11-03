@@ -125,7 +125,7 @@
         return Math.ceil((t.progress * t.durationMs) / 1000)
     }
 
-    const RIGHT_PANEL_MIN_WIDTH = 360
+    const RIGHT_PANEL_MIN_WIDTH = 340
     if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
 
     /** Conflicted rows open ConflictView; everything else opens DiffView (mutually exclusive). */
