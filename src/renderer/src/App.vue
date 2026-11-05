@@ -48,6 +48,13 @@
     import { useWorkspaceStore } from './stores/workspace'
     import { confirmDialog } from './utils/confirm'
     import { useMinVisible } from './utils/minVisible'
+    import {
+        RIGHT_PANEL_MAX_WIDTH,
+        RIGHT_PANEL_MIN_WIDTH,
+        SIDEBAR_MAX_WIDTH,
+        SIDEBAR_MIN_WIDTH,
+        computePanelWidths,
+    } from './utils/panelLayout'
     import { promptDialog } from './utils/prompt'
     import { eventToCombos, mainKeysOf } from './utils/shortcuts'
     import { SPLASH_MIN_MS } from './utils/splash'
@@ -125,7 +132,6 @@
         return Math.ceil((t.progress * t.durationMs) / 1000)
     }
 
-    const RIGHT_PANEL_MIN_WIDTH = 340
     if (ui.rightPanelWidth < RIGHT_PANEL_MIN_WIDTH) ui.rightPanelWidth = RIGHT_PANEL_MIN_WIDTH
 
     /** Conflicted rows open ConflictView; everything else opens DiffView (mutually exclusive). */
@@ -146,7 +152,6 @@
         selectedCommit.value = commit
     }
 
-    const SIDEBAR_MIN_WIDTH = 280
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
@@ -158,8 +163,15 @@
     function updateTerminalMaxHeight() {
         terminalMaxHeight.value = terminalMaxHeightPx()
     }
-    onMounted(() => window.addEventListener('resize', updateTerminalMaxHeight))
-    onUnmounted(() => window.removeEventListener('resize', updateTerminalMaxHeight))
+    /** Layout viewport width in CSS px; window resizes and app zoom both change `innerWidth`. */
+    const viewportWidth = ref(window.innerWidth)
+    const panelWidths = computed(() => computePanelWidths(viewportWidth.value, ui.sidebarWidth, ui.rightPanelWidth))
+    function onWindowResize() {
+        updateTerminalMaxHeight()
+        viewportWidth.value = window.innerWidth
+    }
+    onMounted(() => window.addEventListener('resize', onWindowResize))
+    onUnmounted(() => window.removeEventListener('resize', onWindowResize))
     const tagTarget = ref<{ hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null } | null>(
         null
     )
@@ -546,14 +558,14 @@
         resizeRef.value = {
             side,
             startX: event.clientX,
-            startWidth: side === 'left' ? ui.sidebarWidth : ui.rightPanelWidth,
+            startWidth: side === 'left' ? panelWidths.value.sidebar : panelWidths.value.right,
         }
         const onMove = (moveEvent: MouseEvent) => {
             const resize = resizeRef.value
             if (!resize) return
             const delta = moveEvent.clientX - resize.startX
-            if (resize.side === 'left') ui.sidebarWidth = Math.min(380, Math.max(SIDEBAR_MIN_WIDTH, resize.startWidth + delta))
-            else ui.rightPanelWidth = Math.min(500, Math.max(RIGHT_PANEL_MIN_WIDTH, resize.startWidth - delta))
+            if (resize.side === 'left') ui.sidebarWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, resize.startWidth + delta))
+            else ui.rightPanelWidth = Math.min(RIGHT_PANEL_MAX_WIDTH, Math.max(RIGHT_PANEL_MIN_WIDTH, resize.startWidth - delta))
         }
         const onEnd = () => {
             resizeRef.value = null
@@ -572,8 +584,8 @@
     function resizePanelByKey(side: 'left' | 'right', event: KeyboardEvent) {
         const step = event.shiftKey ? 40 : 10
         const min = side === 'left' ? SIDEBAR_MIN_WIDTH : RIGHT_PANEL_MIN_WIDTH
-        const max = side === 'left' ? 380 : 500
-        const current = side === 'left' ? ui.sidebarWidth : ui.rightPanelWidth
+        const max = side === 'left' ? SIDEBAR_MAX_WIDTH : RIGHT_PANEL_MAX_WIDTH
+        const current = side === 'left' ? panelWidths.value.sidebar : panelWidths.value.right
         let next = current
         if (event.key === 'ArrowLeft') next = current + (side === 'left' ? -step : step)
         else if (event.key === 'ArrowRight') next = current + (side === 'left' ? step : -step)
@@ -987,8 +999,8 @@
     <div
         class="app"
         :style="{
-            '--sidebar-width': `${ui.sidebarWidth}px`,
-            '--right-panel-width': `${ui.rightPanelWidth}px`,
+            '--sidebar-width': `${panelWidths.sidebar}px`,
+            '--right-panel-width': `${panelWidths.right}px`,
             '--terminal-height': `${terminalStore.terminalHeight}px`,
         }">
         <!--
@@ -1025,9 +1037,9 @@
                     role="separator"
                     aria-orientation="vertical"
                     aria-label="Resize sidebar"
-                    :aria-valuenow="ui.sidebarWidth"
+                    :aria-valuenow="panelWidths.sidebar"
                     :aria-valuemin="SIDEBAR_MIN_WIDTH"
-                    :aria-valuemax="380"
+                    :aria-valuemax="SIDEBAR_MAX_WIDTH"
                     tabindex="0"
                     @mousedown="event => beginResize('left', event)"
                     @keydown="resizePanelByKey('left', $event)" />
@@ -1125,15 +1137,15 @@
                             role="separator"
                             aria-orientation="vertical"
                             aria-label="Resize changes panel"
-                            :aria-valuenow="ui.rightPanelWidth"
+                            :aria-valuenow="panelWidths.right"
                             :aria-valuemin="RIGHT_PANEL_MIN_WIDTH"
-                            :aria-valuemax="500"
+                            :aria-valuemax="RIGHT_PANEL_MAX_WIDTH"
                             tabindex="0"
                             @mousedown="event => beginResize('right', event)"
                             @keydown="resizePanelByKey('right', $event)" />
                         <div
                             class="right-pane"
-                            :style="{ width: `${ui.rightPanelWidth}px`, flexBasis: `${ui.rightPanelWidth}px` }">
+                            :style="{ width: `${panelWidths.right}px`, flexBasis: `${panelWidths.right}px` }">
                             <FilePanel
                                 :files="selectedStash ? repoStore.stashFiles : selectedCommit ? repoStore.commitFiles : (repo?.files ?? [])"
                                 :mode="selectedStash ? 'stash' : selectedCommit ? 'commit' : 'workdir'"
@@ -1177,14 +1189,14 @@
         <ConflictView
             v-if="selectedConflict && repo"
             class="diff-overlay"
-            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :style="{ right: `${panelWidths.right + 14}px` }"
             :file="selectedConflict"
             :refresh="repoStore.refresh"
             @close="selectedConflict = null" />
         <DiffView
             v-if="selectedFile && repo"
             class="diff-overlay"
-            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :style="{ right: `${panelWidths.right + 14}px` }"
             :file="selectedFile"
             :commit-hash="selectedStash ? undefined : (selectedCommit?.hash ?? undefined)"
             :stash-hash="selectedStash?.hash ?? undefined"
@@ -1212,19 +1224,19 @@
         <FileHistoryModal
             v-if="historyFile"
             class="diff-overlay"
-            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :style="{ right: `${panelWidths.right + 14}px` }"
             :file="historyFile"
             @close="historyFile = null" />
         <BlameModal
             v-if="blameFile"
             class="diff-overlay"
-            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :style="{ right: `${panelWidths.right + 14}px` }"
             :file="blameFile"
             @close="blameFile = null" />
         <FilePreviewModal
             v-if="previewFile"
             class="diff-overlay"
-            :style="{ right: `${ui.rightPanelWidth + 14}px` }"
+            :style="{ right: `${panelWidths.right + 14}px` }"
             :file="previewFile"
             :commit-hash="selectedStash ? undefined : (selectedCommit?.hash ?? undefined)"
             :stash-hash="selectedStash?.hash ?? undefined"

@@ -605,8 +605,7 @@
     <aside
         ref="sidebarEl"
         class="sidebar"
-        aria-label="Sidebar"
-        :style="{ width: `${ui.sidebarWidth}px`, flexBasis: `${ui.sidebarWidth}px` }">
+        aria-label="Sidebar">
         <div class="sidebar-toolbar">
             <img
                 :src="canoIcon"

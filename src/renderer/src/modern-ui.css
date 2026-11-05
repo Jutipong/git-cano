@@ -1085,7 +1085,6 @@ body {
 
 .app {
     position: relative;
-    min-width: 980px;
     gap: 0;
     padding: 6px;
     background: radial-gradient(circle at 50% -20%, color-mix(in srgb, var(--teal) 8%, transparent), transparent 42%), var(--canvas);
@@ -1315,7 +1314,7 @@ body {
     gap: 2px;
     min-height: 34px;
     width: 100%;
-    min-width: 360px;
+    min-width: 0;
     padding: 2px 4px;
     background: var(--surface-2);
     border: 1px solid var(--line-soft);
@@ -2411,6 +2410,10 @@ body {
 }
 
 .sidebar {
+    /* The effective width (App.vue's panelLayout) can be narrower than the persisted drag width
+       when the window shrinks, so both columns read the resolved variable. */
+    width: var(--sidebar-width);
+    flex: 0 0 var(--sidebar-width);
     /* align top with the commit-history area (.app-body has margin-top: 6px)
        so the sidebar height matches the graph height */
     margin-top: 6px;

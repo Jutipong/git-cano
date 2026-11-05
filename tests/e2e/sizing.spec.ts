@@ -109,6 +109,45 @@ test('sidebar section cards resize with the keyboard and reset on double-click',
     await expect(local).not.toHaveAttribute('style', /height/)
 })
 
+test('the three-column layout fits the minimum window width', async () => {
+    await handle.app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.setSize(1000, 760)
+    })
+    // The renderer reacts to the resize event; poll until the narrow layout has been laid out.
+    await expect
+        .poll(() =>
+            page.evaluate(() => {
+                const app = document.querySelector('.app')!
+                return app.scrollWidth - window.innerWidth
+            })
+        )
+        .toBeLessThanOrEqual(0)
+
+    const metrics = await page.evaluate(() => {
+        const app = document.querySelector('.app')!
+        const rightPane = document.querySelector('.right-pane')!
+        const sync = document.querySelector('.tab-sync-actions')!
+        const syncBox = sync.getBoundingClientRect()
+        const paneBox = rightPane.getBoundingClientRect()
+        return {
+            inner: window.innerWidth,
+            appScroll: app.scrollWidth,
+            syncRight: syncBox.right,
+            syncOverflow: sync.scrollWidth - sync.clientWidth,
+            paneRight: paneBox.right,
+        }
+    })
+    expect(metrics.appScroll).toBeLessThanOrEqual(metrics.inner)
+    // Stashes sits at the end of the sync pill — the 340px panel change used to clip it.
+    expect(metrics.syncOverflow).toBeLessThanOrEqual(1)
+    expect(metrics.syncRight).toBeLessThanOrEqual(metrics.inner + 1)
+    expect(metrics.paneRight).toBeLessThanOrEqual(metrics.inner + 1)
+
+    await handle.app.evaluate(({ BrowserWindow }) => {
+        BrowserWindow.getAllWindows()[0]?.setSize(1400, 900)
+    })
+})
+
 test('a pinned sidebar card fills the leftover space in one drag', async () => {
     // The footer's `margin-top: auto` used to count as reserved space, which capped the computed max at roughly
     // the card's current height: a drag stalled after a few pixels and every re-grab creeped a little further.

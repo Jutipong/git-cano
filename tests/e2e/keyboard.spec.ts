@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 
+import { RIGHT_PANEL_MIN_WIDTH, SIDEBAR_MIN_WIDTH } from '../../src/renderer/src/utils/panelLayout'
 import { loadFixtures } from './fixtures'
 import { launchApp, type AppHandle } from './launch'
 
@@ -194,7 +195,7 @@ test('sidebar and changes splitters resize with arrows', async () => {
     await page.keyboard.press('End')
     await expect(sidebar).toHaveAttribute('aria-valuenow', '380')
     await page.keyboard.press('Home')
-    await expect(sidebar).toHaveAttribute('aria-valuenow', '280')
+    await expect(sidebar).toHaveAttribute('aria-valuenow', String(SIDEBAR_MIN_WIDTH))
 
     const changes = page.locator('.panel-splitter[aria-label="Resize changes panel"]')
     expect(await changes.getAttribute('aria-valuenow')).toBe('360')
@@ -202,7 +203,7 @@ test('sidebar and changes splitters resize with arrows', async () => {
     await page.keyboard.press('ArrowLeft')
     await expect(changes).toHaveAttribute('aria-valuenow', '370')
     await page.keyboard.press('Home')
-    await expect(changes).toHaveAttribute('aria-valuenow', '340')
+    await expect(changes).toHaveAttribute('aria-valuenow', String(RIGHT_PANEL_MIN_WIDTH))
 })
 
 test('terminal splitter resizes with arrows', async () => {
