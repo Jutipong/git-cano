@@ -268,9 +268,16 @@
     }
 
     const collapsedDirs = reactive(new Set<string>())
-    function toggleDir(path: string) {
-        if (collapsedDirs.has(path)) collapsedDirs.delete(path)
-        else collapsedDirs.add(path)
+    function dirKey(group: string, path: string) {
+        return `${group}:${path}`
+    }
+    function isDirCollapsed(group: string, path: string) {
+        return collapsedDirs.has(dirKey(group, path))
+    }
+    function toggleDir(group: string, path: string) {
+        const key = dirKey(group, path)
+        if (collapsedDirs.has(key)) collapsedDirs.delete(key)
+        else collapsedDirs.add(key)
     }
     function expandFileDir(row: HTMLElement): boolean {
         if (!row.classList.contains('dir-row')) return false
@@ -282,28 +289,43 @@
         if (row.getAttribute('aria-expanded') === 'true') row.click()
         return true
     }
-    /** Every folder that exists in the current file set (including nested ones hidden inside collapsed folders). */
-    const allDirPaths = computed(() => {
-        const files =
-            ui.fileFilterMode === 'all'
-                ? allFiles.value
-                : isWorkdir.value
-                  ? [...staged.value, ...unstaged.value, ...untracked.value]
-                  : commitFileList.value
+    /** Every folder that exists in a file set (including nested ones hidden inside collapsed folders). */
+    function dirPaths(files: { path: string }[]): string[] {
         const dirs = new Set<string>()
         for (const file of files) {
             const parts = file.path.split('/')
             for (let i = 1; i < parts.length; i++) dirs.add(parts.slice(0, i).join('/'))
         }
         return [...dirs]
-    })
-    /** Derived from collapsedDirs so manually collapsed folders stay in sync. */
-    const allDirsCollapsed = computed(() => allDirPaths.value.length > 0 && allDirPaths.value.every(path => collapsedDirs.has(path)))
+    }
+    const allDirPaths = computed(() => dirPaths(allFiles.value))
+    const stagedDirPaths = computed(() => dirPaths(staged.value))
+    const unstagedDirPaths = computed(() => dirPaths([...unstaged.value, ...untracked.value]))
+    const commitDirPaths = computed(() => dirPaths(commitFileList.value))
+    /** Derived from collapsedDirs so manually collapsed folders stay in sync. Each group collapses on its own. */
+    function allDirsCollapsed(group: string, paths: string[]): boolean {
+        return paths.length > 0 && paths.every(path => isDirCollapsed(group, path))
+    }
     /** Whole group-header label is clickable only when collapsing actually does something. */
-    const canToggleAll = computed(() => ui.fileViewMode === 'tree' && allDirPaths.value.length > 0)
-    function toggleAllDirs() {
-        if (allDirsCollapsed.value) collapsedDirs.clear()
-        else for (const path of allDirPaths.value) collapsedDirs.add(path)
+    function canToggleAll(paths: string[]): boolean {
+        return ui.fileViewMode === 'tree' && paths.length > 0
+    }
+    function toggleAllDirs(group: string, paths: string[]) {
+        const collapsed = allDirsCollapsed(group, paths)
+        for (const path of paths) {
+            const key = dirKey(group, path)
+            if (collapsed) collapsedDirs.delete(key)
+            else collapsedDirs.add(key)
+        }
+    }
+    /** The collapsed set `flattenTree` expects only holds this group's folder paths. */
+    function collapsedForGroup(group: string): Set<string> {
+        const prefix = `${group}:`
+        const collapsed = new Set<string>()
+        for (const key of collapsedDirs) {
+            if (key.startsWith(prefix)) collapsed.add(key.slice(prefix.length))
+        }
+        return collapsed
     }
     function toggleViewMode() {
         ui.fileViewMode = ui.fileViewMode === 'tree' ? 'flat' : 'tree'
@@ -367,7 +389,7 @@
             }))
         }
         const byPath = new Map(files.map(file => [file.path, file]))
-        return flattenTree(buildTree(files.map(file => file.path)), collapsedDirs, `${group}:`).map(row => ({
+        return flattenTree(buildTree(files.map(file => file.path)), collapsedForGroup(group), `${group}:`).map(row => ({
             ...row,
             file: row.kind === 'file' ? byPath.get(row.fullPath) : undefined,
         }))
@@ -765,12 +787,12 @@
             <template v-else-if="ui.fileFilterMode === 'all'">
                 <div class="group-header">
                     <h4
-                        :class="{ 'can-toggle': canToggleAll }"
-                        @click="canToggleAll && toggleAllDirs()">
+                        :class="{ 'can-toggle': canToggleAll(allDirPaths) }"
+                        @click="canToggleAll(allDirPaths) && toggleAllDirs('all', allDirPaths)">
                         <CollapseAllButton
-                            v-if="canToggleAll"
-                            :all-collapsed="allDirsCollapsed"
-                            @toggle="toggleAllDirs()" />
+                            v-if="canToggleAll(allDirPaths)"
+                            :all-collapsed="allDirsCollapsed('all', allDirPaths)"
+                            @toggle="toggleAllDirs('all', allDirPaths)" />
                         All files <span>{{ allFiles.length }}</span>
                     </h4>
                 </div>
@@ -779,12 +801,12 @@
                     :key="row.key">
                     <div
                         v-if="row.kind === 'dir'"
-                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
+                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!isDirCollapsed('all', row.fullPath)"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                        @click="toggleDir(row.fullPath)"
+                        @click="toggleDir('all', row.fullPath)"
                         @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                         <i-lucide-chevron-right
-                            v-if="collapsedDirs.has(row.fullPath)"
+                            v-if="isDirCollapsed('all', row.fullPath)"
                             class="dir-chevron"
                             width="13"
                             height="13" />
@@ -941,12 +963,12 @@
                 <template v-if="staged.length > 0">
                     <div class="group-header">
                         <h4
-                            :class="{ 'can-toggle': canToggleAll }"
-                            @click="canToggleAll && toggleAllDirs()">
+                            :class="{ 'can-toggle': canToggleAll(stagedDirPaths) }"
+                            @click="canToggleAll(stagedDirPaths) && toggleAllDirs('staged', stagedDirPaths)">
                             <CollapseAllButton
-                                v-if="canToggleAll"
-                                :all-collapsed="allDirsCollapsed"
-                                @toggle="toggleAllDirs()" />
+                                v-if="canToggleAll(stagedDirPaths)"
+                                :all-collapsed="allDirsCollapsed('staged', stagedDirPaths)"
+                                @toggle="toggleAllDirs('staged', stagedDirPaths)" />
                             {{ isMerging ? 'Resolved files' : 'Staged files' }} <span>{{ staged.length }}</span>
                         </h4>
                         <div class="group-header-actions">
@@ -962,12 +984,12 @@
                         :key="row.key">
                         <div
                             v-if="row.kind === 'dir'"
-                            class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
+                            class="dir-row" tabindex="-1" role="option" :aria-expanded="!isDirCollapsed('staged', row.fullPath)"
                             :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                            @click="toggleDir(row.fullPath)"
+                            @click="toggleDir('staged', row.fullPath)"
                             @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                             <i-lucide-chevron-right
-                                v-if="collapsedDirs.has(row.fullPath)"
+                                v-if="isDirCollapsed('staged', row.fullPath)"
                                 class="dir-chevron"
                                 width="13"
                                 height="13" />
@@ -1035,12 +1057,12 @@
 
                 <div class="group-header">
                     <h4
-                        :class="{ 'can-toggle': canToggleAll }"
-                        @click="canToggleAll && toggleAllDirs()">
+                        :class="{ 'can-toggle': canToggleAll(unstagedDirPaths) }"
+                        @click="canToggleAll(unstagedDirPaths) && toggleAllDirs('unstaged', unstagedDirPaths)">
                         <CollapseAllButton
-                            v-if="canToggleAll"
-                            :all-collapsed="allDirsCollapsed"
-                            @toggle="toggleAllDirs()" />
+                            v-if="canToggleAll(unstagedDirPaths)"
+                            :all-collapsed="allDirsCollapsed('unstaged', unstagedDirPaths)"
+                            @toggle="toggleAllDirs('unstaged', unstagedDirPaths)" />
                         Unstaged <span>{{ unstaged.length + untracked.length }}</span>
                     </h4>
                     <div class="group-header-actions">
@@ -1065,12 +1087,12 @@
                     :key="row.key">
                     <div
                         v-if="row.kind === 'dir'"
-                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
+                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!isDirCollapsed('unstaged', row.fullPath)"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                        @click="toggleDir(row.fullPath)"
+                        @click="toggleDir('unstaged', row.fullPath)"
                         @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                         <i-lucide-chevron-right
-                            v-if="collapsedDirs.has(row.fullPath)"
+                            v-if="isDirCollapsed('unstaged', row.fullPath)"
                             class="dir-chevron"
                             width="13"
                             height="13" />
@@ -1161,12 +1183,12 @@
             <template v-else>
                 <div class="group-header">
                     <h4
-                        :class="{ 'can-toggle': canToggleAll }"
-                        @click="canToggleAll && toggleAllDirs()">
+                        :class="{ 'can-toggle': canToggleAll(commitDirPaths) }"
+                        @click="canToggleAll(commitDirPaths) && toggleAllDirs('commit', commitDirPaths)">
                         <CollapseAllButton
-                            v-if="canToggleAll"
-                            :all-collapsed="allDirsCollapsed"
-                            @toggle="toggleAllDirs()" />
+                            v-if="canToggleAll(commitDirPaths)"
+                            :all-collapsed="allDirsCollapsed('commit', commitDirPaths)"
+                            @toggle="toggleAllDirs('commit', commitDirPaths)" />
                         Changed files <span>{{ commitFileList.length }}</span>
                     </h4>
                     <span
@@ -1189,12 +1211,12 @@
                     :key="row.key">
                     <div
                         v-if="row.kind === 'dir'"
-                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!collapsedDirs.has(row.fullPath)"
+                        class="dir-row" tabindex="-1" role="option" :aria-expanded="!isDirCollapsed('commit', row.fullPath)"
                         :style="{ paddingLeft: `${12 + row.depth * 14}px` }"
-                        @click="toggleDir(row.fullPath)"
+                        @click="toggleDir('commit', row.fullPath)"
                         @contextmenu.prevent="openDirectoryMenu($event, row.fullPath)">
                         <i-lucide-chevron-right
-                            v-if="collapsedDirs.has(row.fullPath)"
+                            v-if="isDirCollapsed('commit', row.fullPath)"
                             class="dir-chevron"
                             width="13"
                             height="13" />
