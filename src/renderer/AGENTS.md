@@ -24,9 +24,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   The REMOTE BRANCHES header carries a gear button only while the repo has no remote
   (`!hasRemote`): it deep-links to Settings → Remotes through the one-shot
   `toolsTab`/`toolsOpen` pair, and the empty row reads "No remote configured" instead of
-  "Fetch a remote to see branches" in that case. The REMOTE BRANCHES header also carries
-  the same orange refresh button as TAGS, re-running `repoStore.refresh()` — local data
-  only, it never fetches from a remote (Fetch/Pull own that).
+  "Fetch a remote to see branches" in that case.
+  Only the TAGS header carries the orange refresh button (local data only — it never
+  fetches from a remote; Fetch/Pull own that).
   Brand icon `assets/cano.svg` sits at the top of the toolbar (`.sidebar-brand-icon`);
   the same asset drives the splash (`.splash-logo-image`) and no-repo empty state
   (`.app-empty-logo`) in `App.vue`. `Welcome.vue` was deleted — do not reintroduce it.
