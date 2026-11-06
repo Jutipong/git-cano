@@ -61,7 +61,7 @@
     "@vitejs/plugin-vue": "^6.0.10",
     "@vue/content-mapper": "4.0.0-alpha.0",
     "electron": "^45.2.3",
-    "electron-builder": "^26.18.0",
+    "electron-builder": "^26.18.1",
     "electron-vite": "^6.0.0",
     "oxfmt": "^0.76.0",
     "oxlint": "^1.91.0",
