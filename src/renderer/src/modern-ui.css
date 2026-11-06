@@ -1331,6 +1331,8 @@ body {
     min-width: 0;
     height: var(--control-h-lg);
     min-height: var(--control-h-lg);
+    padding: 0 6px;
+    gap: 4px;
     background: transparent;
     border-color: transparent;
     font-weight: 600;
@@ -1355,10 +1357,12 @@ body {
     white-space: nowrap;
 }
 
-/* Push/Pull carry icons + count badges — give them a wider share than Fetch/Stashes */
+/* Push/Pull carry icons + count badges — give them a wider share than Fetch/Stashes
+   and never let the label shrink below its full text (`Pu…` at the 330px panel minimum) */
 .tab-sync-actions .primary-action,
 .tab-sync-actions .action-pull {
     flex: 1.6 1 0;
+    min-width: max-content;
 }
 
 .tab-sync-actions .action-fetch,
@@ -1387,10 +1391,6 @@ body {
     color: var(--green);
     background: color-mix(in srgb, var(--green) 15%, transparent);
     border-color: transparent;
-}
-
-.tab-sync-actions .action-stash {
-    margin-left: 6px;
 }
 
 .tab-sync-actions .action-stash:hover:not(:disabled) {
