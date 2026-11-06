@@ -11,14 +11,14 @@
     import ILucideCrosshair from '~icons/lucide/crosshair'
     import ILucideGitBranch from '~icons/lucide/git-branch'
     import ILucideGlobe2 from '~icons/lucide/globe2'
-    import ILucidePanelLeftClose from '~icons/lucide/panel-left-close'
-    import ILucidePanelLeftOpen from '~icons/lucide/panel-left-open'
     import ILucideRotateCw from '~icons/lucide/rotate-cw'
     import ILucideSearch from '~icons/lucide/search'
     import ILucideSettings from '~icons/lucide/settings'
     import ILucideTag from '~icons/lucide/tag'
     import ILucideTrash2 from '~icons/lucide/trash2'
     import ILucideZoomIn from '~icons/lucide/zoom-in'
+    import ISolarRoundDoubleAltArrowLeftLineDuotone from '~icons/solar/round-double-alt-arrow-left-line-duotone'
+    import ISolarRoundDoubleAltArrowRightLineDuotone from '~icons/solar/round-double-alt-arrow-right-line-duotone'
 
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
@@ -647,6 +647,7 @@
             </div>
             <CollapseAllButton
                 :all-collapsed="allSectionsCollapsed"
+                duotone
                 @toggle="toggleAllSections()" />
             <button
                 type="button"
@@ -654,14 +655,14 @@
                 :title="ui.sidebarMini ? 'Expand sidebar (Ctrl+B)' : 'Mini sidebar (Ctrl+B)'"
                 :aria-label="ui.sidebarMini ? 'Expand sidebar' : 'Collapse sidebar to mini'"
                 @click="emit('toggle-mini')">
-                <i-lucide-panel-left-open
+                <i-solar-round-double-alt-arrow-right-line-duotone
                     v-if="ui.sidebarMini"
-                    width="14"
-                    height="14" />
-                <i-lucide-panel-left-close
+                    width="22"
+                    height="22" />
+                <i-solar-round-double-alt-arrow-left-line-duotone
                     v-else
-                    width="14"
-                    height="14" />
+                    width="22"
+                    height="22" />
             </button>
         </div>
 

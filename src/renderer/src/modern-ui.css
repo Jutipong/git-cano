@@ -2625,11 +2625,30 @@ body {
     margin: 0 18px 18px;
     gap: 10px;
 }
-/* size the collapse button to the search pill so the row ends evenly */
+/* Both toolbar buttons use Solar duotone icons that carry their own circle: size them to the search
+   pill, hide the shell so the icon's ring is the affordance, and light the 28px hit area on hover. */
 .sidebar > .sidebar-toolbar > .collapse-all-btn {
     width: var(--control-h-md);
     height: var(--control-h-md);
     margin-right: 0;
+    color: var(--text-secondary);
+    background: transparent;
+    border-color: transparent;
+}
+.sidebar > .sidebar-toolbar > .collapse-all-btn:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+    border-color: transparent;
+}
+.sidebar > .sidebar-toolbar > .collapse-all-btn.all-collapsed {
+    color: var(--green);
+    background: transparent;
+    border-color: transparent;
+}
+.sidebar > .sidebar-toolbar > .collapse-all-btn.all-collapsed:hover {
+    color: var(--green);
+    background: var(--surface-hover);
+    border-color: transparent;
 }
 .sidebar > .sidebar-toolbar > .sidebar-brand-icon {
     flex: none;
