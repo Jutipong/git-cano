@@ -1642,7 +1642,19 @@ body {
         border-color 0.15s ease;
 }
 
-.tab-actions .workspace-btn:hover,
+.tab-actions .workspace-btn:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border-color: transparent;
+}
+
+/* Inside the tab-actions pill the workspace trigger is a plain toolbar item,
+   not a permanently highlighted "active" pill (the group border frames it). */
+.tab-actions .workspace-btn {
+    background: transparent;
+    border-color: transparent;
+}
+
 .app-empty .workspace-btn:hover {
     color: var(--text);
     background: color-mix(in srgb, var(--teal) 18%, transparent);
