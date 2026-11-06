@@ -108,6 +108,7 @@ describe('isValidSyncCombo', () => {
 describe('isReservedCombo', () => {
     it('rejects fixed combos and combos taken by other ids', () => {
         expect(isReservedCombo('Ctrl+W', {})).toBe(true)
+        expect(isReservedCombo('Ctrl+B', {})).toBe(true)
         expect(isReservedCombo('Ctrl+K', { push: 'Ctrl+K' })).toBe(true)
         expect(isReservedCombo('Ctrl+K', { push: 'Ctrl+K' }, 'push')).toBe(false)
         expect(isReservedCombo('Ctrl+J', { push: 'Ctrl+K' })).toBe(false)

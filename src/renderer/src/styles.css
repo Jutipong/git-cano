@@ -264,6 +264,9 @@
     --control-h-md: 28px;
     --control-h-lg: 32px;
 
+    /* Mini sidebar: the icon rail's width (the floating panel reuses --sidebar-width). */
+    --sidebar-mini-width: 64px;
+
     --duration-fast: 120ms;
     --duration: 150ms;
     --duration-slow: 200ms;

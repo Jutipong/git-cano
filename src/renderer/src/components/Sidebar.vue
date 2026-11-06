@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
-    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
@@ -11,6 +11,8 @@
     import ILucideCrosshair from '~icons/lucide/crosshair'
     import ILucideGitBranch from '~icons/lucide/git-branch'
     import ILucideGlobe2 from '~icons/lucide/globe2'
+    import ILucidePanelLeftClose from '~icons/lucide/panel-left-close'
+    import ILucidePanelLeftOpen from '~icons/lucide/panel-left-open'
     import ILucideRotateCw from '~icons/lucide/rotate-cw'
     import ILucideSearch from '~icons/lucide/search'
     import ILucideSettings from '~icons/lucide/settings'
@@ -41,6 +43,7 @@
         (e: 'interactive-rebase', baseRef: string): void
         (e: 'cherry-pick', hash: string, targetBranch: string): void
         (e: 'merge-branch', source: string, targetBranch: string): void
+        (e: 'toggle-mini'): void
         (
             e: 'create-tag',
             target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -252,6 +255,15 @@
     function resetSectionHeight(key: SidebarSectionKey) {
         ui.setSidebarSectionHeight(props.repo.path, key, null)
     }
+    /** Mini mode: reveal a section (expanding it when collapsed) and bring its card into view. */
+    function focusSection(key: SidebarSectionKey) {
+        if (!ui.sidebarSections[key]) ui.sidebarSections[key] = true
+        void nextTick(() => {
+            const section = sidebarEl.value?.querySelector<HTMLElement>(`[data-sidebar-section="${key}"]`)
+            section?.scrollIntoView({ block: 'nearest' })
+        })
+    }
+    defineExpose({ focusSection })
     onMounted(() => {
         if (!sidebarEl.value) return
         sectionObserver = new ResizeObserver(measureSections)
@@ -636,6 +648,21 @@
             <CollapseAllButton
                 :all-collapsed="allSectionsCollapsed"
                 @toggle="toggleAllSections()" />
+            <button
+                type="button"
+                class="collapse-all-btn sidebar-mini-btn"
+                :title="ui.sidebarMini ? 'Expand sidebar (Ctrl+B)' : 'Mini sidebar (Ctrl+B)'"
+                :aria-label="ui.sidebarMini ? 'Expand sidebar' : 'Collapse sidebar to mini'"
+                @click="emit('toggle-mini')">
+                <i-lucide-panel-left-open
+                    v-if="ui.sidebarMini"
+                    width="14"
+                    height="14" />
+                <i-lucide-panel-left-close
+                    v-else
+                    width="14"
+                    height="14" />
+            </button>
         </div>
 
         <div

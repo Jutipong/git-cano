@@ -28,6 +28,7 @@
     import ReflogModal from './components/ReflogModal.vue'
     import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
+    import SidebarRail from './components/SidebarRail.vue'
     import SquashModal from './components/SquashModal.vue'
     import StashCreateModal from './components/StashCreateModal.vue'
     import SwitchDialog from './components/SwitchDialog.vue'
@@ -42,7 +43,7 @@
     import { useRepoStore } from './stores/repo'
     import { useSyncStore } from './stores/sync'
     import { useTerminalStore } from './stores/terminal'
-    import { DEFAULT_ZOOM, useUiStore } from './stores/ui'
+    import { DEFAULT_ZOOM, useUiStore, type SidebarSectionKey } from './stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
     import { useUpdaterStore } from './stores/updater'
     import { useWorkspaceStore } from './stores/workspace'
@@ -153,6 +154,85 @@
     }
 
     if (ui.sidebarWidth < SIDEBAR_MIN_WIDTH) ui.sidebarWidth = SIDEBAR_MIN_WIDTH
+
+    // --- Mini sidebar -------------------------------------------------------------------------------------------------------------
+    // The rail takes the sidebar's place in the layout; the real Sidebar (same component, same state)
+    // floats beside it. Hover previews it, clicking a rail icon pins it to that section.
+    const sidebarHost = ref<HTMLElement | null>(null)
+    const sidebarRef = ref<{ focusSection: (key: SidebarSectionKey) => void } | null>(null)
+    const sidebarPeekOpen = ref(false)
+    const sidebarPeekPinned = ref(false)
+    const sidebarPeekSection = ref<SidebarSectionKey | null>(null)
+    let sidebarPeekOpenTimer: ReturnType<typeof setTimeout> | null = null
+    let sidebarPeekCloseTimer: ReturnType<typeof setTimeout> | null = null
+
+    function clearSidebarPeekTimers() {
+        if (sidebarPeekOpenTimer !== null) clearTimeout(sidebarPeekOpenTimer)
+        if (sidebarPeekCloseTimer !== null) clearTimeout(sidebarPeekCloseTimer)
+        sidebarPeekOpenTimer = null
+        sidebarPeekCloseTimer = null
+    }
+    function closeSidebarPeek() {
+        clearSidebarPeekTimers()
+        sidebarPeekOpen.value = false
+        sidebarPeekPinned.value = false
+        sidebarPeekSection.value = null
+    }
+    function toggleSidebarMini() {
+        ui.sidebarMini = !ui.sidebarMini
+        if (!ui.sidebarMini) closeSidebarPeek()
+    }
+    function openSidebarSection(key: SidebarSectionKey) {
+        clearSidebarPeekTimers()
+        if (sidebarPeekOpen.value && sidebarPeekPinned.value && sidebarPeekSection.value === key) {
+            closeSidebarPeek()
+            return
+        }
+        sidebarPeekOpen.value = true
+        sidebarPeekPinned.value = true
+        sidebarPeekSection.value = key
+        void nextTick(() => sidebarRef.value?.focusSection(key))
+    }
+    function onSidebarHostEnter() {
+        if (!ui.sidebarMini) return
+        if (sidebarPeekCloseTimer !== null) clearTimeout(sidebarPeekCloseTimer)
+        sidebarPeekCloseTimer = null
+        if (sidebarPeekOpen.value || sidebarPeekOpenTimer !== null) return
+        sidebarPeekOpenTimer = setTimeout(() => {
+            sidebarPeekOpenTimer = null
+            sidebarPeekOpen.value = true
+        }, 200)
+    }
+    function onSidebarHostLeave() {
+        if (!ui.sidebarMini) return
+        if (sidebarPeekOpenTimer !== null) clearTimeout(sidebarPeekOpenTimer)
+        sidebarPeekOpenTimer = null
+        if (sidebarPeekPinned.value) return
+        if (sidebarPeekCloseTimer !== null) clearTimeout(sidebarPeekCloseTimer)
+        sidebarPeekCloseTimer = setTimeout(() => {
+            sidebarPeekCloseTimer = null
+            sidebarPeekOpen.value = false
+        }, 220)
+    }
+    function onSidebarHostEscape(event: KeyboardEvent) {
+        if (!sidebarPeekOpen.value) return
+        event.stopPropagation()
+        closeSidebarPeek()
+    }
+    function onSidebarOutsidePointer(event: PointerEvent) {
+        if (!sidebarPeekOpen.value) return
+        if (sidebarHost.value && event.target instanceof Node && sidebarHost.value.contains(event.target)) return
+        closeSidebarPeek()
+    }
+    onMounted(() => document.addEventListener('pointerdown', onSidebarOutsidePointer))
+    onBeforeUnmount(() => document.removeEventListener('pointerdown', onSidebarOutsidePointer))
+    // Any path that leaves mini (toolbar, palette, Ctrl+B) must also drop a pinned peek.
+    watch(
+        () => ui.sidebarMini,
+        mini => {
+            if (!mini) closeSidebarPeek()
+        }
+    )
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
     function terminalMaxHeightPx(): number {
@@ -338,6 +418,13 @@
             if (combos.includes(ui.getShortcut('terminal')) && repoStore.repo) {
                 event.preventDefault()
                 void toggleTerminal()
+                return true
+            }
+            // Mini sidebar (fixed). Ctrl+B stays with the shell while the terminal panel has focus — it is
+            // readline's backward-char and tmux's prefix, so the app only takes it outside the panel.
+            if (combos.includes('Ctrl+B') && repoStore.repo && !isTerminalPanelFocused()) {
+                event.preventDefault()
+                toggleSidebarMini()
                 return true
             }
             // Ctrl+T opens a shell for the active repo (fixed, captured before xterm so no shell/TUI ever
@@ -1024,15 +1111,31 @@
             <div
                 v-show="!!repo"
                 class="app-shell">
-                <Sidebar
-                    v-if="repo"
-                    :repo="repo"
-                    :refresh="repoStore.refresh"
-                    @interactive-rebase="rebaseBase = $event"
-                    @cherry-pick="cherryPickOnto"
-                    @merge-branch="mergeBranchOnto"
-                    @create-tag="tagTarget = $event" />
                 <div
+                    ref="sidebarHost"
+                    class="sidebar-host"
+                    :class="{ mini: ui.sidebarMini, 'peek-open': sidebarPeekOpen }"
+                    @mouseenter="onSidebarHostEnter"
+                    @mouseleave="onSidebarHostLeave"
+                    @keydown.escape="onSidebarHostEscape">
+                    <SidebarRail
+                        v-if="repo && ui.sidebarMini"
+                        :active-section="sidebarPeekSection"
+                        :open="sidebarPeekOpen"
+                        @open-section="openSidebarSection" />
+                    <Sidebar
+                        v-if="repo"
+                        ref="sidebarRef"
+                        :repo="repo"
+                        :refresh="repoStore.refresh"
+                        @interactive-rebase="rebaseBase = $event"
+                        @cherry-pick="cherryPickOnto"
+                        @merge-branch="mergeBranchOnto"
+                        @create-tag="tagTarget = $event"
+                        @toggle-mini="toggleSidebarMini" />
+                </div>
+                <div
+                    v-if="!ui.sidebarMini"
                     class="panel-splitter"
                     role="separator"
                     aria-orientation="vertical"

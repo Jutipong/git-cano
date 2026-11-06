@@ -18,6 +18,8 @@
     import Keyboard from '~icons/lucide/keyboard'
     import Layers from '~icons/lucide/layers'
     import Palette from '~icons/lucide/palette'
+    import PanelLeftClose from '~icons/lucide/panel-left-close'
+    import PanelLeftOpen from '~icons/lucide/panel-left-open'
     import Search from '~icons/lucide/search'
     import Settings from '~icons/lucide/settings'
     import SlidersHorizontal from '~icons/lucide/sliders-horizontal'
@@ -321,6 +323,16 @@
                           run: () => {
                               close()
                               emit('toggle-terminal')
+                          },
+                      } satisfies PaletteItem,
+                      {
+                          id: 'sidebarMini',
+                          label: ui.sidebarMini ? 'Sidebar: expand' : 'Sidebar: collapse to mini',
+                          hint: 'Ctrl+B',
+                          icon: ui.sidebarMini ? PanelLeftOpen : PanelLeftClose,
+                          run: () => {
+                              close()
+                              ui.sidebarMini = !ui.sidebarMini
                           },
                       } satisfies PaletteItem,
                   ]

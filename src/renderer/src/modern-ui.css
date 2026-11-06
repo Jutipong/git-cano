@@ -2423,6 +2423,94 @@ body {
     border-right-color: var(--line-soft);
 }
 
+/* --- Mini sidebar: the rail owns the layout slot, the real Sidebar floats beside it --- */
+.sidebar-host {
+    display: flex;
+    flex: 0 0 auto;
+    min-height: 0;
+}
+.sidebar-host.mini {
+    position: relative;
+    flex: 0 0 var(--sidebar-mini-width);
+    width: var(--sidebar-mini-width);
+    /* Keep the normal splitter's 6px gutter so the rail never touches the graph card. */
+    margin-right: 6px;
+}
+/* The panel opens over the rail's own slot (left: 0), so the two read as one card that grows:
+   only one of them is ever visible at full opacity. Clipping (instead of a slide) reveals it
+   from the rail's edge without moving the graph. Hidden with `visibility` while closed so it
+   never takes tab focus, and `visibility` stays off the paint path until the reveal ends. */
+.sidebar-host.mini > .sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 8;
+    width: var(--sidebar-width);
+    margin-top: 6px;
+    visibility: hidden;
+    pointer-events: none;
+    clip-path: inset(0 100% 0 0 round var(--radius-card));
+    box-shadow: 0 12px 32px var(--shadow);
+    transition:
+        clip-path var(--duration) ease-out,
+        visibility 0s linear var(--duration);
+}
+.sidebar-host.mini.peek-open > .sidebar {
+    visibility: visible;
+    pointer-events: auto;
+    clip-path: inset(0 0 0 0 round var(--radius-card));
+    transition:
+        clip-path var(--duration) ease-out,
+        visibility 0s linear 0s;
+}
+
+.sidebar-rail {
+    display: flex;
+    flex: 0 0 var(--sidebar-mini-width);
+    flex-direction: column;
+    align-items: center;
+    width: var(--sidebar-mini-width);
+    margin-top: 6px;
+    padding: 16px 0 9px;
+    gap: 5px;
+    background: var(--surface-0);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
+    box-shadow: 0 3px 14px var(--shadow);
+}
+.sidebar-rail-brand {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 5px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+}
+.sidebar-rail-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-h-lg);
+    height: var(--control-h-lg);
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+}
+.sidebar-rail-btn:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+.sidebar-rail-btn.active {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+    border-color: color-mix(in srgb, var(--teal) 30%, transparent);
+}
+.sidebar-rail-spacer {
+    flex: 1;
+}
+
 /* --- Sidebar proportions: sections size to content; expanded lists take the rest.
        Header sits OUTSIDE the scroll area: the card is a flex column and only
        .section-body scrolls, so the scrollbar/rows never reach the header --- */

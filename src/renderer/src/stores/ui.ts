@@ -152,6 +152,8 @@ export const useUiStore = defineStore(
                 theme.value = DEFAULT_THEME
         })
         const sidebarWidth = ref(280)
+        /** Mini sidebar: a narrow icon rail with the full sidebar floating beside it on hover/click. */
+        const sidebarMini = ref(false)
         const rightPanelWidth = ref(360)
         const summaryHeight = ref(140)
         /** Height (%) of the OUTPUT pane in ConflictView. */
@@ -436,6 +438,7 @@ export const useUiStore = defineStore(
             theme,
             themeOptions,
             sidebarWidth,
+            sidebarMini,
             rightPanelWidth,
             summaryHeight,
             conflictOutputHeight,
@@ -489,6 +492,7 @@ export const useUiStore = defineStore(
             pick: [
                 'theme',
                 'sidebarWidth',
+                'sidebarMini',
                 'rightPanelWidth',
                 'summaryHeight',
                 'conflictOutputHeight',

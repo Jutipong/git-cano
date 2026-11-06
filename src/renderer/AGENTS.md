@@ -34,6 +34,20 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   (`.sidebar-section-resizer`, double-click resets to auto); the height is pinned per repo
   path in `ui.sidebarSectionHeights` (persisted), cards without a pinned height keep the
   automatic flex layout, and a collapsed card ignores its pinned height until reopened.
+- **Mini sidebar** (`ui.sidebarMini`, persisted, fixed `Ctrl+B`): a 64px `.sidebar-rail`
+  (LOCAL / REMOTE / TAGS / STASHES icons + Settings) takes the sidebar's layout slot.
+  The real `Sidebar` component stays mounted in `.sidebar-host` and opens **over the rail's own
+  slot** (`left: 0`) — hover reveals it after 200ms with a left-to-right `clip-path` wipe, so the
+  rail and the panel read as one card growing rather than two cards side by side (the rail's
+  brand sits at the panel brand's own 18px origin for that hand-off). A rail icon activated from
+  the keyboard pins it to that section (the exposed `focusSection` expands + scrolls it); outside
+  click / Esc while focus is inside / `Ctrl+B` closes it. The panel is `visibility: hidden` when
+  closed (no tab focus, no remeasure) and `z-index: 8` keeps it under the diff overlay (10).
+  `Ctrl+B` is left to the shell while the terminal panel has focus (readline backward-char /
+  tmux prefix). Entry points: the sidebar toolbar's `.sidebar-mini-btn` and the palette's
+  `Sidebar: collapse to mini` / `Sidebar: expand` item — the button stays visible inside the mini
+  panel and flips its icon/label to expand. The rail deliberately has no expand button of its
+  own; the panel toolbar's button (plus `Ctrl+B` / the palette) owns that direction.
 - **Workspaces reorder**: `workspace.ts` owns `reorder(from, to)` (bounds-guarded splice).
   `WorkspaceButton.vue` rows are `draggable`; reorder happens live on `dragover`
   (insertion = before/after by pointer Y within the row), `dragstart` is blocked while
@@ -259,6 +273,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Ctrl+W` (fixed, works while typing — closes the active terminal tab, behind the same confirm as
   its ✕, while the keyboard is inside a terminal panel, otherwise the active repo tab behind the
   repo-close confirm; the panel's teal top edge via `:focus-within` marks that first case),
+  Mini sidebar `Ctrl+B` (fixed; toggles `ui.sidebarMini` — left to the shell while the terminal
+  panel has focus, since it is readline's backward-char / tmux's prefix),
   Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
   killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` (fixed, capture-phase; the per-repo cap — Settings → Terminal → Tabs,
