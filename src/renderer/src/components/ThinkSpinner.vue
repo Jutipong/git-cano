@@ -64,20 +64,21 @@
 </template>
 
 <style scoped>
+    /* 10% smaller than the original 13/14px scale */
     .think-spinner {
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: calc(8px * 0.9);
         color: var(--text-secondary);
-        font-size: 13px;
+        font-size: calc(13px * 0.9);
         line-height: 1;
     }
 
     .think-spinner-frames {
         color: var(--teal);
         font-family: var(--font-mono, monospace);
-        font-size: 14px;
-        min-width: 12px;
+        font-size: calc(14px * 0.9);
+        min-width: calc(12px * 0.9);
         text-align: center;
     }
 
