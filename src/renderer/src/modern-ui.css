@@ -4214,14 +4214,24 @@ body {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 10px 16px;
-    border-radius: var(--radius-card);
+    gap: 10px;
+    padding: 11px 22px;
+    border-radius: var(--radius-pill);
     color: var(--text-secondary);
     background: color-mix(in srgb, var(--teal) 4%, var(--surface-2));
     border: 1px solid var(--line);
     box-shadow: 0 8px 24px var(--shadow);
-    font-size: 14px;
+    font-size: var(--font-lg);
+}
+
+.busy-card span.think-spinner {
+    gap: 10px;
+    font-size: var(--font-lg);
+}
+
+.busy-card span.think-spinner .think-spinner-frames {
+    font-size: var(--font-xl);
+    min-width: 14px;
 }
 
 @property --busy-spin {
