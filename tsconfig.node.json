@@ -11,8 +11,9 @@
         "emitDeclarationOnly": true,
         "ignoreDeprecations": "6.0",
         "outDir": "./out/tsbuild/node",
-        "baseUrl": ".",
-        "paths": { "@shared/*": ["src/shared/*"] }
+        "paths": {
+            "@shared/*": ["./src/shared/*"]
+        }
     },
     "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "electron.vite.config.ts"]
 }

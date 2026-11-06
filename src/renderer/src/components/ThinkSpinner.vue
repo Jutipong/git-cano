@@ -9,6 +9,8 @@
         suffix?: string
         /** Frames-only mode for inline use (buttons, small indicators). Inherits size/color. */
         compact?: boolean
+        /** Native tooltip on the spinner root. */
+        title?: string
     }>()
 
     const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
@@ -50,7 +52,8 @@
     <span
         class="think-spinner"
         :class="{ compact }"
-        role="status">
+        role="status"
+        :title="title">
         <span class="think-spinner-frames">{{ SPINNER_FRAMES[frame] }}</span>
         <span
             v-if="!compact"
