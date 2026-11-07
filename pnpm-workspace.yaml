@@ -8,7 +8,7 @@ allowBuilds:
   vue-demi: true
 
 minimumReleaseAgeExclude:
-  - '@iconify-json/lucide@1.2.126'
+  - '@iconify-json/lucide@1.2.126 || 1.2.152'
   - '@oxfmt/binding-android-arm-eabi@0.65.0 || 0.71.0'
   - '@oxfmt/binding-android-arm64@0.65.0 || 0.71.0'
   - '@oxfmt/binding-darwin-arm64@0.65.0 || 0.71.0'
@@ -51,12 +51,15 @@ minimumReleaseAgeExclude:
   - oxfmt@0.65.0 || 0.71.0
   - oxlint@1.80.0 || 1.86.0
   - electron@44.0.0 || 44.1.0
-  - '@iconify-json/thesvg-color@1.2.13 || 1.2.14'
+  - '@iconify-json/thesvg-color@1.2.13 || 1.2.14 || 1.2.25'
   - '@iconify-json/logos@1.2.15'
   - '@iconify-json/simple-icons@1.2.98'
   - '@playwright/test@1.65.0'
   - playwright-core@1.65.0
   - playwright@1.65.0
+  - '@iconify-json/solar@1.2.14'
+  - '@iconify-json/selfhst@1.2.28'
+  - '@iconify-json/devicon@1.2.78'
 
 peerDependencyRules:
   allowedVersions:
