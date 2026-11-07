@@ -235,8 +235,10 @@
     )
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
+    /** Tallest the docked strip goes: the full-height overlay's own box — its 60px top edge (48px tab bar + 6px gutter + 6px
+     *  card offset) down to the app's 6px bottom frame — so the drag reaches the same height as Alt+Enter without switching mode. */
     function terminalMaxHeightPx(): number {
-        return Math.max(160, Math.round(window.innerHeight * 0.7))
+        return Math.max(160, window.innerHeight - 66)
     }
     const terminalMaxHeight = ref(terminalMaxHeightPx())
 
@@ -248,6 +250,8 @@
     const panelWidths = computed(() => computePanelWidths(viewportWidth.value, ui.sidebarWidth, ui.rightPanelWidth))
     function onWindowResize() {
         updateTerminalMaxHeight()
+        // The strip is anchored to the bottom, so a shrunk window would push its top edge past the app frame.
+        terminalStore.terminalHeight = Math.min(terminalStore.terminalHeight, terminalMaxHeight.value)
         viewportWidth.value = window.innerWidth
     }
     onMounted(() => window.addEventListener('resize', onWindowResize))

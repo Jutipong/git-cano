@@ -761,6 +761,43 @@ test('the splitter resizes the panel height, and the shell follows', async () =>
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
+test('the splitter reaches the full-mode height and stays a docked strip', async () => {
+    await page.locator('.graph-terminal-btn').click()
+    const panel = page.locator('.terminal-panel:visible')
+    await page.waitForSelector('.terminal-view:visible .xterm', { timeout: 30_000 })
+
+    // The cap is the full-height overlay's own box: 60px top edge (under the tab bar) + 6px bottom frame.
+    const cap = await page.evaluate(() => Math.max(160, window.innerHeight - 66))
+    const splitter = page.locator('.terminal-splitter')
+    await expect(splitter).toHaveAttribute('aria-valuemax', String(cap))
+
+    const start = await splitter.boundingBox()
+    const x = start.x + start.width / 2
+    await page.mouse.move(x, start.y + start.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(x, 0, { steps: 10 })
+    await page.mouse.up()
+
+    // Dragging to the top stops at the overlay's height but never switches mode: no teleport overlay,
+    // the handle is still there.
+    const grown = await panel.boundingBox()
+    expect(Math.round(grown.height)).toBeGreaterThanOrEqual(cap - 2)
+    await expect(panel).not.toHaveClass(/terminal-overlay/)
+    await expect(page.locator('.terminal-splitter')).toHaveCount(1)
+
+    // Drag back down so the serial tests below still see a graph they can click.
+    const top = await splitter.boundingBox()
+    await page.mouse.move(x, top.y + top.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(x, top.y + top.height / 2 + (cap - 400), { steps: 10 })
+    await page.mouse.up()
+    expect((await panel.boundingBox()).height).toBeLessThan(cap - 40)
+
+    await panel.locator('.diff-close-btn').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(0)
+})
+
 /** 8×8 gradient PNG — an inline-image payload small enough to hand to the addon in one chunk. */
 const TINY_PNG_BASE64 =
     'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAbUlEQVR4nA3NgQAAMAwDwaAEpShFKUohHiAoRdlO4CRhUaLFiBURJyRjU6bNmDUxZ6TCRRVdTLFFiiukxk013UyzTZprpMFDDT3MsEOGm38sXmrpZZZdstz+IzhU6DBhQ8LlH4ePOvqYY48cdzzNxmUBnNw6XgAAAABJRU5ErkJggg=='

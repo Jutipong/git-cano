@@ -77,7 +77,10 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   switching from a repo with no shell into one with a shell is ready to type immediately. A hidden
   target panel stays hidden, and the tab strip's Arrow/Home/End navigation keeps focus on the pills
   (the `activeRepoPath` watcher + `keepKeyboardOnRepoSwitch` in `App.vue`). Drag the
-  `.terminal-splitter` for height (persisted per session, resets to 400px on launch).
+  `.terminal-splitter` for height (persisted per session, resets to 400px on launch): the bottom
+  bound is 120px and the top one is the full-height overlay's own box (`innerHeight - 66`, the 60px
+  edge under the tab bar + the 6px frame), so the drag reaches the same height as `Alt+Enter`
+  without switching mode — full mode still only comes from the maximize button / `Alt+Enter`.
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it). Commit/stash mode (`commit-mode` in `modern-ui.css`)

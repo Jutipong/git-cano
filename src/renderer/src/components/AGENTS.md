@@ -311,7 +311,10 @@ Panel/modal component patterns. Loaded automatically when working under
   `right: calc(var(--right-panel-width) + 12px)` — the default, Sidebar + Graph) or
   `.terminal-docked-full` (all three columns, with the setting on), height from `terminalStore`; the
   drag handle is `.terminal-splitter-wide` / `.terminal-splitter-full`, both riding `--terminal-height`
-  on `.app`. Hide (`chevron-down`) only flips `hidden`: it never touches the
+  on `.app`. The drag spans 120px up to the full-height overlay's own height (`innerHeight - 66`) and
+  only resizes the strip — reaching the top never enters full mode (that stays the maximize button /
+  `Alt+Enter`), and a shrunken window clamps the height back to the cap. Hide (`chevron-down`) only
+  flips `hidden`: it never touches the
   shells and never resizes, so a full-height panel comes back as the overlay (same as the `Ctrl+` /
   palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is
   the only way back to the strip. The ✕ kills every shell of THIS
