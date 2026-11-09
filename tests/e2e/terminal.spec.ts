@@ -47,6 +47,8 @@ test('graph toolbar button spawns one shell, then toggles the panel', async () =
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
     await expect(page.locator('.terminal-view .xterm')).toHaveCount(1)
     await expect(page.locator('.terminal-tab-label')).toHaveText('cmd 1')
+    // The header carries the repo's current branch in front of the font stepper.
+    await expect(page.locator('.terminal-panel:visible .terminal-branch-name')).toHaveText('main')
 
     // Second press only hides — the shell keeps running (the panel stays mounted).
     await page.locator('.graph-terminal-btn').click()

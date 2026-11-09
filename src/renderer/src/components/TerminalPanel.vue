@@ -1,10 +1,12 @@
 <script setup lang="ts">
     import { computed, nextTick, ref, watch } from 'vue'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideGitBranch from '~icons/lucide/git-branch'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
     import ILucidePlus from '~icons/lucide/plus'
 
+    import { useRepoStore } from '../stores/repo'
     import { useTerminalStore } from '../stores/terminal'
     import { useUiStore, TERMINAL_FONT_SIZE_OPTIONS } from '../stores/ui'
     import { isWindows } from '../utils/shortcuts'
@@ -30,11 +32,20 @@
     }>()
 
     const terminalStore = useTerminalStore()
+    const repoStore = useRepoStore()
     const ui = useUiStore()
 
     const tabs = computed(() => terminalStore.repoTerminals(props.repoPath)?.tabs ?? [])
     const activeId = computed(() => terminalStore.repoTerminals(props.repoPath)?.activeId ?? null)
     const atCap = computed(() => tabs.value.length >= terminalStore.maxPerRepo)
+
+    /**
+     * The branch this panel's repo is on. Read from the repo tab list, not the active-repo global — panels stay
+     * mounted for repos that are not on screen, and each must keep showing its own branch.
+     */
+    const currentBranch = computed(() => repoStore.tabs.find(tab => tab.path === props.repoPath)?.status.branch ?? '')
+    /** Same session color the repo tab and the sidebar's current-branch dot use. */
+    const branchColor = computed(() => ui.repoTabColors[props.repoPath] ?? null)
 
     /** Header A− / A+ step through TERMINAL_FONT_SIZE_OPTIONS; disable whichever end is exhausted. */
     const fontStep = computed(() => {
@@ -249,6 +260,17 @@
                 </button>
             </span>
             <span class="terminal-actions">
+                <!-- The repo's current branch sits in front of the font stepper, tinted with its session (tab) color. -->
+                <span
+                    v-if="currentBranch"
+                    class="terminal-branch"
+                    :title="`Current branch: ${currentBranch}`"
+                    :style="branchColor ? { '--branch-color': branchColor } : undefined">
+                    <i-lucide-git-branch
+                        width="13"
+                        height="13" />
+                    <span class="terminal-branch-name">{{ currentBranch }}</span>
+                </span>
                 <!-- Two diff-view style pills: the font stepper and the panel controls stay separate. -->
                 <span class="segmented">
                     <button
