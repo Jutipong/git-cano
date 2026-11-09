@@ -118,8 +118,8 @@
     })
 
     /**
-     * Called when the panel is shown again (Ctrl+` / palette / toolbar) — hidden panels are `display: none`, which blurs the xterm
-     * textarea, so the keyboard has to come back explicitly.
+     * Called when the panel is shown again (Ctrl+` / palette / toolbar) and when Ctrl+` takes the keyboard back from another pane — hidden
+     * panels are `display: none`, which blurs the xterm textarea, so the keyboard has to come back explicitly.
      */
     function focusActive() {
         const id = activeId.value

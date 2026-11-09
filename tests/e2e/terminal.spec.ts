@@ -452,6 +452,26 @@ test('Ctrl+` toggles the panel, and the palette kills everything', async () => {
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 })
 
+test('Ctrl+` hands the keyboard back to a panel that is already on screen', async () => {
+    // No shell yet: the first press opens the panel and lands in the shell.
+    await page.keyboard.press('Control+`')
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused({ timeout: 30_000 })
+
+    // The panel keeps running while the keyboard is elsewhere (a toast can float over the toolbar, so
+    // focus the field directly).
+    await page.locator('.commit-search input').focus()
+    await expect(page.locator('.commit-search input')).toBeFocused()
+
+    // One press takes the keyboard back to the shell instead of hiding the panel.
+    await page.keyboard.press('Control+`')
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+    await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
+
+    // From inside the panel the very same press is the plain hide again.
+    await page.keyboard.press('Control+`')
+    await expect(page.locator('.terminal-panel:visible')).toHaveCount(0)
+})
+
 test('the header hide button hides the panel without killing the shell', async () => {
     await page.locator('.graph-terminal-btn').click()
     const panel = page.locator('.terminal-panel:visible')

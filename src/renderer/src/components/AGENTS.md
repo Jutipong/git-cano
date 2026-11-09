@@ -165,8 +165,11 @@ Panel/modal component patterns. Loaded automatically when working under
   running with no buffer behind it.
 - **Showing the panel returns the keyboard to the shell**: a hidden panel is `display: none`, which
   blurs the focused xterm textarea, so `App.vue` keeps keyed panel refs (`terminalPanels`) and calls
-  the exposed `focusActive()` after `showTerminals` in the `Ctrl+` / palette / toolbar toggle — the
-  shell is ready to type without a click. The maximize/restore toggle
+  the exposed `focusActive()` after `showTerminals` in the toggle — the shell is ready to type
+  without a click. `Ctrl+`` goes one step further: with the panel already visible and the keyboard
+  anywhere else (commit textarea, graph, sidebar) it calls `focusActive()` instead of hiding, so one
+  press always lands in a shell — the palette entry and the toolbar button keep the plain toggle.
+  The maximize/restore toggle
   (`toggleTerminalExpand`) does the same, because its teleport move detaches the panel and would
   otherwise drop focus to `<body>` in both directions. Repo/workspace switches carry the keyboard
   too whenever the target repo's panel is already visible — even when the repo being left had no
@@ -312,8 +315,8 @@ Panel/modal component patterns. Loaded automatically when working under
   `.terminal-docked-full` (all three columns, with the setting on), height from `terminalStore`; the
   drag handle is `.terminal-splitter-wide` / `.terminal-splitter-full`, both riding `--terminal-height`
   on `.app`. Hide (`chevron-down`) only flips `hidden`: it never touches the
-  shells and never resizes, so a full-height panel comes back as the overlay (same as the `Ctrl+` /
-  palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is
+  shells and never resizes, so a full-height panel comes back as the overlay (same as the `Ctrl+`
+  from inside the panel / palette toggle — `hideTerminals(path)` in `terminal.ts` keeps `expanded`); the minimize button is
   the only way back to the strip. The ✕ kills every shell of THIS
   repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
   strip shares the diff-view scale: 30px pills (`--control-h-sm` + 6px: tab, `+`, the two `.segmented`

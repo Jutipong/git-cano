@@ -54,11 +54,16 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   the drag handle (`.terminal-splitter-wide` / `-full`, riding `--terminal-height` on `.app`)
   follows the strip's width. **Hiding never
   resizes**: `hideTerminals(path)` keeps the full-height state, so every gesture that hides the panel
-  (`Ctrl+` / palette / the header's chevron — the toolbar button is unreachable while expanded, the
+  (`Ctrl+` from inside it / palette / the header's chevron — the toolbar button is unreachable while expanded, the
   overlay hides the graph) shows it back exactly as it was; only the header's minimize button leaves
   full mode. Showing the panel (`Ctrl+` / palette / toolbar) and the maximize/restore toggle
   always hand the keyboard back to the active shell (`TerminalPanel.focusActive()` — the teleport
-  move would otherwise drop focus to `<body>`). A repo/workspace switch does too whenever the
+  move would otherwise drop focus to `<body>`). **`Ctrl+` is the one “take me to the terminal”
+  gesture**: when the panel is already on screen but the keyboard sits outside it (commit textarea,
+  graph, sidebar), the press focuses the active shell instead of hiding, so it never needs two
+  presses; the toolbar button and the palette entry keep the plain show/hide toggle (the docked
+  splitter counts as panel furniture, so a press right after resizing still hides). A repo/workspace
+  switch does too whenever the
   target repo's panel is already visible — regardless of whether the repo being left had one — so
   switching from a repo with no shell into one with a shell is ready to type immediately. A hidden
   target panel stays hidden, and the tab strip's Arrow/Home/End navigation keeps focus on the pills
@@ -240,7 +245,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   them to `code`.
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):
   Fetch, Pull, Push, Open repo, Clone repo, Search commits, Open settings, Command
-  palette, Toggle terminal. Click Change… under macOS or Windows then press keys
+  palette, Toggle / focus terminal. Click Change… under macOS or Windows then press keys
   (`Esc` cancels, capture listener while recording), combos must include `Ctrl`/`Cmd` (`isValidSyncCombo`),
   conflicts with fixed combos (`Ctrl+=, -, 0` zoom, `Ctrl+W` close tab / terminal tab,
   terminal tabs `Ctrl+T` / `Ctrl+Tab` / `Ctrl+Shift+Tab` / `Alt+←→`, `Alt+Enter` terminal full height) or other customized ids
@@ -259,8 +264,12 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   `Ctrl+W` (fixed, works while typing — closes the active terminal tab, behind the same confirm as
   its ✕, while the keyboard is inside a terminal panel, otherwise the active repo tab behind the
   repo-close confirm; the panel's teal top edge via `:focus-within` marks that first case),
-  Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
-  killing every shell is palette-only `Terminal: kill all`, behind a confirm),
+  Mini sidebar `Ctrl+B` (fixed; toggles `ui.sidebarMini` — left to the shell while the terminal
+  panel has focus, since it is readline's backward-char / tmux's prefix),
+  Toggle / focus terminal `Ctrl+` (spawns the active repo's first shell; a panel whose shell is
+  already focused hides, while a visible panel with the keyboard anywhere else — including the
+  docked splitter — takes the keyboard back instead of hiding, so one press always lands in a shell;
+  never kills; killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` (fixed, capture-phase; the per-repo cap — Settings → Terminal → Tabs,
   default 4 — is a silent no-op),
   Next terminal tab `Ctrl+Tab` / Previous `Ctrl+Shift+Tab`, plus `Alt+→` / `Alt+←` (fixed,

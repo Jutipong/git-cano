@@ -333,11 +333,12 @@
                 repoStore.commandPaletteOpen = !repoStore.commandPaletteOpen
                 return true
             }
-            // Terminal panel: spawn the first shell of the active repo, then show/hide. Never kills.
-            // Killing every shell is palette-only (confirm-guarded) — no shortcut, too easy to fat-finger.
+            // Terminal panel: spawn the first shell of the active repo, then show/hide — except that a panel already on screen takes the
+            // keyboard back when it sits outside the shell (one press, never a hide). Never kills: killing every shell is palette-only
+            // (confirm-guarded), so it has no shortcut.
             if (combos.includes(ui.getShortcut('terminal')) && repoStore.repo) {
                 event.preventDefault()
-                void toggleTerminal()
+                void toggleTerminal(true)
                 return true
             }
             // Ctrl+T opens a shell for the active repo (fixed, captured before xterm so no shell/TUI ever
@@ -698,6 +699,16 @@
     }
 
     /**
+     * True while the keyboard is on the terminal panel's own furniture — its shell, tabs and header buttons plus the docked drag handle
+     * (`.terminal-splitter`), which lives in `.app` but belongs to the panel. `Ctrl+`` uses it to tell "the user is already here" (hide)
+     * from "the panel is on screen but the keyboard is elsewhere" (focus).
+     */
+    function terminalOwnsKeyboard(): boolean {
+        const active = document.activeElement
+        return active instanceof Element && (!!active.closest('.terminal-panel') || !!active.closest('.terminal-splitter'))
+    }
+
+    /**
      * Ctrl+W with the keyboard in the terminal panel — closes the shell's tab through the same confirm as its ✕. A cancelled dialog hands
      * focus back to the shell: the dialog moved it to its own button, and leaving it there would make the next Ctrl+W close the repo tab
      * instead.
@@ -717,13 +728,22 @@
      * that shows the panel again brings the overlay straight back (the header's minimize button is the only way down to the strip).
      * Showing always hands the keyboard back to the active shell; a repo/workspace switch does too whenever the target repo's panel is
      * already on screen (see the activeRepoPath watcher) — a hidden target stays hidden.
+     *
+     * `focusIfVisible` is the Ctrl+` shortcut's mode: a panel that is already on screen but whose shell lost the keyboard (commit-message
+     * textarea, graph, sidebar) takes the keyboard back instead of hiding, so one press always lands in the terminal. The toolbar button
+     * and the palette keep the plain toggle — their hint says show/hide.
      */
-    async function toggleTerminal() {
+    async function toggleTerminal(focusIfVisible = false) {
         const path = repoStore.tabs[repoStore.activeTab]?.path
         if (!path) return
         if (terminalStore.terminalExists(path)) {
-            if (terminalStore.panelVisible(path)) terminalStore.hideTerminals(path)
-            else {
+            if (terminalStore.panelVisible(path)) {
+                if (focusIfVisible && !terminalOwnsKeyboard()) {
+                    terminalPanels.value[path]?.focusActive()
+                    return
+                }
+                terminalStore.hideTerminals(path)
+            } else {
                 terminalStore.showTerminals(path)
                 // Hidden panels are `display: none`, which blurred the shell's textarea.
                 await nextTick()

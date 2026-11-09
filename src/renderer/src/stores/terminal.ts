@@ -157,8 +157,8 @@ export const useTerminalStore = defineStore('terminal', () => {
 
     /**
      * Hide the panel — the shells keep running (and keep their scrollback) until a ✕ kills them. Hiding is not resizing: the full-height
-     * state survives every hide gesture (the header chevron, Ctrl+` / the palette, the graph toolbar), so showing the panel again puts it
-     * back exactly as it was. The header's minimize button is the only way out of full mode.
+     * state survives every hide gesture (the header chevron, Ctrl+` from inside the panel, the palette, the graph toolbar), so showing the
+     * panel again puts it back exactly as it was. The header's minimize button is the only way out of full mode.
      */
     function hideTerminals(path: string) {
         const state = repoTerminals(path)

@@ -32,7 +32,7 @@
         searchCommits: 'Search commits',
         settings: 'Open settings',
         commandPalette: 'Command palette',
-        terminal: 'Toggle terminal',
+        terminal: 'Toggle / focus terminal',
     }
     const recording = ref<{ id: CustomShortcutId; platform: ShortcutPlatform } | null>(null)
 
