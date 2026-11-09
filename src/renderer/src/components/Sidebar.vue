@@ -6,8 +6,6 @@
     import ILucideChevronRight from '~icons/lucide/chevron-right'
     import ILucideChevronUp from '~icons/lucide/chevron-up'
     import ILucideCircleArrowUp from '~icons/lucide/circle-arrow-up'
-    import ILucideCloud from '~icons/lucide/cloud'
-    import ILucideCloudOff from '~icons/lucide/cloud-off'
     import ILucideCrosshair from '~icons/lucide/crosshair'
     import ILucideGitBranch from '~icons/lucide/git-branch'
     import ILucideGlobe2 from '~icons/lucide/globe2'
@@ -946,24 +944,13 @@
                             @contextmenu.prevent="openTagMenu(tag, $event)">
                             <i-lucide-tag
                                 width="13"
-                                height="13" />
+                                height="13"
+                                :class="{ 'tag-on-remote': remoteTagNames.includes(tag.name) }" />
                             <ThinkSpinner
                                 v-if="pendingRemoteTag === tag.name"
                                 compact
                                 class="tag-remote-ic"
                                 title="Working…" />
-                            <i-lucide-cloud
-                                v-else-if="remoteTagNames.includes(tag.name)"
-                                class="tag-remote-ic"
-                                title="On remote"
-                                width="14"
-                                height="14" />
-                            <i-lucide-cloud-off
-                                v-else-if="hasRemote"
-                                class="tag-remote-ic off"
-                                title="Not pushed to remote"
-                                width="14"
-                                height="14" />
                             <span class="branch-name">{{ tag.name }}</span>
                         </div>
                     </template>

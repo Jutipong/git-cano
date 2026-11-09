@@ -4629,8 +4629,8 @@ body {
     color: var(--green);
 }
 
-.tag-row .tag-remote-ic.off {
-    color: var(--text-muted);
+.tag-row .tag-on-remote {
+    color: var(--orange);
 }
 
 .tag-row .tag-remote-ic.spinning {
