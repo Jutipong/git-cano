@@ -842,7 +842,7 @@
                 GRAPH
             </span>
             <span class="graph-message-header">
-                COMMIT MESSAGE
+                MESSAGE
                 <span class="commit-count"
                     >{{ normalizedQuery ? `${visibleCommits.length} of ${commits.length}` : commits.length }} commits</span
                 >
