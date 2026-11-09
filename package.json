@@ -70,18 +70,67 @@
         "vite": "^8.3.6",
         "vitest": "^5.1.0"
     },
-    "nsis": {
-      "artifactName": "git-cano-${version}-setup.exe",
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": true
+    "allowScripts": {
+        "electron@44.0.0": true,
+        "esbuild@0.28.2": true
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "Jutipong",
-        "repo": "git-cano"
-      }
-    ]
-  }
+    "build": {
+        "appId": "com.jutipong.git-cano",
+        "productName": "Git Cano",
+        "directories": {
+            "output": "release"
+        },
+        "icon": "build/icons/cano.png",
+        "asar": true,
+        "compression": "maximum",
+        "npmRebuild": false,
+        "asarUnpack": [
+            "**/node_modules/node-pty/**"
+        ],
+        "files": [
+            "out/**/*",
+            "package.json",
+            "!out/tsbuild/**",
+            "!**/*.map",
+            "!**/*.md",
+            "!**/LICENSE*"
+        ],
+        "mac": {
+            "icon": "build/icons/cano.icns",
+            "target": [
+                {
+                    "target": "dmg",
+                    "arch": [
+                        "arm64"
+                    ]
+                }
+            ],
+            "category": "public.app-category.developer-tools",
+            "identity": null
+        },
+        "win": {
+            "icon": "build/icons/cano.ico",
+            "target": [
+                {
+                    "target": "nsis",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ]
+        },
+        "nsis": {
+            "artifactName": "git-cano-${version}-setup.exe",
+            "oneClick": false,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": true
+        },
+        "publish": [
+            {
+                "provider": "github",
+                "owner": "Jutipong",
+                "repo": "git-cano"
+            }
+        ]
+    }
 }
