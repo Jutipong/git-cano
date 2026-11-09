@@ -1,16 +1,16 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T extends string | number | boolean">
     defineProps<{
-        modelValue?: string | number | boolean
-        value?: string | number | boolean
+        modelValue?: T
+        value?: T
         name?: string
         disabled?: boolean
     }>()
 
-    const emit = defineEmits<{ (event: 'update:modelValue', value: string | number | boolean): void }>()
+    const emit = defineEmits<{ (event: 'update:modelValue', value: T): void }>()
 
     function onChange(event: Event) {
         const target = event.target as HTMLInputElement
-        if (target.checked) emit('update:modelValue', target.value)
+        if (target.checked) emit('update:modelValue', target.value as T)
     }
 </script>
 

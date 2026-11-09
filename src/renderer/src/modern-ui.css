@@ -1331,6 +1331,8 @@ body {
     min-width: 0;
     height: var(--control-h-lg);
     min-height: var(--control-h-lg);
+    padding: 0 6px;
+    gap: 4px;
     background: transparent;
     border-color: transparent;
     font-weight: 600;
@@ -1355,10 +1357,12 @@ body {
     white-space: nowrap;
 }
 
-/* Push/Pull carry icons + count badges — give them a wider share than Fetch/Stashes */
+/* Push/Pull carry icons + count badges — give them a wider share than Fetch/Stashes
+   and never let the label shrink below its full text (`Pu…` at the 330px panel minimum) */
 .tab-sync-actions .primary-action,
 .tab-sync-actions .action-pull {
     flex: 1.6 1 0;
+    min-width: max-content;
 }
 
 .tab-sync-actions .action-fetch,
@@ -1387,10 +1391,6 @@ body {
     color: var(--green);
     background: color-mix(in srgb, var(--green) 15%, transparent);
     border-color: transparent;
-}
-
-.tab-sync-actions .action-stash {
-    margin-left: 6px;
 }
 
 .tab-sync-actions .action-stash:hover:not(:disabled) {
@@ -1642,7 +1642,19 @@ body {
         border-color 0.15s ease;
 }
 
-.tab-actions .workspace-btn:hover,
+.tab-actions .workspace-btn:hover {
+    color: var(--text);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+    border-color: transparent;
+}
+
+/* Inside the tab-actions pill the workspace trigger is a plain toolbar item,
+   not a permanently highlighted "active" pill (the group border frames it). */
+.tab-actions .workspace-btn {
+    background: transparent;
+    border-color: transparent;
+}
+
 .app-empty .workspace-btn:hover {
     color: var(--text);
     background: color-mix(in srgb, var(--teal) 18%, transparent);
@@ -2423,6 +2435,94 @@ body {
     border-right-color: var(--line-soft);
 }
 
+/* --- Mini sidebar: the rail owns the layout slot, the real Sidebar floats beside it --- */
+.sidebar-host {
+    display: flex;
+    flex: 0 0 auto;
+    min-height: 0;
+}
+.sidebar-host.mini {
+    position: relative;
+    flex: 0 0 var(--sidebar-mini-width);
+    width: var(--sidebar-mini-width);
+    /* Keep the normal splitter's 6px gutter so the rail never touches the graph card. */
+    margin-right: 6px;
+}
+/* The panel opens over the rail's own slot (left: 0), so the two read as one card that grows:
+   only one of them is ever visible at full opacity. Clipping (instead of a slide) reveals it
+   from the rail's edge without moving the graph. Hidden with `visibility` while closed so it
+   never takes tab focus, and `visibility` stays off the paint path until the reveal ends. */
+.sidebar-host.mini > .sidebar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 8;
+    width: var(--sidebar-width);
+    margin-top: 6px;
+    visibility: hidden;
+    pointer-events: none;
+    clip-path: inset(0 100% 0 0 round var(--radius-card));
+    box-shadow: 0 12px 32px var(--shadow);
+    transition:
+        clip-path var(--duration) ease-out,
+        visibility 0s linear var(--duration);
+}
+.sidebar-host.mini.peek-open > .sidebar {
+    visibility: visible;
+    pointer-events: auto;
+    clip-path: inset(0 0 0 0 round var(--radius-card));
+    transition:
+        clip-path var(--duration) ease-out,
+        visibility 0s linear 0s;
+}
+
+.sidebar-rail {
+    display: flex;
+    flex: 0 0 var(--sidebar-mini-width);
+    flex-direction: column;
+    align-items: center;
+    width: var(--sidebar-mini-width);
+    margin-top: 6px;
+    padding: 16px 0 9px;
+    gap: 5px;
+    background: var(--surface-0);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-card);
+    box-shadow: 0 3px 14px var(--shadow);
+}
+.sidebar-rail-brand {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 5px;
+    object-fit: contain;
+    border-radius: var(--radius-md);
+}
+.sidebar-rail-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--control-h-lg);
+    height: var(--control-h-lg);
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+}
+.sidebar-rail-btn:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+}
+.sidebar-rail-btn.active {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 14%, transparent);
+    border-color: color-mix(in srgb, var(--teal) 30%, transparent);
+}
+.sidebar-rail-spacer {
+    flex: 1;
+}
+
 /* --- Sidebar proportions: sections size to content; expanded lists take the rest.
        Header sits OUTSIDE the scroll area: the card is a flex column and only
        .section-body scrolls, so the scrollbar/rows never reach the header --- */
@@ -2537,11 +2637,30 @@ body {
     margin: 0 18px 18px;
     gap: 10px;
 }
-/* size the collapse button to the search pill so the row ends evenly */
+/* Both toolbar buttons use Solar duotone icons that carry their own circle: size them to the search
+   pill, hide the shell so the icon's ring is the affordance, and light the 28px hit area on hover. */
 .sidebar > .sidebar-toolbar > .collapse-all-btn {
     width: var(--control-h-md);
     height: var(--control-h-md);
     margin-right: 0;
+    color: var(--text-secondary);
+    background: transparent;
+    border-color: transparent;
+}
+.sidebar > .sidebar-toolbar > .collapse-all-btn:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+    border-color: transparent;
+}
+.sidebar > .sidebar-toolbar > .collapse-all-btn.all-collapsed {
+    color: var(--green);
+    background: transparent;
+    border-color: transparent;
+}
+.sidebar > .sidebar-toolbar > .collapse-all-btn.all-collapsed:hover {
+    color: var(--green);
+    background: var(--surface-hover);
+    border-color: transparent;
 }
 .sidebar > .sidebar-toolbar > .sidebar-brand-icon {
     flex: none;
@@ -4107,14 +4226,24 @@ body {
     position: relative;
     display: flex;
     align-items: center;
-    gap: 9px;
-    padding: 10px 16px;
-    border-radius: var(--radius-card);
+    gap: 10px;
+    padding: 11px 22px;
+    border-radius: var(--radius-pill);
     color: var(--text-secondary);
     background: color-mix(in srgb, var(--teal) 4%, var(--surface-2));
     border: 1px solid var(--line);
     box-shadow: 0 8px 24px var(--shadow);
-    font-size: 14px;
+    font-size: var(--font-lg);
+}
+
+.busy-card span.think-spinner {
+    gap: 10px;
+    font-size: var(--font-lg);
+}
+
+.busy-card span.think-spinner .think-spinner-frames {
+    font-size: var(--font-xl);
+    min-width: 14px;
 }
 
 @property --busy-spin {
@@ -4481,6 +4610,7 @@ body {
     align-items: stretch;
     gap: 8px;
     margin-top: 2px;
+    container-type: inline-size;
 }
 
 .commit-actions .commit-group {
@@ -4517,6 +4647,9 @@ body {
     font-size: 12.5px;
     font-weight: 650;
     letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* ไอคอนในปุ่ม commit — ห้ามบีบเมื่อปุ่มแคบ */
@@ -4570,6 +4703,24 @@ body {
 .commit-group .commit-push-btn:disabled {
     cursor: default;
     opacity: 0.45;
+}
+
+/* panel ย่อ: ลด font ตามความกว้างจริงของแถบ commit (container query) — ใช้ font token บน scale */
+@container (max-width: 320px) {
+    .commit-group .commit-btn,
+    .commit-group .commit-push-btn {
+        font-size: var(--font-sm);
+        padding: 0 8px;
+        gap: 4px;
+    }
+}
+
+@container (max-width: 260px) {
+    .commit-group .commit-btn,
+    .commit-group .commit-push-btn {
+        font-size: var(--font-xs);
+        padding: 0 6px;
+    }
 }
 
 .tag-modal-body {

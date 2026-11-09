@@ -63,16 +63,6 @@ test('initialize creates the repository and opens it', async () => {
     expect(branch).toBe('main')
 })
 
-test('the remote branches section exposes a refresh button', async () => {
-    const remote = page.locator('[data-sidebar-section="remote"]')
-    const refresh = remote.locator('.section-refresh-btn')
-    await expect(refresh).toBeVisible()
-    await expect(page.locator('[data-sidebar-section="local"] .section-refresh-btn')).toHaveCount(0)
-
-    await refresh.click()
-    await expect(refresh).toBeEnabled()
-})
-
 test('a repo without a remote links to Settings → Remotes', async () => {
     const section = page.locator('[data-sidebar-section="remote"]')
     await expect(section.locator('.sidebar-empty')).toHaveText('No remote configured')

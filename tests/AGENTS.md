@@ -18,6 +18,9 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
       and splitter resizing. Terminal tab keys live in `terminal.spec.ts` (Windows).
     - `sizing.spec.ts` pins the control-height tokens and the section-card resizers
       (keyboard steps + double-click reset).
+    - `sidebar-mini.spec.ts` covers the mini rail: toolbar button + palette entry + `Ctrl+B`
+      toggle, hover preview that opens over the rail without moving the graph, keyboard pin,
+      Esc close, and the splitter returning with the full sidebar.
     - `conflict.spec.ts` covers the conflict flow.
     - `cherry-pick.spec.ts` covers the cherry-pick flow from the commit menu and by dragging a commit onto a
       branch: dirty-tree block, clean pick + Undo, conflict error dialog (abort), and the switch-then-pick path.

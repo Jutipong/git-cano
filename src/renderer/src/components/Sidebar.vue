@@ -1,6 +1,6 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
-    import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+    import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
@@ -17,6 +17,8 @@
     import ILucideTag from '~icons/lucide/tag'
     import ILucideTrash2 from '~icons/lucide/trash2'
     import ILucideZoomIn from '~icons/lucide/zoom-in'
+    import ISolarRoundDoubleAltArrowLeftLineDuotone from '~icons/solar/round-double-alt-arrow-left-line-duotone'
+    import ISolarRoundDoubleAltArrowRightLineDuotone from '~icons/solar/round-double-alt-arrow-right-line-duotone'
 
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
@@ -41,6 +43,7 @@
         (e: 'interactive-rebase', baseRef: string): void
         (e: 'cherry-pick', hash: string, targetBranch: string): void
         (e: 'merge-branch', source: string, targetBranch: string): void
+        (e: 'toggle-mini'): void
         (
             e: 'create-tag',
             target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -252,6 +255,15 @@
     function resetSectionHeight(key: SidebarSectionKey) {
         ui.setSidebarSectionHeight(props.repo.path, key, null)
     }
+    /** Mini mode: reveal a section (expanding it when collapsed) and bring its card into view. */
+    function focusSection(key: SidebarSectionKey) {
+        if (!ui.sidebarSections[key]) ui.sidebarSections[key] = true
+        void nextTick(() => {
+            const section = sidebarEl.value?.querySelector<HTMLElement>(`[data-sidebar-section="${key}"]`)
+            section?.scrollIntoView({ block: 'nearest' })
+        })
+    }
+    defineExpose({ focusSection })
     onMounted(() => {
         if (!sidebarEl.value) return
         sectionObserver = new ResizeObserver(measureSections)
@@ -283,20 +295,9 @@
     const hasRemote = computed(() => repoStore.hasRemote)
     const pendingRemoteTag = ref<string | null>(null)
     const refreshingTags = computed(() => loadingTags.value || loadingRemoteTags.value)
-    const refreshingBranches = ref(false)
     function refreshTags() {
         if (refreshingTags.value || uiTransient.busy) return
         void repoStore.refreshWithTags()
-    }
-    /** Local data only: remote branches change after a fetch/pull, never from this button. */
-    async function refreshBranches() {
-        if (refreshingBranches.value || uiTransient.busy) return
-        refreshingBranches.value = true
-        try {
-            await repoStore.refresh()
-        } finally {
-            refreshingBranches.value = false
-        }
     }
     /** Deep-link into Settings → Remotes (the same one-shot `toolsTab` flow the command palette uses). */
     function openRemotesSettings() {
@@ -635,7 +636,23 @@
             </div>
             <CollapseAllButton
                 :all-collapsed="allSectionsCollapsed"
+                duotone
                 @toggle="toggleAllSections()" />
+            <button
+                type="button"
+                class="collapse-all-btn sidebar-mini-btn"
+                :title="ui.sidebarMini ? 'Expand sidebar (Ctrl+B)' : 'Mini sidebar (Ctrl+B)'"
+                :aria-label="ui.sidebarMini ? 'Expand sidebar' : 'Collapse sidebar to mini'"
+                @click="emit('toggle-mini')">
+                <i-solar-round-double-alt-arrow-right-line-duotone
+                    v-if="ui.sidebarMini"
+                    width="22"
+                    height="22" />
+                <i-solar-round-double-alt-arrow-left-line-duotone
+                    v-else
+                    width="22"
+                    height="22" />
+            </button>
         </div>
 
         <div
@@ -788,20 +805,6 @@
                     <h3>
                         REMOTE BRANCHES <span class="section-count">{{ remote.length }}</span>
                     </h3>
-                </button>
-                <button
-                    class="icon-btn section-refresh-btn"
-                    title="Refresh branches"
-                    aria-label="Refresh branches"
-                    :disabled="refreshingBranches || !!uiTransient.busy"
-                    @click.stop="refreshBranches()">
-                    <ThinkSpinner
-                        v-if="refreshingBranches"
-                        compact />
-                    <i-lucide-rotate-cw
-                        v-else
-                        width="14"
-                        height="14" />
                 </button>
                 <button
                     v-if="!hasRemote"

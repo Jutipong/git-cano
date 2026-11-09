@@ -134,12 +134,17 @@ test('the three-column layout fits the minimum window width', async () => {
             appScroll: app.scrollWidth,
             syncRight: syncBox.right,
             syncOverflow: sync.scrollWidth - sync.clientWidth,
+            syncLabels: [...sync.querySelectorAll('.toolbar-action > span:not(.sync-count)')].map(
+                span => span.scrollWidth - span.clientWidth
+            ),
             paneRight: paneBox.right,
         }
     })
     expect(metrics.appScroll).toBeLessThanOrEqual(metrics.inner)
     // Stashes sits at the end of the sync pill — the 340px panel change used to clip it.
     expect(metrics.syncOverflow).toBeLessThanOrEqual(1)
+    // Every label (Push/Pull/Fetch/Stashes) must render whole — no "Pu…" at the narrowest panel.
+    expect(metrics.syncLabels.filter(gap => gap > 0)).toEqual([])
     expect(metrics.syncRight).toBeLessThanOrEqual(metrics.inner + 1)
     expect(metrics.paneRight).toBeLessThanOrEqual(metrics.inner + 1)
 

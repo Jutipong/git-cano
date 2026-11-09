@@ -24,9 +24,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   The REMOTE BRANCHES header carries a gear button only while the repo has no remote
   (`!hasRemote`): it deep-links to Settings → Remotes through the one-shot
   `toolsTab`/`toolsOpen` pair, and the empty row reads "No remote configured" instead of
-  "Fetch a remote to see branches" in that case. The REMOTE BRANCHES header also carries
-  the same orange refresh button as TAGS, re-running `repoStore.refresh()` — local data
-  only, it never fetches from a remote (Fetch/Pull own that).
+  "Fetch a remote to see branches" in that case.
+  Only the TAGS header carries the orange refresh button (local data only — it never
+  fetches from a remote; Fetch/Pull own that).
   Brand icon `assets/cano.svg` sits at the top of the toolbar (`.sidebar-brand-icon`);
   the same asset drives the splash (`.splash-logo-image`) and no-repo empty state
   (`.app-empty-logo`) in `App.vue`. `Welcome.vue` was deleted — do not reintroduce it.
@@ -34,6 +34,20 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   (`.sidebar-section-resizer`, double-click resets to auto); the height is pinned per repo
   path in `ui.sidebarSectionHeights` (persisted), cards without a pinned height keep the
   automatic flex layout, and a collapsed card ignores its pinned height until reopened.
+- **Mini sidebar** (`ui.sidebarMini`, persisted, fixed `Ctrl+B`): a 64px `.sidebar-rail`
+  (LOCAL / REMOTE / TAGS / STASHES icons + Settings) takes the sidebar's layout slot.
+  The real `Sidebar` component stays mounted in `.sidebar-host` and opens **over the rail's own
+  slot** (`left: 0`) — hover reveals it after 200ms with a left-to-right `clip-path` wipe, so the
+  rail and the panel read as one card growing rather than two cards side by side (the rail's
+  brand sits at the panel brand's own 18px origin for that hand-off). A rail icon activated from
+  the keyboard pins it to that section (the exposed `focusSection` expands + scrolls it); outside
+  click / Esc while focus is inside / `Ctrl+B` closes it. The panel is `visibility: hidden` when
+  closed (no tab focus, no remeasure) and `z-index: 8` keeps it under the diff overlay (10).
+  `Ctrl+B` is left to the shell while the terminal panel has focus (readline backward-char /
+  tmux prefix). Entry points: the sidebar toolbar's `.sidebar-mini-btn` and the palette's
+  `Sidebar: collapse to mini` / `Sidebar: expand` item — the button stays visible inside the mini
+  panel and flips its icon/label to expand. The rail deliberately has no expand button of its
+  own; the panel toolbar's button (plus `Ctrl+B` / the palette) owns that direction.
 - **Workspaces reorder**: `workspace.ts` owns `reorder(from, to)` (bounds-guarded splice).
   `WorkspaceButton.vue` rows are `draggable`; reorder happens live on `dragover`
   (insertion = before/after by pointer Y within the row), `dragstart` is blocked while
@@ -68,7 +82,10 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   switching from a repo with no shell into one with a shell is ready to type immediately. A hidden
   target panel stays hidden, and the tab strip's Arrow/Home/End navigation keeps focus on the pills
   (the `activeRepoPath` watcher + `keepKeyboardOnRepoSwitch` in `App.vue`). Drag the
-  `.terminal-splitter` for height (persisted per session, resets to 400px on launch).
+  `.terminal-splitter` for height (persisted per session, resets to 400px on launch): the bottom
+  bound is 120px and the top one is the full-height overlay's own box (`innerHeight - 66`, the 60px
+  edge under the tab bar + the 6px frame), so the drag reaches the same height as `Alt+Enter`
+  without switching mode — full mode still only comes from the maximize button / `Alt+Enter`.
 - **Changes panel** (right): shows either working-directory changes or, when a commit is
   selected in the graph, that commit's files. The summary textarea is read-only in commit mode
   (author · date chip sits above it). Commit/stash mode (`commit-mode` in `modern-ui.css`)
@@ -266,10 +283,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   repo-close confirm; the panel's teal top edge via `:focus-within` marks that first case),
   Mini sidebar `Ctrl+B` (fixed; toggles `ui.sidebarMini` — left to the shell while the terminal
   panel has focus, since it is readline's backward-char / tmux's prefix),
-  Toggle / focus terminal `Ctrl+` (spawns the active repo's first shell; a panel whose shell is
-  already focused hides, while a visible panel with the keyboard anywhere else — including the
-  docked splitter — takes the keyboard back instead of hiding, so one press always lands in a shell;
-  never kills; killing every shell is palette-only `Terminal: kill all`, behind a confirm),
+  Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
+  killing every shell is palette-only `Terminal: kill all`, behind a confirm),
   New terminal tab `Ctrl+T` (fixed, capture-phase; the per-repo cap — Settings → Terminal → Tabs,
   default 4 — is a silent no-op),
   Next terminal tab `Ctrl+Tab` / Previous `Ctrl+Shift+Tab`, plus `Alt+→` / `Alt+←` (fixed,

@@ -52,6 +52,7 @@ export const SHORTCUTS: ShortcutDef[] = [
     { id: 'terminalFullHeight', label: 'Terminal full height', group: 'terminal', mac: ['Alt+Enter'], win: ['Alt+Enter'] },
     { id: 'terminalClosePanel', label: 'Close terminal panel', group: 'terminal', mac: [], win: ['Alt+F4'] },
     { id: 'searchCommits', label: 'Search commits', group: 'general', mac: ['⌘F'], win: ['Ctrl+F'] },
+    { id: 'sidebarMini', label: 'Toggle mini sidebar', group: 'general', mac: ['Ctrl+B'], win: ['Ctrl+B'] },
     { id: 'settings', label: 'Open settings', group: 'general', mac: ['Ctrl+,'], win: ['Ctrl+,'] },
     { id: 'commandPalette', label: 'Command palette', group: 'general', mac: ['Ctrl+P', 'Shift+Shift'], win: ['Ctrl+P', 'Shift+Shift'] },
     { id: 'shortcuts', label: 'Show shortcuts', group: 'general', mac: ['?'], win: ['?'] },
@@ -120,6 +121,8 @@ const RESERVED_COMBOS = new Set([
     'Ctrl+-',
     'Ctrl+0',
     'Ctrl+W',
+    // Mini sidebar (fixed; the shell keeps Ctrl+B while the terminal panel has focus).
+    'Ctrl+B',
     // Terminal tabs: Ctrl+T opens a shell, Ctrl+Tab / Ctrl+Shift+Tab / Alt+←→ cycle while the panel has focus (captured before xterm;
     // Alt+←→ act only there and stay untouched everywhere else).
     'Ctrl+T',
