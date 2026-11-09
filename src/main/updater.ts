@@ -1,12 +1,55 @@
 import { app, shell, type BrowserWindow } from 'electron'
 import pkg, { type AppUpdater } from 'electron-updater'
 
-import { log } from './logger'
+import { log, summarize } from './logger'
 
 const { autoUpdater } = pkg as unknown as { autoUpdater: AppUpdater }
 
+/** Retry pauses for transient failures; 3 extra attempts, ~7s total worst case. */
+const RETRY_DELAYS_MS = [1000, 2000, 4000]
+
 let getWin: () => BrowserWindow | null = () => null
 let started = false
+
+function rawMessage(err: unknown): string {
+    return err instanceof Error ? err.message : String(err)
+}
+
+/** 5xx from the release CDN and momentary network failures are worth repeating; everything else is final. */
+function isTransient(err: unknown): boolean {
+    const message = rawMessage(err)
+    return /\b5\d{2}\b/.test(message) || /net::|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|socket hang up|Gateway Time-out/i.test(message)
+}
+
+/** Short user-facing text — the raw electron-updater error dumps a whole HTML body into the dialog. */
+function friendlyMessage(err: unknown): string {
+    const message = rawMessage(err)
+    const status = /\b(5\d{2})\b/.exec(message)?.[1]
+    if (status) return `GitHub is temporarily unavailable (HTTP ${status}). Try again in a moment.`
+    if (/net::|ETIMEDOUT|ECONNRESET|ECONNREFUSED|EAI_AGAIN|socket hang up/i.test(message)) {
+        return 'Could not reach GitHub. Check your connection and try again.'
+    }
+    return message.replace(/^Error:\s*/, '')
+}
+
+async function withRetry<T>(label: string, run: () => Promise<T>): Promise<T> {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            // Sequential by design: each retry depends on the previous failure.
+            // oxlint-disable-next-line no-await-in-loop
+            return await run()
+        } catch (err) {
+            const delay = RETRY_DELAYS_MS[attempt]
+            if (delay === undefined || !isTransient(err)) {
+                log('warn', 'updater', `${label} failed: ${friendlyMessage(err)}`)
+                throw new Error(friendlyMessage(err))
+            }
+            log('warn', 'updater', `${label} failed (attempt ${attempt + 1}), retrying in ${delay}ms: ${friendlyMessage(err)}`)
+            // oxlint-disable-next-line no-await-in-loop
+            await new Promise(resolve => setTimeout(resolve, delay))
+        }
+    }
+}
 
 /** True only for the installed Windows build (NSIS Setup .exe). macOS stays manual (unsigned dmg). Dev is never auto. */
 export function isAutoUpdateSupported(): boolean {
@@ -31,6 +74,12 @@ export function initAutoUpdater(getWindow: () => BrowserWindow | null): void {
         log('info', 'updater', 'auto-update disabled (manual download only)')
         return
     }
+    autoUpdater.logger = {
+        info: (message?: unknown) => log('info', 'updater', summarize(message)),
+        warn: (message?: unknown) => log('warn', 'updater', summarize(message)),
+        error: (message?: unknown) => log('error', 'updater', summarize(message)),
+        debug: (message?: unknown) => log('debug', 'updater', summarize(message)),
+    }
     autoUpdater.autoDownload = false
     autoUpdater.autoInstallOnAppQuit = true
     autoUpdater.on('download-progress', progress => {
@@ -46,7 +95,7 @@ export function initAutoUpdater(getWindow: () => BrowserWindow | null): void {
         send('update:downloaded', { version: info.version })
     })
     autoUpdater.on('error', err => {
-        const message = err instanceof Error ? err.message : String(err)
+        const message = friendlyMessage(err)
         log('warn', 'updater', `error ${message}`)
         send('update:error', message)
     })
@@ -56,11 +105,11 @@ export function initAutoUpdater(getWindow: () => BrowserWindow | null): void {
 /** Re-validates via the feed, then downloads. Resolves with the downloaded version. */
 export async function downloadUpdate(): Promise<string> {
     if (!isAutoUpdateSupported()) throw new Error('Automatic download is only available in the installed Windows app')
-    const result = await autoUpdater.checkForUpdates()
+    const result = await withRetry('checkForUpdates', () => autoUpdater.checkForUpdates())
     const info = result?.updateInfo
     if (!info || !info.version) throw new Error('No update found')
     log('info', 'updater', `downloading ${info.version}`)
-    await autoUpdater.downloadUpdate()
+    await withRetry('downloadUpdate', () => autoUpdater.downloadUpdate())
     return info.version
 }
 
