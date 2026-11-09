@@ -267,6 +267,9 @@
     /* Mini sidebar: the icon rail's width (the floating panel reuses --sidebar-width). */
     --sidebar-mini-width: 64px;
 
+    /* Text/icon on a filled accent surface (primary buttons, the sidebar mini toggle). */
+    --on-accent: #fff;
+
     --duration-fast: 120ms;
     --duration: 150ms;
     --duration-slow: 200ms;

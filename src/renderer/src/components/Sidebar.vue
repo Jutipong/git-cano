@@ -3,6 +3,7 @@
     import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
+    import ILucideChevronLeft from '~icons/lucide/chevron-left'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
     import ILucideChevronUp from '~icons/lucide/chevron-up'
     import ILucideCircleArrowUp from '~icons/lucide/circle-arrow-up'
@@ -17,8 +18,6 @@
     import ILucideTag from '~icons/lucide/tag'
     import ILucideTrash2 from '~icons/lucide/trash2'
     import ILucideZoomIn from '~icons/lucide/zoom-in'
-    import ISolarRoundDoubleAltArrowLeftLineDuotone from '~icons/solar/round-double-alt-arrow-left-line-duotone'
-    import ISolarRoundDoubleAltArrowRightLineDuotone from '~icons/solar/round-double-alt-arrow-right-line-duotone'
 
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
@@ -640,18 +639,18 @@
                 @toggle="toggleAllSections()" />
             <button
                 type="button"
-                class="collapse-all-btn sidebar-mini-btn"
+                class="sidebar-mini-btn"
                 :title="ui.sidebarMini ? 'Expand sidebar (Ctrl+B)' : 'Mini sidebar (Ctrl+B)'"
                 :aria-label="ui.sidebarMini ? 'Expand sidebar' : 'Collapse sidebar to mini'"
                 @click="emit('toggle-mini')">
-                <i-solar-round-double-alt-arrow-right-line-duotone
+                <i-lucide-chevron-right
                     v-if="ui.sidebarMini"
-                    width="22"
-                    height="22" />
-                <i-solar-round-double-alt-arrow-left-line-duotone
+                    width="14"
+                    height="14" />
+                <i-lucide-chevron-left
                     v-else
-                    width="22"
-                    height="22" />
+                    width="14"
+                    height="14" />
             </button>
         </div>
 

@@ -2662,6 +2662,25 @@ body {
     background: var(--surface-hover);
     border-color: transparent;
 }
+/* Mini sidebar toggle: a filled accent circle sized to the collapse-all icon's own ring (22px),
+   so the two read as a matched pair at the row's right end. */
+.sidebar > .sidebar-toolbar > .sidebar-mini-btn {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    color: var(--on-accent);
+    background: var(--teal-dark);
+    border: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background var(--duration-fast) ease;
+}
+.sidebar > .sidebar-toolbar > .sidebar-mini-btn:hover {
+    background: var(--teal);
+}
 .sidebar > .sidebar-toolbar > .sidebar-brand-icon {
     flex: none;
     width: 28px;
