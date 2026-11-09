@@ -363,6 +363,9 @@
         const colors = themeColors()
         term = new Terminal({
             cursorBlink: true,
+            cursorStyle: 'bar',
+            cursorWidth: 2,
+            cursorInactiveStyle: 'bar',
             fontFamily: family,
             fontSize: fontSizePx(),
             // Must be exactly 1.0: block-element ASCII art (opencode's logo) fills the em box, and a
