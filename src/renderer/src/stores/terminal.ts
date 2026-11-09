@@ -49,6 +49,11 @@ export const useTerminalStore = defineStore('terminal', () => {
         return repoTerminals(path)?.tabs.length ?? 0
     }
 
+    /** Every live shell in the app, across all repos (the panel header's count pill). */
+    const totalTerminals = computed(() =>
+        Object.values(terminals.value).reduce((sum, state) => sum + state.tabs.length, 0)
+    )
+
     /** True while a repo's panel is on screen (has a shell and isn't toggled away). */
     function panelVisible(path: string): boolean {
         const state = repoTerminals(path)
@@ -181,7 +186,7 @@ export const useTerminalStore = defineStore('terminal', () => {
 
     /** Kills every shell of every repo — the header button, the palette command and its shortcut. */
     async function killAllTerminals(): Promise<number> {
-        const total = Object.values(terminals.value).reduce((sum, state) => sum + state.tabs.length, 0)
+        const total = totalTerminals.value
         await window.api.terminalDisposeAll().catch(() => 0)
         terminals.value = {}
         return total
@@ -197,6 +202,7 @@ export const useTerminalStore = defineStore('terminal', () => {
         repoTerminals,
         terminalExists,
         terminalCount,
+        totalTerminals,
         panelVisible,
         openTerminalTab,
         setActiveTerminal,

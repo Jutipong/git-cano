@@ -309,7 +309,10 @@ Panel/modal component patterns. Loaded automatically when working under
   font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`; both terminal
   pills take an 8px button gap — `.terminal-actions .segmented` — instead of the wider diff
   toolbars' 3px, with no divider between groups; the hide button carries `.terminal-hide-btn`, a
-  permanent green tint like the ✕'s permanent red). Maximize teleports the panel into `.app`
+  permanent green tint like the ✕'s permanent red). A `.terminal-count` pill sits before the font
+  stepper and shows `terminalStore.totalTerminals` — every live shell of every repo, including ones
+  left behind on another repo tab or workspace, so it never matches just this panel's tab count.
+  Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: calc(var(--right-panel-width) + 12px)` clears the Changes pane — Settings → Terminal →
   Full window sets `ui.terminalFullWidth`, which adds `.terminal-overlay-window` (`top: 6px`,

@@ -6208,6 +6208,26 @@ body {
     gap: 8px;
 }
 
+/* Count pill before the font stepper: every live shell of every repo, so shells left behind on
+   another repo tab (or workspace) are still counted while this panel shows only its own tabs. */
+.terminal-count {
+    display: grid;
+    place-items: center;
+    min-width: calc(var(--control-h-sm) + 6px);
+    height: calc(var(--control-h-sm) + 6px);
+    padding: 0 8px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, var(--surface-hover) 55%, transparent);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    cursor: default;
+}
+
 /* Hide button — permanently green like its neighbour ✕ is permanently red, so the three panel
    controls read as hide / full height / close instead of three identical grey circles. */
 .terminal-hide-btn {

@@ -94,6 +94,15 @@ test('the second repo owns its own panel and keeps its shell while the first is 
     const labels = await page.locator('.terminal-panel:visible .terminal-tab-label').allTextContents()
     expect(labels).toEqual(['cmd 1'])
 
+    // The header count pill totals every live shell across repos, not just this panel's tabs.
+    const count = page.locator('.terminal-panel:visible .terminal-count')
+    await expect(count).toHaveText('2')
+    await page.locator('.terminal-panel:visible .terminal-tab-add').click()
+    await expect(count).toHaveText('3')
+    await page.locator('.terminal-panel:visible .terminal-tab.active .terminal-tab-close').click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(count).toHaveText('2')
+
     await page.locator('.repo-tab').nth(0).click()
     await expect(page.locator('.terminal-panel:visible .terminal-tab-label')).toHaveText('cmd 1')
     // The panel was on screen when the tab was clicked and the target panel is visible too, so the
