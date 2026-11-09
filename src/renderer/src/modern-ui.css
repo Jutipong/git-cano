@@ -2437,6 +2437,7 @@ body {
 
 /* --- Mini sidebar: the rail owns the layout slot, the real Sidebar floats beside it --- */
 .sidebar-host {
+    position: relative;
     display: flex;
     flex: 0 0 auto;
     min-height: 0;
@@ -2662,24 +2663,40 @@ body {
     background: var(--surface-hover);
     border-color: transparent;
 }
-/* Mini sidebar toggle: a filled accent circle sized to the collapse-all icon's own ring (22px),
-   so the two read as a matched pair at the row's right end. */
-.sidebar > .sidebar-toolbar > .sidebar-mini-btn {
+/* Mini sidebar toggle: sits in the 6px gutter between the sidebar and the graph, centred on the
+   boundary. Its 4px canvas-coloured ring paints outside the button, biting a 30px circle out of
+   both card edges, so the boundary reads as a punched hole rather than a floating chip. */
+.sidebar-mini-btn {
+    position: absolute;
+    top: calc(50% - 14px);
+    left: calc(var(--sidebar-width) - 15px);
+    z-index: 9; /* over the cards and the splitter (4), under the diff overlay (10) */
     display: grid;
     place-items: center;
-    flex: none;
-    width: 22px;
-    height: 22px;
+    width: 28px;
+    height: 28px;
     padding: 0;
     color: var(--on-accent);
     background: var(--teal-dark);
     border: 0;
     border-radius: 50%;
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--canvas) 50%, var(--surface-0));
     cursor: pointer;
-    transition: background var(--duration-fast) ease;
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    transition:
+        background var(--duration-fast) ease,
+        opacity var(--duration-slow) cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform var(--duration-slow) cubic-bezier(0.34, 1.25, 0.64, 1);
 }
-.sidebar > .sidebar-toolbar > .sidebar-mini-btn:hover {
+.sidebar-mini-btn:hover {
     background: var(--teal);
+}
+/* Collapsed with the panel closed: the button drifts back into the panel edge instead of popping. */
+.sidebar-host.mini:not(.peek-open) > .sidebar-mini-btn {
+    opacity: 0;
+    transform: translateX(-10px) scale(0.85);
+    pointer-events: none;
 }
 .sidebar > .sidebar-toolbar > .sidebar-brand-icon {
     flex: none;

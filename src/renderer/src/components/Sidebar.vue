@@ -3,7 +3,6 @@
     import { computed, inject, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
     import ILucideCheck from '~icons/lucide/check'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
-    import ILucideChevronLeft from '~icons/lucide/chevron-left'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
     import ILucideChevronUp from '~icons/lucide/chevron-up'
     import ILucideCircleArrowUp from '~icons/lucide/circle-arrow-up'
@@ -42,7 +41,6 @@
         (e: 'interactive-rebase', baseRef: string): void
         (e: 'cherry-pick', hash: string, targetBranch: string): void
         (e: 'merge-branch', source: string, targetBranch: string): void
-        (e: 'toggle-mini'): void
         (
             e: 'create-tag',
             target: { hash: string | null; subject?: string | null; shortHash?: string | null; branchName?: string | null }
@@ -637,21 +635,6 @@
                 :all-collapsed="allSectionsCollapsed"
                 duotone
                 @toggle="toggleAllSections()" />
-            <button
-                type="button"
-                class="sidebar-mini-btn"
-                :title="ui.sidebarMini ? 'Expand sidebar (Ctrl+B)' : 'Mini sidebar (Ctrl+B)'"
-                :aria-label="ui.sidebarMini ? 'Expand sidebar' : 'Collapse sidebar to mini'"
-                @click="emit('toggle-mini')">
-                <i-lucide-chevron-right
-                    v-if="ui.sidebarMini"
-                    width="14"
-                    height="14" />
-                <i-lucide-chevron-left
-                    v-else
-                    width="14"
-                    height="14" />
-            </button>
         </div>
 
         <div

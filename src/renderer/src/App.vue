@@ -6,6 +6,8 @@
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowDownToLine from '~icons/lucide/arrow-down-to-line'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
+    import ILucideChevronLeft from '~icons/lucide/chevron-left'
+    import ILucideChevronRight from '~icons/lucide/chevron-right'
     import ILucideUndo2 from '~icons/lucide/undo-2'
 
     import canoIcon from './assets/cano.svg'
@@ -1155,8 +1157,27 @@
                         @interactive-rebase="rebaseBase = $event"
                         @cherry-pick="cherryPickOnto"
                         @merge-branch="mergeBranchOnto"
-                        @create-tag="tagTarget = $event"
-                        @toggle-mini="toggleSidebarMini" />
+                        @create-tag="tagTarget = $event" />
+                    <!-- Sits in the gutter between the sidebar and the graph and punches a
+                         canvas-coloured ring through both card edges, so it reads as a hole in the
+                         boundary. It cannot live inside `.sidebar` (that box clips, and the mini
+                         panel's clip-path reveal would cut it off), and it stays a child of the host
+                         so hovering it never trips the peek's mouseleave. -->
+                    <button
+                        type="button"
+                        class="sidebar-mini-btn"
+                        :title="ui.sidebarMini ? 'Expand sidebar (Ctrl+B)' : 'Mini sidebar (Ctrl+B)'"
+                        :aria-label="ui.sidebarMini ? 'Expand sidebar' : 'Collapse sidebar to mini'"
+                        @click="toggleSidebarMini()">
+                        <i-lucide-chevron-right
+                            v-if="ui.sidebarMini"
+                            width="16"
+                            height="16" />
+                        <i-lucide-chevron-left
+                            v-else
+                            width="16"
+                            height="16" />
+                    </button>
                 </div>
                 <div
                     v-if="!ui.sidebarMini"

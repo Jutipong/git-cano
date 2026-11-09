@@ -43,12 +43,17 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   click / Esc while focus is inside / `Ctrl+B` closes it. The panel is `visibility: hidden` when
   closed (no tab focus, no remeasure) and `z-index: 8` keeps it under the diff overlay (10).
   `Ctrl+B` is left to the shell while the terminal panel has focus (readline backward-char /
-  tmux prefix). Entry points: the sidebar toolbar's `.sidebar-mini-btn` and the palette's
-  `Sidebar: collapse to mini` / `Sidebar: expand` item — the button stays visible inside the mini
-  panel and flips its chevron/label to expand. It is a 22px filled accent circle so it matches the
-  collapse-all icon's own 22px ring beside it (the brand icon, search pill, collapse-all and mini
-  toggle share the toolbar row with one 10px gap each). The rail deliberately has no expand button
-  of its own; the panel toolbar's button (plus `Ctrl+B` / the palette) owns that direction.
+  tmux prefix). Entry points: the `.sidebar-mini-btn` sitting in the gutter between the sidebar and
+  the graph and the palette's `Sidebar: collapse to mini` / `Sidebar: expand` item. `App.vue` renders
+  it as a child of `.sidebar-host` (a 28px accent circle straddling the boundary at roughly 55/45 —
+  `left: calc(var(--sidebar-width) - 15px)`, `top: calc(50% - 14px)` — because `.sidebar` clips its
+  overflow and the mini panel's `clip-path` would cut it off). Its 4px `var(--canvas)`/`var(--surface-0)`
+  mix ring bites a hole out of both card edges — keep that ring, and keep the button outside the panel.
+  The button stays visible inside the mini panel and flips its chevron/label to expand. It fades and
+  drifts 10px left while the mini panel is closed (`mini:not(.peek-open)`) with a 200ms soft ease
+  (`--duration-slow`, a touch longer than the panel's 150ms clip-path) plus a 0.85 scale, so it
+  settles in after the panel reveals instead of popping in over the graph. The rail deliberately has no expand
+  button of its own; the gutter button (plus `Ctrl+B` / the palette) owns that direction.
 - **Workspaces reorder**: `workspace.ts` owns `reorder(from, to)` (bounds-guarded splice).
   `WorkspaceButton.vue` rows are `draggable`; reorder happens live on `dragover`
   (insertion = before/after by pointer Y within the row), `dragstart` is blocked while

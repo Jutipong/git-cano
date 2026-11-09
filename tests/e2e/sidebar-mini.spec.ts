@@ -86,7 +86,7 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     // The panel's toolbar button flips to Expand and returns to the full sidebar.
     await rail.hover()
     await expect(sidebar).toBeVisible()
-    await sidebar.getByRole('button', { name: 'Expand sidebar' }).click()
+    await page.getByRole('button', { name: 'Expand sidebar' }).click()
     await expect(rail).toHaveCount(0)
     await expect(page.locator('.panel-splitter[aria-label="Resize sidebar"]')).toBeVisible()
 
