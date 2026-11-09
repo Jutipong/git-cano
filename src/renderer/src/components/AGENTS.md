@@ -309,9 +309,13 @@ Panel/modal component patterns. Loaded automatically when working under
   font stepper and `[hide · maximize · ✕]` for the panel (`.diff-header-actions`; both terminal
   pills take an 8px button gap — `.terminal-actions .segmented` — instead of the wider diff
   toolbars' 3px, with no divider between groups; the hide button carries `.terminal-hide-btn`, a
-  permanent green tint like the ✕'s permanent red). A `.terminal-count` pill sits before the font
-  stepper and shows `terminalStore.totalTerminals` — every live shell of every repo, including ones
-  left behind on another repo tab or workspace, so it never matches just this panel's tab count.
+  permanent green tint like the ✕'s permanent red). The panel header intentionally carries no shell
+  counter — the total lives on the graph toolbar only: `TerminalCountIcon.vue` (terminal icon +
+  `.terminal-count-badge` green number on its corner, 14px, `--surface-0` pill) inside
+  `.graph-terminal-btn`, showing `terminalStore.totalTerminals` — every live shell of every repo,
+  including ones left behind on another repo tab or workspace (badge hidden at zero). The button
+  tooltip repeats the total, so a background shell stays visible while the panel is hidden. The
+  button itself stays neutral — no active/blink tint around the icon.
   Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
   `right: calc(var(--right-panel-width) + 12px)` clears the Changes pane — Settings → Terminal →

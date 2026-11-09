@@ -46,12 +46,6 @@
         }
     })
 
-    /** The header's count pill: every live shell of every repo, not just this panel's tabs. */
-    const countTitle = computed(() => {
-        const total = terminalStore.totalTerminals
-        return total === 1 ? '1 terminal open across all repos' : `${total} terminals open across all repos`
-    })
-
     /** The header ✕ mirrors Alt+F4 on Windows — the panel's own keyboard close gesture. */
     const closePanelTitle = computed(() => {
         const base = tabs.value.length > 1 ? `Close all ${tabs.value.length} terminals` : 'Close terminal'
@@ -255,10 +249,6 @@
                 </button>
             </span>
             <span class="terminal-actions">
-                <span
-                    class="terminal-count"
-                    :title="countTitle"
-                    :aria-label="countTitle">{{ terminalStore.totalTerminals }}</span>
                 <!-- Two diff-view style pills: the font stepper and the panel controls stay separate. -->
                 <span class="segmented">
                     <button

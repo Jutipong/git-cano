@@ -1,6 +1,5 @@
 <script setup lang="ts">
     import { nextTick, watch, computed, onBeforeUnmount, onMounted, ref } from 'vue'
-    import IAndrsrxnTerminalSquare from '~icons/andrsrxn/terminal-square'
     import ILucideArrowUp from '~icons/lucide/arrow-up'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
     import ILucideChevronRight from '~icons/lucide/chevron-right'
@@ -23,6 +22,7 @@
     import CloseXIcon from './CloseXIcon.vue'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
+    import TerminalCountIcon from './TerminalCountIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
 
     import type { CommitNode } from '@shared/types'
@@ -549,11 +549,12 @@
     /** The toolbar button spawns the first shell, then just shows/hides — only ✕ ever kills. */
     const terminalPath = computed(() => repoStore.tabs[repoStore.activeTab]?.path ?? '')
     const terminalVisible = computed(() => terminalStore.panelVisible(terminalPath.value))
-    /** Shells running while the panel is hidden — the toolbar button blinks green for them. */
-    const terminalRunning = computed(() => terminalStore.terminalExists(terminalPath.value) && !terminalVisible.value)
+    /** The toolbar badge totals every live shell of every repo, matching the panel header's count pill. */
+    const terminalTotal = computed(() => terminalStore.totalTerminals)
     const terminalToggleTitle = computed(() => {
-        if (terminalVisible.value) return 'Hide terminal'
-        return terminalStore.terminalExists(terminalPath.value) ? 'Show terminal' : 'Open terminal'
+        const count = terminalTotal.value ? ` — ${terminalTotal.value} open` : ''
+        if (terminalVisible.value) return `Hide terminal${count}`
+        return terminalStore.terminalExists(terminalPath.value) ? `Show terminal${count}` : 'Open terminal'
     })
 
     const AUTHOR_MIN_W = 88
@@ -908,12 +909,9 @@
                 </button>
                 <button
                     class="icon-btn graph-terminal-btn"
-                    :class="{ active: terminalVisible, 'terminal-running': terminalRunning }"
                     :title="terminalToggleTitle"
                     @click="emit('toggle-terminal')">
-                    <i-andrsrxn-terminal-square
-                        width="14"
-                        height="14" />
+                    <TerminalCountIcon :count="terminalTotal" />
                 </button>
             </span>
             <span
