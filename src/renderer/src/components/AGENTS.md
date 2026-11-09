@@ -39,6 +39,11 @@ Panel/modal component patterns. Loaded automatically when working under
   Follow the stash pattern: export a `*MenuState` interface from the component, pass it
   through a single `menu` prop, emit a typed event per action, and import icons directly
   inside the SFC — never grow `ContextMenu.vue`'s icon registry for feature-specific items.
+- **Menu roots are `<Teleport to="body">`**: the mini sidebar clips its subtree with
+  `clip-path` (the wipe reveal), which also cuts a `position: fixed` menu mounted inside
+  `.sidebar` at the panel's right edge. Keep the teleport in every menu SFC — the
+  branch/tag/stash menus and the shared `ContextMenu.vue` (remote branches) all live in
+  the sidebar. `useMenuKeyboard` and the document mousedown close work unchanged through it.
 
 ## DiffView & diff rendering
 

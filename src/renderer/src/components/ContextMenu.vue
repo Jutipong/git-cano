@@ -67,36 +67,39 @@
 </script>
 
 <template>
-    <div
-        v-if="menu"
-        ref="root"
-        class="context-menu"
-        role="menu"
-        :style="menuStyle()">
-        <template
-            v-for="(item, index) in menu.items"
-            :key="index">
-            <div
-                v-if="item.separatorBefore"
-                class="context-menu-separator" />
-            <button
-                class="context-menu-item"
-                :class="{ danger: item.danger, accent: item.accent }"
-                @click="
-                    () => {
-                        emit('close')
-                        item.action?.()
-                    }
-                ">
-                <component
-                    :is="ICONS[item.icon]"
-                    v-if="item.icon && ICONS[item.icon]"
-                    class="menu-ic"
-                    :class="`menu-ic-${item.icon}`"
-                    width="13"
-                    height="13" />
-                {{ item.label }}
-            </button>
-        </template>
-    </div>
+    <!-- Teleported: fixed menus must escape clipping ancestors (mini sidebar's clip-path reveal). -->
+    <Teleport to="body">
+        <div
+            v-if="menu"
+            ref="root"
+            class="context-menu"
+            role="menu"
+            :style="menuStyle()">
+            <template
+                v-for="(item, index) in menu.items"
+                :key="index">
+                <div
+                    v-if="item.separatorBefore"
+                    class="context-menu-separator" />
+                <button
+                    class="context-menu-item"
+                    :class="{ danger: item.danger, accent: item.accent }"
+                    @click="
+                        () => {
+                            emit('close')
+                            item.action?.()
+                        }
+                    ">
+                    <component
+                        :is="ICONS[item.icon]"
+                        v-if="item.icon && ICONS[item.icon]"
+                        class="menu-ic"
+                        :class="`menu-ic-${item.icon}`"
+                        width="13"
+                        height="13" />
+                    {{ item.label }}
+                </button>
+            </template>
+        </div>
+    </Teleport>
 </template>

@@ -55,6 +55,31 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     await page.mouse.move(900, 300)
     await expect(sidebar).toBeVisible()
 
+    // Right-click menus must escape the panel's clip-path reveal: the card clips its subtree, so a
+    // fixed menu left inside it was cut off at the panel's right edge.
+    const branchRow = sidebar.locator('.branch-row').first()
+    const rowBox = await branchRow.boundingBox()
+    await branchRow.click({ button: 'right', position: { x: rowBox!.width - 10, y: 12 } })
+    const branchMenu = page.locator('.local-branch-menu')
+    await expect(branchMenu).toBeVisible()
+    const menuBox = (await branchMenu.boundingBox())!
+    const panelBox = (await sidebar.boundingBox())!
+    expect(menuBox.width).toBeGreaterThanOrEqual(190)
+    expect(menuBox.x + menuBox.width).toBeGreaterThan(panelBox.x + panelBox.width)
+    // Teleported to <body>, so no sidebar clip applies to it.
+    expect(await branchMenu.evaluate(el => el.parentElement === document.body)).toBe(true)
+    // Hit-testing honours clip-path: a point past the panel edge still belongs to the menu.
+    const overMenu = await page.evaluate(
+        ({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.local-branch-menu'),
+        { x: panelBox.x + panelBox.width + 10, y: menuBox.y + 12 }
+    )
+    expect(overMenu).toBe(true)
+    await page.keyboard.press('Escape')
+    await expect(branchMenu).toHaveCount(0)
+    await expect(sidebar).toBeVisible()
+    // Park the pointer outside the panel again so the later rail hover re-enters it.
+    await page.mouse.move(900, 300)
+
     await page.keyboard.press('Escape')
     await expect(sidebar).toBeHidden()
 

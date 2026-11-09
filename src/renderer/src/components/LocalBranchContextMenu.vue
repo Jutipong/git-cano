@@ -95,126 +95,130 @@
 </script>
 
 <template>
-    <div
-        v-if="menu"
-        ref="root"
-        class="local-branch-menu"
-        role="menu"
-        :style="menuStyle()">
-        <button
-            class="local-branch-menu-item"
-            @click="act('createBranchHere')">
-            <GitBranch
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Create branch
-        </button>
-        <button
-            class="local-branch-menu-item"
-            @click="act('createTagHere')">
-            <Tag
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Create tag
-        </button>
-        <div class="local-branch-menu-separator" />
-        <button
-            class="local-branch-menu-item accent"
-            :disabled="menu.branch.detached"
-            @click="act('solo')">
-            <Crosshair
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            {{ menu.soloed ? 'Unsolo' : 'Solo' }}
-        </button>
-        <div class="local-branch-menu-separator" />
-        <button
-            class="local-branch-menu-item"
-            :disabled="!menu.hasRemote || menu.branch.detached"
-            @click="act('push')">
-            <ArrowUp
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Push
-        </button>
-        <button
-            class="local-branch-menu-item"
-            :disabled="!menu.hasRemote || menu.branch.detached"
-            @click="act('pull')">
-            <ArrowDown
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Pull
-        </button>
-        <button
-            v-if="menu.branch.current"
-            class="local-branch-menu-item"
-            :disabled="!menu.hasRemote || menu.branch.detached"
-            @click="act('pullRebase')">
-            <GitCommitVertical
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Pull (rebase)
-        </button>
-        <button
-            v-if="!menu.branch.current && menu.currentBranch && menu.currentBranch !== 'HEAD (detached)'"
-            class="local-branch-menu-item"
-            :disabled="menu.branch.detached"
-            @click="act('mergeInto')">
-            <GitMerge
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Merge {{ menu.branch.name }} into {{ menu.currentBranch }}
-        </button>
-        <button
-            v-if="!menu.branch.current"
-            class="local-branch-menu-item"
-            :disabled="menu.branch.detached"
-            @click="act('rebaseOnto')">
-            <ListRestart
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Rebase {{ menu.currentBranch || 'current branch' }} onto this
-        </button>
-        <button
-            class="local-branch-menu-item orange"
-            :disabled="!menu.hasRemote || menu.branch.detached"
-            @click="act('forcePush')">
-            <Zap
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Force push
-        </button>
-        <div class="local-branch-menu-separator" />
-        <button
-            class="local-branch-menu-item danger"
-            :disabled="menu.branch.current || menu.branch.detached || menu.soloActive"
-            :title="menu.soloActive ? 'Unsolo before deleting' : ''"
-            @click="act('delete')">
-            <Trash2
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Delete
-        </button>
-        <div class="local-branch-menu-separator" />
-        <button
-            class="local-branch-menu-item"
-            @click="act('copyName')">
-            <Copy
-                class="local-branch-menu-ic"
-                width="13"
-                height="13" />
-            Copy branch name
-        </button>
-    </div>
+    <!-- Teleported: the sidebar clips its subtree in mini mode (clip-path reveal), which
+         else cuts the fixed menu off at the sidebar's right edge. -->
+    <Teleport to="body">
+        <div
+            v-if="menu"
+            ref="root"
+            class="local-branch-menu"
+            role="menu"
+            :style="menuStyle()">
+            <button
+                class="local-branch-menu-item"
+                @click="act('createBranchHere')">
+                <GitBranch
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Create branch
+            </button>
+            <button
+                class="local-branch-menu-item"
+                @click="act('createTagHere')">
+                <Tag
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Create tag
+            </button>
+            <div class="local-branch-menu-separator" />
+            <button
+                class="local-branch-menu-item accent"
+                :disabled="menu.branch.detached"
+                @click="act('solo')">
+                <Crosshair
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                {{ menu.soloed ? 'Unsolo' : 'Solo' }}
+            </button>
+            <div class="local-branch-menu-separator" />
+            <button
+                class="local-branch-menu-item"
+                :disabled="!menu.hasRemote || menu.branch.detached"
+                @click="act('push')">
+                <ArrowUp
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Push
+            </button>
+            <button
+                class="local-branch-menu-item"
+                :disabled="!menu.hasRemote || menu.branch.detached"
+                @click="act('pull')">
+                <ArrowDown
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Pull
+            </button>
+            <button
+                v-if="menu.branch.current"
+                class="local-branch-menu-item"
+                :disabled="!menu.hasRemote || menu.branch.detached"
+                @click="act('pullRebase')">
+                <GitCommitVertical
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Pull (rebase)
+            </button>
+            <button
+                v-if="!menu.branch.current && menu.currentBranch && menu.currentBranch !== 'HEAD (detached)'"
+                class="local-branch-menu-item"
+                :disabled="menu.branch.detached"
+                @click="act('mergeInto')">
+                <GitMerge
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Merge {{ menu.branch.name }} into {{ menu.currentBranch }}
+            </button>
+            <button
+                v-if="!menu.branch.current"
+                class="local-branch-menu-item"
+                :disabled="menu.branch.detached"
+                @click="act('rebaseOnto')">
+                <ListRestart
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Rebase {{ menu.currentBranch || 'current branch' }} onto this
+            </button>
+            <button
+                class="local-branch-menu-item orange"
+                :disabled="!menu.hasRemote || menu.branch.detached"
+                @click="act('forcePush')">
+                <Zap
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Force push
+            </button>
+            <div class="local-branch-menu-separator" />
+            <button
+                class="local-branch-menu-item danger"
+                :disabled="menu.branch.current || menu.branch.detached || menu.soloActive"
+                :title="menu.soloActive ? 'Unsolo before deleting' : ''"
+                @click="act('delete')">
+                <Trash2
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Delete
+            </button>
+            <div class="local-branch-menu-separator" />
+            <button
+                class="local-branch-menu-item"
+                @click="act('copyName')">
+                <Copy
+                    class="local-branch-menu-ic"
+                    width="13"
+                    height="13" />
+                Copy branch name
+            </button>
+        </div>
+    </Teleport>
 </template>

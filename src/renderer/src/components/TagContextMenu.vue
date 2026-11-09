@@ -58,60 +58,63 @@
 </script>
 
 <template>
-    <div
-        v-if="menu"
-        ref="root"
-        class="tag-menu"
-        role="menu"
-        :style="menuStyle()">
-        <button
-            v-if="menu && !menu.checkingRemote && !menu.onRemote && menu.canPush"
-            class="tag-menu-item"
-            @click="act('push')">
-            <CloudUpload
-                class="tag-menu-ic"
-                width="13"
-                height="13" />
-            Push to remote
-        </button>
+    <!-- Teleported: the sidebar clips its subtree in mini mode (clip-path reveal). -->
+    <Teleport to="body">
         <div
-            v-if="menu && !menu.checkingRemote && !menu.onRemote && menu.canPush"
-            class="tag-menu-separator" />
-        <button
-            v-if="menu && menu.checkingRemote"
-            class="tag-menu-item"
-            disabled>
-            Checking remote…
-        </button>
-        <button
-            v-else-if="menu && menu.onRemote"
-            class="tag-menu-item danger"
-            @click="act('deleteRemote')">
-            <Trash2
-                class="tag-menu-ic"
-                width="13"
-                height="13" />
-            Delete remote tag
-        </button>
-        <button
-            v-else
-            class="tag-menu-item danger"
-            @click="act('delete')">
-            <Trash2
-                class="tag-menu-ic"
-                width="13"
-                height="13" />
-            Delete local tag
-        </button>
-        <div class="tag-menu-separator" />
-        <button
-            class="tag-menu-item"
-            @click="act('copyName')">
-            <Copy
-                class="tag-menu-ic"
-                width="13"
-                height="13" />
-            Copy tag name
-        </button>
-    </div>
+            v-if="menu"
+            ref="root"
+            class="tag-menu"
+            role="menu"
+            :style="menuStyle()">
+            <button
+                v-if="menu && !menu.checkingRemote && !menu.onRemote && menu.canPush"
+                class="tag-menu-item"
+                @click="act('push')">
+                <CloudUpload
+                    class="tag-menu-ic"
+                    width="13"
+                    height="13" />
+                Push to remote
+            </button>
+            <div
+                v-if="menu && !menu.checkingRemote && !menu.onRemote && menu.canPush"
+                class="tag-menu-separator" />
+            <button
+                v-if="menu && menu.checkingRemote"
+                class="tag-menu-item"
+                disabled>
+                Checking remote…
+            </button>
+            <button
+                v-else-if="menu && menu.onRemote"
+                class="tag-menu-item danger"
+                @click="act('deleteRemote')">
+                <Trash2
+                    class="tag-menu-ic"
+                    width="13"
+                    height="13" />
+                Delete remote tag
+            </button>
+            <button
+                v-else
+                class="tag-menu-item danger"
+                @click="act('delete')">
+                <Trash2
+                    class="tag-menu-ic"
+                    width="13"
+                    height="13" />
+                Delete local tag
+            </button>
+            <div class="tag-menu-separator" />
+            <button
+                class="tag-menu-item"
+                @click="act('copyName')">
+                <Copy
+                    class="tag-menu-ic"
+                    width="13"
+                    height="13" />
+                Copy tag name
+            </button>
+        </div>
+    </Teleport>
 </template>

@@ -55,39 +55,42 @@
 </script>
 
 <template>
-    <div
-        v-if="menu"
-        ref="root"
-        class="stash-menu"
-        role="menu"
-        :style="menuStyle()">
-        <button
-            class="stash-menu-item"
-            @click="act('apply')">
-            <Download
-                class="stash-menu-ic"
-                width="13"
-                height="13" />
-            Apply
-        </button>
-        <button
-            class="stash-menu-item"
-            @click="act('pop')">
-            <Zap
-                class="stash-menu-ic"
-                width="13"
-                height="13" />
-            Pop
-        </button>
-        <div class="stash-menu-separator" />
-        <button
-            class="stash-menu-item danger"
-            @click="act('drop')">
-            <Trash2
-                class="stash-menu-ic"
-                width="13"
-                height="13" />
-            Delete
-        </button>
-    </div>
+    <!-- Teleported: the sidebar clips its subtree in mini mode (clip-path reveal). -->
+    <Teleport to="body">
+        <div
+            v-if="menu"
+            ref="root"
+            class="stash-menu"
+            role="menu"
+            :style="menuStyle()">
+            <button
+                class="stash-menu-item"
+                @click="act('apply')">
+                <Download
+                    class="stash-menu-ic"
+                    width="13"
+                    height="13" />
+                Apply
+            </button>
+            <button
+                class="stash-menu-item"
+                @click="act('pop')">
+                <Zap
+                    class="stash-menu-ic"
+                    width="13"
+                    height="13" />
+                Pop
+            </button>
+            <div class="stash-menu-separator" />
+            <button
+                class="stash-menu-item danger"
+                @click="act('drop')">
+                <Trash2
+                    class="stash-menu-ic"
+                    width="13"
+                    height="13" />
+                Delete
+            </button>
+        </div>
+    </Teleport>
 </template>
