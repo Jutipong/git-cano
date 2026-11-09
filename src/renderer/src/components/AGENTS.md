@@ -335,7 +335,7 @@ Panel/modal component patterns. Loaded automatically when working under
   the only way back to the strip. The ✕ kills every shell of THIS
   repo. Both ✕s confirm through `ConfirmDialog`; only a shell that exits by itself does not. The
   strip shares the diff-view scale: 30px pills (`--control-h-sm` + 6px: tab, `+`, the two `.segmented`
-  groups), 24px (`--control-h-sm`) buttons with 15px icons inside them, a 12px mono tab label and a 120px tab minimum; the
+  groups), 24px (`--control-h-sm`) buttons with 15px icons inside them, a 12px UI-font tab label and a 120px tab minimum; the
   header's 10px side padding matches the xterm inset — keep those in step with the diff header
   instead of inventing a second compact scale.
 - **Links open in the OS browser**: `@xterm/addon-web-links` handles plain-text URLs and the
@@ -388,6 +388,13 @@ Panel/modal component patterns. Loaded automatically when working under
 
 ## Shared component patterns
 
+- **Current-branch chip** is `BranchChip.vue` — one component behind the terminal panel header and
+  the graph header (shown there only while the mini sidebar hides the branch name). Both share the
+  same type and colors (UI font `--font-sm`, 13px icon); the graph copy is `compact` — a shorter pill
+  and a 12px icon for the 38px header. `.branch-chip` pins `font-weight` and `letter-spacing` so it
+  never inherits the graph header's type. Color is the repo tab's session color, green when the repo
+  has none — the sidebar current-branch dot's own rule. The dot glyph is never rendered; only its
+  color is reused and the chip keeps the git-branch icon.
 - **Close (✕) buttons** always use the `.icon-btn danger commit-close-btn` style (red ring +
   tinted background, hover intensifies — see `.commit-close-btn` in `styles.css`). Reuse that
   class on any close/dismiss ✕ button in panels and modals; never invent a one-off close style.

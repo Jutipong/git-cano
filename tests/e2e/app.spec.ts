@@ -270,6 +270,7 @@ test('blame lens still resolves authorship', async () => {
 
 test('graph search, squash range and context menu still work', async () => {
     await clearSelection()
+    await page.locator('.commit-search-toggle').click()
     await page.locator('.commit-search input').fill('feat: add notes')
     await expect(page.locator('.graph-row')).toHaveCount(1)
     await page.locator('.commit-search input').fill('')
@@ -285,6 +286,51 @@ test('graph search, squash range and context menu still work', async () => {
     await expect(page.locator('.commit-menu')).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.locator('.commit-menu')).toHaveCount(0)
+})
+
+test('commit search stays collapsed until opened, then keeps a live query on screen', async () => {
+    await clearSelection()
+    const toggle = page.locator('.commit-search-toggle')
+    const field = page.locator('.commit-search')
+    const input = field.locator('input')
+
+    // Collapsed by default: the toolbar only carries the search icon.
+    await expect(toggle).toBeVisible()
+    await expect(field).toHaveCount(0)
+
+    // The icon opens the field and hands it the caret.
+    await toggle.click()
+    await expect(field).toBeVisible()
+    await expect(input).toBeFocused()
+
+    // Esc on an empty field collapses it back to the icon.
+    await page.keyboard.press('Escape')
+    await expect(field).toHaveCount(0)
+    await expect(toggle).toBeVisible()
+
+    // Ctrl+F opens the collapsed field directly (the app shortcut twin).
+    await page.keyboard.press('Control+f')
+    await expect(field).toBeVisible()
+    await expect(input).toBeFocused()
+
+    // A live query keeps the field on screen when the keyboard leaves it.
+    await input.fill('feat: add notes')
+    await expect(page.locator('.graph-row')).toHaveCount(1)
+    await page.keyboard.press('Escape')
+    await expect(field).toBeVisible()
+    await expect(input).not.toBeFocused()
+
+    // × clears the query without collapsing the field, so the next search is one keystroke away.
+    await page.locator('.search-clear').click()
+    await expect(input).toHaveValue('')
+    await expect(field).toBeVisible()
+    await expect(input).toBeFocused()
+    await expect(page.locator('.graph-row')).toHaveCount(8)
+
+    // Once empty, leaving the field collapses it again.
+    await page.locator('.graph-graph-header').click()
+    await expect(field).toHaveCount(0)
+    await expect(toggle).toBeVisible()
 })
 
 test('commit submenu stays open while the pointer crosses the gap', async () => {

@@ -19,6 +19,7 @@
     import { formatDatePattern, formatShortDate } from '../utils/format'
     import { mainKeysOf } from '../utils/shortcuts'
     import { buildPrefix, indexAtOffset } from '../utils/virtual'
+    import BranchChip from './BranchChip.vue'
     import CloseXIcon from './CloseXIcon.vue'
     import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
@@ -77,6 +78,39 @@
     const visibleRange = ref<[number, number]>([0, 60])
     const scrollEl = ref<HTMLElement | null>(null)
     const searchInput = ref<HTMLInputElement | null>(null)
+    const searchBox = ref<HTMLElement | null>(null)
+    /* Collapsed to a single icon until the user opens it — an active query keeps it on screen. */
+    const searchOpen = ref(!!uiTransient.searchQuery.trim())
+
+    function openSearch() {
+        searchOpen.value = true
+        void nextTick(() => {
+            searchInput.value?.focus()
+            searchInput.value?.select()
+        })
+    }
+
+    /** App-level Ctrl+F twin: the field may still be collapsed, so open it before handing over the caret. */
+    function focusSearch() {
+        openSearch()
+    }
+
+    /** Only an empty query collapses on blur/Esc — a filter left running must stay visible. */
+    function closeSearchIfEmpty() {
+        if (!uiTransient.searchQuery.trim()) searchOpen.value = false
+    }
+
+    function onSearchBlur(event: FocusEvent) {
+        const next = event.relatedTarget as Node | null
+        if (next && searchBox.value?.contains(next)) return
+        closeSearchIfEmpty()
+    }
+
+    function clearSearch() {
+        uiTransient.searchQuery = ''
+        searchInput.value?.focus()
+    }
+
     const sbw = ref(0)
     function updateSbw() {
         const el = scrollEl.value
@@ -556,6 +590,19 @@
         if (terminalVisible.value) return `Hide terminal${count}`
         return terminalStore.terminalExists(terminalPath.value) ? `Show terminal${count}` : 'Open terminal'
     })
+    /** Current branch, shown next to the terminal button while the mini sidebar hides its name. */
+    const currentBranch = computed(() => {
+        const branch = repoStore.repo?.branch ?? ''
+        return branch && branch !== 'HEAD (detached)' ? branch : ''
+    })
+    /**
+     * Repo tab session color for the chip. The green fallback lives in `.branch-chip`, matching the
+     * sidebar's current-branch dot — the dot itself is never rendered, only its color is reused.
+     */
+    const branchColor = computed(() => {
+        const path = repoStore.tabs[repoStore.activeTab]?.path
+        return (path && ui.repoTabColors[path]) || null
+    })
 
     const AUTHOR_MIN_W = 88
     const AUTHOR_MAX_W = 220
@@ -829,6 +876,8 @@
             if (!open) selectedHash.value = null
         }
     )
+
+    defineExpose({ focusSearch })
 </script>
 
 <template>
@@ -880,7 +929,20 @@
                     v-if="repoStore.refreshingRepo"
                     compact
                     class="graph-refresh-spinner" />
+                <button
+                    v-if="!searchOpen"
+                    type="button"
+                    class="icon-btn commit-search-toggle"
+                    title="Search commits (Ctrl+F)"
+                    aria-label="Search commits"
+                    @click="openSearch()">
+                    <i-lucide-search
+                        width="14"
+                        height="14" />
+                </button>
                 <label
+                    v-else
+                    ref="searchBox"
                     class="commit-search"
                     title="Search commits">
                     <i-lucide-search
@@ -890,12 +952,16 @@
                         ref="searchInput"
                         v-model="uiTransient.searchQuery"
                         placeholder="Search commits"
-                        @keydown.escape.stop="searchInput?.blur()" />
+                        aria-label="Search commits"
+                        @keydown.escape.stop="searchInput?.blur()"
+                        @blur="onSearchBlur" />
                     <button
                         v-if="uiTransient.searchQuery"
                         type="button"
                         class="search-clear"
-                        @click="uiTransient.searchQuery = ''">
+                        title="Clear search"
+                        @mousedown.prevent
+                        @click="clearSearch()">
                         ×
                     </button>
                 </label>
@@ -913,6 +979,11 @@
                     @click="emit('toggle-terminal')">
                     <TerminalCountIcon :count="terminalTotal" />
                 </button>
+                <BranchChip
+                    v-if="ui.sidebarMini && currentBranch"
+                    :branch="currentBranch"
+                    :color="branchColor"
+                    compact />
             </span>
             <span
                 v-if="ui.commitColumns.author"

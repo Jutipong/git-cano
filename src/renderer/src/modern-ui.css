@@ -6045,6 +6045,14 @@ body {
     opacity: 0;
 }
 
+.commit-search-toggle {
+    color: var(--text-secondary);
+}
+
+.commit-search-toggle:hover {
+    color: var(--teal);
+}
+
 .graph-settings-btn {
     color: var(--text-secondary);
 }
@@ -6216,34 +6224,53 @@ body {
     gap: 8px;
 }
 
-/* Current branch of the panel's repo, sitting in front of the font stepper. The text/icon take the
-   repo tab's session color (`--branch-color`, set inline from ui.repoTabColors) so it matches the
-   tab and the sidebar's current-branch dot; without a tab color it stays muted. */
-.terminal-branch {
+/* Current branch chip (BranchChip.vue) — one look in the terminal panel header and in the graph
+   header (the graph copy shows only while the mini sidebar hides the branch name). It must not
+   inherit the graph header's type: font-weight/letter-spacing are pinned here. The text/icon take
+   the session color the sidebar's current-branch dot uses — the repo tab color, green when the repo
+   has none. */
+.branch-chip {
     display: inline-flex;
     align-items: center;
     gap: 4px;
+    flex: 0 0 auto;
     min-width: 0;
     max-width: 180px;
     /* Matches the adjacent `.segmented` pill's outer box: control height + its 2px padding and 1px border. */
     height: calc(var(--control-h-sm) + 6px);
     padding: 0 10px;
-    color: var(--branch-color, var(--text-muted));
+    color: var(--branch-color, var(--green));
     background: color-mix(in srgb, var(--surface-hover) 45%, transparent);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius-pill);
-    font-family: var(--font-mono);
+    font-family: var(--font-ui);
     font-size: var(--font-sm);
+    font-weight: 400;
+    letter-spacing: 0;
 }
 
-.terminal-branch > svg {
+.branch-chip > svg {
     flex: 0 0 auto;
 }
 
-.terminal-branch-name {
+.branch-chip-name {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* Graph header copy: same type and colors, just a shorter pill for the 38px header — it may also
+   shrink so a long branch name never pushes the AUTHOR/HASH/DATE columns. */
+.branch-chip.compact {
+    flex: 0 1 auto;
+    height: auto;
+    gap: 3px;
+    padding: 2px 8px;
+}
+
+.branch-chip.compact > svg {
+    width: 12px;
+    height: 12px;
 }
 
 /* Live-shell count (TerminalCountIcon.vue) on the graph toolbar button — the terminal icon with a
@@ -6350,9 +6377,8 @@ body {
     color: var(--text-muted);
     background: transparent;
     border: none;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    letter-spacing: 0.02em;
+    font-family: var(--font-ui);
+    font-size: var(--font-base);
     text-overflow: ellipsis;
     white-space: nowrap;
 }
@@ -6588,8 +6614,8 @@ body {
     background: var(--surface-0);
     border: 1px solid var(--teal);
     border-radius: var(--radius-pill);
-    font-family: var(--font-mono);
-    font-size: 12px;
+    font-family: var(--font-ui);
+    font-size: var(--font-base);
     line-height: 1.2;
 }
 

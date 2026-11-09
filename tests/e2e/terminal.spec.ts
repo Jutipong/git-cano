@@ -48,7 +48,19 @@ test('graph toolbar button spawns one shell, then toggles the panel', async () =
     await expect(page.locator('.terminal-view .xterm')).toHaveCount(1)
     await expect(page.locator('.terminal-tab-label')).toHaveText('cmd 1')
     // The header carries the repo's current branch in front of the font stepper.
-    await expect(page.locator('.terminal-panel:visible .terminal-branch-name')).toHaveText('main')
+    const branchChip = page.locator('.terminal-panel:visible .branch-chip')
+    await expect(branchChip.locator('.branch-chip-name')).toHaveText('main')
+    // Panel chrome speaks the app's UI font (like the repo tabs), not the terminal mono font, and the
+    // chip keeps the full 30px pill (the graph header's compact copy is shorter).
+    const uiFont = await page.locator('.repo-tab-name').first().evaluate(el => getComputedStyle(el).fontFamily)
+    expect(
+        await page
+            .locator('.terminal-panel:visible .terminal-tab-label')
+            .first()
+            .evaluate(el => getComputedStyle(el).fontFamily)
+    ).toBe(uiFont)
+    expect(await branchChip.evaluate(el => getComputedStyle(el).fontFamily)).toBe(uiFont)
+    expect(await branchChip.evaluate(el => el.getBoundingClientRect().height)).toBe(30)
 
     // Second press only hides — the shell keeps running (the panel stays mounted).
     await page.locator('.graph-terminal-btn').click()
@@ -141,7 +153,7 @@ test('full mode overlays the graph without moving the repo tab bar', async () =>
     await expect(shell).toBeFocused()
 
     // Scoped to the panel: with focus elsewhere the combo stays out of the app.
-    await page.locator('.commit-search input').click()
+    await page.locator('.commit-search-toggle').focus()
     await page.keyboard.press('Alt+Enter')
     await expect(page.locator('.terminal-panel.terminal-overlay')).toHaveCount(0)
 })
@@ -469,9 +481,9 @@ test('Ctrl+` hands the keyboard back to a panel that is already on screen', asyn
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused({ timeout: 30_000 })
 
     // The panel keeps running while the keyboard is elsewhere (a toast can float over the toolbar, so
-    // focus the field directly).
-    await page.locator('.commit-search input').focus()
-    await expect(page.locator('.commit-search input')).toBeFocused()
+    // focus the field's toggle directly).
+    await page.locator('.commit-search-toggle').focus()
+    await expect(page.locator('.commit-search-toggle')).toBeFocused()
 
     // One press takes the keyboard back to the shell instead of hiding the panel.
     await page.keyboard.press('Control+`')
@@ -749,8 +761,8 @@ test('Ctrl+Tab and Alt+←/→ cycle the focused terminal tabs and wrap around',
     await expect(shell).toBeFocused()
 
     // With the keyboard outside the panel none of the combos is the app's — the active tab must not move.
-    // A toast from the previous tests can still float over the toolbar, so focus the field directly.
-    await page.locator('.commit-search input').focus()
+    // A toast from the previous tests can still float over the toolbar, so focus the field's toggle directly.
+    await page.locator('.commit-search-toggle').focus()
     await page.keyboard.press('Control+Tab')
     await page.keyboard.press('Control+Shift+Tab')
     await page.keyboard.press('Alt+ArrowRight')
@@ -968,7 +980,7 @@ test('Ctrl+W closes the focused terminal tab behind a confirm, and the repo tab 
     const shell = page.locator('.terminal-view:visible .xterm-helper-textarea')
     await shell.focus()
     expect(await panel.evaluate(el => el.matches(':focus-within'))).toBe(true)
-    await page.locator('.commit-search input').click()
+    await page.locator('.commit-search-toggle').focus()
     expect(await panel.evaluate(el => el.matches(':focus-within'))).toBe(false)
     await shell.focus()
 
@@ -992,7 +1004,7 @@ test('Ctrl+W closes the focused terminal tab behind a confirm, and the repo tab 
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
 
     // Focus outside the terminal: Ctrl+W is the fixed repo-tab close again, behind the repo confirm.
-    await page.locator('.commit-search input').click()
+    await page.locator('.commit-search-toggle').focus()
     await page.keyboard.press('Control+w')
     await page.locator('.confirm-dialog button', { hasText: 'Close repo' }).click()
     await expect(page.locator('.repo-tab')).toHaveCount(0)

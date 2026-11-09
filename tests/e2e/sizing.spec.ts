@@ -44,6 +44,7 @@ test('main-screen controls follow the tokens', async () => {
     const row = page.locator('.file-row', { hasText: 'untracked-big.txt' }).first()
     await row.hover()
     expect(await height(row.locator('.icon-btn').first())).toBe(24)
+    await page.locator('.commit-search-toggle').click()
     expect(await height(page.locator('.commit-search'))).toBe(28)
     expect(await height(page.locator('.sidebar-bottom-actions .toolbar-icon-button').first())).toBe(28)
     expect(await height(page.locator('.tab-actions .tab-new'))).toBe(32)

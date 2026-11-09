@@ -31,6 +31,17 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     await expect(sidebar).toBeHidden()
     await expect(page.locator('.panel-splitter[aria-label="Resize sidebar"]')).toHaveCount(0)
     await expect(page.locator('.graph-scroll')).toBeVisible()
+    // With the branch list out of sight, the graph header carries the current branch next to the terminal button.
+    const graphChip = page.locator('.graph-header .branch-chip')
+    await expect(graphChip.locator('.branch-chip-name')).toHaveText('main')
+    await expect(graphChip).toHaveAttribute('title', 'Current branch: main')
+    // Same color rule as the sidebar's current-branch dot — the tab session color, the dot's green fallback.
+    const dotColor = await page
+        .locator('.branch-row.current .branch-active-dot')
+        .evaluate(el => getComputedStyle(el).backgroundColor)
+    expect(await graphChip.evaluate(el => getComputedStyle(el).color)).toBe(dotColor)
+    // Compact copy: it fits inside the 38px header instead of the full 30px terminal pill.
+    expect(await graphChip.evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(28)
 
     // Hover previews the sidebar over the rail's own slot without moving the graph.
     const graphBoxBefore = await page.locator('.graph-scroll').boundingBox()
@@ -89,6 +100,7 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     await page.getByRole('button', { name: 'Expand sidebar' }).click()
     await expect(rail).toHaveCount(0)
     await expect(page.locator('.panel-splitter[aria-label="Resize sidebar"]')).toBeVisible()
+    await expect(page.locator('.graph-header .branch-chip')).toHaveCount(0)
 
     // The command palette carries the same toggle.
     await page.locator('.graph-scroll').focus()

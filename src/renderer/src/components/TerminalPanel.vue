@@ -1,7 +1,6 @@
 <script setup lang="ts">
     import { computed, nextTick, ref, watch } from 'vue'
     import ILucideChevronDown from '~icons/lucide/chevron-down'
-    import ILucideGitBranch from '~icons/lucide/git-branch'
     import ILucideMaximize from '~icons/lucide/maximize'
     import ILucideMinimize from '~icons/lucide/minimize'
     import ILucidePlus from '~icons/lucide/plus'
@@ -10,6 +9,7 @@
     import { useTerminalStore } from '../stores/terminal'
     import { useUiStore, TERMINAL_FONT_SIZE_OPTIONS } from '../stores/ui'
     import { isWindows } from '../utils/shortcuts'
+    import BranchChip from './BranchChip.vue'
     import CloseXIcon from './CloseXIcon.vue'
     import TerminalView from './TerminalView.vue'
 
@@ -261,16 +261,10 @@
             </span>
             <span class="terminal-actions">
                 <!-- The repo's current branch sits in front of the font stepper, tinted with its session (tab) color. -->
-                <span
+                <BranchChip
                     v-if="currentBranch"
-                    class="terminal-branch"
-                    :title="`Current branch: ${currentBranch}`"
-                    :style="branchColor ? { '--branch-color': branchColor } : undefined">
-                    <i-lucide-git-branch
-                        width="13"
-                        height="13" />
-                    <span class="terminal-branch-name">{{ currentBranch }}</span>
-                </span>
+                    :branch="currentBranch"
+                    :color="branchColor" />
                 <!-- Two diff-view style pills: the font stepper and the panel controls stay separate. -->
                 <span class="segmented">
                     <button

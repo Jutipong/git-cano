@@ -102,6 +102,8 @@
     const terminalPaths = computed(() => Object.keys(terminalStore.terminals))
     /** Panel handles keyed by repo path — a v-for template ref needs the keyed function-ref form. */
     const terminalPanels = ref<Record<string, { focusActive: () => void } | null>>({})
+    /** Graph handle — Ctrl+F opens the collapsed commit search and takes the caret. */
+    const graphView = ref<{ focusSearch: () => void } | null>(null)
     /** Path of the repo whose terminal is on screen (the active tab). */
     const activeRepoPath = computed(() => repo?.value?.path ?? null)
     /** True while this repo's panel is the one on screen (active tab, not toggled away). */
@@ -492,9 +494,7 @@
             // Focus commit-history search (a diff overlay owns Ctrl+F while open, so leave it alone)
             if (combos.includes(ui.getShortcut('searchCommits')) && !selectedFile.value && !selectedConflict.value) {
                 event.preventDefault()
-                const target = document.querySelector<HTMLInputElement>('.commit-search input')
-                target?.focus()
-                target?.select()
+                graphView.value?.focusSearch()
                 return true
             }
             return false
@@ -1202,6 +1202,7 @@
                     <div class="app-body">
                         <div class="center-column">
                             <GraphView
+                                ref="graphView"
                                 v-show="!isExpandedTerminal(activeRepoPath ?? '')"
                                 :commits="commits"
                                 :has-more="hasMore"
