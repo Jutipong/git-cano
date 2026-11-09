@@ -43,6 +43,14 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     // Compact copy: it fits inside the 38px header instead of the full 30px terminal pill.
     expect(await graphChip.evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(28)
 
+    // A picked tab color takes over the chip (the sidebar dot's own source), and clearing it falls back.
+    await page.locator('.repo-tab').first().click({ button: 'right' })
+    await page.locator('.repo-tab-color-option[title="Red"]').click()
+    await expect.poll(() => graphChip.evaluate(el => getComputedStyle(el).color)).toBe('rgb(255, 59, 48)')
+    await page.locator('.repo-tab').first().click({ button: 'right' })
+    await page.locator('.repo-tab-menu-clear').click()
+    await expect.poll(() => graphChip.evaluate(el => getComputedStyle(el).color)).toBe(dotColor)
+
     // Hover previews the sidebar over the rail's own slot without moving the graph.
     const graphBoxBefore = await page.locator('.graph-scroll').boundingBox()
     const railBox = await rail.boundingBox()

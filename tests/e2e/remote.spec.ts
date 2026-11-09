@@ -62,3 +62,34 @@ test('fetch shows the peer commit and pull brings it in', async () => {
     await expect.poll(() => fs.existsSync(path.join(fx.remote.main, 'peer.txt'))).toBe(true)
     await expect.poll(() => git(fx.remote.main, ['rev-parse', 'HEAD'])).toBe(git(fx.remote.peer, ['rev-parse', 'HEAD']))
 })
+
+test('a pushed tag is marked on remote, a local-only tag stays unmarked', async () => {
+    await page.evaluate(async () => {
+        const api = (window as unknown as { api: any }).api
+        await api.createTag('e2e-pushed-tag', null)
+        await api.createTag('e2e-local-tag', null)
+        await api.pushTag('e2e-pushed-tag')
+    })
+    expect(git(fx.remote.bare, ['tag', '--list', 'e2e-pushed-tag'])).toBe('e2e-pushed-tag')
+
+    // Tag data is opt-in: the section's refresh button reloads local + remote tags.
+    await page.getByRole('button', { name: 'Refresh tags' }).click()
+
+    const pushed = page.locator('.tag-row', { hasText: 'e2e-pushed-tag' })
+    const local = page.locator('.tag-row', { hasText: 'e2e-local-tag' })
+    await expect(pushed).toBeVisible()
+    await expect(local).toBeVisible()
+
+    // Being on the remote is the mark: the pushed tag's icon turns orange, the local-only tag stays plain.
+    await expect(pushed.locator('.tag-on-remote')).toHaveCount(1)
+    await expect(local.locator('.tag-on-remote')).toHaveCount(0)
+    const orange = await page.evaluate(() => {
+        const probe = document.createElement('span')
+        probe.style.color = 'var(--orange)'
+        document.body.appendChild(probe)
+        const color = getComputedStyle(probe).color
+        probe.remove()
+        return color
+    })
+    expect(await pushed.locator('.tag-on-remote').evaluate(el => getComputedStyle(el).color)).toBe(orange)
+})
