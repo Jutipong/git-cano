@@ -164,16 +164,7 @@ function findRider(): string | null {
             path.join(process.env.HOME ?? '', 'Applications', 'Rider.app', 'Contents', 'MacOS', 'rider')
         )
         // JetBrains Toolbox layout: apps/Rider/ch-0/<version>/Rider.app/Contents/MacOS/rider
-        const ch0 = path.join(
-            process.env.HOME ?? '',
-            'Library',
-            'Application Support',
-            'JetBrains',
-            'Toolbox',
-            'apps',
-            'Rider',
-            'ch-0'
-        )
+        const ch0 = path.join(process.env.HOME ?? '', 'Library', 'Application Support', 'JetBrains', 'Toolbox', 'apps', 'Rider', 'ch-0')
         if (fs.existsSync(ch0)) {
             for (const version of fs.readdirSync(ch0)) {
                 candidates.push(path.join(ch0, version, 'Rider.app', 'Contents', 'MacOS', 'rider'))
@@ -270,9 +261,7 @@ function findNotepadPlusPlus(): string | null {
     if (process.platform === 'win32') {
         const candidates = [
             process.env.ProgramFiles ? path.join(process.env.ProgramFiles, 'Notepad++', 'notepad++.exe') : '',
-            process.env['ProgramFiles(x86)']
-                ? path.join(process.env['ProgramFiles(x86)'], 'Notepad++', 'notepad++.exe')
-                : '',
+            process.env['ProgramFiles(x86)'] ? path.join(process.env['ProgramFiles(x86)'], 'Notepad++', 'notepad++.exe') : '',
             process.env.LOCALAPPDATA ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Notepad++', 'notepad++.exe') : '',
             'C:\\Program Files\\Notepad++\\notepad++.exe',
             'C:\\Program Files (x86)\\Notepad++\\notepad++.exe',
@@ -281,10 +270,7 @@ function findNotepadPlusPlus(): string | null {
     }
     if (process.platform !== 'darwin') return null
     // Nextpad++ is the native Notepad++ port for macOS (Homebrew cask: nextpad++)
-    const candidates = [
-        '/Applications/Nextpad++.app',
-        path.join(process.env.HOME ?? '', 'Applications', 'Nextpad++.app'),
-    ]
+    const candidates = ['/Applications/Nextpad++.app', path.join(process.env.HOME ?? '', 'Applications', 'Nextpad++.app')]
     return candidates.find(candidate => fs.existsSync(candidate)) ?? null
 }
 

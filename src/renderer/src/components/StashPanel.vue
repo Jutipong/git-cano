@@ -132,9 +132,7 @@
                     v-else
                     width="13"
                     height="13" />
-                <h3>
-                    STASHES <span class="section-count">{{ stashes.length }}</span>
-                </h3>
+                <h3>STASHES <span class="section-count">{{ stashes.length }}</span></h3>
             </button>
         </div>
         <div

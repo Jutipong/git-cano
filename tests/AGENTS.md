@@ -38,11 +38,11 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
       and across repo/workspace switches when the target repo's panel is on screen (also when the
       repo being left had no shell),
       terminal-only font size, rename + drag reorder,
-the whole pill being the tab's click target (label, blank pill area and a ✕ that is only
-interactive while the pill is hovered),
-the four-shell default cap (raisable in Settings → Terminal → Tabs, and lowering it never kills an
-open shell), `Ctrl+Tab` / `Alt+←→` cycling while the panel is focused (wrap + outside-panel no-op),
-splitter drag-resize, repo-close (confirm + cancel) and kill-all lifecycles, `Ctrl+`` toggle
+      the whole pill being the tab's click target (label, blank pill area and a ✕ that is only
+      interactive while the pill is hovered),
+      the four-shell default cap (raisable in Settings → Terminal → Tabs, and lowering it never kills an
+      open shell), `Ctrl+Tab`/`Alt+←→`cycling while the panel is focused (wrap + outside-panel no-op),
+      splitter drag-resize, repo-close (confirm + cancel) and kill-all lifecycles,`Ctrl+`` toggle
       (a visible panel takes the keyboard back from another pane, and hides only from inside itself),
       `Ctrl+W` while the panel is focused (terminal tab, confirm + cancel refocus) vs outside it (repo
       tab), `Alt+Enter` full-height toggle while focused vs outside, `Alt+F4` panel close while focused

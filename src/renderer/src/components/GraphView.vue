@@ -602,8 +602,8 @@
         return branch && branch !== 'HEAD (detached)' ? branch : ''
     })
     /**
-     * Repo tab session color for the chip. The green fallback lives in `.branch-chip`, matching the
-     * sidebar's current-branch dot — the dot itself is never rendered, only its color is reused.
+     * Repo tab session color for the chip. The green fallback lives in `.branch-chip`, matching the sidebar's current-branch dot — the dot
+     * itself is never rendered, only its color is reused.
      */
     const branchColor = computed(() => {
         const path = repoStore.tabs[repoStore.activeTab]?.path
@@ -663,11 +663,7 @@
             const [high, low] = a > b ? [a, b] : [b, a]
             return (high + 0.05) / (low + 0.05)
         }
-        const background = luminance(
-            parseInt(hex.slice(1, 3), 16),
-            parseInt(hex.slice(3, 5), 16),
-            parseInt(hex.slice(5, 7), 16)
-        )
+        const background = luminance(parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16))
         const dark = luminance(0x12, 0x2d, 0x2c)
         const light = luminance(0xf5, 0xf7, 0xfa)
         return ratio(background, dark) >= ratio(background, light) ? '#122d2c' : '#f5f7fa'

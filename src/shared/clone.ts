@@ -5,9 +5,8 @@
 const INVALID_SEGMENT_CHARS = /[<>:"/|?*\x00-\x1f]/
 
 /**
- * Guess the default folder name from a repository URL.
- * Handles https/ssh URLs, scp-like `git@host:user/repo.git`, trailing slashes,
- * and query/fragment suffixes. Strips a trailing `.git` (case-insensitive).
+ * Guess the default folder name from a repository URL. Handles https/ssh URLs, scp-like `git@host:user/repo.git`, trailing slashes, and
+ * query/fragment suffixes. Strips a trailing `.git` (case-insensitive).
  */
 export function extractRepoFolderName(url: string): string {
     let text = url.trim()
@@ -31,8 +30,8 @@ export function sanitizeCloneFolderName(name: string): string {
 }
 
 /**
- * A clone folder must be a single segment: non-empty, no slashes, no traversal,
- * no Windows-forbidden characters, and not ending with a dot/space.
+ * A clone folder must be a single segment: non-empty, no slashes, no traversal, no Windows-forbidden characters, and not ending with a
+ * dot/space.
  */
 export function isValidCloneFolderName(name: string): boolean {
     const clean = sanitizeCloneFolderName(name)

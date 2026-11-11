@@ -69,9 +69,9 @@
     const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
 
     /**
-     * The app's page zoom scales the whole renderer, while `terminalFontPx` divides out only the UI font scale so
-     * Settings → Terminal's size stays absolute. Keeping the font in CSS px is what keeps xterm's cell metrics and
-     * its mouse coordinates (`getBoundingClientRect`) in one space — never re-introduce a CSS `zoom` on `<html>`.
+     * The app's page zoom scales the whole renderer, while `terminalFontPx` divides out only the UI font scale so Settings → Terminal's
+     * size stays absolute. Keeping the font in CSS px is what keeps xterm's cell metrics and its mouse coordinates
+     * (`getBoundingClientRect`) in one space — never re-introduce a CSS `zoom` on `<html>`.
      */
     function fontSizePx(): number {
         return terminalFontPx(ui.terminalFontSize, ui.fontScale)
@@ -100,13 +100,12 @@
     }
 
     /**
-     * Solve the grid from the box the terminal actually paints into. FitAddon keeps a scrollbar column set
-     * (`DEFAULT_SCROLL_BAR_WIDTH`, 14px) out of the width it proposes even though `modern-ui.css` hides the viewport
-     * scrollbar, so the grid always stopped up to two columns short of the panel and left a dead band along its right
-     * edge — a TUI that paints its own background (opencode's sidebar) shows that band as a differently-coloured strip.
-     * `rows` still comes from the addon (its height maths has no such allowance); `cols` is solved here from the
-     * painted screen's own cell width, so there is no xterm internals dependency and no flip-flop against the addon's
-     * conservative width guess. The public refresh after a resize replaces the full clear the addon used to force.
+     * Solve the grid from the box the terminal actually paints into. FitAddon keeps a scrollbar column set (`DEFAULT_SCROLL_BAR_WIDTH`,
+     * 14px) out of the width it proposes even though `modern-ui.css` hides the viewport scrollbar, so the grid always stopped up to two
+     * columns short of the panel and left a dead band along its right edge — a TUI that paints its own background (opencode's sidebar)
+     * shows that band as a differently-coloured strip. `rows` still comes from the addon (its height maths has no such allowance); `cols`
+     * is solved here from the painted screen's own cell width, so there is no xterm internals dependency and no flip-flop against the
+     * addon's conservative width guess. The public refresh after a resize replaces the full clear the addon used to force.
      */
     function fitGrid() {
         if (!term || !fit || !term.cols || !term.rows) return
@@ -205,20 +204,20 @@
     }
 
     /**
-     * TUIs paint bars and rules with half/full block glyphs — opencode's input-box footer uses `▀`, the sys-status sidebar meters use
-     * `█` + `░`. At fractional display scales each glyph's antialiased edge falls a hair short of the cell, so a run shows a faint
-     * vertical seam at every boundary. Tag those spans so a solid background in the glyph's own colour can sit behind them
-     * (`.terminal-bar` / `.terminal-block` in modern-ui.css) — the antialiasing then blends into the identical colour.
+     * TUIs paint bars and rules with half/full block glyphs — opencode's input-box footer uses `▀`, the sys-status sidebar meters use `█` +
+     * `░`. At fractional display scales each glyph's antialiased edge falls a hair short of the cell, so a run shows a faint vertical seam
+     * at every boundary. Tag those spans so a solid background in the glyph's own colour can sit behind them (`.terminal-bar` /
+     * `.terminal-block` in modern-ui.css) — the antialiasing then blends into the identical colour.
      *
-     * Vertical rules (`│` / `┃`) get the same treatment for a different reason: a rail is one glyph per row, and a font whose
-     * box-drawing ink stops at ascent..descent (Consolas) leaves a 1px background gap at every row boundary because xterm's cell is
-     * as tall as the font's line box, typographic line gap included — the rail then reads as a dashed line. JetBrains Mono, its NFM
-     * cut and Cascadia Mono never show it: their box glyphs overshoot the line box. `.terminal-rule-light` / `.terminal-rule-heavy`
-     * paint a stripe across the cell so consecutive rows overlap in any font (half-cell caps included).
+     * Vertical rules (`│` / `┃`) get the same treatment for a different reason: a rail is one glyph per row, and a font whose box-drawing
+     * ink stops at ascent..descent (Consolas) leaves a 1px background gap at every row boundary because xterm's cell is as tall as the
+     * font's line box, typographic line gap included — the rail then reads as a dashed line. JetBrains Mono, its NFM cut and Cascadia Mono
+     * never show it: their box glyphs overshoot the line box. `.terminal-rule-light` / `.terminal-rule-heavy` paint a stripe across the
+     * cell so consecutive rows overlap in any font (half-cell caps included).
      *
-     * Must run in the same frame as the row rewrite (`term.onRender`, synchronously): deferring it to a
-     * later `requestAnimationFrame` leaves one painted frame of raw glyphs. TUIs that repaint the bar
-     * every frame (opencode while streaming) then show it as a dashed line for as long as they run.
+     * Must run in the same frame as the row rewrite (`term.onRender`, synchronously): deferring it to a later `requestAnimationFrame`
+     * leaves one painted frame of raw glyphs. TUIs that repaint the bar every frame (opencode while streaming) then show it as a dashed
+     * line for as long as they run.
      */
     const BAR_RUN = /^\u2580+$/
     /** A single `█` is a scrollbar cell or block-art dot, not a meter — only paint runs. */
@@ -226,10 +225,9 @@
     const RULE_PROPS = ['--rule-cells', '--rule-fill', '--rule-anchor'] as const
 
     /**
-     * Hand the stripe's box to the CSS: how many leading cells the rule covers (a gutter padded with
-     * same-colour blanks must not be striped), and — for the half-cell caps a rail ends on — which
-     * half of the cell it fills, so a `╹` does not grow a tail the TUI never drew. Runs on every row of
-     * every render, so a span that is not (and was not) a rule leaves without touching its style.
+     * Hand the stripe's box to the CSS: how many leading cells the rule covers (a gutter padded with same-colour blanks must not be
+     * striped), and — for the half-cell caps a rail ends on — which half of the cell it fills, so a `╹` does not grow a tail the TUI never
+     * drew. Runs on every row of every render, so a span that is not (and was not) a rule leaves without touching its style.
      */
     function applyRuleBox(span: HTMLElement, rule: ReturnType<typeof verticalRuleRun>) {
         if (!rule) {
@@ -264,12 +262,11 @@
     }
 
     /**
-     * `markBars()` paints a stripe behind solid vertical rules, and that stripe has to be exactly as wide
-     * as the glyph's stroke: a run's end cap or a cursor cell carries no stripe, so a guess that is too
-     * wide leaves a visible step in the rail. Every family draws `│`/`┃` at its own width (Consolas
-     * 0.073/0.147 em, JetBrains Mono 0.1/0.2 em), so read the ink width from the font itself. Probe at a
-     * large em and divide — Chromium snaps `actualBoundingBox*` to whole pixels, which at 14px would be a
-     * ±1px error. Fail-open: the CSS keeps an `em` fallback when this cannot measure.
+     * `markBars()` paints a stripe behind solid vertical rules, and that stripe has to be exactly as wide as the glyph's stroke: a run's
+     * end cap or a cursor cell carries no stripe, so a guess that is too wide leaves a visible step in the rail. Every family draws `│`/`┃`
+     * at its own width (Consolas 0.073/0.147 em, JetBrains Mono 0.1/0.2 em), so read the ink width from the font itself. Probe at a large
+     * em and divide — Chromium snaps `actualBoundingBox*` to whole pixels, which at 14px would be a ±1px error. Fail-open: the CSS keeps an
+     * `em` fallback when this cannot measure.
      */
     const RULE_PROBE_EM = 100
     function measureRuleWidths(family: string, size: number) {

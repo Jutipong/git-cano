@@ -37,7 +37,6 @@
     function openReleasePage() {
         if (releasePageUrl.value) void window.api.openReleasePage(releasePageUrl.value)
     }
-
 </script>
 
 <template>

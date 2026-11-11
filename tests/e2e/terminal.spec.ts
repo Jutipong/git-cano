@@ -52,7 +52,10 @@ test('graph toolbar button spawns one shell, then toggles the panel', async () =
     await expect(branchChip.locator('.branch-chip-name')).toHaveText('main')
     // Panel chrome speaks the app's UI font (like the repo tabs), not the terminal mono font, and the
     // chip keeps the full 30px pill (the graph header's compact copy is shorter).
-    const uiFont = await page.locator('.repo-tab-name').first().evaluate(el => getComputedStyle(el).fontFamily)
+    const uiFont = await page
+        .locator('.repo-tab-name')
+        .first()
+        .evaluate(el => getComputedStyle(el).fontFamily)
     expect(
         await page
             .locator('.terminal-panel:visible .terminal-tab-label')
@@ -864,9 +867,7 @@ test('inline images land below the text rows', async () => {
         }) as typeof contents.send
     })
     await runInTerminal('echo image-id-probe', 'image-id-probe')
-    const terminalId = await handle.app.evaluate(
-        () => (globalThis as unknown as { __terminalId: string | null }).__terminalId
-    )
+    const terminalId = await handle.app.evaluate(() => (globalThis as unknown as { __terminalId: string | null }).__terminalId)
     expect(terminalId).toBeTruthy()
 
     // Hand the addon an iTerm-IIP payload through that id.

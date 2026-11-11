@@ -160,12 +160,11 @@ function keyFromCode(code: string): string | null {
 /**
  * Every main key a KeyboardEvent could stand for, most specific first.
  *
- * `event.key` follows the active layout: Thai/Cyrillic/Arabic report a local character, and some
- * layouts keep an ASCII label on a key that sits elsewhere on a US board (a Thai backquote key can
- * report "_"). Neither source wins alone — printable ASCII comes first because that is the character
- * printed on the key (AZERTY `a` on the physical Q key), then the physical QWERTY position
- * (`event.code`) so Ctrl+P still fires from the P key of a Thai keyboard and Ctrl+` from the key
- * beside "1". Callers match any candidate; named keys ignore the layout and yield exactly one.
+ * `event.key` follows the active layout: Thai/Cyrillic/Arabic report a local character, and some layouts keep an ASCII label on a key that
+ * sits elsewhere on a US board (a Thai backquote key can report "_"). Neither source wins alone — printable ASCII comes first because that
+ * is the character printed on the key (AZERTY `a` on the physical Q key), then the physical QWERTY position (`event.code`) so Ctrl+P still
+ * fires from the P key of a Thai keyboard and Ctrl+` from the key beside "1". Callers match any candidate; named keys ignore the layout and
+ * yield exactly one.
  */
 export function mainKeysOf(event: Pick<KeyboardEvent, 'key' | 'code'>): string[] {
     const key = event.key

@@ -40,8 +40,8 @@
     const atCap = computed(() => tabs.value.length >= terminalStore.maxPerRepo)
 
     /**
-     * The branch this panel's repo is on. Read from the repo tab list, not the active-repo global — panels stay
-     * mounted for repos that are not on screen, and each must keep showing its own branch.
+     * The branch this panel's repo is on. Read from the repo tab list, not the active-repo global — panels stay mounted for repos that are
+     * not on screen, and each must keep showing its own branch.
      */
     const currentBranch = computed(() => repoStore.tabs.find(tab => tab.path === props.repoPath)?.status.branch ?? '')
     /** Same session color the repo tab and the sidebar's current-branch dot use. */
@@ -74,9 +74,9 @@
     }
 
     /**
-     * The whole pill is the click target, like the repo tabs — the label is a plain span and the ✕ stops its own clicks,
-     * so a press anywhere on the tab switches shells instead of only landing on the text. Guarded while THIS tab is
-     * being renamed: `activate` below would pull the caret back out of the inline rename input.
+     * The whole pill is the click target, like the repo tabs — the label is a plain span and the ✕ stops its own clicks, so a press
+     * anywhere on the tab switches shells instead of only landing on the text. Guarded while THIS tab is being renamed: `activate` below
+     * would pull the caret back out of the inline rename input.
      */
     function onTabClick(id: string) {
         if (renamingId.value === id) return

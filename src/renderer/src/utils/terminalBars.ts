@@ -1,6 +1,6 @@
 /**
- * Terminal bar/rule detection — pure string logic so it stays unit-testable (see
- * `tests/unit/terminalBars.test.ts`). The caller lives in `TerminalView.vue` (`markBars`).
+ * Terminal bar/rule detection — pure string logic so it stays unit-testable (see `tests/unit/terminalBars.test.ts`). The caller lives in
+ * `TerminalView.vue` (`markBars`).
  */
 
 /** U+2588 FULL BLOCK — filled meter cells. */
@@ -15,7 +15,7 @@ const LIGHT_UP = '\u2575'
 const HEAVY_UP = '\u2579'
 const LIGHT_DOWN = '\u2577'
 const HEAVY_DOWN = '\u257b'
-/** Trailing blanks are inside the same SGR run whenever a TUI pads its gutter (`┃   ` on a blank line). */
+/** Trailing blanks are inside the same SGR run whenever a TUI pads its gutter (`┃ ` on a blank line). */
 const LIGHT_VERTICAL_RUN = new RegExp(`^(${LIGHT_VERTICAL}+) *$`)
 const HEAVY_VERTICAL_RUN = new RegExp(`^(${HEAVY_VERTICAL}+) *$`)
 const LIGHT_UP_CAP = new RegExp(`^${LIGHT_UP} *$`)
@@ -26,9 +26,8 @@ const HEAVY_DOWN_CAP = new RegExp(`^${HEAVY_DOWN} *$`)
 const METER_RUN = new RegExp(`^(${FULL_BLOCK}+)${LIGHT_SHADE}*$`)
 
 /**
- * Cells covered by a leading run of `█` when the span is exactly a meter: filled blocks followed by
- * an optional `░` track (`████░░░`). Returns 0 for anything else — a scrollbar cell, the wordmark,
- * Thai text — so the caller never paints over arbitrary content.
+ * Cells covered by a leading run of `█` when the span is exactly a meter: filled blocks followed by an optional `░` track (`████░░░`).
+ * Returns 0 for anything else — a scrollbar cell, the wordmark, Thai text — so the caller never paints over arbitrary content.
  */
 export function fullBlockCells(text: string): number {
     const match = METER_RUN.exec(text)
@@ -49,14 +48,12 @@ export interface VerticalRuleRun {
 }
 
 /**
- * The solid vertical rule a span starts with (`│`/`┃` runs or the `╵ ╹ ╷ ╻` end caps, optionally
- * padded with blanks), else null. `cells` counts only the rule cells, so a padded gutter (`┃   `) is
- * not painted over.
+ * The solid vertical rule a span starts with (`│`/`┃` runs or the `╵ ╹ ╷ ╻` end caps, optionally padded with blanks), else null. `cells`
+ * counts only the rule cells, so a padded gutter (`┃ `) is not painted over.
  *
- * Only the solid verticals and their half-cell caps qualify: the dashed variants (`┆ ┇ ┊ ┋ ╎ ╏`) are
- * dashed on purpose and the double ones (`║`) have two strokes, so painting a solid centred stripe
- * over their cells would erase the shape they are meant to draw. A rule that follows other text never
- * matches — the stripe would land on the wrong cell.
+ * Only the solid verticals and their half-cell caps qualify: the dashed variants (`┆ ┇ ┊ ┋ ╎ ╏`) are dashed on purpose and the double ones
+ * (`║`) have two strokes, so painting a solid centred stripe over their cells would erase the shape they are meant to draw. A rule that
+ * follows other text never matches — the stripe would land on the wrong cell.
  */
 export function verticalRuleRun(text: string): VerticalRuleRun | null {
     const light = LIGHT_VERTICAL_RUN.exec(text)

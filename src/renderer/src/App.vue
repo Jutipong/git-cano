@@ -116,15 +116,15 @@
     }
 
     /**
-     * The repo tab strip's Arrow/Home/End navigation keeps the keyboard on the pills — the carry below is for pointer switches.
-     * Set by the capture-phase keydown handler and cleared on the next task, well after the repo-switch watcher has read it.
+     * The repo tab strip's Arrow/Home/End navigation keeps the keyboard on the pills — the carry below is for pointer switches. Set by the
+     * capture-phase keydown handler and cleared on the next task, well after the repo-switch watcher has read it.
      */
     let keepKeyboardOnRepoSwitch = false
 
     /**
-     * A repo switch lands the keyboard in the target repo's terminal whenever its panel is already on screen — also when the repo
-     * being left had no terminal open (the common git-cano → <repo with a shell> switch). A hidden panel stays hidden, and the tab
-     * strip's own arrow navigation leaves focus on the pills instead of pulling it into a shell.
+     * A repo switch lands the keyboard in the target repo's terminal whenever its panel is already on screen — also when the repo being
+     * left had no terminal open (the common git-cano → <repo with a shell> switch). A hidden panel stays hidden, and the tab strip's own
+     * arrow navigation leaves focus on the pills instead of pulling it into a shell.
      */
     watch(activeRepoPath, async path => {
         if (!path || keepKeyboardOnRepoSwitch || !terminalStore.panelVisible(path)) return
@@ -239,8 +239,10 @@
     )
 
     const resizeRef = ref<{ side: 'left' | 'right'; startX: number; startWidth: number } | null>(null)
-    /** Tallest the docked strip goes: the full-height overlay's own box — its 60px top edge (48px tab bar + 6px gutter + 6px
-     *  card offset) down to the app's 6px bottom frame — so the drag reaches the same height as Alt+Enter without switching mode. */
+    /**
+     * Tallest the docked strip goes: the full-height overlay's own box — its 60px top edge (48px tab bar + 6px gutter + 6px card offset)
+     * down to the app's 6px bottom frame — so the drag reaches the same height as Alt+Enter without switching mode.
+     */
     function terminalMaxHeightPx(): number {
         return Math.max(160, window.innerHeight - 66)
     }
@@ -286,8 +288,8 @@
     }
 
     /**
-     * `repoStore.toolsTab` is a one-shot deep-link for the command palette's Settings rows; clearing it on close keeps a plain open
-     * (Ctrl+, / the sidebar gear / the palette's plain Settings row) on the Appearance tab instead of the last palette pick.
+     * `repoStore.toolsTab` is a one-shot deep-link for the command palette's Settings rows; clearing it on close keeps a plain open (Ctrl+,
+     * / the sidebar gear / the palette's plain Settings row) on the Appearance tab instead of the last palette pick.
      */
     function closeTools() {
         toolsOpen.value = false
@@ -397,10 +399,10 @@
         let lastShiftTap = 0
 
         /**
-         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, new terminal tab (Ctrl+T), Ctrl+Tab /
-         * Ctrl+Shift+Tab / Alt+←→ while the terminal panel is focused (next / previous tab, wrapping), Ctrl+W while it is focused (closes
-         * the shell's tab), Alt+Enter while it is focused (toggles full height), Alt+F4 while it is focused (closes the panel through
-         * the header ✕'s confirm) and commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
+         * App-level shortcuts: open repo, clone, settings, palette, terminal toggle, new terminal tab (Ctrl+T), Ctrl+Tab / Ctrl+Shift+Tab /
+         * Alt+←→ while the terminal panel is focused (next / previous tab, wrapping), Ctrl+W while it is focused (closes the shell's tab),
+         * Alt+Enter while it is focused (toggles full height), Alt+F4 while it is focused (closes the panel through the header ✕'s confirm)
+         * and commit-search focus. Returns true when it handled the combo (and preventDefault()s it).
          *
          * This runs twice on purpose. xterm stops propagation of character keys, so a focused shell would otherwise swallow Ctrl+P / Ctrl+,
          * / Ctrl+O entirely — the capture-phase listener below grabs them first and stops the event there, which also keeps the
@@ -667,7 +669,8 @@
             const resize = resizeRef.value
             if (!resize) return
             const delta = moveEvent.clientX - resize.startX
-            if (resize.side === 'left') ui.sidebarWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, resize.startWidth + delta))
+            if (resize.side === 'left')
+                ui.sidebarWidth = Math.min(SIDEBAR_MAX_WIDTH, Math.max(SIDEBAR_MIN_WIDTH, resize.startWidth + delta))
             else ui.rightPanelWidth = Math.min(RIGHT_PANEL_MAX_WIDTH, Math.max(RIGHT_PANEL_MIN_WIDTH, resize.startWidth - delta))
         }
         const onEnd = () => {
@@ -827,9 +830,9 @@
     /**
      * The graph toolbar button / Ctrl+` / palette "Terminal": spawn the first shell when the repo has none, otherwise show or hide the
      * panel. It never kills anything — the ✕ buttons own that. Hiding never resizes either: the full-height state survives, so any gesture
-     * that shows the panel again brings the overlay straight back (the header's minimize button is the only way down to the strip).
-     * Showing always hands the keyboard back to the active shell; a repo/workspace switch does too whenever the target repo's panel is
-     * already on screen (see the activeRepoPath watcher) — a hidden target stays hidden.
+     * that shows the panel again brings the overlay straight back (the header's minimize button is the only way down to the strip). Showing
+     * always hands the keyboard back to the active shell; a repo/workspace switch does too whenever the target repo's panel is already on
+     * screen (see the activeRepoPath watcher) — a hidden target stays hidden.
      *
      * `focusIfVisible` is the Ctrl+` shortcut's mode: a panel that is already on screen but whose shell lost the keyboard (commit-message
      * textarea, graph, sidebar) takes the keyboard back instead of hiding, so one press always lands in the terminal. The toolbar button

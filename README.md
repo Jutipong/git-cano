@@ -28,12 +28,12 @@ A lightweight, open-source Git GUI for Windows and macOS — review history, sta
 | ---------------------------------------------- | ------------------------------------------ |
 | ![Commit graph](docs/screenshots/02-graph.png) | ![Diff view](docs/screenshots/03-diff.png) |
 
-| Terminal                                            | Command palette                                       |
-| --------------------------------------------------- | ----------------------------------------------------- |
-| ![Terminal panel](docs/screenshots/05-terminal.png) | ![Command palette](docs/screenshots/07-palette.png)   |
+| Terminal                                            | Command palette                                     |
+| --------------------------------------------------- | --------------------------------------------------- |
+| ![Terminal panel](docs/screenshots/05-terminal.png) | ![Command palette](docs/screenshots/07-palette.png) |
 
-| Conflict resolver                                     | Win9x theme                                       |
-| ----------------------------------------------------- | ------------------------------------------------- |
+| Conflict resolver                                             | Win9x theme                                         |
+| ------------------------------------------------------------- | --------------------------------------------------- |
 | ![Conflict resolver](docs/screenshots/06-rebase-conflict.png) | ![Win9x theme](docs/screenshots/08-theme-win9x.png) |
 
 ## Why git-cano

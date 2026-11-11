@@ -36,9 +36,7 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     await expect(graphChip.locator('.branch-chip-name')).toHaveText('main')
     await expect(graphChip).toHaveAttribute('title', 'Current branch: main')
     // Same color rule as the sidebar's current-branch dot — the tab session color, the dot's green fallback.
-    const dotColor = await page
-        .locator('.branch-row.current .branch-active-dot')
-        .evaluate(el => getComputedStyle(el).backgroundColor)
+    const dotColor = await page.locator('.branch-row.current .branch-active-dot').evaluate(el => getComputedStyle(el).backgroundColor)
     expect(await graphChip.evaluate(el => getComputedStyle(el).color)).toBe(dotColor)
     // Compact copy: it fits inside the 38px header instead of the full 30px terminal pill.
     expect(await graphChip.evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(28)
@@ -88,10 +86,10 @@ test('mini sidebar collapses to a rail and opens as one card on hover', async ()
     // Teleported to <body>, so no sidebar clip applies to it.
     expect(await branchMenu.evaluate(el => el.parentElement === document.body)).toBe(true)
     // Hit-testing honours clip-path: a point past the panel edge still belongs to the menu.
-    const overMenu = await page.evaluate(
-        ({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.local-branch-menu'),
-        { x: panelBox.x + panelBox.width + 10, y: menuBox.y + 12 }
-    )
+    const overMenu = await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('.local-branch-menu'), {
+        x: panelBox.x + panelBox.width + 10,
+        y: menuBox.y + 12,
+    })
     expect(overMenu).toBe(true)
     await page.keyboard.press('Escape')
     await expect(branchMenu).toHaveCount(0)

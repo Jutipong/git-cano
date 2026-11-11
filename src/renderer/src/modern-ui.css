@@ -300,9 +300,9 @@
 /* sunken bevel fields + content lists — white windows cut into the gray face */
 :root[data-theme='win9x-opencode']
     :is(
-        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.diff-search-input):not(
-                .palette-input
-            ):not(.section-search-input):not(.terminal-tab-rename),
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.diff-search-input):not(.palette-input):not(
+                .section-search-input
+            ):not(.terminal-tab-rename),
         textarea,
         select,
         .diff-body,
@@ -541,13 +541,7 @@
 
 /* toggled tools look pressed, not tinted */
 :root[data-theme='win9x-opencode']
-    :is(
-        .icon-btn.active,
-        .toolbar-icon-button.active,
-        .tools-tabs .graph-filter.active,
-        .segmented-btn.active,
-        .setting-chip.active
-    ) {
+    :is(.icon-btn.active, .toolbar-icon-button.active, .tools-tabs .graph-filter.active, .segmented-btn.active, .setting-chip.active) {
     color: #000000;
     background: var(--surface-1);
     border: 0;
@@ -739,9 +733,9 @@
 /* sunken bevel fields + content lists — near-black windows cut into the navy face */
 :root[data-theme='win9x-dark']
     :is(
-        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.diff-search-input):not(
-                .palette-input
-            ):not(.section-search-input):not(.terminal-tab-rename),
+        input:not([type='checkbox']):not([type='radio']):not([type='color']):not(.diff-search-input):not(.palette-input):not(
+                .section-search-input
+            ):not(.terminal-tab-rename),
         textarea,
         select,
         .diff-body,
@@ -974,13 +968,7 @@
 
 /* toggled tools look pressed, not tinted */
 :root[data-theme='win9x-dark']
-    :is(
-        .icon-btn.active,
-        .toolbar-icon-button.active,
-        .tools-tabs .graph-filter.active,
-        .segmented-btn.active,
-        .setting-chip.active
-    ) {
+    :is(.icon-btn.active, .toolbar-icon-button.active, .tools-tabs .graph-filter.active, .segmented-btn.active, .setting-chip.active) {
     color: #e8eaf2;
     background: var(--surface-1);
     border: 0;

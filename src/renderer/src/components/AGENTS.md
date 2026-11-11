@@ -274,7 +274,7 @@ Panel/modal component patterns. Loaded automatically when working under
   their shape), and a rule that follows other text in the same SGR run is not detected — that is the
   known limit.
 - **Inline images (Sixel / iTerm IIP)**: `@xterm/addon-image` decodes both protocols, and DA1 stays
-  enabled so TUIs send them. Its canvas `.xterm-image-layer` is appended to `.xterm-screen` *after*
+  enabled so TUIs send them. Its canvas `.xterm-image-layer` is appended to `.xterm-screen` _after_
   `.xterm-rows`, i.e. it paints over the text by default — a TUI that draws its UI over an image
   (opencode's preview) then looks like a black screen with just the picture. The fix is CSS only
   (in `modern-ui.css`): `isolation: isolate` on `.xterm-screen`, `z-index: 0` on the layer and
@@ -390,7 +390,7 @@ Panel/modal component patterns. Loaded automatically when working under
   Alt+Enter habit keep the key; with a shell focused it is captured before xterm and toggles
   `toggleTerminalExpand`, which hands focus back to the shell like the header button. The header
   buttons carry the combo in their tooltips (`Full height (Alt+Enter)` / `Exit full height
-(Alt+Enter)`) — e2e locators match those titles, so update both together.
+  (Alt+Enter)`) — e2e locators match those titles, so update both together.
 - **Alt+F4 closes the panel only while it has focus** (Windows): the captured `handleAppShortcut`
   path with the same `isTerminalPanelFocused()` guard as Ctrl+W routes the OS close-window gesture
   to `confirmCloseTerminal()` — the header ✕'s exact confirm, which ends every shell of the repo.

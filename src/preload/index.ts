@@ -50,8 +50,7 @@ async function call<T>(channel: string, ...args: unknown[]): Promise<T> {
 const api = {
     pickAndOpen: (): Promise<PickRepoResult | null> => call('repo:pickAndOpen'),
     pickDirectory: (): Promise<string | null> => call('repo:pickDir'),
-    clone: (url: string, parent?: string, folderName?: string): Promise<RepoStatus | null> =>
-        call('repo:clone', url, parent, folderName),
+    clone: (url: string, parent?: string, folderName?: string): Promise<RepoStatus | null> => call('repo:clone', url, parent, folderName),
     openPath: (dir: string): Promise<RepoStatus> => call('repo:openPath', dir),
     initRepo: (dir: string): Promise<RepoStatus> => call('repo:init', dir),
     setActiveRepo: (dir: string): Promise<void> => call('repo:setActive', dir),
@@ -225,10 +224,9 @@ const api = {
     },
 
     /**
-     * App zoom/font scale is Electron page zoom, never CSS `zoom`: xterm computes mouse positions from
-     * `getBoundingClientRect()` while its cell metrics come from canvas measurements, so a CSS zoom on
-     * `<html>` would scale one but not the other and every mouse report would drift. Page zoom keeps
-     * both in the same CSS-pixel space.
+     * App zoom/font scale is Electron page zoom, never CSS `zoom`: xterm computes mouse positions from `getBoundingClientRect()` while its
+     * cell metrics come from canvas measurements, so a CSS zoom on `<html>` would scale one but not the other and every mouse report would
+     * drift. Page zoom keeps both in the same CSS-pixel space.
      */
     setZoomFactor: (factor: number): void => webFrame.setZoomFactor(factor),
 

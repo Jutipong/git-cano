@@ -24,9 +24,8 @@ const FOCUSABLE = [
 const stack: symbol[] = []
 
 /**
- * Last focused element outside the current focus target. Dialogs opened by an async action lose
- * the trigger's focus when the action disables it, so `document.activeElement` is <body> by the
- * time the dialog mounts; this tracker keeps the button that started the action.
+ * Last focused element outside the current focus target. Dialogs opened by an async action lose the trigger's focus when the action
+ * disables it, so `document.activeElement` is <body> by the time the dialog mounts; this tracker keeps the button that started the action.
  */
 let lastFocused: HTMLElement | null = null
 
@@ -53,9 +52,8 @@ function focusElement(element: HTMLElement | null | undefined): void {
 }
 
 /**
- * Keyboard/screen-reader plumbing shared by every dialog: save + restore focus, trap Tab,
- * close the topmost modal on Escape, and let stacked modals (palette over settings, confirm
- * over a create form) hand focus back to the dialog underneath.
+ * Keyboard/screen-reader plumbing shared by every dialog: save + restore focus, trap Tab, close the topmost modal on Escape, and let
+ * stacked modals (palette over settings, confirm over a create form) hand focus back to the dialog underneath.
  */
 export function useModalA11y(options: ModalA11yOptions): void {
     const id = Symbol('modal')
@@ -132,8 +130,7 @@ export function useModalA11y(options: ModalA11yOptions): void {
                 attach()
                 await nextTick()
                 if (!open) return
-                const target =
-                    options.initialFocus?.value ?? focusableIn(options.container.value)[0] ?? options.container.value
+                const target = options.initialFocus?.value ?? focusableIn(options.container.value)[0] ?? options.container.value
                 focusElement(target)
             } else {
                 const wasTop = isTop()

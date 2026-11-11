@@ -6,8 +6,8 @@ export const RIGHT_PANEL_MAX_WIDTH = 500
 /** The center column never gives up more than this before the side panels start shrinking. */
 export const CENTER_MIN_WIDTH = 380
 /**
- * Horizontal space `.app` spends outside the three columns: its 6px padding on both sides plus the
- * two `.panel-splitter`s (5px wide with -2px margins, so 1px of layout each).
+ * Horizontal space `.app` spends outside the three columns: its 6px padding on both sides plus the two `.panel-splitter`s (5px wide with
+ * -2px margins, so 1px of layout each).
  */
 export const PANEL_CHROME_WIDTH = 14
 
@@ -21,10 +21,9 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /**
- * Effective sidebar/Changes widths for the current window. The preferred widths are the user's
- * persisted drag positions; when the center column would drop below `CENTER_MIN_WIDTH`, the side
- * panels give up their slack above their floors proportionally. Below the floors (very high app
- * zoom) both sit at their minimum and the center keeps whatever is left.
+ * Effective sidebar/Changes widths for the current window. The preferred widths are the user's persisted drag positions; when the center
+ * column would drop below `CENTER_MIN_WIDTH`, the side panels give up their slack above their floors proportionally. Below the floors (very
+ * high app zoom) both sit at their minimum and the center keeps whatever is left.
  */
 export function computePanelWidths(viewportWidth: number, sidebarPreferred: number, rightPreferred: number): PanelWidths {
     const sidebar = clamp(Math.round(sidebarPreferred), SIDEBAR_MIN_WIDTH, SIDEBAR_MAX_WIDTH)

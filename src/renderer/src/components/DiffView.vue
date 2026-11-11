@@ -821,7 +821,15 @@
                     const rightOffset = p - segment.rightPad
                     const y = (start + p) * barH
                     if (focused !== 'right') {
-                        drawMinimapBar(ctx, pad, y, sideW, barH, colors, leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined)
+                        drawMinimapBar(
+                            ctx,
+                            pad,
+                            y,
+                            sideW,
+                            barH,
+                            colors,
+                            leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined
+                        )
                     }
                     if (focused !== 'left') {
                         drawMinimapBar(
@@ -988,14 +996,12 @@
         if (body && resizeObserver) resizeObserver.observe(body)
     })
 
-    watch(
-        [lines, splitPlan, expandedPane, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme],
-        () =>
-            nextTick(() => {
-                measureRowHeight()
-                resetPaneScroll()
-                updateMinimap()
-            })
+    watch([lines, splitPlan, expandedPane, () => ui.diffViewMode, () => ui.showEntireFile, isFullscreen, () => ui.theme], () =>
+        nextTick(() => {
+            measureRowHeight()
+            resetPaneScroll()
+            updateMinimap()
+        })
     )
 </script>
 

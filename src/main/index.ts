@@ -1,6 +1,7 @@
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 
+import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, sanitizeCloneFolderName } from '@shared/clone'
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
 
 import {
@@ -139,7 +140,6 @@ import {
 } from './terminal'
 import { downloadUpdate, initAutoUpdater, installUpdate, isAutoUpdateSupported, openReleasePage } from './updater'
 
-import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, sanitizeCloneFolderName } from '@shared/clone'
 import type { EditorTarget, LocalChangesMode, MergeMode, TerminalShell } from '@shared/types'
 
 let win: BrowserWindow | null = null
@@ -248,9 +248,8 @@ function writeAppSettings(patch: AppSettings): void {
 }
 
 /**
- * Starting directory for every folder-picker dialog: the last successfully used
- * clone root when it still exists on disk, otherwise the parent of
- * the most recently opened repository, otherwise left to the OS.
+ * Starting directory for every folder-picker dialog: the last successfully used clone root when it still exists on disk, otherwise the
+ * parent of the most recently opened repository, otherwise left to the OS.
  */
 function recentFilePath(): string {
     return path.join(app.getPath('userData'), 'recent.json')
@@ -272,10 +271,9 @@ function startDir(): string | undefined {
 }
 
 /**
- * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't
- * fight the app's own ui.zoom setting — zoom is owned by the renderer's ui store (which drives Electron page
- * zoom through webFrame) instead. Ctrl/Cmd+W is also freed from the native Close-window role so it closes the
- * active repo tab instead (window close stays available via Ctrl/Cmd+Shift+W).
+ * Replace the default application menu so its Zoom In/Out/Reset accelerators (Ctrl+= / Ctrl+- / Ctrl+0) can't fight the app's own ui.zoom
+ * setting — zoom is owned by the renderer's ui store (which drives Electron page zoom through webFrame) instead. Ctrl/Cmd+W is also freed
+ * from the native Close-window role so it closes the active repo tab instead (window close stays available via Ctrl/Cmd+Shift+W).
  *
  * The Window menu is hand-written on both platforms (the stock `windowMenu` role can't be extended) and carries only the app's own items:
  * What's new, and About Git Cano → the repository.
@@ -443,9 +441,7 @@ app.whenReady().then(() => {
     })
     handle('app:openInFolder', (dir: string) => openFolder(dir as string))
     handle('app:openInVSCode', (dir: string) => openVSCode(dir as string))
-    handle('app:openFileInEditor', (target: EditorTarget, repoPath: string, file: string) =>
-        openFileInEditor(target, repoPath, file)
-    )
+    handle('app:openFileInEditor', (target: EditorTarget, repoPath: string, file: string) => openFileInEditor(target, repoPath, file))
     handle('app:getOpenInTargets', (dir: string) => getOpenInTargets(dir as string))
     handle('app:openInKiro', (dir: string) => openKiro(dir as string))
     handle('app:openInRider', (dir: string) => openRider(dir as string))

@@ -92,10 +92,10 @@ export const DEFAULT_TERMINAL_FONT_FAMILY = defaultTerminalFontFamily(isMac)
 /** First shipped default — one Windows stack on every platform; macOS migrates to the SF Mono stack on load. */
 const LEGACY_TERMINAL_FONT_FAMILY = "'Consolas', 'Leelawadee UI', monospace"
 /**
- * Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied), grouped by family so the variants sit next
- * to each other. The Nerd Font entries use the family name the font file itself declares (`nameID 1`), which CoreText and DirectWrite
- * both resolve: `NFM` is the mono-spaced cut sized to a 1-cell grid, while `NF` paints its icons up to ~1.9 cells wide and can bleed
- * into the neighbouring cell — both are offered so the user can compare them.
+ * Preset chips in Settings → Terminal → Text (each keeps the Thai fallback when applied), grouped by family so the variants sit next to
+ * each other. The Nerd Font entries use the family name the font file itself declares (`nameID 1`), which CoreText and DirectWrite both
+ * resolve: `NFM` is the mono-spaced cut sized to a 1-cell grid, while `NF` paints its icons up to ~1.9 cells wide and can bleed into the
+ * neighbouring cell — both are offered so the user can compare them.
  */
 export const TERMINAL_FONT_PRESET_GROUPS = [
     { label: 'System', presets: ['Consolas', 'Cascadia Mono', 'Cascadia Code NF'] },
@@ -223,10 +223,10 @@ export const useUiStore = defineStore(
             if (!TERMINAL_MAX_TABS_OPTIONS.includes(terminalMaxTabs.value)) terminalMaxTabs.value = DEFAULT_TERMINAL_MAX_TABS
         })
         /**
-         * Settings → Terminal → Full window: the terminal covers the whole window. The docked strip spans all three columns at the
-         * bottom (`.terminal-docked-full`) and the expanded overlay spans all three columns and rises over the repo tab bar
-         * (`.terminal-overlay-window`). Off (default) the strip floats over the Sidebar + Graph columns (`.terminal-docked-wide`) and
-         * the overlay stays under the tab bar, clear of the right pane.
+         * Settings → Terminal → Full window: the terminal covers the whole window. The docked strip spans all three columns at the bottom
+         * (`.terminal-docked-full`) and the expanded overlay spans all three columns and rises over the repo tab bar
+         * (`.terminal-overlay-window`). Off (default) the strip floats over the Sidebar + Graph columns (`.terminal-docked-wide`) and the
+         * overlay stays under the tab bar, clear of the right pane.
          */
         const terminalFullWidth = ref(false)
 
@@ -266,8 +266,8 @@ export const useUiStore = defineStore(
             stashes: true,
         })
         /**
-         * Hand-set height of a sidebar card, keyed by repo path so every repo tab keeps its own layout. A missing entry leaves that card
-         * on the automatic flex layout (expanded lists share the leftover space).
+         * Hand-set height of a sidebar card, keyed by repo path so every repo tab keeps its own layout. A missing entry leaves that card on
+         * the automatic flex layout (expanded lists share the leftover space).
          */
         const sidebarSectionHeights = ref<Record<string, Partial<Record<SidebarSectionKey, number>>>>({})
         function setSidebarSectionHeight(repoPath: string, key: SidebarSectionKey, height: number | null) {

@@ -70,18 +70,19 @@ function increases(files, baseline) {
 const current = {}
 for (const file of walk(scanRoot).sort()) {
     const counts = countOffences(cssOf(file, readFileSync(file, 'utf8')))
-    if (counts.hex || counts.colorFn || counts.fontSize)
-        current[relative(root, file).split(sep).join('/')] = counts
+    if (counts.hex || counts.colorFn || counts.fontSize) current[relative(root, file).split(sep).join('/')] = counts
 }
 
 const update = process.argv.includes('--update')
 const force = process.argv.includes('--force')
-const previous = existsSync(baselinePath) ? JSON.parse(readFileSync(baselinePath, 'utf8')).files ?? {} : null
+const previous = existsSync(baselinePath) ? (JSON.parse(readFileSync(baselinePath, 'utf8')).files ?? {}) : null
 
 if (update) {
     const raised = previous ? increases(current, previous) : []
     if (raised.length && !force) {
-        process.stderr.write(`[check-styles] refusing to raise the baseline (use --force only for a deliberate migration):\n${raised.map(line => `  ${line}`).join('\n')}\n`)
+        process.stderr.write(
+            `[check-styles] refusing to raise the baseline (use --force only for a deliberate migration):\n${raised.map(line => `  ${line}`).join('\n')}\n`
+        )
         process.exit(1)
     }
     writeFileSync(baselinePath, `${JSON.stringify({ files: current }, null, 4)}\n`)
@@ -107,6 +108,8 @@ process.stdout.write(
 )
 
 if (failures.length) {
-    process.stderr.write(`[check-styles] drift detected — use a token (var(--font-*) / var(--…)) or lower the baseline:\n${failures.map(line => `  ${line}`).join('\n')}\n`)
+    process.stderr.write(
+        `[check-styles] drift detected — use a token (var(--font-*) / var(--…)) or lower the baseline:\n${failures.map(line => `  ${line}`).join('\n')}\n`
+    )
     process.exit(1)
 }

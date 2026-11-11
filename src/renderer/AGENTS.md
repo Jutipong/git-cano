@@ -263,7 +263,7 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   into every matching canonical combo and handlers use `combos.includes(…)`, so a Thai
   key still fires `Ctrl+P` from the P position and `Ctrl+`` even when that key reports `_`.
   Every layout-sensitive check must go through these helpers — never compare `event.key`
-  for a letter/symbol shortcut directly (`DiffView` find, terminal copy, graph `t`, zoom).
+  for a letter/symbol shortcut directly (`DiffView`find, terminal copy, graph`t`, zoom).
   No-modifier character shortcuts (`?`) deliberately stay character-based; do not switch
   them to `code`.
 - Customizable shortcuts (`CUSTOM_SHORTCUT_IDS` in Settings → Shortcuts tab):

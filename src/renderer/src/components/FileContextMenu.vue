@@ -20,7 +20,6 @@
     import { isPreviewablePath } from '../utils/preview'
 
     import type { ToastKind } from '../stores/uiTransient'
-
     import type { EditorTarget, OpenInTargets } from '@shared/types'
 
     export interface FileMenuState {
@@ -150,8 +149,7 @@
     function menuStyle() {
         const menu = props.menu
         if (!menu) return {}
-        const itemCount =
-            4 + (canOpenInEditor.value ? editorOptions.value.length : 0) + (menu.workdir && !menu.deleted ? 2 : 0)
+        const itemCount = 4 + (canOpenInEditor.value ? editorOptions.value.length : 0) + (menu.workdir && !menu.deleted ? 2 : 0)
         const estimatedHeight = 16 + itemCount * 29
         return {
             left: `${Math.max(8, Math.min(menu.x, window.innerWidth - 250))}px`,

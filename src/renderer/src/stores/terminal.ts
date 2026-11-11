@@ -1,13 +1,7 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
-import {
-    canAddTerminal,
-    moveTerminalTab,
-    nextTerminalNumber,
-    terminalTabLabel,
-    type TerminalTab,
-} from '../utils/terminalTabs'
+import { canAddTerminal, moveTerminalTab, nextTerminalNumber, terminalTabLabel, type TerminalTab } from '../utils/terminalTabs'
 import { useUiStore } from './ui'
 
 import type { TerminalShell } from '@shared/types'
@@ -50,9 +44,7 @@ export const useTerminalStore = defineStore('terminal', () => {
     }
 
     /** Every live shell in the app, across all repos (the panel header's count pill). */
-    const totalTerminals = computed(() =>
-        Object.values(terminals.value).reduce((sum, state) => sum + state.tabs.length, 0)
-    )
+    const totalTerminals = computed(() => Object.values(terminals.value).reduce((sum, state) => sum + state.tabs.length, 0))
 
     /** True while a repo's panel is on screen (has a shell and isn't toggled away). */
     function panelVisible(path: string): boolean {

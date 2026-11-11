@@ -13,6 +13,7 @@
     import { useRepoStore } from '../stores/repo'
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
+    import { confirmDialog } from '../utils/confirm'
     import {
         allSidesPicked,
         annotateConflictMatches,
@@ -29,7 +30,6 @@
         toggleSidePick,
         type ConflictBlock,
     } from '../utils/conflict'
-    import { confirmDialog } from '../utils/confirm'
     import { highlightLine, computeLineStates, highlightLineAt } from '../utils/highlight'
     import { buildPrefix, windowFor } from '../utils/virtual'
     import CloseXIcon from './CloseXIcon.vue'

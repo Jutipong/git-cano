@@ -39,8 +39,6 @@
         const pattern = ui.commitDateFormat.trim() || DEFAULT_DATE_FORMAT
         return formatDatePattern(new Date().toISOString(), pattern)
     })
-
-
 </script>
 
 <template>

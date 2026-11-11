@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-/** sRGB hex (#rgb / #rrggbb) → [r, g, b] in 0..1. */
+/** SRGB hex (#rgb / #rrggbb) → [r, g, b] in 0..1. */
 export function hexToRgb(hex: string): [number, number, number] {
     let h = hex.trim().replace(/^#/, '')
     if (h.length === 3) h = [...h].map(c => c + c).join('')
@@ -25,7 +25,7 @@ export function contrast(a: string, b: string): number {
     return (hi + 0.05) / (lo + 0.05)
 }
 
-/** sRGB hex → OKLab [L, a, b]. */
+/** SRGB hex → OKLab [L, a, b]. */
 export function oklab(hex: string): [number, number, number] {
     const [r, g, b] = hexToRgb(hex).map(toLinear)
     const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b)
@@ -38,7 +38,7 @@ export function oklab(hex: string): [number, number, number] {
     ]
 }
 
-/** sRGB hex → OKLCH [L, C, H°]. */
+/** SRGB hex → OKLCH [L, C, H°]. */
 export function oklch(hex: string): [number, number, number] {
     const [L, a, b] = oklab(hex)
     const h = (Math.atan2(b, a) * 180) / Math.PI

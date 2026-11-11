@@ -7,6 +7,7 @@
 
     import canoIcon from '../assets/cano.svg'
     import { useRepoStore } from '../stores/repo'
+
     import type { SidebarSectionKey } from '../stores/ui'
 
     defineProps<{ activeSection: SidebarSectionKey | null; open: boolean }>()

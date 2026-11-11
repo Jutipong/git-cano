@@ -1,11 +1,11 @@
 <script setup lang="ts">
+    import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, joinClonePath } from '@shared/clone'
+    import { errorMessage } from '@shared/errors'
     import { computed, inject, onMounted, ref, useTemplateRef, watch } from 'vue'
     import ILucideDownload from '~icons/lucide/download'
     import ILucideFolderPlus from '~icons/lucide/folder-plus'
     import ILucideRotateCcw from '~icons/lucide/rotate-ccw'
 
-    import { cloneFolderError, extractRepoFolderName, isValidCloneFolderName, joinClonePath } from '@shared/clone'
-    import { errorMessage } from '@shared/errors'
     import { useRepoStore } from '../stores/repo'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { useModalA11y } from '../utils/modalA11y'
@@ -47,7 +47,7 @@
             isValidCloneFolderName(folder.value) &&
             !busy.value &&
             !pickingParent.value &&
-            !loadingRoot.value,
+            !loadingRoot.value
     )
 
     watch(url, () => {
@@ -98,7 +98,7 @@
         try {
             const status = await uiTransient.withBusy(
                 () => window.api.clone(url.value.trim(), parent.value.trim(), folder.value.trim()),
-                'Cloning repository…',
+                'Cloning repository…'
             )
             if (status) {
                 repoStore.addTab(status)

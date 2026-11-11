@@ -11,8 +11,8 @@
 export const TERMINAL_THAI_FALLBACK = "'Leelawadee UI', 'Thonburi', monospace"
 
 /**
- * Terminal font family the app starts on. Windows: Consolas leads (inbox on every Windows) with Leelawadee UI for the Thai glyphs it
- * lacks. macOS: SF Mono (ships with the OS dev tools), Menlo (always present), Thonburi for Thai.
+ * Terminal font family the app starts on. Windows: Consolas leads (inbox on every Windows) with Leelawadee UI for the Thai glyphs it lacks.
+ * macOS: SF Mono (ships with the OS dev tools), Menlo (always present), Thonburi for Thai.
  */
 export function defaultTerminalFontFamily(onMac: boolean): string {
     return onMac ? "'SF Mono', Menlo, 'Thonburi', monospace" : "'Consolas', 'Leelawadee UI', monospace"
@@ -56,8 +56,8 @@ export function familyDiffersFromFallback(
 
 /**
  * True when the family is usable here: it differs from **at least one** generic fallback. One chain is not enough — on Windows `monospace`
- * resolves to Consolas, so comparing against it alone reported Consolas itself as missing. (`document.fonts.check()` can't do this job —
- * it reports even a bogus family as available.) Fail-open (no `document`/canvas, or anything throws) so an exotic setup never loses its
+ * resolves to Consolas, so comparing against it alone reported Consolas itself as missing. (`document.fonts.check()` can't do this job — it
+ * reports even a bogus family as available.) Fail-open (no `document`/canvas, or anything throws) so an exotic setup never loses its
  * terminal font — xterm itself falls back silently per glyph.
  */
 export function isFontInstalled(family: string): boolean {
@@ -82,10 +82,9 @@ export function resolveTerminalFontFamily(input: string, defaultStack: string): 
 }
 
 /**
- * xterm measures its cell in CSS px, while Electron page zoom carries the UI font scale without changing
- * those metrics. Divide the configured terminal size by that scale so Settings → Terminal's px value stays
- * the terminal's real size when the UI font size changes. The explicit app zoom is deliberately left alone —
- * page zoom still magnifies the whole window.
+ * Xterm measures its cell in CSS px, while Electron page zoom carries the UI font scale without changing those metrics. Divide the
+ * configured terminal size by that scale so Settings → Terminal's px value stays the terminal's real size when the UI font size changes.
+ * The explicit app zoom is deliberately left alone — page zoom still magnifies the whole window.
  */
 export function terminalFontPx(size: number, fontScale: number): number {
     return fontScale > 0 ? size / fontScale : size

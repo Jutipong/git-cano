@@ -15,12 +15,14 @@
         },
         "types": ["unplugin-icons/types/vue"]
     },
-    "contentMappers": [{
-        "package": "@vue/content-mapper",
-        "extensions": [".vue"],
-        "options": {
-            "target": 3.5
+    "contentMappers": [
+        {
+            "package": "@vue/content-mapper",
+            "extensions": [".vue"],
+            "options": {
+                "target": 3.5
+            }
         }
-    }],
+    ],
     "include": ["src/renderer/src/**/*.ts", "src/renderer/src/**/*.d.ts", "src/renderer/src/**/*.vue", "src/shared/**/*"]
 }

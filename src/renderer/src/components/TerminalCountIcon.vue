@@ -15,6 +15,8 @@
         <span
             v-if="count"
             class="terminal-count-badge"
-            aria-hidden="true">{{ count }}</span>
+            aria-hidden="true"
+            >{{ count }}</span
+        >
     </span>
 </template>

@@ -26,9 +26,7 @@ test('theme picker only offers the shipped themes', async () => {
     await expect(page.locator('.tools-modal')).toBeVisible()
 
     await Promise.all(
-        ['Dark Neon', 'Dark Retro'].map(removed =>
-            expect(page.getByRole('button', { name: removed, exact: true })).toHaveCount(0)
-        )
+        ['Dark Neon', 'Dark Retro'].map(removed => expect(page.getByRole('button', { name: removed, exact: true })).toHaveCount(0))
     )
     await Promise.all(
         ['Dark', 'Dark Modern', 'Light', 'Light Retro', 'Win9x', 'Win9x Dark'].map(theme =>
@@ -44,8 +42,7 @@ test('theme tokens resolve from the single styles.css source', async () => {
     await page.keyboard.press('Control+,')
     await expect(page.locator('.tools-modal')).toBeVisible()
 
-    const read = (name: string) =>
-        page.evaluate(token => getComputedStyle(document.documentElement).getPropertyValue(token).trim(), name)
+    const read = (name: string) => page.evaluate(token => getComputedStyle(document.documentElement).getPropertyValue(token).trim(), name)
     const select = async (name: string) => {
         await page.getByRole('button', { name, exact: true }).click()
         await page.waitForTimeout(50)

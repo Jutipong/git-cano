@@ -35,7 +35,6 @@
         onClose: () => emit('close'),
     })
 
-
     // Update check against GitHub Releases; the installed Windows build (Setup .exe)
     // additionally downloads/installs in-app via electron-updater (see stores/updater).
     // State lives in the shared updater store so the sidebar button reacts to the same result.
@@ -74,8 +73,6 @@
     watch(tab, value => {
         visitedTabs.add(value)
     })
-
-
 </script>
 
 <template>
@@ -176,7 +173,6 @@
                     class="settings-tab-pane">
                     <AiSettings @close="emit('close')" />
                 </div>
-
             </div>
         </div>
     </div>

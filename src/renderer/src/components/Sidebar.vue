@@ -652,9 +652,7 @@
                         v-else
                         width="13"
                         height="13" />
-                    <h3>
-                        LOCAL BRANCHES <span class="section-count">{{ local.length }}</span>
-                    </h3>
+                    <h3>LOCAL BRANCHES <span class="section-count">{{ local.length }}</span></h3>
                 </button>
             </div>
 
@@ -782,9 +780,7 @@
                         v-else
                         width="13"
                         height="13" />
-                    <h3>
-                        REMOTE BRANCHES <span class="section-count">{{ remote.length }}</span>
-                    </h3>
+                    <h3>REMOTE BRANCHES <span class="section-count">{{ remote.length }}</span></h3>
                 </button>
                 <button
                     v-if="!hasRemote"
@@ -890,9 +886,7 @@
                         v-else
                         width="13"
                         height="13" />
-                    <h3>
-                        TAGS <span class="section-count">{{ tags.length }}</span>
-                    </h3>
+                    <h3>TAGS <span class="section-count">{{ tags.length }}</span></h3>
                 </button>
                 <button
                     class="icon-btn section-refresh-btn"

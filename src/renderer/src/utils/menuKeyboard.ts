@@ -27,8 +27,8 @@ function focusItem(item: HTMLElement | null | undefined): void {
 }
 
 /**
- * Keyboard plumbing for popup menus: focus the first enabled item, cycle with Arrow keys,
- * Home/End, close on Escape/Tab, and (optionally) hand ArrowLeft/Right to a submenu owner.
+ * Keyboard plumbing for popup menus: focus the first enabled item, cycle with Arrow keys, Home/End, close on Escape/Tab, and (optionally)
+ * hand ArrowLeft/Right to a submenu owner.
  */
 export function useMenuKeyboard(options: MenuKeyboardOptions): void {
     const id = Symbol('menu')
@@ -118,8 +118,7 @@ export function useMenuKeyboard(options: MenuKeyboardOptions): void {
         async active => {
             if (active) {
                 restoreTarget =
-                    options.restoreFocus?.value ??
-                    (document.activeElement instanceof HTMLElement ? document.activeElement : null)
+                    options.restoreFocus?.value ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null)
                 attach()
                 await nextTick()
                 if (!open) return

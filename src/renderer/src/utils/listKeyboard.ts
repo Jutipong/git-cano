@@ -19,16 +19,13 @@ function dispatchContextMenu(row: HTMLElement): void {
 }
 
 /**
- * Roving keyboard navigation for clickable list rows. The container is the single tab stop;
- * rows are `tabindex="-1"` and get focus from the arrow keys. Enter/Space activate, and
- * Shift+F10 / the ContextMenu key replay the row's existing contextmenu handler.
+ * Roving keyboard navigation for clickable list rows. The container is the single tab stop; rows are `tabindex="-1"` and get focus from the
+ * arrow keys. Enter/Space activate, and Shift+F10 / the ContextMenu key replay the row's existing contextmenu handler.
  */
 export function handleListKeydown(event: KeyboardEvent, selector: string, options: ListKeyboardOptions = {}): void {
     const container = event.currentTarget as HTMLElement | null
     if (!container) return
-    const rows = Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
-        row => row.getClientRects().length > 0
-    )
+    const rows = Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(row => row.getClientRects().length > 0)
     if (!rows.length) return
     const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const target = event.target instanceof HTMLElement ? event.target : null

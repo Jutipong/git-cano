@@ -16,8 +16,8 @@ import {
 } from '../../src/renderer/src/utils/conflict'
 
 /**
- * Two conflicts in one file: the first is a hunk that the incoming side deleted (empty theirs — the shape that left the conflict view
- * stuck at "3/5 resolved"), the second has content on both sides.
+ * Two conflicts in one file: the first is a hunk that the incoming side deleted (empty theirs — the shape that left the conflict view stuck
+ * at "3/5 resolved"), the second has content on both sides.
  */
 const TWO_BLOCKS = [
     'top',
@@ -64,7 +64,11 @@ describe('parseConflictBlocks', () => {
 
     it('annotates block positions in both sides', () => {
         const blocks = parseConflictBlocks(TWO_BLOCKS, 'theirs')
-        annotateConflictMatches(blocks, 'top\n// comment\n// comment 2\nl1\nl2\nmiddle\nmain side\nbottom\n', 'top\nl1\nl2\nmiddle\nfeature side\nbottom\n')
+        annotateConflictMatches(
+            blocks,
+            'top\n// comment\n// comment 2\nl1\nl2\nmiddle\nmain side\nbottom\n',
+            'top\nl1\nl2\nmiddle\nfeature side\nbottom\n'
+        )
         expect(blocks[0]!.matchIdx).toEqual({ ours: 1, theirs: -1 })
         expect(blocks[1]!.matchIdx).toEqual({ ours: 6, theirs: 4 })
     })
