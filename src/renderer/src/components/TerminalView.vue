@@ -9,6 +9,7 @@
     import { terminalCopyDecision } from '../utils/terminalCopy'
     import { primaryFontFamily, resolveTerminalFontFamily, terminalFontPx } from '../utils/terminalFont'
     import { shouldActivateTerminalLink } from '../utils/terminalLinks'
+    import { thaiClusterJoins } from '../utils/terminalThai'
 
     import type { TerminalData, TerminalExit } from '@shared/types'
     import type { FitAddon } from '@xterm/addon-fit'
@@ -63,6 +64,7 @@
      * keeps the Thai faces behind it — Thai has no monospace face on Windows, so the browser falls back per codepoint and lets GPOS stack
      * the vowels/tone marks. xterm's DOM renderer writes whole grapheme clusters into one <span>, which is what makes that shaping work —
      * the canvas renderer (removed in xterm 6) never shaped Thai at all. A pick whose font is not installed resolves back to the default.
+     * SARA AM is the one Thai character that gets a cell of its own, so it needs the character joiner below (see `utils/terminalThai.ts`).
      */
     const family = resolveTerminalFontFamily(ui.terminalFontFamily, DEFAULT_TERMINAL_FONT_FAMILY)
 
@@ -412,6 +414,10 @@
             // The shell stays usable without image support.
         }
         term.open(host.value)
+        // SARA AM gets a cell of its own, so a solo `ำ` is shaped alone and the macOS Thai faces draw it on a dotted circle one
+        // column off its consonant. Join the cluster's cells so the browser shapes `จำ` as one run (see `utils/terminalThai.ts`);
+        // must come after `open()` — xterm throws "Terminal must be opened first" otherwise.
+        term.registerCharacterJoiner(thaiClusterJoins)
         // xterm rewrites row spans on every screen refresh, so re-tag the `▀` runs in the same
         // frame — deferring it to rAF paints one frame of seamed glyphs on every TUI repaint.
         renderDisposer = term.onRender(markBars)

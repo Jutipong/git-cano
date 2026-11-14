@@ -195,6 +195,18 @@ Panel/modal component patterns. Loaded automatically when working under
   (`.xterm-rows > div` → `overflow-x: clip; overflow-y: visible`, `!important`) because a Thai tone
   mark stacked over an upper vowel (`ที่`, `น้ำ`) rises above the 1.0 cell and the clip erased it.
   Do not drop that override.
+- **SARA AM needs the character joiner.** `ำ` (U+0E33) is the one Thai character xterm gives a cell
+  of its own (width 1) — the tone marks and vowels are zero width and ride along in the consonant's
+  cell — so a solo `ำ` is shaped alone, and the macOS Thai faces (Thonburi, the default stack's Thai
+  face, plus Krungthep/Sathu/Silom/Sukhumvit Set) draw it on a dotted circle one column right of its
+  consonant: the "floating" marks. `term.registerCharacterJoiner(thaiClusterJoins)`
+  (`utils/terminalThai.ts`, registered right after `term.open()` — xterm throws "Terminal must be
+  opened first" before that) merges the cluster's cells into one render unit so the browser shapes
+  `จำ` as one run while the grid keeps both columns, which is what keeps the shell's wcwidth (SARA
+  AM = 1) in step with the terminal. Never "fix" this by making SARA AM zero width — the terminal
+  would then be one column narrower than zsh/readline thinks. xterm only runs joiners inside one
+  same-fg/bg run, so a cluster whose colour changes across the pair (or one the cursor sits on)
+  stays split for that frame — a known, transient limit.
 - **The grid is solved by `fitGrid()`, never by `fit.fit()` directly.** FitAddon keeps a scrollbar
   column set (`DEFAULT_SCROLL_BAR_WIDTH`, 14px) out of the width it proposes even though
   `modern-ui.css` hides the viewport scrollbar, so `fit.fit()` alone left the grid up to two columns
