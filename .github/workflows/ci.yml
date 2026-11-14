@@ -40,8 +40,9 @@ jobs:
                   node-version: 22
                   cache: pnpm
             - run: pnpm install --frozen-lockfile
-            # pnpm blocks lifecycle scripts by default; make sure the Electron binary exists before launching it.
-            - run: pnpm rebuild electron
+            # Electron 45 has no install hook of its own and pnpm never runs the root postinstall on an
+            # update, so fetch the binary with the same script the dev/dist scripts use.
+            - run: node scripts/fix-electron-path.mjs
             - run: pnpm exec electron --version
             - run: pnpm test:e2e
               env:

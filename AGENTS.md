@@ -19,6 +19,11 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm test` — lint + typecheck + unit + e2e (release gate)
 - `pnpm build` — production build (`out/`)
 - `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
+- Electron's binary is fetched by `scripts/fix-electron-path.mjs` (cross-platform). Electron 45
+  dropped its own install hook, and pnpm only runs the root `postinstall` on a real `install` —
+  never on `pnpm up` / `pnpm add` — so `dev`, `start`, `test:e2e`, `dist:mac`, `dist:win` and the
+  CI e2e job call the script first. Keep that prefix when adding a script that launches or
+  packages Electron, and never hard-code `path.txt` per platform (see the script's header).
 - Packaging (`package.json` → `build`): `appId` `com.jutipong.git-cano`, `productName` `Git Cano`,
   icons `build/icons/cano.png` + per-OS `cano.icns` / `cano.ico`, `asar: true` with maximum
   compression. `files` ships `out/**/*` + `package.json` only (excludes `out/tsbuild`,
