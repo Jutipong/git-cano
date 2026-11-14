@@ -31,7 +31,10 @@ Panel/modal component patterns. Loaded automatically when working under
   AI actions live behind an `AI…` drill-in mode (`Sparkles` chip), gated by `aiCanRun`.
   Typing at the outermost level additionally surfaces query-driven `Open in` / `Repositories` /
   `Branches` / `Workspaces` / `AI` / `Settings` sections (top hits only — the full lists stay in
-  their drill-in modes; Settings is flat by design). The Settings rows are the Tools modal's tabs
+  their drill-in modes; Settings is flat by design). The repo, branch and workspace rows mark the one
+  already in use with the green `Active` pill plus a green icon (`current` flag) — the checked-out
+  branch is included in the list, leads it, and picking it only closes the palette (never re-checkouts);
+  detached HEAD stays out. The Settings rows are the Tools modal's tabs
   by name (`SETTINGS_TABS` in `utils/settingsTabs.ts`) and open it straight on the picked tab — the
   modal watches `props.initialTab` so an already-open modal follows a palette pick (the palette z-95
   opens over the modal). Each row also carries a `search: 'settings'` text, so typing setting(s)

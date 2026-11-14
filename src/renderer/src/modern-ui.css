@@ -8460,8 +8460,9 @@ body {
     white-space: nowrap;
 }
 
-/* Accent pill for the repo that is actually open. Green so it never reads as the teal of the row the
-   cursor is on, and `color-mix` like `.repo-tab.active` so it holds up in the light themes. */
+/* Accent pill for the row that is already active (open repo / checked-out branch / current workspace).
+   Green so it never reads as the teal of the row the cursor is on, and `color-mix` like `.repo-tab.active`
+   so it holds up in the light themes. */
 .palette-badge {
     display: inline-flex;
     height: 16px;
@@ -8505,6 +8506,12 @@ body {
 
 .palette-item.accent-red .palette-ic {
     color: var(--red);
+}
+
+/* The row that is already active keeps its green icon even while the cursor is on it (same placement as
+   the accents above): the badge and icon together read as "you are here", not as another command. */
+.palette-item.current .palette-ic {
+    color: var(--green);
 }
 
 /* ===== Animated checkbox (AppCheckbox.vue) — colors follow project theme ===== */

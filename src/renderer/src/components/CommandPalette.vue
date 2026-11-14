@@ -84,8 +84,8 @@
         id: string
         label: string
         hint?: string
-        /** Accent pill rendered before the hint (the repo mode's "Active" marker). */
-        badge?: string
+        /** Marks the row that is already open/checked out — renders the green "Active" pill and icon. */
+        current?: boolean
         /** Extra text folded into the filter match on top of `label` (e.g. a repo's full path). */
         search?: string
         icon: Component
@@ -372,7 +372,7 @@
             label: entry.name,
             // The badge marks the repo that is genuinely open; the workspace name only earns its place once
             // there is more than one. Green, so it never reads as the teal of the row the cursor is on.
-            badge: entry.isActiveTab ? 'Active' : undefined,
+            current: entry.isActiveTab,
             hint: crossWorkspace ? entry.workspace : undefined,
             // A repo answers to its name (the label), its path, and — once there is more than one workspace —
             // the workspace that opens it. The space separator keeps a match from spanning the two fields.
@@ -390,22 +390,28 @@
         }))
     })
 
-    const branchItems = computed<PaletteItem[]>(() =>
-        (repoStore.branchList?.local ?? fetchedLocal.value ?? [])
-            .filter(branch => !branch.current && !branch.detached)
-            .map(branch => ({
-                id: branch.name,
-                label: branch.name,
-                icon: GitBranch,
-                run: () => checkoutBranch(branch.name),
-            }))
-    )
+    const branchItems = computed<PaletteItem[]>(() => {
+        const local = (repoStore.branchList?.local ?? fetchedLocal.value ?? []).filter(branch => !branch.detached)
+        // The checked-out branch leads the list so it is visible without searching; picking it is a no-op
+        // (the palette closes) instead of a pointless checkout of the branch already on HEAD.
+        const ordered = [...local.filter(branch => branch.current), ...local.filter(branch => !branch.current)]
+        return ordered.map(branch => ({
+            id: branch.name,
+            label: branch.name,
+            current: branch.current,
+            icon: GitBranch,
+            run: () => {
+                if (branch.current) close()
+                else checkoutBranch(branch.name)
+            },
+        }))
+    })
 
     const workspaceItems = computed<PaletteItem[]>(() =>
         ws.names.map(name => ({
             id: name,
             label: name,
-            hint: name === ws.active ? 'Active' : undefined,
+            current: name === ws.active,
             icon: Layers,
             run: () => {
                 close()
@@ -706,7 +712,11 @@
                         v-for="(item, index) in section.items"
                         :key="item.id"
                         class="palette-item"
-                        :class="[{ active: section.offset + index === active }, item.accent ? `accent-${item.accent}` : '']"
+                        :class="[
+                            { active: section.offset + index === active, current: item.current },
+                            item.accent ? `accent-${item.accent}` : '',
+                        ]"
+                        :aria-current="item.current ? 'true' : undefined"
                         @mousemove="active = section.offset + index"
                         @click="item.run()">
                         <component
@@ -716,12 +726,12 @@
                             height="14" />
                         <span class="palette-label">{{ item.label }}</span>
                         <span
-                            v-if="item.badge || item.hint"
+                            v-if="item.current || item.hint"
                             class="palette-hint">
                             <span
-                                v-if="item.badge"
+                                v-if="item.current"
                                 class="palette-badge"
-                                >{{ item.badge }}</span
+                                >Active</span
                             >{{ item.hint }}
                         </span>
                     </button>

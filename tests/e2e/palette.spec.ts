@@ -78,6 +78,41 @@ test('outer search finds branches and checks out the picked one', async () => {
     expect(current).toBe('feature-palette')
 })
 
+test('palette marks the active repo, branch and workspace', async () => {
+    // Repo: the tab that is open carries the Active pill.
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-item', { hasText: 'Repo…' }).click()
+    const activeRepo = page.locator('.palette-item.current', { hasText: 'ops-repo' })
+    await expect(activeRepo.locator('.palette-badge')).toHaveText('Active')
+
+    // Branch: the checked-out branch is listed (it used to be filtered out), leads the list, and picking
+    // it only closes the palette instead of checking it out again.
+    await page.keyboard.press('Escape')
+    await page.locator('.palette-item', { hasText: 'Branch…' }).click()
+    const activeBranch = page.locator('.palette-item.current')
+    await expect(activeBranch).toHaveCount(1)
+    await expect(activeBranch).toContainText('feature-palette')
+    await expect(activeBranch.locator('.palette-badge')).toHaveText('Active')
+    await expect(page.locator('.palette-item').first()).toHaveClass(/current/)
+    await activeBranch.click()
+    await expect(page.locator('.palette')).toBeHidden()
+    const current = await page.evaluate(() =>
+        (window as unknown as { api: any }).api.branches().then((b: any) => b.local.find((x: any) => x.current)?.name)
+    )
+    expect(current).toBe('feature-palette')
+
+    // Workspace: the one in use shows the same pill, not a muted hint.
+    await page.keyboard.press('Control+p')
+    await page.locator('.palette-item', { hasText: 'Workspace…' }).click()
+    const activeWorkspace = page.locator('.palette-item.current')
+    await expect(activeWorkspace).toHaveCount(1)
+    await expect(activeWorkspace).toContainText('Main')
+    await expect(activeWorkspace.locator('.palette-badge')).toHaveText('Active')
+    await page.keyboard.press('Escape')
+    await page.keyboard.press('Escape')
+    await expect(page.locator('.palette')).toBeHidden()
+})
+
 test('outer search finds workspaces and switches to the picked one', async () => {
     await page.keyboard.press('Control+p')
     await page.locator('.palette-input').fill('alt')
