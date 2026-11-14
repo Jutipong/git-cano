@@ -94,6 +94,8 @@ export const useRepoStore = defineStore('repo', () => {
     const switchingWorkspace = ref(false)
     /** Path of the repo whose status/commits are actually loaded — used to detect a mid-switch tab. */
     const loadedPath = ref<string | null>(null)
+    /** When the last successful full refresh() finished — lets the watcher skip its own late echo. */
+    let lastRefreshAt = 0
     const commitFiles = ref<CommitFile[]>([])
     const loadingCommitDetails = ref(false)
     /** True while a repo-switch-driven refresh is in flight — drives the small graph spinner (cache is painted underneath). */
@@ -304,6 +306,7 @@ export const useRepoStore = defineStore('repo', () => {
             if (needTags && tags) tagList.value = tags
             hasRemote.value = remote
             loadedPath.value = status.path
+            lastRefreshAt = Date.now()
             const index = tabs.value.findIndex(tab => tab.path === status.path)
             if (index >= 0) tabs.value[index].status = status
             // Remote tag lookup is network-bound; do not hold repository switching on it.
@@ -329,7 +332,8 @@ export const useRepoStore = defineStore('repo', () => {
 
     /**
      * Light refresh for frequent events (window focus): 1 git spawn instead of 4. Escalates to a full refresh only when the status actually
-     * changed. NOT used for repo-changed watcher events — those always mean real git activity, so they keep using the full refresh().
+     * changed. Repo-changed watcher events still keep the full refresh() — except inside the short window where App.vue recognises the
+     * event as the late echo of our own action and calls this as a cheap verification instead (see debouncedRefresh).
      */
     async function refreshStatusOnly() {
         if (useUiTransientStore().busy || switchingWorkspace.value) return
@@ -355,6 +359,29 @@ export const useRepoStore = defineStore('repo', () => {
     /** Cheap change detector — avoids a full refresh when focus found nothing new. */
     function statusSignature(s: RepoStatus): string {
         return `${s.branch}|${s.ahead}|${s.behind}|${s.files.map(f => `${f.path}${f.staged}${f.unstaged}`).join(',')}`
+    }
+
+    /** Milliseconds since the last successful full refresh() — used to recognise the watcher's echo of our own action. */
+    function refreshAge(): number {
+        return Date.now() - lastRefreshAt
+    }
+
+    /**
+     * Status-only refresh for actions that touch the index/worktree only (stage, unstage, discard, mark-resolved): the log, branches and
+     * remote existence cannot change, so this skips those spawns. Unlike refreshStatusOnly() it runs INSIDE withBusy() and therefore must not
+     * check the busy flag — and it never escalates, because the caller already knows exactly what changed.
+     */
+    async function refreshIndexStatus(): Promise<void> {
+        if (switchingWorkspace.value) return
+        const tab = tabs.value[activeTab.value]
+        if (!tab || loadedPath.value !== tab.path) return
+        try {
+            const [status, state] = await Promise.all([window.api.status(), window.api.repoState()])
+            if (tabs.value[activeTab.value]?.path !== status.path) return
+            const index = tabs.value.findIndex(t => t.path === status.path)
+            if (index >= 0) tabs.value[index].status = status
+            repoState.value = state
+        } catch {}
     }
 
     async function selectTab(index: number, precomputedStatus?: RepoStatus) {
@@ -684,6 +711,8 @@ export const useRepoStore = defineStore('repo', () => {
         refresh,
         refreshWithTags,
         refreshStatusOnly,
+        refreshAge,
+        refreshIndexStatus,
         selectTab,
         setActive,
         reorderTabs,

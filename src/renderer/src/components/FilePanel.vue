@@ -42,6 +42,8 @@
         files: FileEntry[] | CommitFile[]
         selected: { path: string; staged: boolean } | null
         refresh: () => Promise<unknown>
+        /** Status-only refresh for index/worktree actions (stage, unstage, discard) — see repoStore.refreshIndexStatus. */
+        refreshStatus?: () => Promise<unknown>
         mode?: 'workdir' | 'commit' | 'stash'
         loading?: boolean
         commitHash?: string
@@ -176,11 +178,11 @@
     const conflictedFiles = computed(() => (isWorkdir.value ? (props.files as FileEntry[]).filter(isConflicted) : []))
 
     function markResolved(file: FileEntry) {
-        void run(() => window.api.markResolved([file.path]), `${file.path}: resolved`)
+        void runIndex(() => window.api.markResolved([file.path]), `${file.path}: resolved`)
     }
     function markAllResolved() {
         const count = conflictedFiles.value.length
-        void run(() => window.api.markResolved(conflictedFiles.value.map(file => file.path)), `Marked ${count} files resolved`)
+        void runIndex(() => window.api.markResolved(conflictedFiles.value.map(file => file.path)), `Marked ${count} files resolved`)
     }
     function continueMerge() {
         void run(() => window.api.continueMerge(), 'Merge completed', 'Completing merge…')
@@ -400,13 +402,14 @@
     const commitRows = computed(() => makeRows(commitFileList.value, 'commit'))
     const allRows = computed(() => makeRows<FileEntry | CommitFile>(allFiles.value, 'all'))
 
-    async function run(fn: () => Promise<unknown>, ok: string | null, busyLabel = 'Working…'): Promise<boolean> {
+    async function run(fn: () => Promise<unknown>, ok: string | null, busyLabel = 'Working…', light = false): Promise<boolean> {
         if (pending.value) return false
         pending.value = true
         try {
             await uiTransient.withBusy(async () => {
                 await fn()
-                await props.refresh()
+                if (light && props.refreshStatus) await props.refreshStatus()
+                else await props.refresh()
                 await loadAllFiles()
             }, busyLabel)
             if (ok) notify(ok, 'success')
@@ -417,6 +420,11 @@
         } finally {
             pending.value = false
         }
+    }
+
+    /** Index/worktree-only action — a status refresh is enough, so no log/branch/remote spawns follow. */
+    function runIndex(fn: () => Promise<unknown>, ok: string | null, busyLabel = 'Working…'): Promise<boolean> {
+        return run(fn, ok, busyLabel, true)
     }
 
     async function doCommit(push = false) {
@@ -582,10 +590,10 @@
         U: 'Conflict',
     }
     function unstage(file: FileEntry) {
-        void run(() => window.api.unstage([file.path]), null)
+        void runIndex(() => window.api.unstage([file.path]), null)
     }
     function stage(file: FileEntry) {
-        void run(() => window.api.stage([file.path]), null)
+        void runIndex(() => window.api.stage([file.path]), null)
     }
     function filesInDirectory(path: string, files: FileEntry[]) {
         const prefix = `${path}/`
@@ -594,18 +602,18 @@
     function stageDirectory(path: string) {
         const files = filesInDirectory(path, [...unstaged.value, ...untracked.value])
         if (files.length === 0) return
-        void run(() => window.api.stage(files.map(file => file.path)), null)
+        void runIndex(() => window.api.stage(files.map(file => file.path)), null)
     }
     function unstageAll() {
-        void run(() => window.api.unstageAll(), null)
+        void runIndex(() => window.api.unstageAll(), null)
     }
     function unstageDirectory(path: string) {
         const files = filesInDirectory(path, staged.value)
         if (files.length === 0) return
-        void run(() => window.api.unstage(files.map(file => file.path)), null)
+        void runIndex(() => window.api.unstage(files.map(file => file.path)), null)
     }
     function stageAll() {
-        void run(() => window.api.stageAll(), null)
+        void runIndex(() => window.api.stageAll(), null)
     }
     async function discard(file: FileEntry) {
         const untrackedFile = isUntracked(file)
@@ -618,7 +626,7 @@
             danger: true,
         })
         if (!ok) return
-        void run(() => window.api.discardFile(file.path), untrackedFile ? 'File deleted' : 'Changes discarded')
+        void runIndex(() => window.api.discardFile(file.path), untrackedFile ? 'File deleted' : 'Changes discarded')
     }
     async function discardDirectory(path: string) {
         const files = filesInDirectory(path, [...unstaged.value, ...untracked.value])
@@ -630,7 +638,7 @@
             danger: true,
         })
         if (!ok) return
-        void run(
+        void runIndex(
             () => files.reduce((previous, file) => previous.then(() => window.api.discardFile(file.path)), Promise.resolve()),
             'Folder changes discarded'
         )
@@ -643,7 +651,7 @@
             danger: true,
         })
         if (!ok) return
-        void run(() => window.api.discardUnstaged(), 'Unstaged changes discarded')
+        void runIndex(() => window.api.discardUnstaged(), 'Unstaged changes discarded')
     }
 
     function badgeClass(badge: string) {

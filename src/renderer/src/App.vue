@@ -312,12 +312,21 @@
         )
     }
 
+    /**
+     * main debounces watcher events by 300ms and this handler by another 400ms, so the echo of our own
+     * git action lands ~700ms after that action already refreshed everything. Inside this window, verify
+     * with a single status spawn instead of repeating log + branches + remote; a real external change
+     * still escalates to a full refresh inside refreshStatusOnly().
+     */
+    const WATCHER_REFRESH_DEDUPE_MS = 1000
+
     function debouncedRefresh() {
         if (!repoStore.repo) return
         if (refreshTimer) clearTimeout(refreshTimer)
         refreshTimer = setTimeout(() => {
             refreshTimer = null
-            void repoStore.refresh()
+            if (repoStore.refreshAge() < WATCHER_REFRESH_DEDUPE_MS) void repoStore.refreshStatusOnly()
+            else void repoStore.refresh()
         }, 400)
     }
 
@@ -1305,6 +1314,7 @@
                                 :commit-author="selectedStash ? '' : repoStore.commitAuthor"
                                 :commit-date="selectedStash ? selectedStash.date : repoStore.commitDate"
                                 :refresh="repoStore.refresh"
+                                :refresh-status="repoStore.refreshIndexStatus"
                                 @select="selectFilePanel"
                                 @show-history="historyFile = $event"
                                 @show-blame="blameFile = $event"

@@ -46,5 +46,14 @@ Terminal preferences (`ui.terminalShell`, `ui.terminalFontSize`, `ui.terminalFon
 - Workspace switches close only repositories that are not present in the destination workspace,
   open target repositories concurrently, and pass the already-computed active-repo status into
   `selectTab()` to avoid a duplicate `git status`.
+- Index/worktree-only actions (`markResolved`, stage/unstage, discard) go through
+  `refreshIndexStatus()` — status + repo state only, never the log/branch/remote spawns, because
+  none of those can change without a ref update. It runs inside `withBusy()` and deliberately has
+  no busy guard and no escalation (unlike `refreshStatusOnly()`); anything that touches HEAD, refs
+  or tags must keep the full `refresh()`.
+- The repo-changed watcher echo is deduped by time: `refresh()` records `lastRefreshAt`, and
+  `App.vue`'s `debouncedRefresh()` calls `refreshStatusOnly()` instead of a second full refresh
+  when `refreshAge()` is under the dedupe window. Do not drop that verification step — it is what
+  escalates a genuine external change that happens to land inside the window.
 - Keep the local loading indicators honest: local tags and remote tag status have separate loading
   states, and local tags should remain visible while remote status is loading.

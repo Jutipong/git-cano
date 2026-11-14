@@ -264,7 +264,13 @@
         if (n === 0) return
         const atTop = indexAtOffset(prefix, el.scrollTop)
         const atBottom = indexAtOffset(prefix, el.scrollTop + el.clientHeight)
-        visibleRange.value = [Math.max(0, atTop - 15), Math.min(n, atBottom + 1 + 15)]
+        const next: [number, number] = [Math.max(0, atTop - 15), Math.min(n, atBottom + 1 + 15)]
+        // Scroll events fire continuously inside a single row. A fresh array here would invalidate
+        // renderedCommits/graphWindow/renderEdges and re-render every visible row for a range that
+        // did not actually change — only assign when a row boundary was crossed.
+        const current = visibleRange.value
+        if (current[0] === next[0] && current[1] === next[1]) return
+        visibleRange.value = next
     }
     function onScroll() {
         hideTip()
