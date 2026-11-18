@@ -817,30 +817,12 @@
                 const start = plan.prefix[s] ?? 0
                 const rows = Math.max(segment.dels.length, segment.adds.length)
                 for (let p = 0; p < rows; p++) {
-                    const leftOffset = p - segment.leftPad
-                    const rightOffset = p - segment.rightPad
                     const y = (start + p) * barH
                     if (focused !== 'right') {
-                        drawMinimapBar(
-                            ctx,
-                            pad,
-                            y,
-                            sideW,
-                            barH,
-                            colors,
-                            leftOffset >= 0 ? kindOf(segment.dels[leftOffset]?.type) : undefined
-                        )
+                        drawMinimapBar(ctx, pad, y, sideW, barH, colors, kindOf(segment.dels[p]?.type))
                     }
                     if (focused !== 'left') {
-                        drawMinimapBar(
-                            ctx,
-                            focused ? pad : pad + halfW + 2,
-                            y,
-                            sideW,
-                            barH,
-                            colors,
-                            rightOffset >= 0 ? kindOf(segment.adds[rightOffset]?.type) : undefined
-                        )
+                        drawMinimapBar(ctx, focused ? pad : pad + halfW + 2, y, sideW, barH, colors, kindOf(segment.adds[p]?.type))
                     }
                 }
             }

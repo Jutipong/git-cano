@@ -29,8 +29,6 @@ export interface SplitChangeSegment {
     kind: 'change'
     dels: DiffLine[]
     adds: DiffLine[]
-    leftPad: number
-    rightPad: number
     /** Change number carried by the first row, or undefined when this run continues the previous change region. */
     change?: number
     /** Source line index of the first del / first add (-1 when the side is empty). */
@@ -104,12 +102,13 @@ export function buildSplitPlan(source: DiffLine[]): SplitPlan {
         // Consecutive del/add runs share the previous change number unless a context/hunk row reset the
         // run (mirrors the old inline loop, which only numbered the first row of a fresh change region).
         const changeNo = inChange ? undefined : change++
+        // Uneven blocks pair from the top (dels[k] next to adds[k]) and the leftover rows of the longer
+        // side sit at the bottom against an empty cell. Padding the top instead pushed every addition of a
+        // whole-file rewrite (a single hunk, no context rows) below the fold, leaving the right pane blank.
         segments.push({
             kind: 'change',
             dels,
             adds,
-            leftPad: Math.max(0, adds.length - dels.length),
-            rightPad: Math.max(0, dels.length - adds.length),
             change: changeNo,
             delStart,
             addStart,
@@ -124,8 +123,8 @@ export function buildSplitPlan(source: DiffLine[]): SplitPlan {
         const start = prefix[s]!
         if (segment.kind === 'change') {
             if (segment.change !== undefined) changeRows.push(start)
-            for (let k = 0; k < segment.dels.length; k++) lineRows[segment.delStart + k] = start + segment.leftPad + k
-            for (let k = 0; k < segment.adds.length; k++) lineRows[segment.addStart + k] = start + segment.rightPad + k
+            for (let k = 0; k < segment.dels.length; k++) lineRows[segment.delStart + k] = start + k
+            for (let k = 0; k < segment.adds.length; k++) lineRows[segment.addStart + k] = start + k
         } else if (segment.kind === 'ctx') {
             for (let k = 0; k < segment.lines.length; k++) lineRows[segment.lineStart + k] = start + k
         }
@@ -144,15 +143,13 @@ export function splitRowAt(plan: SplitPlan, index: number): SideBySideRow {
         if (!line) return {}
         return { left: line, right: line, leftIndex: segment.lineStart + offset, rightIndex: segment.lineStart + offset }
     }
-    const leftOffset = offset - segment.leftPad
-    const rightOffset = offset - segment.rightPad
-    const left = leftOffset >= 0 ? segment.dels[leftOffset] : undefined
-    const right = rightOffset >= 0 ? segment.adds[rightOffset] : undefined
+    const left = segment.dels[offset]
+    const right = segment.adds[offset]
     return {
         left,
         right,
         change: offset === 0 ? segment.change : undefined,
-        leftIndex: left ? segment.delStart + leftOffset : undefined,
-        rightIndex: right ? segment.addStart + rightOffset : undefined,
+        leftIndex: left ? segment.delStart + offset : undefined,
+        rightIndex: right ? segment.addStart + offset : undefined,
     }
 }

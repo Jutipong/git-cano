@@ -44,13 +44,11 @@ function referenceRows(lines: DiffLine[]): { left?: DiffLine; right?: DiffLine; 
         while (i < lines.length && lines[i]!.type === 'del') dels.push(lines[i++]!)
         const adds: DiffLine[] = []
         while (i < lines.length && lines[i]!.type === 'add') adds.push(lines[i++]!)
-        const leftPad = Math.max(0, adds.length - dels.length)
-        const rightPad = Math.max(0, dels.length - adds.length)
         const at = (arr: DiffLine[], index: number): DiffLine | undefined => (index >= 0 && index < arr.length ? arr[index] : undefined)
         for (let p = 0; p < Math.max(dels.length, adds.length); p++) {
             const row: { left?: DiffLine; right?: DiffLine; change?: number } = {
-                left: at(dels, p - leftPad),
-                right: at(adds, p - rightPad),
+                left: at(dels, p),
+                right: at(adds, p),
             }
             if (!inChange) {
                 row.change = change++
@@ -125,10 +123,10 @@ describe('split plan parity', () => {
         ]
         const plan = buildSplitPlan(lines)
         expect(plan.totalRows).toBe(2)
-        // The shorter side is padded at the top of the block (adds longer than dels).
-        expect(splitRowAt(plan, 0)).toMatchObject({ left: undefined, right: lines[1], change: 0 })
-        expect(splitRowAt(plan, 1)).toMatchObject({ left: lines[0], right: lines[2], change: undefined })
-        expect(plan.lineRows[0]).toBe(1)
+        // Rows pair from the top, so the extra addition sits below the paired row with an empty left cell.
+        expect(splitRowAt(plan, 0)).toMatchObject({ left: lines[0], right: lines[1], change: 0 })
+        expect(splitRowAt(plan, 1)).toMatchObject({ left: undefined, right: lines[2], change: undefined })
+        expect(plan.lineRows[0]).toBe(0)
         expect(plan.lineRows[1]).toBe(0)
         expect(plan.lineRows[2]).toBe(1)
     })
