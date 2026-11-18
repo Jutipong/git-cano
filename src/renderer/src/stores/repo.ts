@@ -368,8 +368,8 @@ export const useRepoStore = defineStore('repo', () => {
 
     /**
      * Status-only refresh for actions that touch the index/worktree only (stage, unstage, discard, mark-resolved): the log, branches and
-     * remote existence cannot change, so this skips those spawns. Unlike refreshStatusOnly() it runs INSIDE withBusy() and therefore must not
-     * check the busy flag — and it never escalates, because the caller already knows exactly what changed.
+     * remote existence cannot change, so this skips those spawns. Unlike refreshStatusOnly() it runs INSIDE withBusy() and therefore must
+     * not check the busy flag — and it never escalates, because the caller already knows exactly what changed.
      */
     async function refreshIndexStatus(): Promise<void> {
         if (switchingWorkspace.value) return

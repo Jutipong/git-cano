@@ -6,13 +6,13 @@ import { fileURLToPath } from 'node:url'
 /**
  * Makes sure the Electron binary exists before anything launches or packages it.
  *
- * Electron 45 ships no install script of its own (the `install-electron` bin plus the lazy download in `electron/index.js` replaced
- * it), and pnpm only runs this repo's `postinstall` on a real `install` — never on `pnpm up` / `pnpm add`. So a version bump leaves
- * the package folder without `dist/` and `path.txt`, and `dev` / e2e / `dist:*` would otherwise download ~100 MB in the middle of
- * their own run. Every script that needs the binary calls this first; it is a silent no-op once both files are in place.
+ * Electron 45 ships no install script of its own (the `install-electron` bin plus the lazy download in `electron/index.js` replaced it),
+ * and pnpm only runs this repo's `postinstall` on a real `install` — never on `pnpm up` / `pnpm add`. So a version bump leaves the package
+ * folder without `dist/` and `path.txt`, and `dev` / e2e / `dist:*` would otherwise download ~100 MB in the middle of their own run. Every
+ * script that needs the binary calls this first; it is a silent no-op once both files are in place.
  *
- * `path.txt` holds the executable path relative to `dist/` and is written by install.js for the current platform — never hard-code
- * the macOS value, or Windows sees a foreign path and install.js re-downloads the whole build.
+ * `path.txt` holds the executable path relative to `dist/` and is written by install.js for the current platform — never hard-code the
+ * macOS value, or Windows sees a foreign path and install.js re-downloads the whole build.
  */
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const electronDir = join(root, 'node_modules', 'electron')

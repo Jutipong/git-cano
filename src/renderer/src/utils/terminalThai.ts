@@ -1,17 +1,15 @@
 /**
- * Thai cell joins for xterm's DOM renderer. Pure string logic, so it stays unit-testable (see `tests/unit/terminalThai.test.ts`);
- * the caller is `registerCharacterJoiner()` in `TerminalView.vue`.
+ * Thai cell joins for xterm's DOM renderer. Pure string logic, so it stays unit-testable (see `tests/unit/terminalThai.test.ts`); the
+ * caller is `registerCharacterJoiner()` in `TerminalView.vue`.
  *
- * SARA AM (U+0E33) is the one Thai character xterm reserves a cell for: the tone marks and the above/below vowels are zero width,
- * so xterm folds them into the consonant's own cell, while SARA AM measures one column and lands in a cell of its own. A cell of
- * its own means the mark is shaped alone, and the macOS Thai faces (Thonburi — the macOS default stack — plus Krungthep, Sathu,
- * Silom, Sukhumvit Set) draw a lone SARA AM as a dotted-circle cluster one column to the right of its consonant, i.e. the
- * "floating" marks. Consolas + Leelawadee UI on Windows hide this because the Windows face draws a lone SARA AM as a full-width
- * glyph, but the cell split happens on every platform.
+ * SARA AM (U+0E33) is the one Thai character xterm reserves a cell for: the tone marks and the above/below vowels are zero width, so xterm
+ * folds them into the consonant's own cell, while SARA AM measures one column and lands in a cell of its own. A cell of its own means the
+ * mark is shaped alone, and the macOS Thai faces (Thonburi — the macOS default stack — plus Krungthep, Sathu, Silom, Sukhumvit Set) draw a
+ * lone SARA AM as a dotted-circle cluster one column to the right of its consonant, i.e. the "floating" marks. Consolas + Leelawadee UI on
+ * Windows hide this because the Windows face draws a lone SARA AM as a full-width glyph, but the cell split happens on every platform.
  *
- * Joining the cluster's cells back into one render unit lets the browser shape `จำ` as one run. The grid keeps both columns, so
- * the shell's wcwidth (SARA AM = 1) and the terminal still agree — unlike a zero-width SARA AM, which would leave every cursor
- * move one column off.
+ * Joining the cluster's cells back into one render unit lets the browser shape `จำ` as one run. The grid keeps both columns, so the shell's
+ * wcwidth (SARA AM = 1) and the terminal still agree — unlike a zero-width SARA AM, which would leave every cursor move one column off.
  */
 
 const SARA_AM = 0x0e33
@@ -22,8 +20,8 @@ function isThaiMark(cp: number): boolean {
 }
 
 /**
- * Cell ranges (`[start, end)` in the row's string) a character joiner has to merge: each SARA AM together with the consonant
- * cluster it belongs to. A lone SARA AM (after a space, or at the start of the line) and non-Thai text yield nothing.
+ * Cell ranges (`[start, end)` in the row's string) a character joiner has to merge: each SARA AM together with the consonant cluster it
+ * belongs to. A lone SARA AM (after a space, or at the start of the line) and non-Thai text yield nothing.
  */
 export function thaiClusterJoins(text: string): [number, number][] {
     const ranges: [number, number][] = []
