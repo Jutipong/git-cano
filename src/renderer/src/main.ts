@@ -1,8 +1,9 @@
 import { createPinia } from 'pinia'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import { createPersistedState } from 'pinia-plugin-persistedstate'
 import { createApp } from 'vue'
 
 import App from './App.vue'
+import { persistStorage } from './utils/persistStorage'
 
 import './styles.css'
 import './modern-ui.css'
@@ -27,5 +28,5 @@ const app = createApp(App)
 app.config.errorHandler = err => {
     reportError(err instanceof Error ? (err.stack ?? err.message) : String(err))
 }
-app.use(createPinia().use(piniaPluginPersistedstate))
+app.use(createPinia().use(createPersistedState({ storage: persistStorage })))
 app.mount('#root')

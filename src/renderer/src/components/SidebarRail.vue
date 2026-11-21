@@ -5,7 +5,7 @@
     import ILucideSettings from '~icons/lucide/settings'
     import ILucideTag from '~icons/lucide/tag'
 
-    import canoIcon from '../assets/cano.svg'
+    import canoIcon from '../assets/cano.png'
     import { useRepoStore } from '../stores/repo'
 
     import type { SidebarSectionKey } from '../stores/ui'

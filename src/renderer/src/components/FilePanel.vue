@@ -29,6 +29,7 @@
     import { buildTree, flattenTree, type TreeRow } from '../utils/fileTree'
     import { formatDatePattern } from '../utils/format'
     import { handleListKeydown } from '../utils/listKeyboard'
+    import { beginPersistenceBurst, endPersistenceBurst } from '../utils/persistStorage'
     import { isConflicted } from '../utils/status'
     import { notifyUndoable } from '../utils/undo'
     import CloseXIcon from './CloseXIcon.vue'
@@ -538,6 +539,7 @@
 
     function startResizeBox(event: MouseEvent) {
         event.preventDefault()
+        beginPersistenceBurst()
         const startY = event.clientY
         const startH = ui.summaryHeight
         const onMove = (moveEvent: MouseEvent) => {
@@ -548,6 +550,7 @@
             document.body.style.userSelect = ''
             window.removeEventListener('mousemove', onMove)
             window.removeEventListener('mouseup', onEnd)
+            endPersistenceBurst()
         }
         document.body.style.cursor = 'row-resize'
         document.body.style.userSelect = 'none'

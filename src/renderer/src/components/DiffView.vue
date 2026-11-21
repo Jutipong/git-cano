@@ -712,19 +712,28 @@
         ranges: [number, number][]
     }
 
+    /**
+     * Lowercase content per diff line, rebuilt once per diff load. Search re-scans every line on each keystroke, and lowercasing a 20k-line
+     * whole-file view on every keystroke was the expensive half of find-in-diff.
+     */
+    const searchableLines = computed(() =>
+        lines.value.map(line => (line.type === 'hunk' || line.type === 'meta' ? '' : line.text.slice(1).toLowerCase()))
+    )
+
     const searchHits = computed<SearchHit[]>(() => {
         const query = searchQuery.value.trim()
         const hits: SearchHit[] = []
         if (!query || meta.value?.binary || meta.value?.image) return hits
         const lower = query.toLowerCase()
+        const searchable = searchableLines.value
         for (let index = 0; index < lines.value.length; index++) {
             const line = lines.value[index]!
             if (line.type === 'hunk' || line.type === 'meta') continue
-            const content = line.text.slice(1)
+            const content = searchable[index]!
             const ranges: [number, number][] = []
             let from = 0
             while (from < content.length) {
-                const i = content.toLowerCase().indexOf(lower, from)
+                const i = content.indexOf(lower, from)
                 if (i === -1) break
                 ranges.push([i, i + query.length])
                 from = i + query.length

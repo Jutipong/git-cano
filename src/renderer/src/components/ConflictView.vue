@@ -14,6 +14,7 @@
     import { useUiStore } from '../stores/ui'
     import { useUiTransientStore, type ToastKind } from '../stores/uiTransient'
     import { confirmDialog } from '../utils/confirm'
+    import { beginPersistenceBurst, endPersistenceBurst } from '../utils/persistStorage'
     import {
         allSidesPicked,
         annotateConflictMatches,
@@ -525,6 +526,7 @@
 
     function startOutputResize(event: MouseEvent) {
         event.preventDefault()
+        beginPersistenceBurst()
         const startY = event.clientY
         const startPct = ui.conflictOutputHeight
         const containerH = conflictMainEl.value?.clientHeight ?? 1
@@ -536,6 +538,7 @@
             document.body.style.userSelect = ''
             window.removeEventListener('mousemove', onMove)
             window.removeEventListener('mouseup', onEnd)
+            endPersistenceBurst()
         }
         document.body.style.cursor = 'row-resize'
         document.body.style.userSelect = 'none'

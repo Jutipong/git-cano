@@ -56,3 +56,18 @@ app-level UI rules live in `src/renderer/AGENTS.md`.
   escalates a genuine external change that happens to land inside the window.
 - Keep the local loading indicators honest: local tags and remote tag status have separate loading
   states, and local tags should remain visible while remote status is loading.
+
+## Renderer performance invariants
+
+- Heavy overlays (`DiffView` + the syntax tokenizer, `FilePreviewModal` → marked/DOMPurify,
+  `ToolsModal`, `CommandPalette`, the blame/history/reflog/rebase modals) are `defineAsyncComponent`
+  chunks in `App.vue` and are prefetched through `requestIdleCallback` after boot. Keep the boot
+  bundle free of them — a static import puts them back in the 600 KB+ main chunk.
+- Persisted splitters (sidebar section handles, `summaryHeight`, `conflictOutputHeight`, panel widths)
+  wrap their mousemove gesture in `beginPersistenceBurst()` / `endPersistenceBurst()`
+  (`utils/persistStorage.ts`): the persistedstate plugin writes the whole picked state per mutation,
+  so a drag would otherwise hit localStorage every frame. Outside a burst writes stay write-through —
+  never reintroduce a timed debounce, it can clobber an external localStorage edit on reload.
+- `GraphView` keeps a per-commit lowercase search haystack (`searchHaystack`) and `DiffView` keeps
+  `searchableLines` per diff; do not go back to building/lowercasing those strings inside the filter
+  on every keystroke.

@@ -63,6 +63,9 @@ into every command fed a name from the UI:
   and untracked files are the reason it exists.
 - `logCache` / `branchCache` are MRU-bounded to 6 repos (`cacheLog`, `listBranches`) and survive `closeRepo` only within
   that bound; `getCachedLog` touches the entry. Keep new per-repo caches bounded the same way.
+- `hasRemoteCache` answers the per-refresh `remote:has` question without a `git remote` spawn. It is
+  invalidated when the repo watcher sees `.git/config`, when `addRemote`/`setRemoteUrl` run, and on
+  `closeRepo` (reopen re-checks). Any new remote mutation must invalidate it too.
 - Image IPC (`getImageVersion` / `getCommitImageVersion` / `getStashImageVersion`) returns `GitImage` raw bytes, never a
   base64 data URL; the renderer wraps them in blob URLs. Base64 here kept a ~1.37x string per image side on both ends.
 - `getChangesContext()` caps each prompt section (`capContextSection`, 20k chars) before joining — the prompt is

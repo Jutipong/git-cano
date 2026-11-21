@@ -44,6 +44,11 @@ import type { FSWatcher } from 'node:fs'
 const repoInstances = new Map<string, SimpleGit>()
 let activeRepoPath: string | null = null
 /**
+ * `localeCompare` builds a collator per call; status sorts can hold tens of thousands of untracked paths, so share one instance. Default
+ * locale/options keep the exact ordering `a.localeCompare(b)` produced.
+ */
+const pathCollator = new Intl.Collator()
+/**
  * Last computed log per repo path — lets the renderer paint instantly (stale-while-revalidate) when switching back. Bounded to the most
  * recently used repos so a long session with many tabs can't grow it forever.
  */
@@ -52,6 +57,11 @@ const LOG_CACHE_MAX_REPOS = 6
 /** Last computed branch list per repo path — same stale-while-revalidate purpose as logCache (branches change slowly). */
 const branchCache = new Map<string, { local: BranchInfo[]; remote: BranchInfo[] }>()
 const BRANCH_CACHE_MAX_REPOS = 6
+/**
+ * Whether a repo has any remote — expensive to ask (`git remote` spawn) and only changes when `.git/config` does, which the repo watcher
+ * already sees. Invalidated on config writes and remote mutations, cleared when the repo closes so a reopen re-checks.
+ */
+const hasRemoteCache = new Map<string, boolean>()
 /** Original HEAD per repo path while an interactive rebase is paused, so completion can be journaled for Undo. */
 const interactiveRebases = new Map<string, string>()
 
@@ -282,6 +292,8 @@ export function closeRepo(dir?: string): void {
     // Drop its undo journal too — hashes from a previous life at the same path must not resurface.
     undoStacks.delete(target)
     interactiveRebases.delete(target)
+    // Remote existence is re-read on the next open instead of trusting a cache from before the close.
+    hasRemoteCache.delete(target)
     // Keep the log/branch cache for closed repos — it only costs a few hundred in-memory commits, is bounded
     // by the LRU caps above, and makes reopening (tab or workspace switch) paint instantly; selectTab always re-validates.
     unwatchRepo(target)
@@ -312,6 +324,8 @@ function watchRepo(dir: string): void {
             fs.watch(gitDir, (_event, filename) => {
                 const name = typeof filename === 'string' ? filename : ''
                 if (!name || name === 'index' || name.endsWith('.lock')) return
+                // Remotes live in `.git/config` — drop the cached answer so the next refresh re-reads it.
+                if (name === 'config') hasRemoteCache.delete(dir)
                 emit()
             })
         )
@@ -367,7 +381,7 @@ export async function getStatusFor(dir: string): Promise<RepoStatus> {
         unstaged: f.working_dir,
     }))
     const rank = (f: FileEntry) => (f.staged !== ' ' && f.staged !== '' ? 0 : f.unstaged === '?' ? 2 : 1)
-    files.sort((a, b) => rank(a) - rank(b) || a.path.localeCompare(b.path))
+    files.sort((a, b) => rank(a) - rank(b) || pathCollator.compare(a.path, b.path))
 
     const branch = status.current ?? 'HEAD (detached)'
     const ahead = status.ahead ?? 0
@@ -1510,9 +1524,13 @@ export async function pullBranch(name: string): Promise<string> {
 }
 
 export async function hasRemote(): Promise<boolean> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
+    const cached = hasRemoteCache.get(p)
+    if (cached !== undefined) return cached
     const remotes = await g.getRemotes()
-    return remotes.length > 0
+    const value = remotes.length > 0
+    hasRemoteCache.set(p, value)
+    return value
 }
 
 /** Branch (or short hash) being merged in — parsed from MERGE_MSG/MERGE_HEAD. */
@@ -2155,15 +2173,17 @@ export async function sshTestHost(): Promise<string> {
 }
 
 export async function addRemote(name: string, url: string): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
     if (!name.trim() || !url.trim()) throw new Error('Name and URL are required')
     await g.raw(['remote', 'add', name.trim(), url.trim()])
+    hasRemoteCache.delete(p)
 }
 
 export async function setRemoteUrl(name: string, url: string): Promise<void> {
-    const { git: g } = getRepo()
+    const { path: p, git: g } = getRepo()
     if (!url.trim()) throw new Error('URL is required')
     await g.raw(['remote', 'set-url', name, url.trim()])
+    hasRemoteCache.delete(p)
 }
 
 export async function testRemoteUrl(rawUrl: string): Promise<RemoteTestResult> {

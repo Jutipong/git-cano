@@ -16,7 +16,7 @@
     import ILucideTrash2 from '~icons/lucide/trash2'
     import ILucideZoomIn from '~icons/lucide/zoom-in'
 
-    import canoIcon from '../assets/cano.svg'
+    import canoIcon from '../assets/cano.png'
     import { useRepoStore } from '../stores/repo'
     import { SIDEBAR_SECTION_MIN_HEIGHT, useUiStore, type SidebarSectionKey } from '../stores/ui'
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from '../stores/uiTransient'
@@ -24,6 +24,7 @@
     import { resolveCheckoutMode } from '../utils/checkout'
     import { confirmDialog } from '../utils/confirm'
     import { handleListKeydown } from '../utils/listKeyboard'
+    import { beginPersistenceBurst, endPersistenceBurst } from '../utils/persistStorage'
     import { promptDialog } from '../utils/prompt'
     import CollapseAllButton from './CollapseAllButton.vue'
     import ContextMenuVue, { type MenuState } from './ContextMenu.vue'
@@ -213,6 +214,8 @@
         const section = sectionAbove(event.currentTarget)
         if (!section) return
         event.preventDefault()
+        // Every mousemove pins a persisted height — stream them into one storage write.
+        beginPersistenceBurst()
         const startY = event.clientY
         const startHeight = section.getBoundingClientRect().height
         const max = maxSectionHeight(section)
@@ -224,6 +227,7 @@
             document.body.style.userSelect = ''
             window.removeEventListener('mousemove', onMove)
             window.removeEventListener('mouseup', onEnd)
+            endPersistenceBurst()
         }
         document.body.style.cursor = 'row-resize'
         document.body.style.userSelect = 'none'

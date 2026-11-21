@@ -178,13 +178,23 @@
     onBeforeUnmount(() => window.clearTimeout(tipTimer))
 
     const normalizedQuery = computed(() => uiTransient.searchQuery.trim().toLowerCase())
-    const visibleCommits = computed(() =>
-        normalizedQuery.value
-            ? props.commits.filter(commit =>
-                  `${commit.subject} ${commit.author} ${commit.hash} ${commit.refs.join(' ')}`.toLowerCase().includes(normalizedQuery.value)
-              )
-            : props.commits
+    /**
+     * Lowercase search haystack per commit, rebuilt only when the log array is replaced. The filter used to build these strings (and
+     * lowercase them) for every commit on every keystroke, which is the expensive half of live search on multi-thousand-commit logs.
+     */
+    const searchHaystack = computed(() =>
+        props.commits.map(commit => `${commit.subject} ${commit.author} ${commit.hash} ${commit.refs.join(' ')}`.toLowerCase())
     )
+    const visibleCommits = computed(() => {
+        const query = normalizedQuery.value
+        if (!query) return props.commits
+        const haystack = searchHaystack.value
+        const matches: CommitNode[] = []
+        for (let index = 0; index < props.commits.length; index++) {
+            if (haystack[index]!.includes(query)) matches.push(props.commits[index]!)
+        }
+        return matches
+    })
     const GRAPH_MIN_W = 80
     const graphW = computed(
         () => Math.max((visibleCommits.value.reduce((max, c) => Math.max(max, c.lane), 0) + 1) * laneW + 4, GRAPH_MIN_W) + GRAPH_PAD

@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import { errorMessage } from '@shared/errors'
     import { storeToRefs } from 'pinia'
-    import { computed, nextTick, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
+    import { computed, defineAsyncComponent, nextTick, onBeforeUnmount, onMounted, onUnmounted, provide, ref, watch } from 'vue'
     import ILucideArchive from '~icons/lucide/archive'
     import ILucideArrowDown from '~icons/lucide/arrow-down'
     import ILucideArrowDownToLine from '~icons/lucide/arrow-down-to-line'
@@ -10,35 +10,24 @@
     import ILucideChevronRight from '~icons/lucide/chevron-right'
     import ILucideUndo2 from '~icons/lucide/undo-2'
 
-    import canoIcon from './assets/cano.svg'
-    import BlameModal from './components/BlameModal.vue'
-    import ChangelogModal from './components/ChangelogModal.vue'
+    import canoIcon from './assets/cano.png'
     import CloneRepoModal from './components/CloneRepoModal.vue'
-    import CommandPalette from './components/CommandPalette.vue'
     import ConfirmDialog from './components/ConfirmDialog.vue'
-    import ConflictView from './components/ConflictView.vue'
-    import DiffView from './components/DiffView.vue'
     import ErrorDialog from './components/ErrorDialog.vue'
-    import FileHistoryModal from './components/FileHistoryModal.vue'
     import FilePanel from './components/FilePanel.vue'
-    import FilePreviewModal from './components/FilePreviewModal.vue'
     import GraphView from './components/GraphView.vue'
     import KittScanner from './components/KittScanner.vue'
     import OpenRepoMenu from './components/OpenRepoMenu.vue'
     import PromptDialog from './components/PromptDialog.vue'
-    import RebaseEditor from './components/RebaseEditor.vue'
-    import ReflogModal from './components/ReflogModal.vue'
     import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
     import SidebarRail from './components/SidebarRail.vue'
-    import SquashModal from './components/SquashModal.vue'
     import StashCreateModal from './components/StashCreateModal.vue'
     import SwitchDialog from './components/SwitchDialog.vue'
     import TabBar from './components/TabBar.vue'
     import TagCreateModal from './components/TagCreateModal.vue'
     import TerminalPanel from './components/TerminalPanel.vue'
     import ThinkSpinner from './components/ThinkSpinner.vue'
-    import ToolsModal from './components/ToolsModal.vue'
     import WorkspaceButton from './components/WorkspaceButton.vue'
     import { useAiStore } from './stores/ai'
     import { useAuthStore } from './stores/auth'
@@ -58,6 +47,7 @@
         SIDEBAR_MIN_WIDTH,
         computePanelWidths,
     } from './utils/panelLayout'
+    import { beginPersistenceBurst, endPersistenceBurst } from './utils/persistStorage'
     import { promptDialog } from './utils/prompt'
     import { eventToCombos, mainKeysOf } from './utils/shortcuts'
     import { SPLASH_MIN_MS } from './utils/splash'
@@ -65,6 +55,46 @@
     import { notifyUndoable } from './utils/undo'
 
     import type { CommitNode, RepoStatus } from '@shared/types'
+
+    /**
+     * Heavy overlays (diff rendering + the syntax tokenizer, markdown, the whole settings modal) are code-split so the boot bundle stays
+     * small. They are prefetched while the app is idle, so their first open is instant and behaviour is unchanged.
+     */
+    const loadDiffView = () => import('./components/DiffView.vue')
+    const loadConflictView = () => import('./components/ConflictView.vue')
+    const loadFilePreviewModal = () => import('./components/FilePreviewModal.vue')
+    const loadToolsModal = () => import('./components/ToolsModal.vue')
+    const loadCommandPalette = () => import('./components/CommandPalette.vue')
+    const loadBlameModal = () => import('./components/BlameModal.vue')
+    const loadFileHistoryModal = () => import('./components/FileHistoryModal.vue')
+    const loadReflogModal = () => import('./components/ReflogModal.vue')
+    const loadRebaseEditor = () => import('./components/RebaseEditor.vue')
+    const loadChangelogModal = () => import('./components/ChangelogModal.vue')
+    const loadSquashModal = () => import('./components/SquashModal.vue')
+    const DiffView = defineAsyncComponent(loadDiffView)
+    const ConflictView = defineAsyncComponent(loadConflictView)
+    const FilePreviewModal = defineAsyncComponent(loadFilePreviewModal)
+    const ToolsModal = defineAsyncComponent(loadToolsModal)
+    const CommandPalette = defineAsyncComponent(loadCommandPalette)
+    const BlameModal = defineAsyncComponent(loadBlameModal)
+    const FileHistoryModal = defineAsyncComponent(loadFileHistoryModal)
+    const ReflogModal = defineAsyncComponent(loadReflogModal)
+    const RebaseEditor = defineAsyncComponent(loadRebaseEditor)
+    const ChangelogModal = defineAsyncComponent(loadChangelogModal)
+    const SquashModal = defineAsyncComponent(loadSquashModal)
+    const overlayLoaders = [
+        loadDiffView,
+        loadConflictView,
+        loadFilePreviewModal,
+        loadToolsModal,
+        loadCommandPalette,
+        loadBlameModal,
+        loadFileHistoryModal,
+        loadReflogModal,
+        loadRebaseEditor,
+        loadChangelogModal,
+        loadSquashModal,
+    ]
 
     const repoStore = useRepoStore()
     const ui = useUiStore()
@@ -335,6 +365,13 @@
         void repoStore.init()
         void useAiStore().load()
         void auth.load()
+
+        // Warm the code-split overlays during idle time so their first open never shows a load gap.
+        const prefetchOverlays = () => {
+            for (const load of overlayLoaders) void load()
+        }
+        if ('requestIdleCallback' in window) window.requestIdleCallback(prefetchOverlays, { timeout: 4000 })
+        else setTimeout(prefetchOverlays, 1500)
 
         const unwatch = window.api.onRepoChanged(debouncedRefresh)
         onUnmounted(unwatch)
@@ -659,6 +696,8 @@
 
     function beginResize(side: 'left' | 'right', event: MouseEvent) {
         event.preventDefault()
+        // The drag mutates a persisted width on every mousemove — collapse them into one storage write.
+        beginPersistenceBurst()
         resizeRef.value = {
             side,
             startX: event.clientX,
@@ -678,6 +717,7 @@
             document.body.style.userSelect = ''
             window.removeEventListener('mousemove', onMove)
             window.removeEventListener('mouseup', onEnd)
+            endPersistenceBurst()
         }
         document.body.style.cursor = 'col-resize'
         document.body.style.userSelect = 'none'
