@@ -1448,8 +1448,8 @@ body {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 18%, transparent);
 }
 
-/* Live-shell count per repo (TerminalCountIcon.vue) on the tab's right edge — the graph button keeps
-   the app-wide total, this badge counts only the shells that belong to this repo's path. */
+/* Live-shell count per repo (TerminalCountIcon.vue) on the tab's right edge — the graph button repeats
+   the active repo's count; this badge always counts only the shells that belong to this repo's path. */
 .repo-tab .terminal-count-icon {
     flex: 0 0 auto;
     margin-right: 4px;
@@ -1540,6 +1540,44 @@ body {
     color: var(--text);
     background: var(--surface-hover);
     border-color: var(--line-soft);
+}
+
+.repo-tab-menu-separator {
+    height: 1px;
+    margin: 8px 4px;
+    background: var(--line-soft);
+}
+
+/* Per-repo "Kill all terminals" — only rendered while that tab owns live shells, so it sits apart
+   from the color controls with the same red treatment as the other destructive menu items. */
+.repo-tab-menu-action {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    text-align: left;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    cursor: pointer;
+}
+
+.repo-tab-menu-action:hover {
+    color: var(--text);
+    background: var(--surface-hover);
+    border-color: var(--line-soft);
+}
+
+.repo-tab-menu-action.danger {
+    color: var(--red);
+}
+
+.repo-tab-menu-action.danger:hover {
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+    border-color: color-mix(in srgb, var(--red) 30%, transparent);
 }
 
 .repo-tab-color-picker-row {

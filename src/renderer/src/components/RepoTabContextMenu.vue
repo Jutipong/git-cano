@@ -4,6 +4,7 @@
 
     import { REPO_TAB_COLOR_OPTIONS } from '../stores/ui'
     import { useMenuKeyboard } from '../utils/menuKeyboard'
+    import TerminalCountIcon from './TerminalCountIcon.vue'
 
     export interface RepoTabMenuState {
         x: number
@@ -11,12 +12,14 @@
         path: string
         name: string
         color: string | null
+        terminalCount: number
     }
 
     const props = defineProps<{ menu: RepoTabMenuState | null }>()
     const emit = defineEmits<{
         (e: 'close'): void
         (e: 'selectColor', color: string | null): void
+        (e: 'killTerminals', path: string): void
     }>()
     const root = ref<HTMLElement | null>(null)
 
@@ -43,12 +46,19 @@
         if (!props.menu) return {}
         return {
             left: `${Math.max(8, Math.min(props.menu.x, window.innerWidth - 228))}px`,
-            top: `${Math.max(8, Math.min(props.menu.y, window.innerHeight - 190))}px`,
+            top: `${Math.max(8, Math.min(props.menu.y, window.innerHeight - 240))}px`,
         }
     }
 
     function selectColor(color: string | null) {
         emit('selectColor', color)
+        emit('close')
+    }
+
+    function killTerminals() {
+        const path = props.menu?.path
+        if (!path) return
+        emit('killTerminals', path)
         emit('close')
     }
 
@@ -103,5 +113,16 @@
             @click="selectColor(null)">
             Clear color
         </button>
+        <template v-if="menu.terminalCount">
+            <div class="repo-tab-menu-separator" />
+            <button
+                type="button"
+                class="repo-tab-menu-action danger"
+                :title="`Kill every terminal of ${menu.name}`"
+                @click="killTerminals()">
+                <TerminalCountIcon :count="menu.terminalCount" />
+                Kill all terminals
+            </button>
+        </template>
     </div>
 </template>

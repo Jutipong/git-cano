@@ -35,6 +35,7 @@
         (e: 'reorder', from: number, to: number): void
         (e: 'create-stash'): void
         (e: 'clone'): void
+        (e: 'kill-terminals', path: string): void
     }>()
 
     const draggingPath = ref<string | null>(null)
@@ -121,6 +122,7 @@
             path: tab.path,
             name: tab.name,
             color: ui.repoTabColors[tab.path] ?? null,
+            terminalCount: terminalStore.terminalCount(tab.path),
         }
     }
 
@@ -203,7 +205,8 @@
         <RepoTabContextMenu
             :menu="tabMenu"
             @close="tabMenu = null"
-            @select-color="setTabColor" />
+            @select-color="setTabColor"
+            @kill-terminals="path => emit('kill-terminals', path)" />
         <div class="tab-sync-actions">
             <button
                 class="toolbar-action primary-action"

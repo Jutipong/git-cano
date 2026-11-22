@@ -325,14 +325,15 @@ Panel/modal component patterns. Loaded automatically when working under
   pills take an 8px button gap — `.terminal-actions .segmented` — instead of the wider diff
   toolbars' 3px, with no divider between groups; the hide button carries `.terminal-hide-btn`, a
   permanent green tint like the ✕'s permanent red). The panel header intentionally carries no shell
-  counter — the total lives on the graph toolbar only: `TerminalCountIcon.vue` (terminal icon +
+  counter — the count lives on the graph toolbar only: `TerminalCountIcon.vue` (terminal icon +
   `.terminal-count-badge` green number on its corner, 14px, `--surface-0` pill) inside
-  `.graph-terminal-btn`, showing `terminalStore.totalTerminals` — every live shell of every repo,
-  including ones left behind on another repo tab or workspace (badge hidden at zero). The same
+  `.graph-terminal-btn`, showing `terminalStore.terminalCount(terminalPath)` for the ACTIVE repo only
+  (badge hidden at zero). Shells left behind on another repo tab or workspace are not folded into
+  this number; they stay on their own tab badge. The same
   `TerminalCountIcon` sits on each repo tab (`.repo-tab-terminal`), counted per repo path through
   `terminalStore.terminalCount(tab.path)` and shown whenever that repo owns a shell — a hidden panel
-  keeps its badge. The graph button tooltip repeats the total, so a background shell stays visible
-  while the panel is hidden. The
+  keeps its badge. The graph button tooltip repeats the active repo's count, so a hidden panel stays
+  visible. The
   button itself stays neutral — no active/blink tint around the icon.
   Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
@@ -400,9 +401,12 @@ Panel/modal component patterns. Loaded automatically when working under
   xterm would otherwise map F4+Alt to `ESC[1;3S` and swallow the key, so this has to run before it.
   With focus anywhere else the combo is left untouched and Windows closes the window. The ✕ tooltip
   carries `(Alt+F4)` on Windows, and the Shortcuts modal lists it `win`-only.
-- **Kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of repos that
-  are not even on screen, so it has exactly one home: the `Terminal: kill all` palette item, behind
-  a confirm. Do not add a header button or a shortcut back.
+- **App-wide kill every terminal is palette-only — no panel button, no shortcut.** It ends shells of
+  repos that are not even on screen, so it has exactly one home: the `Terminal: kill all` palette
+  item, behind a confirm. Do not add a header button or a shortcut back. The **per-repo** kill-all
+  lives in the repo tab context menu (`RepoTabContextMenu.vue`, item only while that tab owns live
+  shells → `TabBar` → App's `confirmCloseTerminal`), sharing the panel ✕'s confirm and ending only
+  that repo's shells.
 
 ## Shared component patterns
 

@@ -599,10 +599,10 @@
     /** The toolbar button spawns the first shell, then just shows/hides — only ✕ ever kills. */
     const terminalPath = computed(() => repoStore.tabs[repoStore.activeTab]?.path ?? '')
     const terminalVisible = computed(() => terminalStore.panelVisible(terminalPath.value))
-    /** The toolbar badge totals every live shell of every repo, matching the panel header's count pill. */
-    const terminalTotal = computed(() => terminalStore.totalTerminals)
+    /** The toolbar badge counts only the active repo's live shells, like that repo tab's own badge. */
+    const terminalCount = computed(() => terminalStore.terminalCount(terminalPath.value))
     const terminalToggleTitle = computed(() => {
-        const count = terminalTotal.value ? ` — ${terminalTotal.value} open` : ''
+        const count = terminalCount.value ? ` — ${terminalCount.value} open` : ''
         if (terminalVisible.value) return `Hide terminal${count}`
         return terminalStore.terminalExists(terminalPath.value) ? `Show terminal${count}` : 'Open terminal'
     })
@@ -989,7 +989,7 @@
                     class="icon-btn graph-terminal-btn"
                     :title="terminalToggleTitle"
                     @click="emit('toggle-terminal')">
-                    <TerminalCountIcon :count="terminalTotal" />
+                    <TerminalCountIcon :count="terminalCount" />
                 </button>
                 <BranchChip
                     v-if="ui.sidebarMini && currentBranch"

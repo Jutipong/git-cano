@@ -119,22 +119,63 @@ test('the second repo owns its own panel and keeps its shell while the first is 
     const labels = await page.locator('.terminal-panel:visible .terminal-tab-label').allTextContents()
     expect(labels).toEqual(['cmd 1'])
 
-    // The graph toolbar badge totals every live shell across repos, not just this panel's tabs.
+    // The graph toolbar badge counts only the active repo's shells — the background repo's shell stays
+    // on that repo's own tab badge instead of inflating this number.
     const badge = page.locator('.graph-terminal-btn .terminal-count-badge')
-    await expect(badge).toHaveText('2')
+    const terminalBtn = page.locator('.graph-terminal-btn')
+    await expect(badge).toHaveText('1')
     await page.locator('.terminal-panel:visible .terminal-tab-add').click()
-    await expect(badge).toHaveText('3')
-    // The repo tab counts only this repo's shells, not the other repo's background one.
+    await expect(badge).toHaveText('2')
+    await expect(terminalBtn).toHaveAttribute('title', 'Hide terminal — 2 open')
+    // The repo tab counts the same shells, and adding/reordering never leaks the other repo's one.
     await expect(page.locator('.repo-tab.active .terminal-count-badge')).toHaveText('2')
     await page.locator('.terminal-panel:visible .terminal-tab.active .terminal-tab-close').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
-    await expect(badge).toHaveText('2')
+    await expect(badge).toHaveText('1')
     await expect(page.locator('.repo-tab.active .terminal-count-badge')).toHaveText('1')
 
     await page.locator('.repo-tab').nth(0).click()
     await expect(page.locator('.terminal-panel:visible .terminal-tab-label')).toHaveText('cmd 1')
     // The panel was on screen when the tab was clicked and the target panel is visible too, so the
     // returning repo's shell takes the keyboard without another click.
+    await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
+})
+
+test('the repo tab menu kills only that repo’s shells, and only while it owns one', async () => {
+    const firstTab = page.locator('.repo-tab').nth(0)
+    const secondTab = page.locator('.repo-tab').nth(1)
+    const firstTabName = await firstTab.locator('.repo-tab-name').innerText()
+    const kill = page.locator('.repo-tab-menu-action')
+    // Both repos own one shell here; right-clicking the background tab must not switch to it.
+    await secondTab.click({ button: 'right' })
+    await expect(kill).toBeVisible()
+    await expect(kill.locator('.terminal-count-badge')).toHaveText('1')
+    await expect(page.locator('.repo-tab.active .repo-tab-name')).toHaveText(firstTabName)
+
+    // Cancelling the shared confirm leaves both repos' shells running.
+    await kill.click()
+    await expect(page.locator('.confirm-dialog-header')).toContainText('Close terminal')
+    await page.locator('.confirm-dialog button', { hasText: 'Cancel' }).click()
+    await expect(page.locator('.confirm-dialog')).toHaveCount(0)
+    await expect(page.locator('.terminal-panel')).toHaveCount(2)
+
+    // The confirmed kill ends the ops repo's shell only: the main repo keeps its panel and badge.
+    await secondTab.click({ button: 'right' })
+    await kill.click()
+    await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(1)
+    await expect(firstTab.locator('.terminal-count-badge')).toHaveText('1')
+    await expect(secondTab.locator('.terminal-count-icon')).toHaveCount(0)
+    // A repo with no shell gets no kill item at all.
+    await secondTab.click({ button: 'right' })
+    await expect(kill).toHaveCount(0)
+    await page.keyboard.press('Escape')
+
+    // Put the ops shell back so the serial tests below keep both repos with a shell.
+    await secondTab.click()
+    await page.locator('.graph-terminal-btn').click()
+    await expect(page.locator('.terminal-panel')).toHaveCount(2)
+    await firstTab.click()
     await expect(page.locator('.terminal-view:visible .xterm-helper-textarea')).toBeFocused()
 })
 
@@ -431,9 +472,10 @@ test('closing the repo tab asks first, then kills its shells, and the other repo
     await expect(page.locator('.repo-tab .terminal-count-badge')).toHaveText('1')
 })
 
-test('kill all lives in the palette only, and terminates every remaining shell', async () => {
-    // No header button for it and no shortcut (too easy to fat-finger): kill-all ends shells of
-    // repos that are not on screen, so it keeps one confirm-guarded home — the palette item.
+test('the app-wide kill all lives in the palette only, and terminates every remaining shell', async () => {
+    // No header button for it and no shortcut (too easy to fat-finger): app-wide kill-all ends shells
+    // of repos that are not on screen, so it keeps one confirm-guarded home — the palette item. (The
+    // repo tab menu's own kill is scoped to that tab and tested above.)
     await expect(page.locator('.terminal-panel:visible .icon-btn[title*="Kill every terminal"]')).toHaveCount(0)
     await page.keyboard.press('Control+p')
     await page

@@ -17,7 +17,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   their icon for a compact `ThinkSpinner` (fixed 15px slot and 15px glyph, inherits
   the button color) while `syncStore.busy` is set. A tab whose repo owns live shells carries
   `TerminalCountIcon` (per-repo count) next to its name, even while that repo's panel is hidden —
-  the graph toolbar button keeps the app-wide total.
+  the graph toolbar button repeats the active repo's count. Right-clicking a tab that owns shells adds
+  `Kill all terminals` to its color menu, behind the panel ✕'s confirm and scoped to that repo.
 - **Sidebar**: fetch/pull/push sync card at the top, workspace switcher
   (`WorkspaceButton.vue`, one persisted repo-tab session per workspace, text-only button
   with no leading icon), branch/tag
@@ -292,7 +293,8 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   Mini sidebar `Ctrl+B` (fixed; toggles `ui.sidebarMini` — left to the shell while the terminal
   panel has focus, since it is readline's backward-char / tmux's prefix),
   Toggle terminal `Ctrl+` (spawns the active repo's first shell, then show/hide — never kills;
-  killing every shell is palette-only `Terminal: kill all`, behind a confirm),
+  killing every shell is the palette-only app-wide `Terminal: kill all`, behind a confirm, while
+  the repo tab menu owns the per-repo kill),
   New terminal tab `Ctrl+T` (fixed, capture-phase; the per-repo cap — Settings → Terminal → Tabs,
   default 4 — is a silent no-op),
   Next terminal tab `Ctrl+Tab` / Previous `Ctrl+Shift+Tab`, plus `Alt+→` / `Alt+←` (fixed,

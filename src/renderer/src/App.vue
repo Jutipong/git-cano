@@ -1184,7 +1184,8 @@
                 @close="repoStore.closeTab($event)"
                 @reorder="(from, to) => repoStore.reorderTabs(from, to)"
                 @create-stash="stashCreateOpen = true"
-                @clone="cloneOpen = true" />
+                @clone="cloneOpen = true"
+                @kill-terminals="confirmCloseTerminal" />
             <div
                 v-show="!!repo"
                 class="app-shell">
