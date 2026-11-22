@@ -38,7 +38,7 @@ export default defineConfig({
             }),
         ],
         optimizeDeps: {
-            include: ['vue', 'pinia', 'pinia-plugin-persistedstate'],
+            include: ['vue', 'pinia', 'pinia-plugin-persistedstate', 'dompurify', 'marked'],
             entries: ['./src/renderer/src/**/*.vue'],
         },
         build: {
