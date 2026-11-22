@@ -1448,6 +1448,13 @@ body {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--text) 18%, transparent);
 }
 
+/* Live-shell count per repo (TerminalCountIcon.vue) on the tab's right edge — the graph button keeps
+   the app-wide total, this badge counts only the shells that belong to this repo's path. */
+.repo-tab .terminal-count-icon {
+    flex: 0 0 auto;
+    margin-right: 4px;
+}
+
 .repo-tab-menu {
     position: fixed;
     z-index: var(--z-fixed-menu);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
     import IAndrsrxnTerminalSquare from '~icons/andrsrxn/terminal-square'
 
-    /** Terminal icon with a live-shell total badge on its corner (panel header and graph toolbar). */
+    /** Terminal icon with a live-shell total badge on its corner (panel graph toolbar and repo tabs). */
     defineProps<{ count: number; title?: string }>()
 </script>
 

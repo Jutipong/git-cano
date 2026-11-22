@@ -5,12 +5,14 @@
 
     import { useRepoStore } from '../stores/repo'
     import { useSyncStore } from '../stores/sync'
+    import { useTerminalStore } from '../stores/terminal'
     import { useUiStore } from '../stores/ui'
     import { formatCombo } from '../utils/shortcuts'
     import CloseXIcon from './CloseXIcon.vue'
     import OpenInButton from './OpenInButton.vue'
     import OpenRepoMenu from './OpenRepoMenu.vue'
     import RepoTabContextMenu, { type RepoTabMenuState } from './RepoTabContextMenu.vue'
+    import TerminalCountIcon from './TerminalCountIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
     import WorkspaceButton from './WorkspaceButton.vue'
 
@@ -64,6 +66,7 @@
 
     const syncStore = useSyncStore()
     const repoStore = useRepoStore()
+    const terminalStore = useTerminalStore()
     const syncBusy = computed(() => syncStore.busy)
 
     function actFetch() {
@@ -130,6 +133,12 @@
     function tabColorHex(path: string) {
         return ui.repoTabColors[path]
     }
+
+    /** Per-repo shell count on the tab's corner badge — live shells count even while their panel is hidden. */
+    function terminalTitle(path: string): string {
+        const count = terminalStore.terminalCount(path)
+        return count === 1 ? '1 terminal running' : `${count} terminals running`
+    }
 </script>
 
 <template>
@@ -174,6 +183,11 @@
                             :style="{ backgroundColor: tabColorHex(tab.path) }"
                             aria-hidden="true" />
                         <span class="repo-tab-name">{{ tab.name }}</span>
+                        <TerminalCountIcon
+                            v-if="terminalStore.terminalCount(tab.path)"
+                            class="repo-tab-terminal"
+                            :count="terminalStore.terminalCount(tab.path)"
+                            :title="terminalTitle(tab.path)" />
                         <button
                             class="icon-btn danger commit-close-btn tab-close"
                             tabindex="-1"

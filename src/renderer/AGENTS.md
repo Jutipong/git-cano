@@ -15,7 +15,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   trigger (`OpenInButton.vue`) is a text-only button with no chevron and tighter padding.
   Push/Pull/Fetch swap
   their icon for a compact `ThinkSpinner` (fixed 15px slot and 15px glyph, inherits
-  the button color) while `syncStore.busy` is set.
+  the button color) while `syncStore.busy` is set. A tab whose repo owns live shells carries
+  `TerminalCountIcon` (per-repo count) next to its name, even while that repo's panel is hidden —
+  the graph toolbar button keeps the app-wide total.
 - **Sidebar**: fetch/pull/push sync card at the top, workspace switcher
   (`WorkspaceButton.vue`, one persisted repo-tab session per workspace, text-only button
   with no leading icon), branch/tag

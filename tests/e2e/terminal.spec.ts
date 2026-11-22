@@ -47,6 +47,10 @@ test('graph toolbar button spawns one shell, then toggles the panel', async () =
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
     await expect(page.locator('.terminal-view .xterm')).toHaveCount(1)
     await expect(page.locator('.terminal-tab-label')).toHaveText('cmd 1')
+    // Each repo tab badges its own live shells with the same terminal icon as the graph button;
+    // the repo without a shell carries none.
+    await expect(page.locator('.repo-tab').nth(0).locator('.terminal-count-badge')).toHaveText('1')
+    await expect(page.locator('.repo-tab').nth(1).locator('.terminal-count-icon')).toHaveCount(0)
     // The header carries the repo's current branch in front of the font stepper.
     const branchChip = page.locator('.terminal-panel:visible .branch-chip')
     await expect(branchChip.locator('.branch-chip-name')).toHaveText('main')
@@ -68,6 +72,8 @@ test('graph toolbar button spawns one shell, then toggles the panel', async () =
     // Second press only hides — the shell keeps running (the panel stays mounted).
     await page.locator('.graph-terminal-btn').click()
     await expect(page.locator('.terminal-panel')).toBeHidden()
+    // A hidden panel keeps its shell, so the repo tab badge stays.
+    await expect(page.locator('.repo-tab').nth(0).locator('.terminal-count-badge')).toBeVisible()
     await page.locator('.graph-terminal-btn').click()
     await expect(page.locator('.terminal-panel')).toBeVisible()
 
@@ -106,6 +112,8 @@ test('the second repo owns its own panel and keeps its shell while the first is 
 
     await page.locator('.graph-terminal-btn').click()
     await expect(page.locator('.terminal-panel')).toHaveCount(2)
+    // Both repo tabs now carry their own badge, one shell each.
+    await expect(page.locator('.repo-tab .terminal-count-icon')).toHaveCount(2)
 
     // Each repo's panel renders only its own active shell.
     const labels = await page.locator('.terminal-panel:visible .terminal-tab-label').allTextContents()
@@ -116,9 +124,12 @@ test('the second repo owns its own panel and keeps its shell while the first is 
     await expect(badge).toHaveText('2')
     await page.locator('.terminal-panel:visible .terminal-tab-add').click()
     await expect(badge).toHaveText('3')
+    // The repo tab counts only this repo's shells, not the other repo's background one.
+    await expect(page.locator('.repo-tab.active .terminal-count-badge')).toHaveText('2')
     await page.locator('.terminal-panel:visible .terminal-tab.active .terminal-tab-close').click()
     await page.locator('.confirm-dialog button', { hasText: 'Close terminal' }).click()
     await expect(badge).toHaveText('2')
+    await expect(page.locator('.repo-tab.active .terminal-count-badge')).toHaveText('1')
 
     await page.locator('.repo-tab').nth(0).click()
     await expect(page.locator('.terminal-panel:visible .terminal-tab-label')).toHaveText('cmd 1')
@@ -416,6 +427,8 @@ test('closing the repo tab asks first, then kills its shells, and the other repo
     await expect(page.locator('.repo-tab')).toHaveCount(1)
     await expect(page.locator('.terminal-panel')).toHaveCount(1)
     await expect(page.locator('.terminal-panel:visible')).toHaveCount(1)
+    // The surviving repo tab still badges its own shell.
+    await expect(page.locator('.repo-tab .terminal-count-badge')).toHaveText('1')
 })
 
 test('kill all lives in the palette only, and terminates every remaining shell', async () => {
@@ -429,6 +442,8 @@ test('kill all lives in the palette only, and terminates every remaining shell',
         .click()
     await page.locator('.confirm-dialog button', { hasText: 'Kill all' }).click()
     await expect(page.locator('.terminal-panel')).toHaveCount(0)
+    // With every shell gone the repo tab loses its badge too.
+    await expect(page.locator('.repo-tab .terminal-count-icon')).toHaveCount(0)
 })
 
 test('the header ✕ closes every shell of its repo behind a confirm', async () => {

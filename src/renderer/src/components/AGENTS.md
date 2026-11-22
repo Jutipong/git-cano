@@ -328,8 +328,11 @@ Panel/modal component patterns. Loaded automatically when working under
   counter — the total lives on the graph toolbar only: `TerminalCountIcon.vue` (terminal icon +
   `.terminal-count-badge` green number on its corner, 14px, `--surface-0` pill) inside
   `.graph-terminal-btn`, showing `terminalStore.totalTerminals` — every live shell of every repo,
-  including ones left behind on another repo tab or workspace (badge hidden at zero). The button
-  tooltip repeats the total, so a background shell stays visible while the panel is hidden. The
+  including ones left behind on another repo tab or workspace (badge hidden at zero). The same
+  `TerminalCountIcon` sits on each repo tab (`.repo-tab-terminal`), counted per repo path through
+  `terminalStore.terminalCount(tab.path)` and shown whenever that repo owns a shell — a hidden panel
+  keeps its badge. The graph button tooltip repeats the total, so a background shell stays visible
+  while the panel is hidden. The
   button itself stays neutral — no active/blink tint around the icon.
   Maximize teleports the panel into `.app`
   as `.terminal-overlay` (`top: 60px` keeps it under the repo tab bar,
