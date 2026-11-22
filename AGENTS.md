@@ -73,15 +73,17 @@ Follow this checklist in order:
 
 ## Architecture
 
-Data flows one direction: **component → window.api (preload IPC) → main process → git.ts → simple-git**.
+Data flows one direction: **component → window.api (preload IPC) → main process → git/<feature> → simple-git**.
 Never call git from the renderer directly, and never import from `src/main` in the renderer —
-add a new IPC handler in `main/index.ts`, expose it in `preload/index.ts`, and type it via
-`shared/types.ts`. Keep `window.api` names verb-first, and add new repo-scoped operations with an
-optional `dir` param resolved by `getRepoFor` (never the mutable active-repo global).
+add a new IPC handler in `main/ipc/<feature>.ts` (registered in `main/ipc/index.ts`), expose it in
+`preload/index.ts`, and type it via `shared/types.ts`. Keep `window.api` names verb-first, and add
+new repo-scoped operations with an optional `dir` param resolved by `getRepoFor` (never the mutable
+active-repo global).
 
 Key files:
 
-- `src/main/git.ts` — all git operations (one exported function per operation) — see `src/main/AGENTS.md`
+- `src/main/ipc/` — one IPC slice per feature (`repo`, `history`, `changes`, `stash`, `branches`, …), registered by `index.ts`
+- `src/main/git/` — vertical slices of git operations (`repo`, `history`, `changes`, `branches`, …) over a shared `repo.ts` kernel — see `src/main/AGENTS.md`
 - `src/main/opencode.ts` — AI commit-message generation — see `src/main/AGENTS.md`
 - `src/main/terminal.ts` — PTY sessions for the terminal panel — see `src/main/AGENTS.md`
 - `src/main/updater.ts` — Windows in-app update download/install — see `src/main/AGENTS.md`

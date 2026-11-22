@@ -1,4 +1,4 @@
-import type { CommitNode, DiffLine } from '@shared/types'
+import type { CommitFile, CommitNode, DiffLine, MergeCheck } from '@shared/types'
 
 /**
  * Pure git-output parsers shared by the main process. Kept free of electron/simple-git imports so they can be unit-tested directly (see
@@ -137,4 +137,52 @@ export function capContextSection(text: string): string {
     if (text.length <= AI_CONTEXT_SECTION_MAX) return text
     const cut = text.lastIndexOf('\n', AI_CONTEXT_SECTION_MAX)
     return `${text.slice(0, cut > 0 ? cut : AI_CONTEXT_SECTION_MAX)}\n… (truncated)`
+}
+
+/** Parses `git diff --numstat` output into a path → additions/deletions map. */
+export function parseNumstatMap(text: string): Map<string, { additions: number; deletions: number }> {
+    const map = new Map<string, { additions: number; deletions: number }>()
+    for (const line of text.split('\n')) {
+        if (!line.trim()) continue
+        const [add, del, ...pathParts] = line.split('\t')
+        map.set(pathParts.join('\t'), {
+            additions: add === '-' ? 0 : Number.parseInt(add, 10) || 0,
+            deletions: del === '-' ? 0 : Number.parseInt(del, 10) || 0,
+        })
+    }
+    return map
+}
+
+/** Parses `git diff --name-status` output, joining in the matching numstat entries. */
+export function parseNameStatus(text: string, stats: Map<string, { additions: number; deletions: number }>): CommitFile[] {
+    return text
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map(line => {
+            const [status, ...pathParts] = line.split('\t')
+            const path = pathParts.join('\t')
+            return { path, status, ...(stats.get(path) ?? { additions: 0, deletions: 0 }) }
+        })
+}
+
+/** Parses `git merge-tree --write-tree --name-only` output into the dry-run conflict check result. */
+export function parseMergeTreeOutput(stdout: string): MergeCheck {
+    // Success: a single tree OID line. Conflict (exit 1): tree OID, then with
+    // --name-only one conflicted file per line until a blank line, then
+    // informational messages ("CONFLICT (content): Merge conflict in …").
+    const lines = stdout.split('\n').map(line => line.trim())
+    const conflicts: string[] = []
+    for (const line of lines.slice(1)) {
+        if (!line) break
+        conflicts.push(line)
+    }
+    if (!conflicts.length && lines.some(line => /^CONFLICT\b/.test(line))) {
+        // No --name-only names parsed — fall back to the message lines.
+        for (const line of lines) {
+            const match = line.match(/^CONFLICT.*Merge conflict in (.+)$/)
+            if (match) conflicts.push(match[1].trim())
+        }
+    }
+    return { supported: true, fastForward: false, conflicts }
 }

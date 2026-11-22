@@ -9,6 +9,9 @@ import {
     normalizeRef,
     parseDiff,
     parseLog,
+    parseMergeTreeOutput,
+    parseNameStatus,
+    parseNumstatMap,
 } from '../../src/main/parsers'
 
 import type { DiffLine } from '../../src/shared/types'
@@ -175,5 +178,44 @@ describe('capContextSection', () => {
         expect(capped.length).toBeLessThanOrEqual(AI_CONTEXT_SECTION_MAX + 20)
         expect(capped.endsWith('… (truncated)')).toBe(true)
         expect(capped).not.toContain('xx…')
+    })
+})
+
+describe('parseNumstatMap', () => {
+    it('maps paths to additions/deletions and treats binary entries as zero', () => {
+        const map = parseNumstatMap('12\t3\tsrc/a.ts\n-\t-\timg.png\n')
+        expect(map.get('src/a.ts')).toEqual({ additions: 12, deletions: 3 })
+        expect(map.get('img.png')).toEqual({ additions: 0, deletions: 0 })
+    })
+
+    it('rejoins paths that contain tabs', () => {
+        const map = parseNumstatMap('1\t0\tdir/with\ttab.txt\n')
+        expect(map.get('dir/with\ttab.txt')).toEqual({ additions: 1, deletions: 0 })
+    })
+})
+
+describe('parseNameStatus', () => {
+    it('joins the numstat entries by path and defaults missing stats', () => {
+        const stats = new Map([['a.ts', { additions: 5, deletions: 2 }]])
+        expect(parseNameStatus('M\ta.ts\nA\tnew.ts\n', stats)).toEqual([
+            { path: 'a.ts', status: 'M', additions: 5, deletions: 2 },
+            { path: 'new.ts', status: 'A', additions: 0, deletions: 0 },
+        ])
+    })
+})
+
+describe('parseMergeTreeOutput', () => {
+    it('reports a clean merge', () => {
+        expect(parseMergeTreeOutput('treeoid\n')).toEqual({ supported: true, fastForward: false, conflicts: [] })
+    })
+
+    it('collects --name-only conflict names', () => {
+        const stdout = 'treeoid\na.txt\nb.txt\n\nCONFLICT (content): Merge conflict in a.txt\n'
+        expect(parseMergeTreeOutput(stdout)).toEqual({ supported: true, fastForward: false, conflicts: ['a.txt', 'b.txt'] })
+    })
+
+    it('falls back to CONFLICT message lines when no names were printed', () => {
+        const stdout = 'treeoid\n\nCONFLICT (content): Merge conflict in a.txt\n'
+        expect(parseMergeTreeOutput(stdout)).toEqual({ supported: true, fastForward: false, conflicts: ['a.txt'] })
     })
 })

@@ -3,12 +3,27 @@
 Main-process rules. Loaded automatically when working under `src/main`. The
 root `AGENTS.md` holds the always-on rules (architecture, commands, conventions).
 
-Data flow: renderer → `window.api` (preload IPC) → `main/index.ts` handlers →
-`src/main/git.ts` → simple-git. Never call git from the renderer.
+Data flow: renderer → `window.api` (preload IPC) → `main/ipc/<feature>.ts` →
+`main/git/<feature>.ts` → simple-git. Never call git from the renderer.
+
+## Layout (vertical slices)
+
+- `main/index.ts` — composition root only: window, native menu, app lifecycle.
+- `main/ipc/<feature>.ts` — one `register<Feature>Ipc()` per feature (`repo`, `history`, `changes`,
+  `stash`, `branches`, `remotes`, `conflicts`, `rebase`, `commits`, `ai`, `auth`, `terminal`, `app`);
+  `ipc/core.ts` owns `handle` / `handleSensitive` (+ the repo-scoped `handleRepo` /
+  `handleSensitiveRepo`), `requireRepo` and the error→`{ __error }` mapping; `ipc/index.ts`
+  registers every slice exactly once.
+- `main/git/<feature>.ts` — the git behaviour of that feature. `git/repo.ts` is the shared kernel
+  (instances, env guard, `getRepo`/`getRepoFor`, open/close, watcher); `git/state.ts` holds the
+  cross-slice module state; `git/util.ts` holds blob/path helpers; `git/index.ts` is a barrel so
+  callers keep importing from `./git`.
+- Pure output parsers stay in `main/parsers.ts` (no electron/simple-git imports — unit-tested).
+- Add a new operation to the slice that owns it, then expose it through the matching `ipc/` slice.
 
 ## Git environment (simple-git)
 
-`src/main/git.ts` injects credentials/config per command (`authGitEnv()` via `withAuthEnv`). simple-git v4
+`src/main/git/repo.ts` injects credentials/config per command (`authGitEnv()` via `withAuthEnv`). simple-git v4
 adds an environment guard that rejects any injected `git_*` key not listed in
 `SAFE_UNSAFE_OPTIONS.allowEnvironment` ("blocked by the environment guard") — the older `unsafe.*` flags
 cover a different check and are not a substitute. Current keys: `GIT_SSH_COMMAND`,
@@ -74,7 +89,7 @@ into every command fed a name from the UI:
 ## AI commit messages
 
 All AI logic lives in `src/main/opencode.ts` (renderer never calls model APIs directly;
-it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts`, typed via
+it goes through the `ai:*` IPC handlers in `main/ipc/ai.ts` → `preload/index.ts`, typed via
 `shared/types.ts`).
 
 - `callModel()` is the single HTTP entry point. It talks to three API "families"
@@ -87,7 +102,7 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
   Do not raise this for commit messages — the point is speed and not burning the
   small output budget on thinking (`finish_reason=length`).
 - **Context scope** (`AiContextScope` in `shared/types.ts`): `generateCommitMessage()`
-  forwards it to `getChangesContext()` in `git.ts`.
+  forwards it to `getChangesContext()` in `git/changes.ts`.
     - `'staged'` → staged file list + `git diff --cached` only
     - `'all'` → staged + unstaged diff + untracked file previews
     - Rule: `FilePanel.vue` picks `'staged'` when `ui.aiCommitMode === 'off'`
@@ -154,10 +169,10 @@ it goes through the `ai:*` IPC handlers in `main/index.ts` → `preload/index.ts
 ## Undo journaling
 
 Undo toasts (`utils/undo.ts` → `notifyUndoable` in the renderer) journal their pre-op state in
-`main/git.ts`: commit/amend, revert, squash, soft/mixed reset, rebase (native + interactive),
-cherry-pick, merge, and stash delete. State is kept in per-repo stacks, cap 10, cleared on
-`closeRepo`. Undo resolves through an id-guarded `git:undo` IPC call so a stale toast can't undo a
-newer action.
+`main/git/` slices (`commits.ts`, `conflicts.ts`, `rebase.ts`, `stash.ts`): commit/amend, revert,
+squash, soft/mixed reset, rebase (native + interactive), cherry-pick, merge, and stash delete.
+State is kept in per-repo stacks, cap 10, cleared on `closeRepo`. Undo resolves through an id-guarded
+`git:undo` IPC call so a stale toast can't undo a newer action.
 
 Rules: journal only fully recoverable ops — hard reset and anything already pushed are excluded
 (no entry = no Undo button, plain toast); history-rewriting ops journal only from a clean tree
@@ -171,7 +186,7 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
 ## Reflog
 
 - Recovery net beyond the undo toast window: `listReflog(limit)` / `restoreReflog(ref)` in
-  `main/git.ts` (`reflog:list` / `reflog:restore` IPC, `window.api.reflog` / `restoreReflog`,
+  `main/git/history.ts` (`reflog:list` / `reflog:restore` IPC, `window.api.reflog` / `restoreReflog`,
   `ReflogEntry` in `shared/types.ts`). Unborn branches have no reflog — git exits non-zero,
   so `listReflog` catches and returns `[]` (modal shows "No reflog entries", never a raw fatal).
 - Modal (`ReflogModal.vue`, styles in `modern-ui.css` `.reflog-*`): timeline rail with
@@ -186,7 +201,7 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
 ## Interactive rebase
 
 - The engine is the real `git rebase -i` (`startInteractiveRebase(baseRef, entries)` in
-  `main/git.ts`, `rebase:start` IPC → `window.api.rebaseStart`). Do NOT go back to replaying
+  `main/git/rebase.ts`, `rebase:start` IPC → `window.api.rebaseStart`). Do NOT go back to replaying
   commits with `cherry-pick` — that could not squash/fixup and replayed the whole plan on resume.
 - Repo pinning: `RebaseEditor.vue` captures `repoStore.repo?.path` when it opens and passes it to
   `rebase:plan` / `rebase:start`; main resolves it via `getRepoFor(dir)`. The modal can outlive a
@@ -223,7 +238,7 @@ flows (merge/cherry-pick/rebase continuations) are owned by abort — never jour
 ## Squash
 
 - Squash is HEAD-range only: `getSquashPlan(target)` / `squashCommits(base, message)` in
-  `main/git.ts` via `reset --soft base` + one commit (`squash:plan` / `squash:run` IPC,
+  `main/git/rebase.ts` via `reset --soft base` + one commit (`squash:plan` / `squash:run` IPC,
   `squashPlan` / `squashCommits` on `window.api`, `SquashPlan` in `shared/types.ts`).
   Middle-slice squash is deliberately unsupported — it would need commit replay.
 - Selection (`GraphView.vue`): `Shift+click` extends a range from the last pick (or the open

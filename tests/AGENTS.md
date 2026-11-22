@@ -6,7 +6,7 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
 
 - `tests/unit` — Vitest, `pnpm test:unit`. Pure logic only: no electron, no Vue component mounting.
     - Main-process parsers live in `src/main/parsers.ts` (no electron imports) for this reason; keep new pure
-      helpers there or in `src/shared/` instead of inside `git.ts`.
+      helpers there or in `src/shared/` instead of inside a `git/` slice.
     - Split-view row planning lives in `src/renderer/src/utils/diffPlan.ts` for the same reason.
     - `tests/unit/diffPlan.test.ts` is a parity fuzz against a reference implementation — when the row mapping
       changes intentionally (e.g. meta rows became separators), update the reference in the test too.
