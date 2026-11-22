@@ -17,6 +17,11 @@ Renderer is plain HTML/CSS (no UI framework). Package manager: **pnpm**.
 - `pnpm test:unit` — Vitest unit tests for pure logic (`tests/unit`)
 - `pnpm test:e2e` — Playwright Electron E2E; builds `out/` first (`tests/e2e`) — see `tests/AGENTS.md`
 - `pnpm test` — lint + typecheck + unit + e2e (release gate)
+- Verification workflow: while refactoring, use `pnpm exec tsc --noEmit --runExternalCode -p tsconfig.node.json`
+  (node project) and `pnpm test:unit` for fast feedback; run `pnpm test` **once** before committing —
+  it already covers lint + typecheck + unit + e2e, so don't repeat the full gate for checks it covers.
+  After a rebase that only touches docs, push without re-running; if it changes dependencies or tooling
+  (`package.json`, lockfile, build config), re-run `pnpm test` on the rebased tree before pushing.
 - `pnpm build` — production build (`out/`)
 - `pnpm dist:mac` / `pnpm dist:win` — macOS `.dmg` (arm64) / Windows Setup `.exe` (NSIS) → `release/`
 - Electron's binary is fetched by `scripts/fix-electron-path.mjs` (cross-platform). Electron 45

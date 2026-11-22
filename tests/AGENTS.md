@@ -94,3 +94,4 @@ Testing rules for the two layers. Overall architecture lives in the root `AGENTS
 - `pnpm test:unit` / `pnpm test:unit:watch`
 - `pnpm test:e2e` (builds first; ~25s locally)
 - `pnpm test` — full gate before release
+- Full-gate policy (when to run `pnpm test` vs unit/typecheck only) lives in the root `AGENTS.md` → Commands.
