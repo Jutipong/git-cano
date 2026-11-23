@@ -163,7 +163,7 @@
         role="menu"
         :style="menuStyle()">
         <button
-            class="commit-menu-item"
+            class="commit-menu-item green"
             @click="act('create-branch')">
             <GitBranchPlus
                 class="commit-menu-ic"
@@ -172,7 +172,7 @@
             Create branch
         </button>
         <button
-            class="commit-menu-item"
+            class="commit-menu-item orange"
             @click="act('create-tag')">
             <Tag
                 class="commit-menu-ic"
@@ -182,7 +182,7 @@
         </button>
         <div class="commit-menu-separator" />
         <button
-            class="commit-menu-item"
+            class="commit-menu-item pink"
             @click="act('cherry-pick')">
             <Cherry
                 class="commit-menu-ic"
@@ -260,7 +260,7 @@
                 role="menu"
                 aria-label="Reset options">
                 <button
-                    class="commit-menu-item"
+                    class="commit-menu-item orange"
                     @click="act('reset-soft')">
                     <CircleCheck
                         class="commit-menu-ic"

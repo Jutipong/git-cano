@@ -105,7 +105,7 @@
             role="menu"
             :style="menuStyle()">
             <button
-                class="local-branch-menu-item"
+                class="local-branch-menu-item green"
                 @click="act('createBranchHere')">
                 <GitBranch
                     class="local-branch-menu-ic"
@@ -114,7 +114,7 @@
                 Create branch
             </button>
             <button
-                class="local-branch-menu-item"
+                class="local-branch-menu-item orange"
                 @click="act('createTagHere')">
                 <Tag
                     class="local-branch-menu-ic"
@@ -124,7 +124,7 @@
             </button>
             <div class="local-branch-menu-separator" />
             <button
-                class="local-branch-menu-item accent"
+                class="local-branch-menu-item"
                 :disabled="menu.branch.detached"
                 @click="act('solo')">
                 <Crosshair
