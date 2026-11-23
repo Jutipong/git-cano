@@ -21,7 +21,7 @@
     import { buildPrefix, indexAtOffset } from '../utils/virtual'
     import BranchChip from './BranchChip.vue'
     import CloseXIcon from './CloseXIcon.vue'
-    import CommitContextMenu, { type CommitMenuState } from './CommitContextMenu.vue'
+    import CommitContextMenu, { type CommitBranchOption, type CommitMenuState } from './CommitContextMenu.vue'
     import GraphSettingsModal from './GraphSettingsModal.vue'
     import TerminalCountIcon from './TerminalCountIcon.vue'
     import ThinkSpinner from './ThinkSpinner.vue'
@@ -42,6 +42,7 @@
         (e: 'select-commit', commit: CommitNode): void
         (e: 'load-more'): void
         (e: 'checkout', commit: CommitNode): void
+        (e: 'checkout-branch', branch: CommitBranchOption): void
         (e: 'create-branch', commit: CommitNode): void
         (e: 'create-tag', commit: CommitNode): void
         (e: 'cherry-pick', commit: CommitNode): void
@@ -330,13 +331,38 @@
         const clickedIdx = chainIndex.value.get(commit.hash) ?? -1
         if (squashOldestChainIdx.value >= 0 && clickedIdx >= 0 && clickedIdx <= squashOldestChainIdx.value) {
             const oldest = headChain.value[squashOldestChainIdx.value]!
-            menu.value = { x, y, commit: oldest, squashCount: squashOldestChainIdx.value + 1 }
+            menu.value = { x, y, commit: oldest, squashCount: squashOldestChainIdx.value + 1, checkoutBranches: checkoutBranchesFor(oldest) }
         } else {
             clearSquashPicks()
             // Only commits below HEAD on the current branch can be squashed — HEAD itself has nothing to squash.
             const count = clickedIdx > 0 ? clickedIdx + 1 : 0
-            menu.value = { x, y, commit, squashCount: count }
+            menu.value = { x, y, commit, squashCount: count, checkoutBranches: checkoutBranchesFor(commit) }
         }
+    }
+
+    /** Branches at this commit, local first; remote-only entries create a tracking branch, current branch and tags are skipped. */
+    function checkoutBranchesFor(commit: CommitNode): CommitBranchOption[] {
+        const current = repoStore.repo?.branch
+        const localNames = new Set((repoStore.branchList?.local ?? []).map(branch => branch.name))
+        const locals: CommitBranchOption[] = []
+        const remotes: CommitBranchOption[] = []
+        const seen = new Set<string>()
+        for (const ref of commit.refs) {
+            if (refKind(ref) !== 'local' || ref === 'HEAD') continue
+            const name = refLabel(ref)
+            if (name === current || seen.has(name)) continue
+            seen.add(name)
+            locals.push({ kind: 'local', name })
+        }
+        for (const ref of commit.refs) {
+            if (refKind(ref) !== 'remote') continue
+            const name = refBase(ref)
+            if (name === current || localNames.has(name) || seen.has(name)) continue
+            seen.add(name)
+            remotes.push({ kind: 'remote', name, remoteRef: refLabel(ref) })
+        }
+        const byName = (a: CommitBranchOption, b: CommitBranchOption) => a.name.localeCompare(b.name)
+        return [...locals.sort(byName), ...remotes.sort(byName)]
     }
 
     function openMenu(commit: CommitNode, event: MouseEvent) {
@@ -1283,6 +1309,7 @@
             :menu="menu"
             @close="menu = null"
             @checkout="commit => emit('checkout', commit)"
+            @checkout-branch="branch => emit('checkout-branch', branch)"
             @create-branch="commit => emit('create-branch', commit)"
             @create-tag="commit => emit('create-tag', commit)"
             @cherry-pick="commit => emit('cherry-pick', commit)"

@@ -156,6 +156,12 @@ Panel/modal component patterns. Loaded automatically when working under
   as `remote:<name>` by `normalizeRef()` in `git.ts` so classification needs no
   remote list. Chip order is tags (a-z) first, then branches grouped by short base
   (a-z) with remote before HEAD before local — keep it.
+- **Commit menu lists the branches at the commit**: right-clicking the row (chips bubble to
+  the same row menu) shows one `Checkout <branch>` item per local branch at that tip, above
+  the detached `Checkout <shortHash>`. The current branch and tags are skipped; a remote ref
+  is listed only when its local branch is missing and goes through `checkoutRemote` (label
+  `Checkout <name> (track <remote>)`), so the menu works whether the click lands on the row
+  or a chip.
 - **Full-message popover** (`.commit-msg-popover`, styles in `modern-ui.css`): header row
   is author (bold) / date / mono hash chip with a separator line, then the subject
   (bold) and the body as a `<pre>` (shown only when `commit.body`/the lazy fetch has one).

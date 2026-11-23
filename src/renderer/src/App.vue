@@ -38,6 +38,7 @@
     import { useUiTransientStore, type NotifyOptions, type ToastKind } from './stores/uiTransient'
     import { useUpdaterStore } from './stores/updater'
     import { useWorkspaceStore } from './stores/workspace'
+    import { resolveCheckoutMode } from './utils/checkout'
     import { confirmDialog } from './utils/confirm'
     import { useMinVisible } from './utils/minVisible'
     import {
@@ -54,6 +55,7 @@
     import { nextTerminalTabId, prevTerminalTabId } from './utils/terminalTabs'
     import { notifyUndoable } from './utils/undo'
 
+    import type { CommitBranchOption } from './components/CommitContextMenu.vue'
     import type { CommitNode, RepoStatus } from '@shared/types'
 
     /**
@@ -956,6 +958,20 @@
         void run(`Checked out ${commit.shortHash}`, () => window.api.checkoutCommit(commit.hash), `Checking out ${commit.shortHash}…`)
     }
 
+    /** Checkout from the commit menu's branch list — local branches switch directly, remote refs create/track their local branch. */
+    async function checkoutBranchFromMenu(branch: CommitBranchOption) {
+        const solo = repoStore.soloBranch
+        if (solo && solo !== branch.name && solo !== branch.remoteRef) return
+        const mode = await resolveCheckoutMode(branch.name)
+        if (!mode) return
+        const target = branch.kind === 'remote' ? (branch.remoteRef ?? branch.name) : branch.name
+        void run(
+            `Checked out ${branch.name}`,
+            () => (branch.kind === 'remote' ? window.api.checkoutRemote(target, mode) : window.api.checkout(target, mode)),
+            `Checking out ${branch.name}…`
+        )
+    }
+
     async function createBranchAt(commit: CommitNode) {
         const existing = await window.api
             .branches()
@@ -1263,6 +1279,7 @@
                                 @select-commit="selectCommit"
                                 @load-more="repoStore.loadMore()"
                                 @checkout="checkoutCommit"
+                                @checkout-branch="checkoutBranchFromMenu"
                                 @create-branch="createBranchAt"
                                 @create-tag="tagTarget = $event"
                                 @cherry-pick="cherryPickCommit"

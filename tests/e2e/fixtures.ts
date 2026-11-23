@@ -27,6 +27,8 @@ export interface Fixtures {
      * `conflict-release` (non-current targets).
      */
     mergeRepo: string
+    /** Clean repo whose tip carries two extra local branches (`dev`, `dev-2`) for the commit menu's branch checkout list. */
+    chipRepo: string
 }
 
 const META_FILE = path.join(os.tmpdir(), 'git-cano-e2e-fixtures.json')
@@ -380,6 +382,27 @@ function createMergeRepo(root: string): string {
     return dir
 }
 
+function createChipRepo(root: string): string {
+    const dir = path.join(root, 'chip-repo')
+    initRepo(dir)
+    write(dir, 'readme.md', '# Chip repo\n')
+    run(dir, ['add', 'readme.md'])
+    commit(dir, 'chore: base')
+    write(dir, 'second.txt', 'second\n')
+    run(dir, ['add', 'second.txt'])
+    commit(dir, 'chore: tip')
+    run(dir, ['branch', 'dev'])
+    run(dir, ['branch', 'dev-2'])
+    // A remote-tracking-only branch at the tip, for the remote chip's tracking-branch checkout.
+    const remote = path.join(root, 'chip-remote.git')
+    fs.mkdirSync(remote, { recursive: true })
+    run(remote, ['init', '--bare', '--initial-branch=main'])
+    run(dir, ['remote', 'add', 'origin', remote])
+    run(dir, ['push', 'origin', 'dev:refs/heads/remote-dev'])
+    run(dir, ['fetch', 'origin'])
+    return dir
+}
+
 export function createFixtures(): Fixtures {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'git-cano-e2e-fixtures-'))
     const fixtures: Fixtures = {
@@ -394,6 +417,7 @@ export function createFixtures(): Fixtures {
         hugeRepo: createHugeRepo(root),
         pickRepo: createPickRepo(root),
         mergeRepo: createMergeRepo(root),
+        chipRepo: createChipRepo(root),
     }
     return fixtures
 }

@@ -6,7 +6,9 @@
     import Combine from '~icons/lucide/combine'
     import Copy from '~icons/lucide/copy'
     import CornerDownRight from '~icons/lucide/corner-down-right'
+    import GitBranch from '~icons/lucide/git-branch'
     import GitBranchPlus from '~icons/lucide/git-branch-plus'
+    import Globe2 from '~icons/lucide/globe2'
     import RotateCcw from '~icons/lucide/rotate-ccw'
     import Tag from '~icons/lucide/tag'
     import Trash2 from '~icons/lucide/trash2'
@@ -17,17 +19,29 @@
     import type { NotifyOptions, ToastKind } from '../stores/uiTransient'
     import type { CommitNode } from '@shared/types'
 
+    /** A branch pointing at the menu's commit — listed as its own `Checkout <branch>` item. */
+    export interface CommitBranchOption {
+        kind: 'local' | 'remote'
+        /** Local branch name shown in the menu and checked out for both kinds. */
+        name: string
+        /** Full remote ref (`origin/dev`) — only for remote targets. */
+        remoteRef?: string
+    }
+
     export interface CommitMenuState {
         x: number
         y: number
         commit: CommitNode
         squashCount?: number
+        /** Branches at the commit, local first; remote-only entries create/track the local branch. */
+        checkoutBranches?: CommitBranchOption[]
     }
 
     const props = defineProps<{ menu: CommitMenuState | null }>()
     const emit = defineEmits<{
         (e: 'close'): void
         (e: 'checkout', commit: CommitNode): void
+        (e: 'checkout-branch', branch: CommitBranchOption): void
         (e: 'create-branch', commit: CommitNode): void
         (e: 'create-tag', commit: CommitNode): void
         (e: 'cherry-pick', commit: CommitNode): void
@@ -92,20 +106,32 @@
     onMounted(() => document.addEventListener('mousedown', onDocMouseDown))
     onBeforeUnmount(() => document.removeEventListener('mousedown', onDocMouseDown))
 
-    type CommitAction = 'checkout' | 'create-branch' | 'create-tag' | 'cherry-pick' | 'squash' | 'revert' | 'reset-soft' | 'reset-hard'
+    type CommitAction = 'create-branch' | 'create-tag' | 'cherry-pick' | 'squash' | 'revert' | 'reset-soft' | 'reset-hard'
 
     function act(kind: CommitAction) {
         const commit = props.menu?.commit
         if (!commit) return
         emit('close')
-        if (kind === 'checkout') emit('checkout', commit)
-        else if (kind === 'create-branch') emit('create-branch', commit)
+        if (kind === 'create-branch') emit('create-branch', commit)
         else if (kind === 'create-tag') emit('create-tag', commit)
         else if (kind === 'cherry-pick') emit('cherry-pick', commit)
         else if (kind === 'squash') emit('squash', commit)
         else if (kind === 'revert') emit('revert', commit)
         else if (kind === 'reset-soft') emit('reset-soft', commit)
         else emit('reset-hard', commit)
+    }
+
+    /** The raw-commit checkout item keeps detached-HEAD inspection available when the menu also lists branches. */
+    function checkoutCommitItem() {
+        const commit = props.menu?.commit
+        if (!commit) return
+        emit('close')
+        emit('checkout', commit)
+    }
+
+    function checkoutBranch(branch: CommitBranchOption) {
+        emit('close')
+        emit('checkout-branch', branch)
     }
 
     function copyHash() {
@@ -120,9 +146,11 @@
 
     function menuStyle() {
         if (!props.menu) return {}
+        // Branch rows grow the menu — keep the top clamp in step so it never opens past the bottom edge.
+        const height = 330 + (props.menu.checkoutBranches?.length ?? 0) * 29
         return {
             left: `${Math.min(props.menu.x, window.innerWidth - 240)}px`,
-            top: `${Math.min(props.menu.y, window.innerHeight - 330)}px`,
+            top: `${Math.max(8, Math.min(props.menu.y, window.innerHeight - height))}px`,
         }
     }
 </script>
@@ -174,8 +202,26 @@
         </button>
         <div class="commit-menu-separator" />
         <button
+            v-for="branch in menu.checkoutBranches ?? []"
+            :key="`${branch.kind}:${branch.name}`"
             class="commit-menu-item"
-            @click="act('checkout')">
+            :title="branch.kind === 'remote' ? `Track ${branch.remoteRef}` : ''"
+            @click="checkoutBranch(branch)">
+            <GitBranch
+                v-if="branch.kind === 'local'"
+                class="commit-menu-ic"
+                width="13"
+                height="13" />
+            <Globe2
+                v-else
+                class="commit-menu-ic"
+                width="13"
+                height="13" />
+            Checkout {{ branch.name }}<template v-if="branch.kind === 'remote'"> (track {{ branch.remoteRef }})</template>
+        </button>
+        <button
+            class="commit-menu-item"
+            @click="checkoutCommitItem">
             <CornerDownRight
                 class="commit-menu-ic"
                 width="13"
