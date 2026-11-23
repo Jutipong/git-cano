@@ -47,6 +47,11 @@ Panel/modal component patterns. Loaded automatically when working under
   `.sidebar` at the panel's right edge. Keep the teleport in every menu SFC — the
   branch/tag/stash menus and the shared `ContextMenu.vue` (remote branches) all live in
   the sidebar. `useMenuKeyboard` and the document mousedown close work unchanged through it.
+- **Menu item colors are hover-only**: semantic classes (`.green`, `.orange`, `.blue`, `.pink`,
+  `.accent` teal for Solo, `.danger` red) stay neutral (`--text-secondary`) at rest and paint
+  their color plus a 12% tint on `:hover` / `:focus-visible`; `:disabled` rules stay last so
+  locked rows never take the color. Destructive actions (force push, delete/drop, hard reset,
+  kill terminals) are red only while targeted. Do not reintroduce a permanently colored menu label.
 
 ## DiffView & diff rendering
 

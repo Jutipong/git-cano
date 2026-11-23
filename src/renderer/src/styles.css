@@ -1751,9 +1751,22 @@ kbd {
     font-size: 12px;
     text-align: left;
 }
-.context-menu-item:hover {
+.context-menu-item:hover,
+.context-menu-item:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
+}
+
+.context-menu-item.danger:hover,
+.context-menu-item.danger:focus-visible {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+.context-menu-item.accent:hover,
+.context-menu-item.accent:focus-visible {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
 }
 
 .context-menu-item:disabled {
@@ -1764,14 +1777,6 @@ kbd {
 .context-menu-item:disabled:hover {
     color: var(--text-secondary);
     background: transparent;
-}
-
-.context-menu-item.danger {
-    color: var(--red);
-}
-
-.context-menu-item.danger:hover {
-    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 .context-menu-separator {
     height: 1px;

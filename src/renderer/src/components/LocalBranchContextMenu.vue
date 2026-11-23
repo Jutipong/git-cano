@@ -124,7 +124,7 @@
             </button>
             <div class="local-branch-menu-separator" />
             <button
-                class="local-branch-menu-item"
+                class="local-branch-menu-item accent"
                 :disabled="menu.branch.detached"
                 @click="act('solo')">
                 <Crosshair

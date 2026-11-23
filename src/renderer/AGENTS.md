@@ -229,11 +229,13 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 - **Focus rings are limited to text inputs and links** (product decision): only `input`,
   `textarea`, `select` and `a[href]` get the global `:focus-visible` ring. Buttons, tabs,
   popup menus, list rows and splitters intentionally have no visible focus cue; their
-  hover/active/selected states carry the UI. The terminal panel keeps its `:focus-within`
-  teal edge. Never reintroduce a global `*:focus-visible` outline. Chromeless inputs inside
-  a styled field (`.palette-input`, `.commit-search input`, `.workspace-add-input`,
-  `.terminal-tab-rename`) suppress the outline and use the field border instead; the
-  command palette's field is a pill like the create-branch prompt input.
+  hover/active/selected states carry the UI. Popup menu rows are the one exception that keeps
+  keyboard navigation visible without a ring: they reuse the hover row tint on
+  `:focus-visible`, because semantic menu colors are hover-only. The terminal panel keeps its
+  `:focus-within` teal edge. Never reintroduce a global `*:focus-visible` outline.
+  Chromeless inputs inside a styled field (`.palette-input`, `.commit-search input`,
+  `.workspace-add-input`, `.terminal-tab-rename`) suppress the outline and use the field
+  border instead; the command palette's field is a pill like the create-branch prompt input.
 
 ## Keyboard shortcuts
 

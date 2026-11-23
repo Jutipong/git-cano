@@ -1563,17 +1563,16 @@ body {
     cursor: pointer;
 }
 
-.repo-tab-menu-action:hover {
+.repo-tab-menu-action:hover,
+.repo-tab-menu-action:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
     border-color: var(--line-soft);
 }
 
-.repo-tab-menu-action.danger {
+.repo-tab-menu-action.danger:hover,
+.repo-tab-menu-action.danger:focus-visible {
     color: var(--red);
-}
-
-.repo-tab-menu-action.danger:hover {
     background: color-mix(in srgb, var(--red) 12%, transparent);
     border-color: color-mix(in srgb, var(--red) 30%, transparent);
 }
@@ -4372,16 +4371,15 @@ body {
     text-align: left;
 }
 
-.stash-menu-item:hover {
+.stash-menu-item:hover,
+.stash-menu-item:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
 }
 
-.stash-menu-item.danger {
+.stash-menu-item.danger:hover,
+.stash-menu-item.danger:focus-visible {
     color: var(--red);
-}
-
-.stash-menu-item.danger:hover {
     background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
@@ -4421,9 +4419,16 @@ body {
     text-align: left;
 }
 
-.tag-menu-item:hover {
+.tag-menu-item:hover,
+.tag-menu-item:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
+}
+
+.tag-menu-item.danger:hover,
+.tag-menu-item.danger:focus-visible {
+    color: var(--red);
+    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
 .tag-menu-item:disabled {
@@ -4434,14 +4439,6 @@ body {
 .tag-menu-item:disabled:hover {
     color: var(--text-secondary);
     background: transparent;
-}
-
-.tag-menu-item.danger {
-    color: var(--red);
-}
-
-.tag-menu-item.danger:hover {
-    background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
 .tag-menu-ic {
@@ -4480,40 +4477,33 @@ body {
     text-align: left;
 }
 
-.commit-menu-item:hover {
+.commit-menu-item:hover,
+.commit-menu-item:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
 }
 
-.commit-menu-item.danger {
+.commit-menu-item.danger:hover,
+.commit-menu-item.danger:focus-visible {
     color: var(--red);
-}
-
-.commit-menu-item.danger:hover {
     background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
-.commit-menu-item.green {
+.commit-menu-item.green:hover,
+.commit-menu-item.green:focus-visible {
     color: var(--green);
-}
-
-.commit-menu-item.green:hover {
     background: color-mix(in srgb, var(--green) 12%, transparent);
 }
 
-.commit-menu-item.orange {
+.commit-menu-item.orange:hover,
+.commit-menu-item.orange:focus-visible {
     color: var(--orange);
-}
-
-.commit-menu-item.orange:hover {
     background: color-mix(in srgb, var(--orange) 12%, transparent);
 }
 
-.commit-menu-item.pink {
+.commit-menu-item.pink:hover,
+.commit-menu-item.pink:focus-visible {
     color: var(--pink);
-}
-
-.commit-menu-item.pink:hover {
     background: color-mix(in srgb, var(--pink) 12%, transparent);
 }
 
@@ -4598,7 +4588,8 @@ body {
     text-align: left;
 }
 
-.local-branch-menu-item:hover {
+.local-branch-menu-item:hover,
+.local-branch-menu-item:focus-visible {
     color: var(--text);
     background: var(--surface-hover);
 }
@@ -4613,11 +4604,9 @@ body {
     background: transparent;
 }
 
-.local-branch-menu-item.danger {
+.local-branch-menu-item.danger:hover,
+.local-branch-menu-item.danger:focus-visible {
     color: var(--red);
-}
-
-.local-branch-menu-item.danger:hover {
     background: color-mix(in srgb, var(--red) 12%, transparent);
 }
 
@@ -4626,11 +4615,9 @@ body {
     background: transparent;
 }
 
-.local-branch-menu-item.orange {
+.local-branch-menu-item.orange:hover,
+.local-branch-menu-item.orange:focus-visible {
     color: var(--orange);
-}
-
-.local-branch-menu-item.orange:hover {
     background: color-mix(in srgb, var(--orange) 12%, transparent);
 }
 
@@ -4639,11 +4626,9 @@ body {
     background: transparent;
 }
 
-.local-branch-menu-item.green {
+.local-branch-menu-item.green:hover,
+.local-branch-menu-item.green:focus-visible {
     color: var(--green);
-}
-
-.local-branch-menu-item.green:hover {
     background: color-mix(in srgb, var(--green) 12%, transparent);
 }
 
@@ -4652,15 +4637,24 @@ body {
     background: transparent;
 }
 
-.local-branch-menu-item.blue {
+.local-branch-menu-item.blue:hover,
+.local-branch-menu-item.blue:focus-visible {
     color: var(--blue);
-}
-
-.local-branch-menu-item.blue:hover {
     background: color-mix(in srgb, var(--blue) 12%, transparent);
 }
 
 .local-branch-menu-item.blue:disabled {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.local-branch-menu-item.accent:hover,
+.local-branch-menu-item.accent:focus-visible {
+    color: var(--teal);
+    background: color-mix(in srgb, var(--teal) 12%, transparent);
+}
+
+.local-branch-menu-item.accent:disabled {
     color: var(--text-muted);
     background: transparent;
 }

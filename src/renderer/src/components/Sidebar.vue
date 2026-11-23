@@ -348,6 +348,8 @@
         const items: MenuItem[] = [
             {
                 label: soloed ? 'Unsolo' : 'Solo',
+                accent: true,
+                icon: 'crosshair',
                 action: () => toggleSolo(branch.name),
             },
             {

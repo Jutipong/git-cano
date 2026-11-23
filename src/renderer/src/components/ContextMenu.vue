@@ -7,6 +7,7 @@
     import VisualStudioCode from '~icons/devicon/vscode'
     import CircleCheck from '~icons/lucide/circle-check'
     import Copy from '~icons/lucide/copy'
+    import Crosshair from '~icons/lucide/crosshair'
     import GitBranch from '~icons/lucide/git-branch'
     import Pencil from '~icons/lucide/pencil'
     import Trash2 from '~icons/lucide/trash2'
@@ -37,6 +38,7 @@
 
     const ICONS: Record<string, FunctionalComponent> = {
         'circle-check': CircleCheck,
+        crosshair: Crosshair,
         'git-branch': GitBranch,
         zap: Zap,
         pencil: Pencil,
@@ -83,7 +85,7 @@
                     class="context-menu-separator" />
                 <button
                     class="context-menu-item"
-                    :class="{ danger: item.danger }"
+                    :class="{ danger: item.danger, accent: item.accent }"
                     @click="
                         () => {
                             emit('close')
