@@ -1,13 +1,5 @@
 <script setup lang="ts">
-    import { onMounted, onUnmounted, ref, useTemplateRef } from 'vue'
-    import ICatppuccinFolderGit from '~icons/catppuccin/folder-git'
-    import ICatppuccinFolderOpen from '~icons/catppuccin/folder-open'
     import ILucideFolderPlus from '~icons/lucide/folder-plus'
-
-    import { useRepoStore } from '../stores/repo'
-    import { useUiStore } from '../stores/ui'
-    import { useMenuKeyboard } from '../utils/menuKeyboard'
-    import { formatCombo } from '../utils/shortcuts'
 
     const props = withDefaults(
         defineProps<{
@@ -15,47 +7,11 @@
         }>(),
         { label: '' }
     )
-    const emit = defineEmits<{ (e: 'clone'): void }>()
+    const emit = defineEmits<{ (e: 'open'): void }>()
 
-    const repoStore = useRepoStore()
-    const ui = useUiStore()
-
-    const open = ref(false)
-    const pop = useTemplateRef<HTMLElement>('pop')
-
-    useMenuKeyboard({
-        active: () => open.value,
-        container: pop,
-        onClose: () => {
-            open.value = false
-        },
-    })
-
-    function toggle(event?: MouseEvent) {
-        open.value = !open.value
-        // drop the focus ring after a pointer click — the open state below
-        // already shows the menu is active (keyboard focus is unaffected)
-        if (event?.detail) (event.currentTarget as HTMLElement | null)?.blur()
+    function open() {
+        emit('open')
     }
-
-    function openLocal() {
-        open.value = false
-        void repoStore.pickAndOpen()
-    }
-
-    function openClone() {
-        open.value = false
-        emit('clone')
-    }
-
-    function onDocPointerDown(event: PointerEvent) {
-        if (!open.value) return
-        if ((event.target as HTMLElement | null)?.closest('.open-repo-wrap')) return
-        open.value = false
-    }
-
-    onMounted(() => document.addEventListener('pointerdown', onDocPointerDown))
-    onUnmounted(() => document.removeEventListener('pointerdown', onDocPointerDown))
 </script>
 
 <template>
@@ -63,11 +19,9 @@
         <button
             v-if="!props.label"
             class="icon-btn tab-new"
-            :class="{ open }"
             title="Open from local or clone a repository"
-            aria-haspopup="menu"
-            :aria-expanded="open"
-            @click="toggle($event)">
+            aria-haspopup="dialog"
+            @click="open()">
             <i-lucide-folder-plus
                 width="15"
                 height="15" />
@@ -75,54 +29,12 @@
         <button
             v-else
             class="btn primary"
-            :class="{ open }"
-            aria-haspopup="menu"
-            :aria-expanded="open"
-            @click="toggle()">
+            aria-haspopup="dialog"
+            @click="open()">
             <i-lucide-folder-plus
                 width="15"
                 height="15" />
             {{ props.label }}
         </button>
-        <div
-            v-if="open"
-            ref="pop"
-            class="open-repo-pop"
-            role="menu"
-            aria-label="Open repository">
-            <div class="open-repo-label">Open repository</div>
-            <button
-                class="open-repo-item"
-                role="menuitem"
-                title="Pick a folder from your local disk"
-                @click="openLocal()">
-                <span class="open-repo-icon">
-                    <i-catppuccin-folder-open
-                        width="14"
-                        height="14" />
-                </span>
-                <span class="open-repo-text">
-                    <span class="open-repo-title">Open from local</span>
-                    <span class="open-repo-desc">Pick a folder from your disk</span>
-                </span>
-                <kbd class="open-repo-kbd">{{ formatCombo(ui.getShortcut('openRepo')) }}</kbd>
-            </button>
-            <button
-                class="open-repo-item"
-                role="menuitem"
-                title="Clone a remote repository into a new folder"
-                @click="openClone()">
-                <span class="open-repo-icon">
-                    <i-catppuccin-folder-git
-                        width="14"
-                        height="14" />
-                </span>
-                <span class="open-repo-text">
-                    <span class="open-repo-title">Clone from URL</span>
-                    <span class="open-repo-desc">Download a remote repository</span>
-                </span>
-                <kbd class="open-repo-kbd">{{ formatCombo(ui.getShortcut('cloneRepo')) }}</kbd>
-            </button>
-        </div>
     </div>
 </template>

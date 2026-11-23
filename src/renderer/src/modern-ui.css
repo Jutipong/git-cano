@@ -354,7 +354,6 @@
         .toast,
         .workspace-pop,
         .repo-tab-menu,
-        .open-repo-pop,
         .context-menu,
         .file-context-menu,
         .palette
@@ -787,7 +786,6 @@
         .toast,
         .workspace-pop,
         .repo-tab-menu,
-        .open-repo-pop,
         .context-menu,
         .file-context-menu,
         .palette
@@ -1885,47 +1883,12 @@ body {
 }
 
 .open-repo-wrap {
-    position: relative;
     display: inline-flex;
 }
 
 .tab-actions .open-repo-wrap {
     flex: 0 0 32px;
     align-self: center;
-    /* anchor the popup to the pill (.tab-actions) so it aligns under the + button */
-    position: static;
-}
-
-.tab-actions .open-repo-pop {
-    left: auto;
-    right: 0;
-    width: max-content;
-    min-width: 228px;
-}
-
-.open-repo-pop {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    z-index: var(--z-popover);
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    min-width: 228px;
-    padding: 4px;
-    background: var(--surface-2);
-    border: 1px solid var(--line-soft);
-    border-radius: var(--radius-md);
-    box-shadow: 0 18px 50px var(--shadow);
-}
-
-.open-repo-label {
-    padding: 5px 8px 3px;
-    color: var(--text-muted);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
 }
 
 .open-repo-item {
@@ -1993,6 +1956,34 @@ body {
 .open-repo-kbd {
     flex: 0 0 auto;
     margin-left: 16px;
+}
+
+.open-repo-dialog {
+    width: min(400px, 92vw);
+}
+
+/* keep the trigger's green identity in the dialog header */
+.open-repo-dialog .confirm-dialog-header.flow > svg:first-child {
+    color: var(--green);
+}
+
+.open-repo-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.open-repo-dialog .open-repo-item {
+    min-height: 46px;
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-md);
+}
+
+.open-repo-dialog .open-repo-item:hover {
+    background: var(--surface-hover);
+    border-color: var(--line);
 }
 
 .clone-modal {

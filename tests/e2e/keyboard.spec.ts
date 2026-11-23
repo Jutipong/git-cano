@@ -156,18 +156,20 @@ test('reflog rows are keyboard reachable', async () => {
     await expect(page.locator('.reflog-row')).toHaveCount(0)
 })
 
-test('open repository popover is keyboard navigable', async () => {
+test('open repository dialog is keyboard navigable', async () => {
     const trigger = page.locator('.tab-new').first()
     await trigger.focus()
     await page.keyboard.press('Enter')
-    const menu = page.locator('.open-repo-pop')
-    await expect(menu).toHaveAttribute('role', 'menu')
-    expect(await page.evaluate(() => !!document.activeElement?.closest('.open-repo-pop'))).toBe(true)
-
-    await page.keyboard.press('ArrowDown')
+    const dialog = page.locator('.open-repo-dialog')
+    await expect(dialog).toHaveAttribute('role', 'dialog')
+    await expect(dialog.locator('#open-repo-title')).toHaveText('Open repository')
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.open-repo-dialog'))).toBe(true)
     expect(await activeClass()).toContain('open-repo-item')
+
+    await page.keyboard.press('Tab')
+    expect(await page.evaluate(() => document.activeElement?.textContent?.includes('Clone from URL') ?? false)).toBe(true)
     await page.keyboard.press('Escape')
-    await expect(menu).toHaveCount(0)
+    await expect(dialog).toHaveCount(0)
     await expect(trigger).toBeFocused()
 })
 

@@ -9,9 +9,9 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
 ## UI model (app level)
 
 - **Tab bar** (top): capsule-shaped repository tabs (`TabBar.vue`); the open-repo trigger
-  (`OpenRepoMenu.vue`) uses a lucide `folder-plus` icon — the open popup appears
-  instantly with no pop/rotate animation.
-  Its rows use catppuccin `folder-open` (local) / `folder-git` (clone). The `Open in`
+  (`OpenRepoMenu.vue`) uses a lucide `folder-plus` icon and opens the `OpenRepoModal.vue`
+  choice dialog (Open from local / Clone from URL, catppuccin `folder-open` / `folder-git`,
+  shortcut kbds, Cancel/✕/Esc) instead of a popup menu. The `Open in`
   trigger (`OpenInButton.vue`) is a text-only button with no chevron and tighter padding.
   Push/Pull/Fetch swap
   their icon for a compact `ThinkSpinner` (fixed 15px slot and 15px glyph, inherits

@@ -18,6 +18,7 @@
     import GraphView from './components/GraphView.vue'
     import KittScanner from './components/KittScanner.vue'
     import OpenRepoMenu from './components/OpenRepoMenu.vue'
+    import OpenRepoModal from './components/OpenRepoModal.vue'
     import PromptDialog from './components/PromptDialog.vue'
     import ShortcutsModal from './components/ShortcutsModal.vue'
     import Sidebar from './components/Sidebar.vue'
@@ -300,6 +301,7 @@
     const squashTarget = ref<CommitNode | null>(null)
     const stashCreateOpen = ref(false)
     const cloneOpen = ref(false)
+    const openRepoOpen = ref(false)
 
     // Splash visibility is stabilized by the shared composable: the boot cover stays for the shared
     // minimum after `booted` flips, and the switch cover for the minimum after `switchingWorkspace`
@@ -317,6 +319,16 @@
 
     function openNewRepo() {
         void repoStore.pickAndOpen()
+    }
+
+    function openLocalFromChooser() {
+        openRepoOpen.value = false
+        openNewRepo()
+    }
+
+    function openCloneFromChooser() {
+        openRepoOpen.value = false
+        cloneOpen.value = true
     }
 
     /**
@@ -1200,7 +1212,7 @@
                 @close="repoStore.closeTab($event)"
                 @reorder="(from, to) => repoStore.reorderTabs(from, to)"
                 @create-stash="stashCreateOpen = true"
-                @clone="cloneOpen = true"
+                @open-repo="openRepoOpen = true"
                 @kill-terminals="confirmCloseTerminal" />
             <div
                 v-show="!!repo"
@@ -1403,7 +1415,7 @@
             </div>
             <OpenRepoMenu
                 label="Open repository"
-                @clone="cloneOpen = true" />
+                @open="openRepoOpen = true" />
         </div>
         <ConflictView
             v-if="selectedConflict && repo"
@@ -1472,6 +1484,11 @@
         <StashCreateModal
             v-if="stashCreateOpen"
             @close="stashCreateOpen = false" />
+        <OpenRepoModal
+            v-if="openRepoOpen"
+            @close="openRepoOpen = false"
+            @open-local="openLocalFromChooser"
+            @clone="openCloneFromChooser" />
         <CloneRepoModal
             v-if="cloneOpen"
             @close="cloneOpen = false" />

@@ -34,7 +34,7 @@
         (e: 'close', index: number): void
         (e: 'reorder', from: number, to: number): void
         (e: 'create-stash'): void
-        (e: 'clone'): void
+        (e: 'open-repo'): void
         (e: 'kill-terminals', path: string): void
     }>()
 
@@ -152,7 +152,7 @@
             <span class="tab-actions-sep" />
             <OpenInButton :path="activePath" />
             <span class="tab-actions-sep" />
-            <OpenRepoMenu @clone="emit('clone')" />
+            <OpenRepoMenu @open="emit('open-repo')" />
         </div>
         <div class="tab-group">
             <div class="tab-scroll">
