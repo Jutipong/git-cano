@@ -204,7 +204,7 @@
         <button
             v-for="branch in menu.checkoutBranches ?? []"
             :key="`${branch.kind}:${branch.name}`"
-            class="commit-menu-item"
+            class="commit-menu-item green"
             :title="branch.kind === 'remote' ? `Track ${branch.remoteRef}` : ''"
             @click="checkoutBranch(branch)">
             <GitBranch
@@ -220,7 +220,7 @@
             Checkout {{ branch.name }}<template v-if="branch.kind === 'remote'"> (track {{ branch.remoteRef }})</template>
         </button>
         <button
-            class="commit-menu-item"
+            class="commit-menu-item green"
             @click="checkoutCommitItem">
             <CornerDownRight
                 class="commit-menu-ic"
