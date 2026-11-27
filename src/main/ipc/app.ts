@@ -14,10 +14,11 @@ import type { EditorTarget } from '@shared/types'
 
 /** App/system slice: settings, external apps, auto-update, recent repos and renderer logging. */
 
-/** Main-process app settings (currently: the opt-in Windows status accelerators + the last clone root). */
+/** Main-process app settings (currently: the opt-in Windows status accelerators + the last clone root + the last open-repo root). */
 interface AppSettings {
     statusAccelerators?: boolean
     lastCloneRoot?: string
+    lastOpenRoot?: string
 }
 
 function appSettingsFile(): string {
@@ -59,6 +60,20 @@ export function startDir(): string | undefined {
         if (last) return path.dirname(last)
     } catch {}
     return undefined
+}
+
+/**
+ * Starting directory for the Open repo dialog: the parent of the folder picked there last time, so the user lands next to the repo they
+ * just opened. Clone roots must not win here — falls back to startDir() only when no open root is saved or it no longer exists.
+ */
+export function openStartDir(): string | undefined {
+    const lastRoot = readAppSettings().lastOpenRoot?.trim()
+    if (lastRoot) {
+        try {
+            if (fs.statSync(lastRoot).isDirectory()) return lastRoot
+        } catch {}
+    }
+    return startDir()
 }
 
 const LOG_LEVELS = new Set(['info', 'warn', 'error'])

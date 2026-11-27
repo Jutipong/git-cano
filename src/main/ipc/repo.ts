@@ -17,16 +17,17 @@ import {
     plainGit,
     setActiveRepo,
 } from '../git'
-import { startDir, writeAppSettings } from './app'
+import { openStartDir, startDir, writeAppSettings } from './app'
 import { handle, handleRepo } from './core'
 
 /** Repository lifecycle slice: open/init/clone/activate/close. */
 
 export function registerRepoIpc(): void {
     handle('repo:pickAndOpen', async () => {
-        const res = await dialog.showOpenDialog({ properties: ['openDirectory'], defaultPath: startDir() })
+        const res = await dialog.showOpenDialog({ properties: ['openDirectory'], defaultPath: openStartDir() })
         if (res.canceled || !res.filePaths[0]) return null
         const dir = res.filePaths[0]
+        writeAppSettings({ lastOpenRoot: path.dirname(dir) })
         try {
             return { kind: 'opened', status: await openRepo(dir) }
         } catch (error) {
