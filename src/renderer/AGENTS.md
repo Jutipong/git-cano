@@ -151,6 +151,17 @@ under `src/renderer`. The root `AGENTS.md` holds the always-on rules
   look & feel). Put visual tweaks in `modern-ui.css`. Keep cards/panels/modals at a consistent
   `12px` radius; rows/buttons use pill (`999px`) shapes. Dark palettes use `color-mix` for tints;
   light is a warm-gray base — keep both legible on low-clarity Windows displays.
+- **Dark (default) is macOS-style + Liquid Glass overlays**: surfaces keep the original deep
+  navy-black (`--canvas` `#0f0f14` → `--surface-*`, a product decision — don't swap them for
+  macOS graphite), with macOS text, white hairlines (`--line-soft`), Apple dark system accents
+  and a flat canvas (no glow).
+  Only top-level floating overlays (context/popup menus, popovers, toasts, the command palette)
+  get `--glass-bg` + `backdrop-filter`; modal backdrops blur, the dialogs stay opaque. Never
+  blur a nested element (submenus, dropdowns inside tab-bar capsules or panels): a
+  backdrop-filter parent is its children's backdrop root, so a nested blur samples nothing and
+  turns see-through — those stay opaque with the `--glass-highlight` top edge. The palette
+  overlay stays unblurred for the same reason. Glass tokens live in the dark block of `styles.css`;
+  the window's pre-paint `backgroundColor` (`main/index.ts`) mirrors dark `--canvas`.
 - **Windows-only settings hide on macOS/Linux**: General → Performance status accelerators render
   only when `isWindows` (`utils/shortcuts.ts`), and main forces them off outside win32
   (`setStatusAccelerators()` in `main/git.ts`). Settings → Terminal hides its shell section the same

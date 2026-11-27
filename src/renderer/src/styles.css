@@ -3,7 +3,8 @@
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-mono: 'SF Mono', Menlo, 'Cascadia Mono', Consolas, monospace;
 
-    /* Surfaces climb in even OKLCH lightness steps (+0.025, hue 285); accents keep their hue at ~87% chroma. */
+    /* Surfaces keep the original deep navy-black and climb in even OKLCH lightness steps (+0.025, hue 285);
+       text, hairlines and accents follow macOS (Apple dark system colors, link blue instead of #0a84ff so accent text stays AA). */
     --canvas: #0f0f14;
     --surface-0: #14141b;
     --surface-1: #1a1a22;
@@ -11,33 +12,38 @@
     --surface-3: #252531;
     --surface-hover: #2b2b3a;
     --surface-selected: #313047;
-    --line: #2c2c3a;
-    --line-soft: rgba(69, 168, 243, 0.15);
-    --text: #e8e8f0;
-    --text-secondary: #b7b7c8;
-    --text-muted: #9090a3;
-    --teal: #45a8f3;
-    --teal-dark: #1277c2;
-    --blue: #78d7f8;
-    --green: #63d272;
-    --orange: #f7a449;
-    --red: #ea646e;
-    --purple: #9c80f2;
-    --yellow: #fad74b;
-    --pink: #f579ad;
+    --line: #38383a;
+    --line-soft: rgba(255, 255, 255, 0.08);
+    --text: #f5f5f7;
+    --text-secondary: #c7c7cc;
+    --text-muted: #98989d;
+    --teal: #409cff;
+    --teal-dark: #0a6ce0;
+    --blue: #64d2ff;
+    --green: #30d158;
+    --orange: #ff9f0a;
+    --red: #ff453a;
+    --purple: #bf5af2;
+    --yellow: #ffd60a;
+    --pink: #ff375f;
     --diff-bg: #1a1a22;
     --diff-inline-bg: #313047;
     --diff-row-tint: 15%;
     --diff-mark-strength: 45%;
     --toast-bg: #1a1a22;
-    --toast-border: #2c2c3a;
+    --toast-border: #38383a;
     --conflict-bg: #313047;
-    --conflict-border: #45a8f3;
-    --conflict-text: #fad74b;
+    --conflict-border: #409cff;
+    --conflict-text: #ffd60a;
     --conflict-ours-bg: #1d2b1d;
     --conflict-theirs-bg: #2b2014;
     --conflict-base-bg: #1a1a22;
-    --shadow: rgba(0, 0, 0, 0.5);
+    --shadow: rgba(0, 0, 0, 0.45);
+    /* Liquid Glass overlays (menus, popovers, toasts, palette, modal backdrop) — used only by dark-scoped rules in modern-ui.css. */
+    --glass-bg: rgba(31, 31, 41, 0.72);
+    --glass-border: rgba(255, 255, 255, 0.12);
+    --glass-highlight: rgba(255, 255, 255, 0.1);
+    --glass-backdrop: rgba(15, 15, 20, 0.35);
     --radius-card: 12px;
     --radius-pill: 999px;
 }

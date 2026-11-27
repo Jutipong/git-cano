@@ -1,3 +1,77 @@
+/* ===== Dark theme — macOS graphite + Liquid Glass overlays ===== */
+/* flat graphite backdrop: no accent glow hotspot */
+:root[data-theme='dark'] .app,
+:root[data-theme='dark'] .app-empty {
+    background: var(--canvas);
+}
+/* Floating menus, popovers, toasts and the palette are frosted glass with a specular top edge.
+   Only top-level overlays blur: an element with backdrop-filter becomes the backdrop root of its
+   descendants, so a nested blur (submenu, dropdown inside a blurred capsule) samples nothing and
+   turns see-through. Submenus, tab-bar capsules and panels therefore stay opaque. */
+:root[data-theme='dark']
+    :is(
+        .context-menu,
+        .repo-tab-menu,
+        .theme-menu,
+        .commit-msg-popover,
+        .file-context-menu,
+        .cb-ai-menu,
+        .stash-menu,
+        .tag-menu,
+        .commit-menu,
+        .local-branch-menu,
+        .zoom-menu,
+        .palette
+    ) {
+    background: var(--glass-bg);
+    border-color: var(--glass-border);
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 18px 50px var(--shadow);
+    backdrop-filter: blur(24px) saturate(180%);
+}
+:root[data-theme='dark'] .toast {
+    background: color-mix(in srgb, var(--toast-accent, var(--teal)) 10%, var(--glass-bg));
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 12px 40px var(--shadow);
+    backdrop-filter: blur(24px) saturate(180%);
+}
+:root[data-theme='dark'] :is(.file-context-menu-sub, .commit-menu-sub) {
+    border-color: var(--glass-border);
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 18px 50px var(--shadow);
+}
+/* Modal backdrops dim and soften the app; the dialog itself stays opaque like a macOS sheet.
+   The palette overlay is left unblurred so the palette's own glass has the app to sample. */
+:root[data-theme='dark'] :is(.modal-overlay, .error-dialog-overlay, .confirm-dialog-overlay) {
+    background: var(--glass-backdrop);
+    backdrop-filter: blur(8px);
+}
+:root[data-theme='dark'] :is(.modal-overlay > div, .confirm-dialog, .error-dialog) {
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 24px 80px var(--shadow);
+}
+/* Panels and tab-bar capsules: opaque, with the same specular top edge. */
+:root[data-theme='dark'] :is(.sidebar, .sidebar-rail, .center-column, .right-pane) {
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 3px 14px var(--shadow);
+}
+:root[data-theme='dark'] :is(.tab-group, .tab-actions, .tab-sync-actions) {
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+}
+/* active repo tab reads as a raised segmented-control thumb instead of an accent tint */
+:root[data-theme='dark'] .repo-tab.active {
+    background: var(--surface-hover);
+    border-color: var(--glass-border);
+    box-shadow:
+        inset 0 1px 0 var(--glass-highlight),
+        0 1px 3px var(--shadow);
+}
+
 /* ===== Light theme — eye-strain tuning (dim warm gray + vivid accents) ===== */
 /* flat backdrop: no glow hotspot on dim paper */
 :root[data-theme='light'] .app,
@@ -7018,7 +7092,7 @@ body {
 }
 
 :root[data-theme='dark'] .diff-body::-webkit-scrollbar-thumb {
-    background: #262632;
+    background: var(--surface-hover);
 }
 
 :root[data-theme='light'] .diff-body::-webkit-scrollbar-thumb {

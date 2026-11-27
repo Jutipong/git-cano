@@ -31,7 +31,7 @@ function createWindow(): void {
         minWidth: 1000,
         minHeight: 600,
         title: 'Git Cano',
-        backgroundColor: '#1e2227',
+        backgroundColor: '#0f0f14',
         webPreferences: {
             preload: path.join(__dirname, '../preload/index.mjs'),
             contextIsolation: true,
