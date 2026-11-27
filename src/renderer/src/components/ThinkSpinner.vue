@@ -82,6 +82,36 @@
         text-align: center;
     }
 
+    /* "AI thinking" shimmer: a bright band sweeps across the label to the end, then back.
+       The base is the label's own color (currentColor) dimmed so the band reads in every theme even where
+       --text-secondary sits close to --text; text-fill (not `color`) goes transparent so currentColor
+       still resolves inside the gradient. */
+    .think-spinner-label {
+        --think-dim: color-mix(in srgb, currentColor 55%, transparent);
+        background: linear-gradient(90deg, var(--think-dim) 0 36%, var(--text) 50%, var(--think-dim) 64% 100%);
+        background-size: 250% 100%;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: think-shimmer 1.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes think-shimmer {
+        from {
+            background-position: 100% 0;
+        }
+        to {
+            background-position: 0% 0;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .think-spinner-label {
+            animation: none;
+            background: none;
+            -webkit-text-fill-color: currentColor;
+        }
+    }
+
     .think-spinner.compact {
         gap: 0;
         color: inherit;

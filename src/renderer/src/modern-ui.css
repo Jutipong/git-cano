@@ -4391,12 +4391,14 @@ body {
     inset: -1px;
     border-radius: inherit;
     padding: 1px;
+    /* Kept at 1px (thinner blurs on 100%-scale Windows displays); it reads lighter through a fainter,
+       shorter comet instead. */
     background: conic-gradient(
         from var(--busy-spin),
         transparent 0%,
-        transparent 55%,
-        color-mix(in srgb, var(--teal) 90%, transparent) 75%,
-        transparent 95%
+        transparent 65%,
+        color-mix(in srgb, var(--teal) 45%, transparent) 80%,
+        transparent 92%
     );
     -webkit-mask:
         linear-gradient(#fff 0 0) content-box,
